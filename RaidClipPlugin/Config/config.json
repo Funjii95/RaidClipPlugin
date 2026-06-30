@@ -1,0 +1,15 @@
+{
+  "Twitch": {
+    "ClientId": "1ld73unzjpiecz84b8ocuuwnma3ax9",
+    "AccessToken": "1ld73unzjpiecz84b8ocuuwnma3ax9"
+  },
+  "OBS": {
+    "Host": "127.0.0.1",
+    "Port": 4455,
+    "Password": ""
+  },
+  "Player": {
+    "Scene": "Alerts",
+    "BrowserSource": "RaidClip"
+  }
+}

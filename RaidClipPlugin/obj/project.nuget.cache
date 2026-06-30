@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "dgSpecHash": "KbGJV/2KxBA=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Benjamin\\source\\repos\\RaidClipPlugin\\RaidClipPlugin\\RaidClipPlugin.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.configuration\\10.0.9\\microsoft.extensions.configuration.10.0.9.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\10.0.9\\microsoft.extensions.configuration.abstractions.10.0.9.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.configuration.binder\\10.0.9\\microsoft.extensions.configuration.binder.10.0.9.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.configuration.fileextensions\\10.0.9\\microsoft.extensions.configuration.fileextensions.10.0.9.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.configuration.json\\10.0.9\\microsoft.extensions.configuration.json.10.0.9.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.4\\microsoft.extensions.dependencyinjection.abstractions.9.0.4.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.fileproviders.abstractions\\10.0.9\\microsoft.extensions.fileproviders.abstractions.10.0.9.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.fileproviders.physical\\10.0.9\\microsoft.extensions.fileproviders.physical.10.0.9.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.filesystemglobbing\\10.0.9\\microsoft.extensions.filesystemglobbing.10.0.9.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\9.0.4\\microsoft.extensions.logging.abstractions.9.0.4.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.9\\microsoft.extensions.primitives.10.0.9.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\microsoft.io.recyclablememorystream\\3.0.0\\microsoft.io.recyclablememorystream.3.0.0.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\newtonsoft.json\\13.0.4\\newtonsoft.json.13.0.4.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\obs-websocket-dotnet\\5.0.1\\obs-websocket-dotnet.5.0.1.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\system.reactive\\6.0.0\\system.reactive.6.0.0.nupkg.sha512",
+    "C:\\Users\\Benjamin\\.nuget\\packages\\websocket.client\\5.1.2\\websocket.client.5.1.2.nupkg.sha512"
+  ],
+  "logs": []
+}
