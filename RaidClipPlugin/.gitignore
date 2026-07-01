@@ -1,0 +1,15 @@
+# Lokale Twitch-Zugangsdaten / private Konfiguration
+Config/config.json
+config.json
+*.secrets.json
+
+# Benutzer- und Builddaten
+bin/
+obj/
+publish/
+fertige-exe/
+installer-output/
+.vs/
+
+# Lokale Protokolle
+logs/

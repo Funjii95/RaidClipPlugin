@@ -1,0 +1,34 @@
+{
+  "Twitch": {
+    "ClientId": "",
+    "ClientSecret": "",
+    "BroadcasterLogin": "",
+    "MinimumRaidViewers": 1,
+    "ClipLookbackDays": 365,
+    "ClipRetryAttempts": 3,
+    "RaidCooldownMinutes": 5
+  },
+  "OBS": {
+    "Host": "127.0.0.1",
+    "Port": 4455,
+    "Password": ""
+  },
+  "Player": {
+    "Scene": "Alerts",
+    "BrowserSource": "RaidClip",
+    "Port": 17891,
+    "DurationSeconds": 30,
+    "VolumePercent": 100,
+    "BlacklistedClipIds": []
+  },
+  "Chat": {
+    "SendRaidMessage": true,
+    "SendShoutout": true,
+    "RaidMessageTemplate": "Danke für den Raid, @{name}! Schaut bei https://twitch.tv/{login} vorbei!"
+  },
+  "Update": {
+    "ManifestUrl": "https://github.com/Funjii95/RaidClipPlugin/releases/latest/download/update.json",
+    "Enabled": true,
+    "SkippedVersion": ""
+  }
+}
