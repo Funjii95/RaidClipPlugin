@@ -1,0 +1,79 @@
+name: Windows Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: RaidClipPlugin
+
+    steps:
+      - name: Quellcode laden
+        uses: actions/checkout@v4
+
+      - name: .NET 10 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Version prüfen
+        shell: pwsh
+        run: |
+          [xml]$project = Get-Content "RaidClipPlugin.csproj"
+          $version = [string]$project.Project.PropertyGroup.Version
+          $tagVersion = "${{ github.ref_name }}".TrimStart("v")
+          if ($version -ne $tagVersion) { throw "Tag $tagVersion stimmt nicht mit Projektversion $version überein." }
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Windows-App erstellen
+        shell: pwsh
+        run: dotnet publish "RaidClipPlugin.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o "publish"
+
+      - name: Update-ZIP erstellen
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force "installer-output" | Out-Null
+          Compress-Archive -Path "publish\*" -DestinationPath "installer-output\RaidClipPlugin-Update-$env:APP_VERSION.zip" -Force
+
+      - name: Inno Setup installieren
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Windows-Installer erstellen
+        shell: pwsh
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "Installer\RaidClipPlugin.iss"'
+
+      - name: update.json erzeugen
+        shell: pwsh
+        run: |
+          $zipName = "RaidClipPlugin-Update-$env:APP_VERSION.zip"
+          $zipPath = Join-Path "installer-output" $zipName
+          $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash
+          $downloadUrl = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$zipName"
+          $manifest = [ordered]@{
+            latestVersion = $env:APP_VERSION
+            downloadUrl = $downloadUrl
+            changelog = "Änderungen siehe GitHub Release ${{ github.ref_name }}."
+            sha256 = $hash
+          }
+          $manifest | ConvertTo-Json | Set-Content "installer-output\update.json" -Encoding UTF8
+
+      - name: GitHub Release veröffentlichen
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          gh release view $tag --json tagName 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --title "RaidClipPlugin $env:APP_VERSION" --generate-notes
+          }
+          gh release upload $tag "installer-output\RaidClipPlugin-Setup-$env:APP_VERSION.exe" "installer-output\RaidClipPlugin-Update-$env:APP_VERSION.zip" "installer-output\update.json" --clobber
