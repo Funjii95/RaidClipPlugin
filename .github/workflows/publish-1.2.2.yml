@@ -605,10 +605,7 @@ jobs:
           if (Test-Path "RaidClipPlugin") { Remove-Item "RaidClipPlugin" -Recurse -Force }
           New-Item -ItemType Directory -Force "RaidClipPlugin" | Out-Null
           Get-ChildItem $stage -Force | Copy-Item -Destination "RaidClipPlugin" -Recurse -Force
-          New-Item -ItemType Directory -Force ".github\workflows" | Out-Null
-          Copy-Item "RaidClipPlugin\.github\workflows\release.yml" ".github\workflows\release.yml" -Force
           Remove-Item "RaidClipPlugin\.github" -Recurse -Force
-          Remove-Item ".github\workflows\publish-1.2.2.yml" -Force
 
       - name: .NET 10 einrichten
         uses: actions/setup-dotnet@v4
