@@ -13,7 +13,9 @@ public sealed class AuthenticationService
     private const string TokenUrl = "https://id.twitch.tv/oauth2/token";
     private const string ValidateUrl = "https://id.twitch.tv/oauth2/validate";
     private const string RequiredScopeValue =
-        "user:write:chat moderator:manage:shoutouts";
+        "user:read:chat user:write:chat moderator:manage:shoutouts " +
+        "moderator:manage:banned_users moderator:manage:chat_messages " +
+        "moderator:read:chatters";
     private static readonly string[] RequiredScopes =
         RequiredScopeValue.Split(' ');
     private readonly TwitchConfig _config;

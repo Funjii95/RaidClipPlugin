@@ -77,7 +77,13 @@ public sealed class ConfigurationService
             SendShoutout = config.Chat.SendShoutout,
             RaidMessageTemplate = config.Chat.RaidMessageTemplate,
             AutoUpdateEnabled = config.Update.Enabled,
-            SkippedUpdateVersion = config.Update.SkippedVersion
+            SkippedUpdateVersion = config.Update.SkippedVersion,
+            ModerationEnabled = config.Moderation.Enabled,
+            ShowChatMessagesInLog = config.Moderation.ShowMessagesInLog,
+            AutoFilterEnabled = config.Moderation.AutoFilterEnabled,
+            WhitelistModsAndVips = config.Moderation.WhitelistModsAndVips,
+            ModerationTimeoutSeconds = config.Moderation.TimeoutSeconds,
+            BlockedWords = config.Moderation.BlockedWords
         };
 
         File.WriteAllText(
@@ -180,6 +186,40 @@ public sealed class ConfigurationService
                 config.Update.SkippedVersion =
                     settings.SkippedUpdateVersion;
             }
+
+            if (settings.ModerationEnabled is not null)
+            {
+                config.Moderation.Enabled = settings.ModerationEnabled.Value;
+            }
+
+            if (settings.ShowChatMessagesInLog is not null)
+            {
+                config.Moderation.ShowMessagesInLog =
+                    settings.ShowChatMessagesInLog.Value;
+            }
+
+            if (settings.AutoFilterEnabled is not null)
+            {
+                config.Moderation.AutoFilterEnabled =
+                    settings.AutoFilterEnabled.Value;
+            }
+
+            if (settings.WhitelistModsAndVips is not null)
+            {
+                config.Moderation.WhitelistModsAndVips =
+                    settings.WhitelistModsAndVips.Value;
+            }
+
+            if (settings.ModerationTimeoutSeconds is not null)
+            {
+                config.Moderation.TimeoutSeconds =
+                    settings.ModerationTimeoutSeconds.Value;
+            }
+
+            if (settings.BlockedWords is not null)
+            {
+                config.Moderation.BlockedWords = settings.BlockedWords;
+            }
         }
         catch (Exception exception)
         {
@@ -204,6 +244,12 @@ public sealed class ConfigurationService
             (config.Chat.RaidMessageTemplate ?? "").Trim();
         config.Update.SkippedVersion =
             (config.Update.SkippedVersion ?? "").Trim();
+        config.Moderation.BlockedWords =
+            (config.Moderation.BlockedWords ?? new List<string>())
+            .Where(word => !string.IsNullOrWhiteSpace(word))
+            .Select(word => word.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static void ValidateTechnicalSettings(AppConfig config)
@@ -283,6 +329,12 @@ public sealed class ConfigurationService
                 "Der Raid-Cooldown muss zwischen 0 und 1440 Minuten liegen.");
         }
 
+        if (config.Moderation.TimeoutSeconds is < 1 or > 1_209_600)
+        {
+            throw new InvalidOperationException(
+                "Der Moderations-Timeout muss zwischen 1 und 1209600 Sekunden liegen.");
+        }
+
         if (config.Chat.SendRaidMessage &&
             string.IsNullOrWhiteSpace(config.Chat.RaidMessageTemplate))
         {
@@ -308,5 +360,11 @@ public sealed class ConfigurationService
         public string? RaidMessageTemplate { get; set; }
         public bool? AutoUpdateEnabled { get; set; }
         public string? SkippedUpdateVersion { get; set; }
+        public bool? ModerationEnabled { get; set; }
+        public bool? ShowChatMessagesInLog { get; set; }
+        public bool? AutoFilterEnabled { get; set; }
+        public bool? WhitelistModsAndVips { get; set; }
+        public int? ModerationTimeoutSeconds { get; set; }
+        public List<string>? BlockedWords { get; set; }
     }
 }

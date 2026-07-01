@@ -29,6 +29,6 @@ if errorlevel 1 (
 
 echo.
 echo Lade diese beiden Dateien als GitHub-Release-Assets hoch:
-echo - installer-output\RaidClipPlugin-Update-1.2.2.zip
+echo - installer-output\RaidClipPlugin-Update-1.2.3.zip
 echo - installer-output\update.json
 pause

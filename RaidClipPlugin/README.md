@@ -1,4 +1,4 @@
-# RaidClipPlugin 1.2.2
+# RaidClipPlugin 1.2.3
 
 RaidClipPlugin erkennt eingehende Twitch-Raids und spielt automatisch einen zufälligen Clip des raidenden Kanals in einer OBS-Browserquelle ab.
 
@@ -37,6 +37,12 @@ Twitch-Kanal, OBS-Verbindung, Clip-Zeitraum, Retries, Clipdauer, Lautstärke, Ra
 
 Technische Standardwerte stehen in `Config/config.template.json`. Die Datei enthält absichtlich keine echten Client-Zugangsdaten.
 
+## Chat-Moderation
+
+Das optionale Modul läuft unabhängig von Raid-Erkennung und Clip-Wiedergabe. Im Tab **Chat-Moderation** erscheinen neue Nachrichten mit direkten Schaltflächen für Timeout, Ban und Löschen.
+
+Der Wortfilter ist standardmäßig deaktiviert. Bei Aktivierung löscht er nur die betroffene Nachricht; automatische Timeouts oder Bans werden bewusst nicht ausgeführt. Streamer, Moderatoren und VIPs können vom Filter ausgenommen werden. Beim ersten Start nach dem Update fordert Twitch die zusätzlichen Chat- und Moderationsrechte an.
+
 ## EXE erstellen
 
 Den Ordner entpacken und `EXE_ERSTELLEN.cmd` doppelt anklicken. Die fertige App erscheint anschließend im Ordner `fertige-exe`.
@@ -45,7 +51,7 @@ Den Ordner entpacken und `EXE_ERSTELLEN.cmd` doppelt anklicken. Die fertige App 
 
 1. Einmalig [Inno Setup 6](https://jrsoftware.org/isdl.php) installieren.
 2. `BUILD_INSTALLER.bat` doppelt anklicken.
-3. Der fertige Installer liegt anschließend unter `installer-output/RaidClipPlugin-Setup-1.2.2.exe`.
+3. Der fertige Installer liegt anschließend unter `installer-output/RaidClipPlugin-Setup-1.2.3.exe`.
 
 Der Installer arbeitet ohne Administratorrechte, enthält die benötigte .NET-Laufzeit, legt einen Startmenü-Eintrag an und bietet optional eine Desktop-Verknüpfung.
 
@@ -63,7 +69,7 @@ Beim Installieren wird das ZIP oder die EXE heruntergeladen und über SHA-256 ge
 
 ### GitHub Release veröffentlichen
 
-1. `BUILD_INSTALLER.bat` ausführen. Dadurch entstehen der normale Installer und `RaidClipPlugin-Update-1.2.2.zip`.
+1. `BUILD_INSTALLER.bat` ausführen. Dadurch entstehen der normale Installer und `RaidClipPlugin-Update-1.2.3.zip`.
 2. Ein GitHub Release erstellen und das Update-ZIP hochladen.
 3. `UPDATE_DATEI_ERSTELLEN.cmd` starten und die endgültige GitHub-Downloadadresse des ZIPs eingeben.
 4. Die erzeugte `update.json` ebenfalls als Release-Asset hochladen.

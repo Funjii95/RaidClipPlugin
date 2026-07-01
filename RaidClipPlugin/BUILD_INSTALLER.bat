@@ -31,7 +31,7 @@ if errorlevel 1 (
 )
 
 echo [2/3] ZIP fuer GitHub Auto-Update wird erstellt ...
-powershell.exe -NoProfile -Command "Compress-Archive -Path 'publish\*' -DestinationPath 'installer-output\RaidClipPlugin-Update-1.2.2.zip' -Force"
+powershell.exe -NoProfile -Command "Compress-Archive -Path 'publish\*' -DestinationPath 'installer-output\RaidClipPlugin-Update-1.2.3.zip' -Force"
 if errorlevel 1 (
     echo.
     echo FEHLER: Das Update-ZIP konnte nicht erstellt werden.
@@ -67,8 +67,8 @@ if errorlevel 1 (
 
 echo.
 echo FERTIG:
-echo - RaidClipPlugin-Setup-1.2.2.exe
-echo - RaidClipPlugin-Update-1.2.2.zip
+echo - RaidClipPlugin-Setup-1.2.3.exe
+echo - RaidClipPlugin-Update-1.2.3.zip
 echo Ordner: %~dp0installer-output
 start "" explorer.exe "%~dp0installer-output"
 pause

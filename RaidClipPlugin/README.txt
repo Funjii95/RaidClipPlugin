@@ -1,4 +1,4 @@
-RAID CLIP PLUGIN 1.2.2
+RAID CLIP PLUGIN 1.2.3
 =======================
 
 ERSTER START
@@ -21,7 +21,7 @@ BEDIENUNG
 - „Clip testen“ spielt einen Clip des eingegebenen Kanals ab.
 
 INSTALLER
-BUILD_INSTALLER.bat erzeugt installer-output\RaidClipPlugin-Setup-1.2.2.exe.
+BUILD_INSTALLER.bat erzeugt installer-output\RaidClipPlugin-Setup-1.2.3.exe.
 
 AUTO-UPDATE
 - Beim Start wird update.json aus dem GitHub Release geprüft.

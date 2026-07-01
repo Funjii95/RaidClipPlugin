@@ -6,6 +6,7 @@ public class AppConfig
     public OBSConfig OBS { get; set; } = new();
     public PlayerConfig Player { get; set; } = new();
     public ChatConfig Chat { get; set; } = new();
+    public ModerationConfig Moderation { get; set; } = new();
     public UpdateConfig Update { get; set; } = new();
 }
 
@@ -43,6 +44,16 @@ public class ChatConfig
     public bool SendShoutout { get; set; } = true;
     public string RaidMessageTemplate { get; set; } =
         "Danke für den Raid, @{name}! Schaut bei https://twitch.tv/{login} vorbei!";
+}
+
+public class ModerationConfig
+{
+    public bool Enabled { get; set; } = false;
+    public bool ShowMessagesInLog { get; set; } = false;
+    public bool AutoFilterEnabled { get; set; } = false;
+    public bool WhitelistModsAndVips { get; set; } = true;
+    public int TimeoutSeconds { get; set; } = 600;
+    public List<string> BlockedWords { get; set; } = new();
 }
 
 public class UpdateConfig

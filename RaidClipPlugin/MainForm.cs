@@ -167,6 +167,50 @@ public sealed class MainForm : Form
         PlaceholderText = "{name}, {login} und {viewers} sind verfügbar"
     };
 
+
+    private readonly CheckBox _moderationEnabledCheck = new()
+    {
+        Text = "Chat-Moderation aktivieren",
+        AutoSize = true,
+        Margin = new Padding(8, 24, 4, 4)
+    };
+
+    private readonly CheckBox _chatLogCheck = new()
+    {
+        Text = "Chatnachrichten im Log",
+        AutoSize = true,
+        Margin = new Padding(8, 24, 4, 4)
+    };
+
+    private readonly CheckBox _autoFilterCheck = new()
+    {
+        Text = "Wortfilter aktivieren",
+        AutoSize = true,
+        Margin = new Padding(8, 24, 4, 4)
+    };
+
+    private readonly CheckBox _modVipWhitelistCheck = new()
+    {
+        Text = "Mods/VIPs vom Filter ausnehmen",
+        AutoSize = true,
+        Checked = true,
+        Margin = new Padding(8, 24, 4, 4)
+    };
+
+    private readonly NumericUpDown _moderationTimeoutControl = new()
+    {
+        Minimum = 1,
+        Maximum = 1_209_600,
+        Value = 600,
+        Width = 100
+    };
+
+    private readonly TextBox _blockedWordsBox = new()
+    {
+        Width = 320,
+        PlaceholderText = "Gesperrte Wörter, durch Komma getrennt"
+    };
+
     private readonly Button _saveSettingsButton = new()
     {
         Text = "Einstellungen speichern",
@@ -177,7 +221,7 @@ public sealed class MainForm : Form
 
     private readonly Label _versionLabel = new()
     {
-        Text = "Version 1.2.2\n🟢 Aktuell",
+        Text = "Version 1.2.3\n🟢 Aktuell",
         AutoSize = true,
         ForeColor = Color.ForestGreen,
         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -258,12 +302,38 @@ public sealed class MainForm : Form
         BackColor = Color.White
     };
 
+
+    private readonly DataGridView _chatGrid = new()
+    {
+        Dock = DockStyle.Fill,
+        ReadOnly = true,
+        AllowUserToAddRows = false,
+        AllowUserToDeleteRows = false,
+        AllowUserToResizeRows = false,
+        AutoGenerateColumns = false,
+        MultiSelect = false,
+        SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+        RowHeadersVisible = false,
+        BackgroundColor = Color.White
+    };
+
+    private readonly Label _moderationStatusLabel = new()
+    {
+        Text = "● Chat-Moderation: Deaktiviert",
+        AutoSize = true,
+        ForeColor = InactiveColor,
+        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        Padding = new Padding(4)
+    };
+
     private CancellationTokenSource? _shutdown;
     private LocalPlayerServer? _player;
     private ObsService? _obs;
     private PlaybackService? _playback;
     private TwitchUser? _broadcaster;
     private EventSubService? _eventSub;
+    private ChatModerationService? _chatModeration;
+    private Task? _chatModerationTask;
     private Task? _playerTask;
     private Task? _eventSubTask;
     private UpdateInfo? _availableUpdate;
@@ -302,6 +372,8 @@ public sealed class MainForm : Form
         _installUpdateButton.Click += async (_, _) =>
             await InstallAvailableUpdateAsync();
         _skipUpdateButton.Click += (_, _) => SkipAvailableUpdate();
+        _chatGrid.CellContentClick += async (_, args) =>
+            await HandleChatGridActionAsync(args.RowIndex, args.ColumnIndex);
         Shown += async (_, _) =>
         {
             try
@@ -479,6 +551,14 @@ public sealed class MainForm : Form
         settingsFlow.Controls.Add(_sendRaidMessageCheck);
         settingsFlow.Controls.Add(_sendShoutoutCheck);
         settingsFlow.Controls.Add(_autoUpdateCheck);
+        settingsFlow.Controls.Add(_moderationEnabledCheck);
+        settingsFlow.Controls.Add(_chatLogCheck);
+        settingsFlow.Controls.Add(_autoFilterCheck);
+        settingsFlow.Controls.Add(_modVipWhitelistCheck);
+        settingsFlow.Controls.Add(
+            CreateSettingEditor("Moderations-Timeout (Sek.)", _moderationTimeoutControl));
+        settingsFlow.Controls.Add(
+            CreateSettingEditor("Gesperrte Wörter", _blockedWordsBox));
         settingsFlow.Controls.Add(
             CreateSettingEditor("Raid-Chatnachricht", _chatTemplateBox));
         settingsFlow.Controls.Add(_saveSettingsButton);
@@ -490,16 +570,75 @@ public sealed class MainForm : Form
         _historyList.Columns.Add("Status", 110);
         _historyList.Columns.Add("Clip-ID", 280);
 
+        _chatGrid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Time",
+            HeaderText = "Uhrzeit",
+            Width = 80
+        });
+        _chatGrid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "User",
+            HeaderText = "Nutzer",
+            Width = 150
+        });
+        _chatGrid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Message",
+            HeaderText = "Nachricht",
+            AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+        });
+        _chatGrid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Role",
+            HeaderText = "Rolle",
+            Width = 90
+        });
+        _chatGrid.Columns.Add(new DataGridViewButtonColumn
+        {
+            Name = "Timeout",
+            HeaderText = "",
+            Text = "Timeout",
+            UseColumnTextForButtonValue = true,
+            Width = 80
+        });
+        _chatGrid.Columns.Add(new DataGridViewButtonColumn
+        {
+            Name = "Ban",
+            HeaderText = "",
+            Text = "Ban",
+            UseColumnTextForButtonValue = true,
+            Width = 60
+        });
+        _chatGrid.Columns.Add(new DataGridViewButtonColumn
+        {
+            Name = "Delete",
+            HeaderText = "",
+            Text = "Löschen",
+            UseColumnTextForButtonValue = true,
+            Width = 75
+        });
+
         var logPage = new TabPage("Log");
         logPage.Controls.Add(_logBox);
         var historyPage = new TabPage("Clip-Historie");
         historyPage.Controls.Add(_historyList);
+        var moderationPage = new TabPage("Chat-Moderation");
+        moderationPage.Controls.Add(_chatGrid);
+        moderationPage.Controls.Add(new Panel
+        {
+            Dock = DockStyle.Top,
+            Height = 36,
+            Padding = new Padding(4),
+            Controls = { _moderationStatusLabel }
+        });
         var detailsTabs = new TabControl
         {
             Dock = DockStyle.Fill
         };
         detailsTabs.TabPages.Add(logPage);
         detailsTabs.TabPages.Add(historyPage);
+        detailsTabs.TabPages.Add(moderationPage);
 
         var layout = new TableLayoutPanel
         {
@@ -721,6 +860,27 @@ public sealed class MainForm : Form
                 _playerIndicator,
                 "Player");
 
+            if (config.Moderation.Enabled)
+            {
+                SetModerationStatus("Startet …", WaitingColor);
+                _chatModeration = new ChatModerationService(
+                    config.Twitch.ClientId,
+                    session.AccessToken,
+                    _broadcaster.Id,
+                    session.UserId);
+                _chatModeration.Activated += () =>
+                    SetModerationStatus("Aktiv", ActiveColor);
+                _chatModeration.MessageReceived += message =>
+                    HandleChatMessageAsync(message, config, cancellationToken);
+                _chatModerationTask =
+                    _chatModeration.RunAsync(cancellationToken);
+                ObserveChatModerationTask(_chatModerationTask);
+            }
+            else
+            {
+                SetModerationStatus("Deaktiviert", InactiveColor);
+            }
+
             _testButton.Enabled = true;
             _stopButton.Enabled = true;
             SetOverallStatus("Aktiv", ActiveColor);
@@ -792,6 +952,271 @@ public sealed class MainForm : Form
                     exception.Message);
             }
         }
+    }
+
+
+    private async Task HandleChatMessageAsync(
+        ChatMessage message,
+        AppConfig config,
+        CancellationToken cancellationToken)
+    {
+        AddChatMessage(message);
+
+        if (config.Moderation.ShowMessagesInLog)
+        {
+            AppendLog($"[Chat] {message.UserName}: {message.Text}");
+        }
+
+        if (!config.Moderation.AutoFilterEnabled ||
+            string.IsNullOrWhiteSpace(message.Text))
+        {
+            return;
+        }
+
+        if (config.Moderation.WhitelistModsAndVips && message.IsWhitelisted)
+        {
+            return;
+        }
+
+        var blockedWord = config.Moderation.BlockedWords.FirstOrDefault(word =>
+            ContainsBlockedWord(message.Text, word));
+
+        if (blockedWord is null || _chatModeration is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _chatModeration.DeleteMessageAsync(
+                message.Id,
+                cancellationToken);
+            AppendLog(
+                $"Wortfilter: Nachricht von {message.UserName} wegen " +
+                $"‚{blockedWord}‘ gelöscht.");
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            AppendLog(
+                "Wortfilter konnte Nachricht nicht löschen: " +
+                exception.Message);
+        }
+    }
+
+    private void AddChatMessage(ChatMessage message)
+    {
+        if (IsDisposed)
+        {
+            return;
+        }
+
+        if (InvokeRequired)
+        {
+            try
+            {
+                BeginInvoke(new Action(() => AddChatMessage(message)));
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            return;
+        }
+
+        var role = message.IsBroadcaster
+            ? "Streamer"
+            : message.IsModerator
+                ? "Mod"
+                : message.IsVip
+                    ? "VIP"
+                    : "Zuschauer";
+
+        var index = _chatGrid.Rows.Add(
+            message.ReceivedAt.ToLocalTime().ToString("HH:mm:ss"),
+            message.UserName,
+            message.Text,
+            role);
+        _chatGrid.Rows[index].Tag = message;
+
+        while (_chatGrid.Rows.Count > 250)
+        {
+            _chatGrid.Rows.RemoveAt(0);
+        }
+
+        if (_chatGrid.Rows.Count > 0)
+        {
+            _chatGrid.FirstDisplayedScrollingRowIndex =
+                _chatGrid.Rows.Count - 1;
+        }
+    }
+
+    private async Task HandleChatGridActionAsync(int rowIndex, int columnIndex)
+    {
+        if (rowIndex < 0 || columnIndex < 0 ||
+            rowIndex >= _chatGrid.Rows.Count ||
+            _chatModeration is null)
+        {
+            return;
+        }
+
+        if (_chatGrid.Rows[rowIndex].Tag is not ChatMessage message)
+        {
+            return;
+        }
+
+        var columnName = _chatGrid.Columns[columnIndex].Name;
+        if (columnName is not ("Timeout" or "Ban" or "Delete"))
+        {
+            return;
+        }
+
+        if (message.IsBroadcaster &&
+            (columnName == "Timeout" || columnName == "Ban"))
+        {
+            AppendLog("Der eigene Broadcaster kann nicht moderiert werden.");
+            return;
+        }
+
+        if (columnName == "Ban")
+        {
+            var confirmation = MessageBox.Show(
+                $"{message.UserName} wirklich dauerhaft bannen?",
+                "Ban bestätigen",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            if (confirmation != DialogResult.Yes)
+            {
+                return;
+            }
+        }
+
+        var cancellationToken = _shutdown?.Token ?? CancellationToken.None;
+
+        try
+        {
+            switch (columnName)
+            {
+                case "Timeout":
+                    await _chatModeration.TimeoutUserAsync(
+                        message.UserId,
+                        decimal.ToInt32(_moderationTimeoutControl.Value),
+                        "Manueller Timeout über RaidClipPlugin",
+                        cancellationToken);
+                    AppendLog($"{message.UserName} wurde in Timeout gesetzt.");
+                    break;
+
+                case "Ban":
+                    await _chatModeration.BanUserAsync(
+                        message.UserId,
+                        "Manueller Ban über RaidClipPlugin",
+                        cancellationToken);
+                    AppendLog($"{message.UserName} wurde gebannt.");
+                    break;
+
+                case "Delete":
+                    await _chatModeration.DeleteMessageAsync(
+                        message.Id,
+                        cancellationToken);
+                    AppendLog(
+                        $"Nachricht von {message.UserName} wurde gelöscht.");
+                    break;
+            }
+
+            _chatGrid.Rows[rowIndex].DefaultCellStyle.BackColor =
+                Color.Honeydew;
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            AppendLog(
+                $"Moderationsaktion für {message.UserName} fehlgeschlagen: " +
+                exception.Message);
+            _chatGrid.Rows[rowIndex].DefaultCellStyle.BackColor =
+                Color.MistyRose;
+        }
+    }
+
+    private async void ObserveChatModerationTask(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException)
+            when (_shutdown?.IsCancellationRequested == true)
+        {
+        }
+        catch (Exception exception)
+        {
+            AppendLog(
+                "Chat-Moderation wurde beendet: " + exception.Message);
+            SetModerationStatus("Fehler", ErrorColor);
+        }
+    }
+
+    private static bool ContainsBlockedWord(string message, string blockedWord)
+    {
+        if (string.IsNullOrWhiteSpace(blockedWord))
+        {
+            return false;
+        }
+
+        var start = 0;
+        while (start < message.Length)
+        {
+            var index = message.IndexOf(
+                blockedWord,
+                start,
+                StringComparison.OrdinalIgnoreCase);
+            if (index < 0)
+            {
+                return false;
+            }
+
+            var beforeIsBoundary = index == 0 ||
+                !char.IsLetterOrDigit(message[index - 1]);
+            var afterIndex = index + blockedWord.Length;
+            var afterIsBoundary = afterIndex >= message.Length ||
+                !char.IsLetterOrDigit(message[afterIndex]);
+
+            if (beforeIsBoundary && afterIsBoundary)
+            {
+                return true;
+            }
+
+            start = index + 1;
+        }
+
+        return false;
+    }
+
+    private void SetModerationStatus(string status, Color color)
+    {
+        if (IsDisposed)
+        {
+            return;
+        }
+
+        if (InvokeRequired)
+        {
+            try
+            {
+                BeginInvoke(new Action(() => SetModerationStatus(status, color)));
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            return;
+        }
+
+        _moderationStatusLabel.Text = $"● Chat-Moderation: {status}";
+        _moderationStatusLabel.ForeColor = color;
     }
 
     private async Task TestConnectionsAsync()
@@ -1020,7 +1445,7 @@ public sealed class MainForm : Form
 
         shutdown.Cancel();
 
-        var tasks = new[] { _playerTask, _eventSubTask }
+        var tasks = new[] { _playerTask, _eventSubTask, _chatModerationTask }
             .Where(task => task is not null)
             .Cast<Task>()
             .ToArray();
@@ -1045,6 +1470,7 @@ public sealed class MainForm : Form
             }
         }
 
+        _chatModeration?.Dispose();
         _obs?.Dispose();
         _player?.Dispose();
         shutdown.Dispose();
@@ -1055,10 +1481,13 @@ public sealed class MainForm : Form
         _playback = null;
         _broadcaster = null;
         _eventSub = null;
+        _chatModeration = null;
+        _chatModerationTask = null;
         _playerTask = null;
         _eventSubTask = null;
 
         ResetServiceIndicators();
+        SetModerationStatus("Deaktiviert", InactiveColor);
         _testChannelBox.Enabled = true;
         _startButton.Enabled = true;
         _settingsGroup.Enabled = true;
@@ -1409,6 +1838,17 @@ public sealed class MainForm : Form
             _sendRaidMessageCheck.Checked = config.Chat.SendRaidMessage;
             _sendShoutoutCheck.Checked = config.Chat.SendShoutout;
             _autoUpdateCheck.Checked = config.Update.Enabled;
+            _moderationEnabledCheck.Checked = config.Moderation.Enabled;
+            _chatLogCheck.Checked = config.Moderation.ShowMessagesInLog;
+            _autoFilterCheck.Checked = config.Moderation.AutoFilterEnabled;
+            _modVipWhitelistCheck.Checked =
+                config.Moderation.WhitelistModsAndVips;
+            SetNumericValue(
+                _moderationTimeoutControl,
+                config.Moderation.TimeoutSeconds);
+            _blockedWordsBox.Text = string.Join(
+                ", ",
+                config.Moderation.BlockedWords);
             _chatTemplateBox.Text = config.Chat.RaidMessageTemplate;
         }
         catch (Exception exception)
@@ -1449,6 +1889,21 @@ public sealed class MainForm : Form
         config.Chat.SendRaidMessage = _sendRaidMessageCheck.Checked;
         config.Chat.SendShoutout = _sendShoutoutCheck.Checked;
         config.Update.Enabled = _autoUpdateCheck.Checked;
+        config.Moderation.Enabled = _moderationEnabledCheck.Checked;
+        config.Moderation.ShowMessagesInLog = _chatLogCheck.Checked;
+        config.Moderation.AutoFilterEnabled = _autoFilterCheck.Checked;
+        config.Moderation.WhitelistModsAndVips =
+            _modVipWhitelistCheck.Checked;
+        config.Moderation.TimeoutSeconds =
+            decimal.ToInt32(_moderationTimeoutControl.Value);
+        config.Moderation.BlockedWords = _blockedWordsBox.Text
+            .Split(
+                new[] { ',', ';', '\r', '\n' },
+                StringSplitOptions.RemoveEmptyEntries)
+            .Select(word => word.Trim())
+            .Where(word => word.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
         config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
         return config;
     }

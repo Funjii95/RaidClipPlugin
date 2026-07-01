@@ -30,5 +30,13 @@
     "ManifestUrl": "https://github.com/Funjii95/RaidClipPlugin/releases/latest/download/update.json",
     "Enabled": true,
     "SkippedVersion": ""
+  },
+  "Moderation": {
+    "Enabled": false,
+    "ShowMessagesInLog": false,
+    "AutoFilterEnabled": false,
+    "WhitelistModsAndVips": true,
+    "TimeoutSeconds": 600,
+    "BlockedWords": []
   }
 }

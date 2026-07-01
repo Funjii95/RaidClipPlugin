@@ -245,7 +245,7 @@ public sealed class UpdateService
             Timeout = TimeSpan.FromMinutes(10)
         };
         client.DefaultRequestHeaders.UserAgent.ParseAdd(
-            "RaidClipPlugin-AutoUpdater/1.2.2");
+            "RaidClipPlugin-AutoUpdater/1.2.3");
         return client;
     }
 
