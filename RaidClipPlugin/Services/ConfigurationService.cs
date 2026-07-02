@@ -83,7 +83,24 @@ public sealed class ConfigurationService
             AutoFilterEnabled = config.Moderation.AutoFilterEnabled,
             WhitelistModsAndVips = config.Moderation.WhitelistModsAndVips,
             ModerationTimeoutSeconds = config.Moderation.TimeoutSeconds,
-            BlockedWords = config.Moderation.BlockedWords
+            BlockedWords = config.Moderation.BlockedWords,
+            MinigameEnabled = config.Minigame.Enabled,
+            PointsEnabled = config.Minigame.PointsEnabled,
+            PointsPerInterval = config.Minigame.PointsPerInterval,
+            PointsIntervalMinutes = config.Minigame.IntervalMinutes,
+            MinimumPoints = config.Minigame.MinimumPoints,
+            PointsCommandCooldownSeconds =
+                config.Minigame.PointsCommandCooldownSeconds,
+            GambleEnabled = config.Minigame.GambleEnabled,
+            GambleCooldownSeconds = config.Minigame.GambleCooldownSeconds,
+            GlobalCommandCooldownSeconds =
+                config.Minigame.GlobalCommandCooldownSeconds,
+            MinimumBet = config.Minigame.MinimumBet,
+            MaximumBet = config.Minigame.MaximumBet,
+            GambleRanges = config.Minigame.GambleRanges
+                .Select(CloneRange)
+                .ToList(),
+            Minigame = config.Minigame
         };
 
         File.WriteAllText(
@@ -220,6 +237,38 @@ public sealed class ConfigurationService
             {
                 config.Moderation.BlockedWords = settings.BlockedWords;
             }
+
+            if (settings.MinigameEnabled is not null)
+                config.Minigame.Enabled = settings.MinigameEnabled.Value;
+            if (settings.PointsEnabled is not null)
+                config.Minigame.PointsEnabled = settings.PointsEnabled.Value;
+            if (settings.PointsPerInterval is not null)
+                config.Minigame.PointsPerInterval = settings.PointsPerInterval.Value;
+            if (settings.PointsIntervalMinutes is not null)
+                config.Minigame.IntervalMinutes = settings.PointsIntervalMinutes.Value;
+            if (settings.MinimumPoints is not null)
+                config.Minigame.MinimumPoints = settings.MinimumPoints.Value;
+            if (settings.PointsCommandCooldownSeconds is not null)
+                config.Minigame.PointsCommandCooldownSeconds =
+                    settings.PointsCommandCooldownSeconds.Value;
+            if (settings.GambleEnabled is not null)
+                config.Minigame.GambleEnabled = settings.GambleEnabled.Value;
+            if (settings.GambleCooldownSeconds is not null)
+                config.Minigame.GambleCooldownSeconds =
+                    settings.GambleCooldownSeconds.Value;
+            if (settings.GlobalCommandCooldownSeconds is not null)
+                config.Minigame.GlobalCommandCooldownSeconds =
+                    settings.GlobalCommandCooldownSeconds.Value;
+            if (settings.MinimumBet is not null)
+                config.Minigame.MinimumBet = settings.MinimumBet.Value;
+            if (settings.MaximumBet is not null)
+                config.Minigame.MaximumBet = settings.MaximumBet.Value;
+            if (settings.GambleRanges is { Count: > 0 })
+                config.Minigame.GambleRanges = settings.GambleRanges
+                    .Select(CloneRange)
+                    .ToList();
+            if (settings.Minigame is not null)
+                config.Minigame = settings.Minigame;
         }
         catch (Exception exception)
         {
@@ -249,6 +298,19 @@ public sealed class ConfigurationService
             .Where(word => !string.IsNullOrWhiteSpace(word))
             .Select(word => word.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        config.Minigame.SlotSymbols =
+            (config.Minigame.SlotSymbols ?? "").Trim();
+        config.Minigame.GambleRanges =
+            (config.Minigame.GambleRanges is { Count: > 0 }
+                ? config.Minigame.GambleRanges
+                : MinigameConfig.CreateDefaultRanges())
+            .Select(range =>
+            {
+                var clone = CloneRange(range);
+                clone.ChatText = (clone.ChatText ?? "").Trim();
+                return clone;
+            })
             .ToList();
     }
 
@@ -335,6 +397,8 @@ public sealed class ConfigurationService
                 "Der Moderations-Timeout muss zwischen 1 und 1209600 Sekunden liegen.");
         }
 
+        ValidateMinigameSettings(config.Minigame);
+
         if (config.Chat.SendRaidMessage &&
             string.IsNullOrWhiteSpace(config.Chat.RaidMessageTemplate))
         {
@@ -342,6 +406,107 @@ public sealed class ConfigurationService
                 "Bitte eine Raid-Chatnachricht eingeben.");
         }
     }
+
+    public static void ValidateMinigameSettings(MinigameConfig config)
+    {
+        if (config.PointsPerInterval is < 0 or > 1_000_000)
+            throw new InvalidOperationException(
+                "Punkte pro Intervall müssen zwischen 0 und 1000000 liegen.");
+        if (config.IntervalMinutes is < 1 or > 1440)
+            throw new InvalidOperationException(
+                "Das Punkteintervall muss zwischen 1 und 1440 Minuten liegen.");
+        if (config.MinimumPoints is < 0 or > 1_000_000_000)
+            throw new InvalidOperationException(
+                "Mindestpunkte müssen zwischen 0 und 1000000000 liegen.");
+        if (config.PointsCommandCooldownSeconds is < 0 or > 3600 ||
+            config.GambleCooldownSeconds is < 0 or > 3600 ||
+            config.GlobalCommandCooldownSeconds is < 0 or > 3600)
+            throw new InvalidOperationException(
+                "Command-Cooldowns müssen zwischen 0 und 3600 Sekunden liegen.");
+        if (config.MinimumBet < 0 || config.MaximumBet < config.MinimumBet ||
+            config.MaximumBet > 1_000_000_000)
+            throw new InvalidOperationException(
+                "Minimale und maximale Einsätze sind ungültig.");
+        if (config.ChatMessagePoints is < 0 or > 1_000_000 ||
+            config.FollowPoints is < 0 or > 1_000_000 ||
+            config.SubPoints is < 0 or > 1_000_000 ||
+            config.RaidPoints is < 0 or > 1_000_000 ||
+            config.ChannelRewardPoints is < 0 or > 1_000_000 ||
+            config.DailyBonusPoints is < 0 or > 1_000_000)
+            throw new InvalidOperationException(
+                "Passive Punkte und Daily müssen zwischen 0 und 1000000 liegen.");
+        if (config.ChatMessagePointsCooldownSeconds is < 0 or > 3600 ||
+            config.LeaderboardCooldownSeconds is < 0 or > 3600 ||
+            config.ProfileCooldownSeconds is < 0 or > 3600 ||
+            config.CoinflipCooldownSeconds is < 0 or > 3600 ||
+            config.SlotsCooldownSeconds is < 0 or > 3600)
+            throw new InvalidOperationException(
+                "Minigame-Cooldowns müssen zwischen 0 und 3600 Sekunden liegen.");
+        if (config.MaximumTopEntries is < 1 or > 100 ||
+            config.HistoryLimit is < 1 or > 10000)
+            throw new InvalidOperationException(
+                "Top-Anzahl oder Historienlimit ist ungültig.");
+        if (config.CoinflipMultiplier is < 0 or > 100 ||
+            config.SlotsThreeMultiplier is < 0 or > 100 ||
+            config.SlotsTwoMultiplier is < 0 or > 100 ||
+            config.SlotsSevenMultiplier is < 0 or > 100)
+            throw new InvalidOperationException(
+                "Casino-Multiplikatoren müssen zwischen 0 und 100 liegen.");
+        if (config.CoinflipMinimumBet < 0 ||
+            config.CoinflipMaximumBet < config.CoinflipMinimumBet ||
+            config.SlotsMinimumBet < 0 ||
+            config.SlotsMaximumBet < config.SlotsMinimumBet)
+            throw new InvalidOperationException(
+                "Coinflip- oder Slots-Einsätze sind ungültig.");
+        if (config.SlotSymbols.Split(',',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries).Length < 2)
+            throw new InvalidOperationException(
+                "Bitte mindestens zwei Slot-Symbole eintragen.");
+        if (config.JackpotStartValue < 0 ||
+            config.JackpotContributionPercent is < 0 or > 100 ||
+            config.JackpotChancePercent is < 0 or > 100)
+            throw new InvalidOperationException(
+                "Jackpot-Einstellungen sind ungültig.");
+        if (config.MaximumAccountPoints < config.MinimumPoints ||
+            config.DailyGambleLimit < 0 ||
+            config.DailyLossLimit < 0 || config.DailyWinLimit < 0)
+            throw new InvalidOperationException(
+                "Minigame-Limits dürfen nicht negativ sein.");
+        if (config.GambleRanges.Count != 4)
+            throw new InvalidOperationException(
+                "Es müssen genau vier Gamble-Ergebnisbereiche vorhanden sein.");
+
+        var ranges = config.GambleRanges.OrderBy(range => range.From).ToArray();
+        var expectedFrom = 1;
+        foreach (var range in ranges)
+        {
+            if (range.From != expectedFrom || range.To < range.From ||
+                range.To > 100)
+                throw new InvalidOperationException(
+                    "Gamble-Bereiche müssen 1 bis 100 lückenlos und ohne Überschneidungen abdecken.");
+            if (range.Multiplier is < 0 or > 100)
+                throw new InvalidOperationException(
+                    "Gamble-Multiplikatoren müssen zwischen 0 und 100 liegen.");
+            if (string.IsNullOrWhiteSpace(range.ChatText))
+                throw new InvalidOperationException(
+                    "Jeder Gamble-Bereich benötigt einen Chattext.");
+            expectedFrom = range.To + 1;
+        }
+
+        if (expectedFrom != 101)
+            throw new InvalidOperationException(
+                "Gamble-Bereiche müssen bei 100 enden.");
+    }
+
+    private static GambleRangeConfig CloneRange(GambleRangeConfig range) =>
+        new()
+        {
+            From = range.From,
+            To = range.To,
+            Multiplier = range.Multiplier,
+            ChatText = range.ChatText
+        };
 
     private sealed class GuiSettings
     {
@@ -366,5 +531,18 @@ public sealed class ConfigurationService
         public bool? WhitelistModsAndVips { get; set; }
         public int? ModerationTimeoutSeconds { get; set; }
         public List<string>? BlockedWords { get; set; }
+        public bool? MinigameEnabled { get; set; }
+        public bool? PointsEnabled { get; set; }
+        public int? PointsPerInterval { get; set; }
+        public int? PointsIntervalMinutes { get; set; }
+        public int? MinimumPoints { get; set; }
+        public int? PointsCommandCooldownSeconds { get; set; }
+        public bool? GambleEnabled { get; set; }
+        public int? GambleCooldownSeconds { get; set; }
+        public int? GlobalCommandCooldownSeconds { get; set; }
+        public int? MinimumBet { get; set; }
+        public int? MaximumBet { get; set; }
+        public List<GambleRangeConfig>? GambleRanges { get; set; }
+        public MinigameConfig? Minigame { get; set; }
     }
 }
