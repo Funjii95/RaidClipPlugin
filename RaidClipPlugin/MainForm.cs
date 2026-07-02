@@ -2129,20 +2129,6 @@ public sealed partial class MainForm : Form
                     _minigameTask = _minigame.RunAsync(cancellationToken);
                     ObserveMinigameTask(_minigameTask);
 
-                    if (config.Minigame.FollowPointsEnabled ||
-                        config.Minigame.SubPointsEnabled ||
-                        config.Minigame.ChannelRewardPointsEnabled)
-                    {
-                        _minigameEvents = new MinigameEventService(
-                            config.Twitch.ClientId, session.AccessToken,
-                            _broadcaster.Id, session.UserId, config.Minigame);
-                        _minigameEvents.EventReceived += passiveEvent =>
-                            _minigame.ProcessPassiveEventAsync(
-                                passiveEvent, cancellationToken);
-                        _minigameEventTask = _minigameEvents.RunAsync(
-                            cancellationToken);
-                        ObserveMinigameTask(_minigameEventTask);
-                    }
                 }
                 else
                 {
@@ -2152,6 +2138,40 @@ public sealed partial class MainForm : Form
                 _chatModerationTask =
                     _chatModeration.RunAsync(cancellationToken);
                 ObserveChatModerationTask(_chatModerationTask);
+
+                if ((config.Minigame.Enabled &&
+                     (config.Minigame.FollowPointsEnabled ||
+                      config.Minigame.SubPointsEnabled ||
+                      config.Minigame.ChannelRewardPointsEnabled)) ||
+                    config.MusicRequests.Enabled)
+                {
+                    _minigameEvents = new MinigameEventService(
+                        config.Twitch.ClientId, session.AccessToken,
+                        _broadcaster.Id, session.UserId, config.Minigame,
+                        config.MusicRequests.Enabled
+                            ? config.MusicRequests.SelectedRewardId : "");
+                    if (_minigame is not null)
+                    {
+                        _minigameEvents.EventReceived += passiveEvent =>
+                            _minigame.ProcessPassiveEventAsync(
+                                passiveEvent, cancellationToken);
+                    }
+                    if (_musicRequests is not null)
+                    {
+                        _minigameEvents.MusicRedemptionReceived += redemption =>
+                            _musicRequests.EnqueueAsync(
+                                redemption, cancellationToken);
+                        _minigameEvents.Activated += () =>
+                            SetSpotifyStatus(_spotify?.IsConnected == true
+                                ? "Verbunden · EventSub aktiv"
+                                : "EventSub aktiv · Spotify fehlt",
+                                _spotify?.IsConnected == true
+                                    ? ActiveColor : WaitingColor);
+                    }
+                    _minigameEventTask = _minigameEvents.RunAsync(
+                        cancellationToken);
+                    ObserveMinigameTask(_minigameEventTask);
+                }
             }
             else
             {
