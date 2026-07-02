@@ -1,5 +1,16 @@
 # Changelog
 
+## Unveröffentlicht
+
+- Neuer vollständiger Stream-Start-Check mit 18 unabhängigen Prüfungen
+- Konfigurierbares Check-Profil, Wiederholung, sichere Diagnose und Ergebnisexport
+- Bestätigter Streamstart mit optionaler Startszene und OBS-Streaming
+- Der Jackpot wird ausschließlich bei einer gewürfelten 100 in `!gamble` ausgeschüttet
+- Die zufällige Jackpot-Gewinnchance wurde aus Logik und GUI entfernt
+- Der Broadcaster erhält nun Chat-, Anwesenheits- und Lurkerpunkte
+- Europäisches Roulette mit Farben, Gerade/Ungerade, 1–18, 19–36 und exakten Zahlen
+- Konfigurierbare Roulette-Auszahlungen, Einsatzgrenzen und eigener Cooldown
+
 ## 1.4.0
 
 - Schaltflächen zeichnen Beschriftungen zuverlässig und vollständig, auch im dunklen Theme
