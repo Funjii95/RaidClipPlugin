@@ -1,6 +1,12 @@
 # Changelog
 
-## 1.2.8
+## 1.3.0
+
+- Checkboxen im dunklen GUI-Theme wieder klar sichtbar und bedienbar
+- Konfigurierbare Punkte-Währung mit Einzahl, Mehrzahl und Live-Vorschau
+- Auswahl zwischen !punkte, !points, !perlen und eigenem Abfrage-Command
+- Konfigurierbare Punkte-Blacklist mit sicheren Standard-Botkonten
+- Zentrale Blacklist-Prüfung für Anwesenheit, Chat, Events, Casino und Vergaben
 
 - Anwesenheitspunkte für stille Zuschauer und Lurker
 - Neue Commands `!lurk`, `!unlurk` und `!give all <punkte>`
