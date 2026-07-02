@@ -7,6 +7,7 @@ public class AppConfig
     public PlayerConfig Player { get; set; } = new();
     public ChatConfig Chat { get; set; } = new();
     public ModerationConfig Moderation { get; set; } = new();
+    public MinigameConfig Minigame { get; set; } = new();
     public UpdateConfig Update { get; set; } = new();
 }
 
@@ -54,6 +55,109 @@ public class ModerationConfig
     public bool WhitelistModsAndVips { get; set; } = true;
     public int TimeoutSeconds { get; set; } = 600;
     public List<string> BlockedWords { get; set; } = new();
+}
+
+public class MinigameConfig
+{
+    public bool Enabled { get; set; } = false;
+    public bool PointsEnabled { get; set; } = true;
+    public int PointsPerInterval { get; set; } = 10;
+    public int IntervalMinutes { get; set; } = 5;
+    public int MinimumPoints { get; set; } = 0;
+    public int PointsCommandCooldownSeconds { get; set; } = 30;
+    public bool GambleEnabled { get; set; } = true;
+    public int GambleCooldownSeconds { get; set; } = 20;
+    public int GlobalCommandCooldownSeconds { get; set; } = 2;
+    public int MinimumBet { get; set; } = 10;
+    public int MaximumBet { get; set; } = 1000;
+    public bool ChatPointsEnabled { get; set; } = true;
+    public int ChatMessagePoints { get; set; } = 1;
+    public int ChatMessagePointsCooldownSeconds { get; set; } = 60;
+    public bool FollowPointsEnabled { get; set; } = true;
+    public int FollowPoints { get; set; } = 50;
+    public bool SubPointsEnabled { get; set; } = true;
+    public int SubPoints { get; set; } = 250;
+    public bool RaidPointsEnabled { get; set; } = true;
+    public int RaidPoints { get; set; } = 100;
+    public bool ChannelRewardPointsEnabled { get; set; } = true;
+    public int ChannelRewardPoints { get; set; } = 25;
+    public bool DailyEnabled { get; set; } = true;
+    public int DailyBonusPoints { get; set; } = 100;
+    public bool LeaderboardEnabled { get; set; } = true;
+    public int MaximumTopEntries { get; set; } = 10;
+    public int LeaderboardCooldownSeconds { get; set; } = 30;
+    public bool ProfileEnabled { get; set; } = true;
+    public int ProfileCooldownSeconds { get; set; } = 30;
+    public bool HistoryEnabled { get; set; } = true;
+    public int HistoryLimit { get; set; } = 500;
+    public bool CoinflipEnabled { get; set; } = false;
+    public decimal CoinflipMultiplier { get; set; } = 2.0m;
+    public int CoinflipMinimumBet { get; set; } = 10;
+    public int CoinflipMaximumBet { get; set; } = 1000;
+    public int CoinflipCooldownSeconds { get; set; } = 20;
+    public bool SlotsEnabled { get; set; } = false;
+    public string SlotSymbols { get; set; } = "🍒,🍋,🔔,⭐,💎,7️⃣";
+    public decimal SlotsThreeMultiplier { get; set; } = 5.0m;
+    public decimal SlotsTwoMultiplier { get; set; } = 1.5m;
+    public decimal SlotsSevenMultiplier { get; set; } = 10.0m;
+    public int SlotsMinimumBet { get; set; } = 10;
+    public int SlotsMaximumBet { get; set; } = 1000;
+    public int SlotsCooldownSeconds { get; set; } = 20;
+    public bool JackpotEnabled { get; set; } = false;
+    public int JackpotStartValue { get; set; } = 1000;
+    public decimal JackpotContributionPercent { get; set; } = 10m;
+    public decimal JackpotChancePercent { get; set; } = 0.5m;
+    public bool MaximumAccountEnabled { get; set; } = false;
+    public int MaximumAccountPoints { get; set; } = 1_000_000;
+    public bool DailyGambleLimitEnabled { get; set; } = false;
+    public int DailyGambleLimit { get; set; } = 100;
+    public bool DailyLossLimitEnabled { get; set; } = false;
+    public int DailyLossLimit { get; set; } = 10_000;
+    public bool DailyWinLimitEnabled { get; set; } = false;
+    public int DailyWinLimit { get; set; } = 10_000;
+    public List<GambleRangeConfig> GambleRanges { get; set; } =
+        CreateDefaultRanges();
+
+    public static List<GambleRangeConfig> CreateDefaultRanges() =>
+        new()
+        {
+            new GambleRangeConfig
+            {
+                From = 1,
+                To = 31,
+                Multiplier = 0.0m,
+                ChatText = "@{name} würfelt eine {roll} und verliert {stake} Punkte! Neuer Stand: {balance}."
+            },
+            new GambleRangeConfig
+            {
+                From = 32,
+                To = 50,
+                Multiplier = 0.5m,
+                ChatText = "@{name} würfelt eine {roll} und erhält {payout} Punkte zurück! Neuer Stand: {balance}."
+            },
+            new GambleRangeConfig
+            {
+                From = 51,
+                To = 70,
+                Multiplier = 1.0m,
+                ChatText = "@{name} würfelt eine {roll} und erhält den Einsatz zurück! Neuer Stand: {balance}."
+            },
+            new GambleRangeConfig
+            {
+                From = 71,
+                To = 100,
+                Multiplier = 2.0m,
+                ChatText = "@{name} würfelt eine {roll} und gewinnt {payout} Punkte! Neuer Stand: {balance}."
+            }
+        };
+}
+
+public class GambleRangeConfig
+{
+    public int From { get; set; }
+    public int To { get; set; }
+    public decimal Multiplier { get; set; }
+    public string ChatText { get; set; } = "";
 }
 
 public class UpdateConfig
