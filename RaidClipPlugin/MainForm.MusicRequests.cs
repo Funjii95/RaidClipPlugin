@@ -807,18 +807,11 @@ public sealed partial class MainForm
             twitch, _spotify!, _musicStore);
         _musicRequests.RequestUpdated += entry => _ = RefreshMusicGridAsync();
         _musicRequestTask = _musicRequests.RunAsync(cancellationToken);
-        _musicEventSub = new MusicRequestEventSubService(
-            config.Twitch.ClientId, session.AccessToken, broadcaster.Id,
-            config.MusicRequests.SelectedRewardId);
-        _musicEventSub.Activated += () =>
-            SetSpotifyStatus(_spotify!.IsConnected
-                ? "Verbunden · EventSub aktiv" : "EventSub aktiv · Spotify fehlt",
-                _spotify.IsConnected ? ActiveColor : WaitingColor);
-        _musicEventSub.RedemptionReceived += redemption =>
-            _musicRequests.EnqueueAsync(redemption, cancellationToken);
-        _musicEventSubTask = _musicEventSub.RunAsync(cancellationToken);
         ObserveMinigameTask(_musicRequestTask!);
-        ObserveMinigameTask(_musicEventSubTask!);
+        SetSpotifyStatus(_spotify!.IsConnected
+            ? "Verbunden · EventSub wird gemeinsam gestartet"
+            : "EventSub wird gemeinsam gestartet · Spotify fehlt",
+            _spotify.IsConnected ? ActiveColor : WaitingColor);
     }
 
     private void StopMusicRequests()
