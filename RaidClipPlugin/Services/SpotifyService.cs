@@ -21,6 +21,7 @@ public sealed class SpotifyService : IDisposable
     private const string ApiUrl = "https://api.spotify.com/v1";
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(30) };
     private readonly SemaphoreSlim _tokenLock = new(1, 1);
+    private readonly SemaphoreSlim _connectLock = new(1, 1);
     private readonly string _tokenPath;
     private MusicRequestConfig _config;
     private SpotifyToken? _token;
@@ -53,6 +54,12 @@ public sealed class SpotifyService : IDisposable
 
     public async Task ConnectAsync(CancellationToken cancellationToken)
     {
+        if (!await _connectLock.WaitAsync(0, cancellationToken))
+            throw new InvalidOperationException(
+                "Die Spotify-Anmeldung läuft bereits. Bitte das geöffnete Browserfenster verwenden.");
+
+        try
+        {
         if (string.IsNullOrWhiteSpace(_config.SpotifyClientId))
             throw new InvalidOperationException("Bitte eine Spotify Client-ID eingeben.");
 
@@ -71,7 +78,17 @@ public sealed class SpotifyService : IDisposable
 
         using var listener = new HttpListener();
         listener.Prefixes.Add(redirect.AbsoluteUri);
-        listener.Start();
+        try
+        {
+            listener.Start();
+        }
+        catch (HttpListenerException exception)
+        {
+            throw new InvalidOperationException(
+                $"Der Spotify-Callback {redirect.AbsoluteUri} wird bereits verwendet. " +
+                "Bitte eine zweite RaidClip-Instanz schließen und erneut versuchen.",
+                exception);
+        }
         Process.Start(new ProcessStartInfo(authorizationUrl)
         {
             UseShellExecute = true
@@ -130,6 +147,11 @@ public sealed class SpotifyService : IDisposable
         SaveToken();
         AccountName = await GetAccountNameAsync(cancellationToken);
         Console.WriteLine("Spotify-Verbindung erfolgreich hergestellt.");
+        }
+        finally
+        {
+            _connectLock.Release();
+        }
     }
 
     public void Disconnect()
@@ -432,6 +454,7 @@ public sealed class SpotifyService : IDisposable
     {
         _http.Dispose();
         _tokenLock.Dispose();
+        _connectLock.Dispose();
     }
 
     private sealed record SpotifyToken(
