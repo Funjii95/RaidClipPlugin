@@ -19,6 +19,8 @@ public sealed class ChatMinigameService : IDisposable
         new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _gambleCooldowns =
         new(StringComparer.Ordinal);
+    private readonly Dictionary<string, DateTimeOffset> _giveCooldowns =
+        new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _leaderboardCooldowns = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _profileCooldowns = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _coinflipCooldowns = new(StringComparer.Ordinal);
@@ -272,6 +274,19 @@ public sealed class ChatMinigameService : IDisposable
                 return;
             }
 
+            if (command == "!give")
+            {
+                await HandleGiveCommandAsync(message, parts, cancellationToken);
+                return;
+            }
+
+            if (command == "!addpoints")
+            {
+                await HandleAddPointsCommandAsync(
+                    message, parts, cancellationToken);
+                return;
+            }
+
             if (command == "!coinflip")
             {
                 if (!_config.CoinflipEnabled || parts.Length != 3 ||
@@ -319,12 +334,41 @@ public sealed class ChatMinigameService : IDisposable
             if (command != "!gamble" || !_config.GambleEnabled) return;
             if (!await TryEnterCooldownAsync(message.UserId, _gambleCooldowns,
                 _config.GambleCooldownSeconds, cancellationToken)) return;
-            if (parts.Length != 2 || !int.TryParse(parts[1], out var gambleStake) ||
-                gambleStake < _config.MinimumBet || gambleStake > _config.MaximumBet)
-            { await TrySendChatAsync($"@{message.UserName}, nutze !gamble <einsatz>.", cancellationToken); return; }
+            if (parts.Length != 2)
+            {
+                await TrySendChatAsync(
+                    $"@{message.UserName}, nutze !gamble <einsatz|all>.",
+                    cancellationToken);
+                return;
+            }
+
+            var isAllIn = parts[1].Equals(
+                "all", StringComparison.OrdinalIgnoreCase);
+            var gambleStake = isAllIn
+                ? await _points.GetPointsAsync(
+                    message.UserId, cancellationToken) -
+                  Math.Max(0, _config.MinimumPoints)
+                : int.TryParse(parts[1], out var parsedStake)
+                    ? parsedStake
+                    : -1;
+
+            if (gambleStake < _config.MinimumBet ||
+                (!isAllIn && gambleStake > _config.MaximumBet))
+            {
+                await TrySendChatAsync(
+                    isAllIn
+                        ? $"@{message.UserName}, du hast nicht genug verfügbare Punkte für All-in."
+                        : $"@{message.UserName}, nutze !gamble <einsatz|all>.",
+                    cancellationToken);
+                return;
+            }
             var roll = Random.Shared.Next(1, 101);
             var range = _config.GambleRanges.Single(x => roll >= x.From && roll <= x.To);
-            var gamblePayout = (int)Math.Floor(gambleStake * range.Multiplier);
+            var payoutValue = Math.Floor(
+                gambleStake * range.Multiplier);
+            var gamblePayout = payoutValue >= int.MaxValue
+                ? int.MaxValue
+                : (int)Math.Max(0, payoutValue);
             var gambleResult = await ApplyCasinoAsync(message, "Gamble", gambleStake,
                 gamblePayout, cancellationToken);
             if (!gambleResult.Success) return;
@@ -532,6 +576,107 @@ public sealed class ChatMinigameService : IDisposable
         await TrySendChatAsync(
             $"@{user.DisplayName} hat jetzt {newBalance} Punkte.",
             cancellationToken);
+        DataChanged?.Invoke();
+    }
+
+    private async Task HandleGiveCommandAsync(
+        ChatMessage message,
+        string[] parts,
+        CancellationToken cancellationToken)
+    {
+        if (!await TryEnterCooldownAsync(
+                message.UserId, _giveCooldowns,
+                _config.PointsCommandCooldownSeconds, cancellationToken))
+        {
+            return;
+        }
+
+        if (parts.Length != 3 ||
+            !int.TryParse(parts[2], out var amount) || amount <= 0)
+        {
+            await TrySendChatAsync(
+                $"@{message.UserName}, nutze !give @name <punkte>.",
+                cancellationToken);
+            return;
+        }
+
+        var login = parts[1].Trim().TrimStart('@');
+        var recipient = await _twitch.GetUserAsync(login, cancellationToken);
+        if (recipient is null)
+        {
+            await TrySendChatAsync(
+                $"@{message.UserName}, Twitch-Nutzer @{login} wurde nicht gefunden.",
+                cancellationToken);
+            return;
+        }
+
+        var result = await _points.TransferPointsAsync(
+            message.UserId, message.UserName,
+            recipient.Id, recipient.DisplayName, amount,
+            _config.MinimumPoints, MaximumPoints, cancellationToken);
+
+        if (!result.Success)
+        {
+            await TrySendChatAsync(
+                $"@{message.UserName}, {result.Error}.", cancellationToken);
+            return;
+        }
+
+        Console.WriteLine(
+            $"Minigame-Geschenk: {message.UserName} schenkt " +
+            $"{recipient.DisplayName} {amount} Punkte. " +
+            $"Neue Stände: {result.SenderBalance}/{result.RecipientBalance}.");
+        await TrySendChatAsync(
+            $"@{message.UserName} schenkt @{recipient.DisplayName} " +
+            $"{amount} Punkte! Neuer Stand: {result.SenderBalance}.",
+            cancellationToken);
+        DataChanged?.Invoke();
+    }
+
+    private async Task HandleAddPointsCommandAsync(
+        ChatMessage message,
+        string[] parts,
+        CancellationToken cancellationToken)
+    {
+        if (!message.IsBroadcaster && !message.IsModerator)
+        {
+            return;
+        }
+
+        if (!await TryEnterCooldownAsync(
+                message.UserId, null, 0, cancellationToken))
+        {
+            return;
+        }
+
+        if (parts.Length != 3 ||
+            !int.TryParse(parts[2], out var amount) || amount <= 0)
+        {
+            await TrySendChatAsync(
+                $"@{message.UserName}, nutze !addpoints @name <punkte>.",
+                cancellationToken);
+            return;
+        }
+
+        var login = parts[1].Trim().TrimStart('@');
+        var user = await _twitch.GetUserAsync(login, cancellationToken);
+        if (user is null)
+        {
+            await TrySendChatAsync(
+                $"@{message.UserName}, Twitch-Nutzer @{login} wurde nicht gefunden.",
+                cancellationToken);
+            return;
+        }
+
+        var newBalance = await _points.AddPointsAsync(
+            user.Id, user.DisplayName, amount, _config.MinimumPoints,
+            cancellationToken, MaximumPoints);
+        Console.WriteLine(
+            $"Minigame-Admin: {message.UserName} erzeugt {amount} Punkte " +
+            $"für {user.DisplayName}. Neuer Stand: {newBalance}.");
+        await TrySendChatAsync(
+            $"@{user.DisplayName} erhält {amount} Punkte und hat jetzt " +
+            $"{newBalance} Punkte.", cancellationToken);
         DataChanged?.Invoke();
     }
 
