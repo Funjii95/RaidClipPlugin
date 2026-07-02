@@ -43,6 +43,7 @@
     "Enabled": false,
     "PointsEnabled": true,
     "PointsPerInterval": 10,
+    "LurkerPointsPerInterval": 5,
     "IntervalMinutes": 5,
     "MinimumPoints": 0,
     "PointsCommandCooldownSeconds": 30,
