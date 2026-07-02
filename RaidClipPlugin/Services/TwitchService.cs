@@ -188,6 +188,49 @@ public sealed class TwitchService
         return chatters.Values.ToList();
     }
 
+    public async Task<IReadOnlyList<TwitchCustomReward>> GetCustomRewardsAsync(
+        string broadcasterId,
+        CancellationToken cancellationToken)
+    {
+        var url = "https://api.twitch.tv/helix/channel_points/custom_rewards" +
+                  "?broadcaster_id=" + Uri.EscapeDataString(broadcasterId);
+        using var response = await _http.GetAsync(url, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(cancellationToken));
+        return document.RootElement.GetProperty("data").EnumerateArray()
+            .Select(item => new TwitchCustomReward(
+                item.GetProperty("id").GetString() ?? "",
+                item.GetProperty("title").GetString() ?? "",
+                item.TryGetProperty("is_user_input_required", out var input) &&
+                input.GetBoolean(),
+                !item.TryGetProperty("is_enabled", out var enabled) ||
+                enabled.GetBoolean()))
+            .ToArray();
+    }
+
+    public async Task UpdateRedemptionStatusAsync(
+        string broadcasterId,
+        string rewardId,
+        string redemptionId,
+        bool fulfilled,
+        CancellationToken cancellationToken)
+    {
+        var url = "https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions" +
+                  "?broadcaster_id=" + Uri.EscapeDataString(broadcasterId) +
+                  "&reward_id=" + Uri.EscapeDataString(rewardId) +
+                  "&id=" + Uri.EscapeDataString(redemptionId);
+        using var request = new HttpRequestMessage(HttpMethod.Patch, url)
+        {
+            Content = JsonContent.Create(new
+            {
+                status = fulfilled ? "FULFILLED" : "CANCELED"
+            })
+        };
+        using var response = await _http.SendAsync(request, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+    }
+
     public async Task SendChatMessageAsync(
         string broadcasterId,
         string senderId,
