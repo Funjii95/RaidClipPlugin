@@ -96,3 +96,19 @@ Beim Installieren wird das ZIP oder die EXE heruntergeladen und über SHA-256 ge
 Die Struktur von `update.json` ist in `Installer/update.example.json` dokumentiert.
 
 Persönliche Einstellungen, verschlüsselte Twitch-Zugangsdaten und Clip-Historie bleiben bei einem Update erhalten.
+
+
+## Musikwünsche mit Spotify
+
+Das optionale Modul **Musikwünsche** verarbeitet eine ausgewählte Twitch-Kanalpunkte-Belohnung und fügt den gewünschten Spotify-Track zur Warteschlange hinzu oder spielt ihn sofort ab.
+
+Einrichtung:
+
+1. Im [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) eine App mit Web API anlegen.
+2. Als Redirect-URI exakt `http://127.0.0.1:17892/callback/` eintragen.
+3. Die Spotify Client-ID im Bereich **Musikwünsche** eintragen und **Mit Spotify verbinden** wählen. Ein Client-Secret wird nicht benötigt.
+4. Ein Spotify-Connect-Gerät starten und im Tool auswählen.
+5. Auf Twitch eine Kanalpunkte-Belohnung mit erforderlicher Texteingabe anlegen und im Tool auswählen.
+6. Twitch beim nächsten Start neu autorisieren, damit `channel:manage:redemptions` erteilt wird.
+
+Spotify-Tokens werden mit Windows DPAPI verschlüsselt im Benutzerprofil gespeichert. Für die Player-Steuerung wird in der Regel Spotify Premium benötigt. Twitch kann den Einlösungsstatus nur automatisch erfüllen oder stornieren, wenn die Belohnung mit derselben Twitch-App erstellt wurde; andernfalls bleibt die Einlösung offen und der Fehler wird nur protokolliert.
