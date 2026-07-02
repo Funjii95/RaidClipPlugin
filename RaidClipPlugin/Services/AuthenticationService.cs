@@ -15,7 +15,8 @@ public sealed class AuthenticationService
     private const string RequiredScopeValue =
         "user:read:chat user:write:chat moderator:manage:shoutouts " +
         "moderator:manage:banned_users moderator:manage:chat_messages " +
-        "moderator:read:chatters";
+        "moderator:read:chatters moderator:read:followers " +
+        "channel:read:subscriptions channel:read:redemptions";
     private static readonly string[] RequiredScopes =
         RequiredScopeValue.Split(' ');
     private readonly TwitchConfig _config;
