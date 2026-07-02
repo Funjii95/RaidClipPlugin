@@ -13,3 +13,6 @@ installer-output/
 
 # Lokale Protokolle
 logs/
+
+# Aus Base64 beim Build erzeugtes Windows-Icon
+Assets/RaidClipPlugin.ico
