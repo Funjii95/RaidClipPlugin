@@ -1,7 +1,10 @@
 # Changelog
 
-## Unveröffentlicht
+## 1.4.0
 
+- Schaltflächen zeichnen Beschriftungen zuverlässig und vollständig, auch im dunklen Theme
+- Größere Navigation, Tabs und Aktionsbereiche verhindern abgeschnittene Texte
+- Fenster und Einstellungsbereiche skalieren sauberer bei langen deutschen Beschriftungen
 - Neues optionales Modul „Musikwünsche“ mit Spotify PKCE und sicherer Tokenablage
 - Twitch-Kanalpunkte-EventSub, persistente Deduplizierung und Statusupdates
 - Spotify-Suche, Queue/Sofortwiedergabe, Geräteauswahl, Filter und Blacklists
