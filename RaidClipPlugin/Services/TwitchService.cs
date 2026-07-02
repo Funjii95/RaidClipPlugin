@@ -45,6 +45,25 @@ public sealed class TwitchService
             user.GetProperty("display_name").GetString() ?? "");
     }
 
+    public async Task<TwitchChannelInfo?> GetChannelInfoAsync(
+        string broadcasterId,
+        CancellationToken cancellationToken)
+    {
+        var url = "https://api.twitch.tv/helix/channels?broadcaster_id=" +
+                  Uri.EscapeDataString(broadcasterId);
+        using var response = await _http.GetAsync(url, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(cancellationToken));
+        var data = document.RootElement.GetProperty("data");
+        if (data.GetArrayLength() == 0) return null;
+        var channel = data[0];
+        return new TwitchChannelInfo(
+            channel.TryGetProperty("title", out var title) ? title.GetString() ?? "" : "",
+            channel.TryGetProperty("game_id", out var gameId) ? gameId.GetString() ?? "" : "",
+            channel.TryGetProperty("game_name", out var gameName) ? gameName.GetString() ?? "" : "");
+    }
+
     public async Task<List<Clip>> GetClipsAsync(
         string broadcasterId,
         int lookbackDays,
@@ -312,3 +331,5 @@ public sealed record TwitchUser(
     string Id,
     string Login,
     string DisplayName);
+
+public sealed record TwitchChannelInfo(string Title, string GameId, string GameName);
