@@ -230,7 +230,7 @@ public sealed class MainForm : Form
 
     private readonly Label _versionLabel = new()
     {
-        Text = "Version 1.2.8\n🟢 Aktuell",
+        Text = "Version 1.3.0\n🟢 Aktuell",
         AutoSize = true,
         ForeColor = Color.ForestGreen,
         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -362,6 +362,28 @@ public sealed class MainForm : Form
         CreateIntegerControl(10, 0, 1_000_000_000);
     private readonly NumericUpDown _maximumBetControl =
         CreateIntegerControl(1000, 0, 1_000_000_000);
+    private readonly TextBox _currencySingularBox = new()
+        { Text = "Punkt", Width = 150, MaxLength = 30 };
+    private readonly TextBox _currencyPluralBox = new()
+        { Text = "Punkte", Width = 150, MaxLength = 30 };
+    private readonly Label _currencyPreviewLabel = new()
+        { AutoSize = true, Margin = new Padding(8, 24, 8, 4) };
+    private readonly CheckBox _pointsCommandPunkteCheck =
+        NewCheck("!punkte", true);
+    private readonly CheckBox _pointsCommandPointsCheck =
+        NewCheck("!points", false);
+    private readonly CheckBox _pointsCommandPerlenCheck =
+        NewCheck("!perlen", false);
+    private readonly TextBox _customPointsCommandBox = new()
+        { Width = 150, MaxLength = 30 };
+    private readonly TextBox _pointsBlacklistInput = new()
+        { Width = 180, MaxLength = 50 };
+    private readonly ListBox _pointsBlacklistList = new()
+        { Width = 220, Height = 115, IntegralHeight = false };
+    private readonly Button _addPointsBlacklistButton =
+        NewActionButton("Hinzufügen");
+    private readonly Button _removePointsBlacklistButton =
+        NewActionButton("Auswahl entfernen");
 
     private readonly CheckBox _chatPointsCheck = NewCheck(
         "Chatnachrichten-Punkte", true);
@@ -670,6 +692,11 @@ public sealed class MainForm : Form
         _saveSettingsButton.Click += (_, _) => SaveSettingsFromControls();
         _saveModerationSettingsButton.Click += (_, _) => SaveSettingsFromControls();
         _saveMinigameSettingsButton.Click += (_, _) => SaveSettingsFromControls();
+        _addPointsBlacklistButton.Click += (_, _) => AddPointsBlacklistEntry();
+        _removePointsBlacklistButton.Click += (_, _) =>
+            RemoveSelectedPointsBlacklistEntry();
+        _currencySingularBox.TextChanged += (_, _) => UpdateCurrencyPreview();
+        _currencyPluralBox.TextChanged += (_, _) => UpdateCurrencyPreview();
         _resetPointsButton.Click += async (_, _) => await ResetPointDataAsync();
         _exportMinigameButton.Click += async (_, _) =>
             await ExportMinigameDataAsync();
@@ -842,6 +869,15 @@ public sealed class MainForm : Form
                     checkBox.BackColor = Color.Transparent;
                     checkBox.ForeColor = TextColor;
                     checkBox.FlatStyle = FlatStyle.Flat;
+                    checkBox.AutoCheck = true;
+                    checkBox.Paint -= DrawDarkCheckBox;
+                    checkBox.Paint += DrawDarkCheckBox;
+                    break;
+
+                case ListBox listBox:
+                    listBox.BackColor = InputColor;
+                    listBox.ForeColor = TextColor;
+                    listBox.BorderStyle = BorderStyle.FixedSingle;
                     break;
 
                 case GroupBox groupBox:
@@ -927,6 +963,46 @@ public sealed class MainForm : Form
 
         _versionLabel.ForeColor = ActiveColor;
         _jackpotValueLabel.ForeColor = AccentColor;
+    }
+
+    private static void DrawDarkCheckBox(object? sender, PaintEventArgs e)
+    {
+        if (sender is not CheckBox checkBox) return;
+
+        e.Graphics.Clear(checkBox.Parent?.BackColor ?? BackgroundColor);
+        const int boxSize = 16;
+        var box = new Rectangle(2, Math.Max(1, (checkBox.Height - boxSize) / 2),
+            boxSize, boxSize);
+        using var fill = new SolidBrush(
+            checkBox.Checked ? AccentColor : InputColor);
+        using var border = new Pen(
+            checkBox.Focused ? Color.White : AccentColor, 1.4F);
+        e.Graphics.FillRectangle(fill, box);
+        e.Graphics.DrawRectangle(border, box);
+
+        if (checkBox.Checked)
+        {
+            using var checkPen = new Pen(Color.White, 2F)
+            {
+                StartCap = System.Drawing.Drawing2D.LineCap.Round,
+                EndCap = System.Drawing.Drawing2D.LineCap.Round
+            };
+            e.Graphics.DrawLines(checkPen, new[]
+            {
+                new Point(box.Left + 3, box.Top + 8),
+                new Point(box.Left + 7, box.Bottom - 4),
+                new Point(box.Right - 3, box.Top + 4)
+            });
+        }
+
+        var textArea = new Rectangle(box.Right + 7, 0,
+            Math.Max(0, checkBox.Width - box.Right - 7), checkBox.Height);
+        TextRenderer.DrawText(e.Graphics, checkBox.Text, checkBox.Font,
+            textArea, checkBox.Enabled ? TextColor : MutedTextColor,
+            TextFormatFlags.Left | TextFormatFlags.VerticalCenter |
+            TextFormatFlags.EndEllipsis);
+        if (checkBox.Focused)
+            ControlPaint.DrawFocusRectangle(e.Graphics, textArea);
     }
 
     private static void StyleButton(Button button)
@@ -1387,6 +1463,11 @@ public sealed class MainForm : Form
 
         var pointsFlow = CreateMinigameFlow();
         pointsFlow.Controls.Add(CreateSettingEditor(
+            "Währung – Einzahl", _currencySingularBox));
+        pointsFlow.Controls.Add(CreateSettingEditor(
+            "Währung – Mehrzahl", _currencyPluralBox));
+        pointsFlow.Controls.Add(_currencyPreviewLabel);
+        pointsFlow.Controls.Add(CreateSettingEditor(
             "Aktive Zuschauer pro Intervall", _pointsPerIntervalControl));
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Stille Zuschauer/Lurker pro Intervall",
@@ -1412,8 +1493,27 @@ public sealed class MainForm : Form
         pointsFlow.Controls.Add(_rewardPointsCheck);
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Punkte je Channel Reward", _rewardPointsControl));
+        pointsFlow.Controls.Add(CreateSettingEditor(
+            "Punkte-Blacklist", _pointsBlacklistInput));
+        pointsFlow.Controls.Add(_addPointsBlacklistButton);
+        pointsFlow.Controls.Add(_pointsBlacklistList);
+        pointsFlow.Controls.Add(_removePointsBlacklistButton);
+        var savePointsButton = NewActionButton("Einstellungen speichern");
+        savePointsButton.Click += (_, _) => SaveSettingsFromControls();
+        pointsFlow.Controls.Add(savePointsButton);
 
         var commandsFlow = CreateMinigameFlow();
+        commandsFlow.Controls.Add(new Label
+        {
+            Text = "Commands für Punkteabfrage", AutoSize = true,
+            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            Margin = new Padding(8, 24, 8, 4)
+        });
+        commandsFlow.Controls.Add(_pointsCommandPunkteCheck);
+        commandsFlow.Controls.Add(_pointsCommandPointsCheck);
+        commandsFlow.Controls.Add(_pointsCommandPerlenCheck);
+        commandsFlow.Controls.Add(CreateSettingEditor(
+            "Eigener Command", _customPointsCommandBox));
         commandsFlow.Controls.Add(_dailyCheck);
         commandsFlow.Controls.Add(CreateSettingEditor(
             "Daily-Bonus", _dailyPointsControl));
@@ -1429,6 +1529,9 @@ public sealed class MainForm : Form
             "Profil-Cooldown", _profileCooldownControl));
         commandsFlow.Controls.Add(CreateSettingEditor(
             "Globaler Cooldown", _globalCommandCooldownControl));
+        var saveCommandsButton = NewActionButton("Einstellungen speichern");
+        saveCommandsButton.Click += (_, _) => SaveSettingsFromControls();
+        commandsFlow.Controls.Add(saveCommandsButton);
 
         var rangeTable = new TableLayoutPanel
         {
@@ -1552,7 +1655,7 @@ public sealed class MainForm : Form
 
         var tabs = new TabControl { Dock = DockStyle.Fill };
         AddMinigameTab(tabs, "Übersicht", overviewFlow);
-        AddMinigameTab(tabs, "Punkte sammeln", pointsFlow);
+        AddMinigameTab(tabs, "Punkte & Währung", pointsFlow);
         AddMinigameTab(tabs, "Chat-Commands", commandsFlow);
         AddMinigameTab(tabs, "Casino-Spiele", casinoLayout);
         AddMinigameTab(tabs, "Limits & Fairness", limitsFlow);
@@ -2377,7 +2480,11 @@ public sealed class MainForm : Form
             }));
         }
         _minigameHistoryList.EndUpdate();
-        _jackpotValueLabel.Text = $"Aktueller Jackpot: {jackpot:N0}";
+        var currency = _activeConfig?.Minigame.CurrencyPlural ??
+            (_currencyPluralBox.Text.Trim().Length > 0
+                ? _currencyPluralBox.Text.Trim() : "Punkte");
+        _jackpotValueLabel.Text =
+            $"Aktueller Jackpot: {jackpot:N0} {currency}";
     }
 
     private async Task ExportMinigameDataAsync()
@@ -3126,6 +3233,35 @@ public sealed class MainForm : Form
         }
     }
 
+    private void AddPointsBlacklistEntry()
+    {
+        var name = _pointsBlacklistInput.Text.Trim().TrimStart('@')
+            .ToLowerInvariant();
+        if (name.Length == 0) return;
+        if (!_pointsBlacklistList.Items.Cast<object>().Any(item =>
+                string.Equals(item.ToString(), name,
+                    StringComparison.OrdinalIgnoreCase)))
+            _pointsBlacklistList.Items.Add(name);
+        _pointsBlacklistInput.Clear();
+    }
+
+    private void RemoveSelectedPointsBlacklistEntry()
+    {
+        while (_pointsBlacklistList.SelectedIndices.Count > 0)
+            _pointsBlacklistList.Items.RemoveAt(
+                _pointsBlacklistList.SelectedIndices[0]);
+    }
+
+    private void UpdateCurrencyPreview()
+    {
+        var singular = string.IsNullOrWhiteSpace(_currencySingularBox.Text)
+            ? "Punkt" : _currencySingularBox.Text.Trim();
+        var plural = string.IsNullOrWhiteSpace(_currencyPluralBox.Text)
+            ? "Punkte" : _currencyPluralBox.Text.Trim();
+        _currencyPreviewLabel.Text =
+            $"Beispiel: Du besitzt 1 {singular}.  Du besitzt 250 {plural}.";
+    }
+
     private void LoadSettingsIntoControls()
     {
         try
@@ -3170,6 +3306,21 @@ public sealed class MainForm : Form
             _minigameEnabledCheck.Checked = config.Minigame.Enabled;
             _pointsEnabledCheck.Checked = config.Minigame.PointsEnabled;
             _gambleEnabledCheck.Checked = config.Minigame.GambleEnabled;
+            _currencySingularBox.Text = config.Minigame.CurrencySingular;
+            _currencyPluralBox.Text = config.Minigame.CurrencyPlural;
+            _pointsCommandPunkteCheck.Checked =
+                config.Minigame.PointsCommandPunkteEnabled;
+            _pointsCommandPointsCheck.Checked =
+                config.Minigame.PointsCommandPointsEnabled;
+            _pointsCommandPerlenCheck.Checked =
+                config.Minigame.PointsCommandPerlenEnabled;
+            _customPointsCommandBox.Text = config.Minigame.CustomPointsCommand;
+            _pointsBlacklistList.Items.Clear();
+            _pointsBlacklistList.Items.AddRange(
+                config.Minigame.PointsBlacklist.Cast<object>().ToArray());
+            UpdateCurrencyPreview();
+            if (_minigameTopList.Columns.Count >= 3)
+                _minigameTopList.Columns[2].Text = config.Minigame.CurrencyPlural;
             SetNumericValue(_pointsPerIntervalControl,
                 config.Minigame.PointsPerInterval);
             SetNumericValue(_lurkerPointsPerIntervalControl,
@@ -3303,6 +3454,21 @@ public sealed class MainForm : Form
         config.Minigame.Enabled = _minigameEnabledCheck.Checked;
         config.Minigame.PointsEnabled = _pointsEnabledCheck.Checked;
         config.Minigame.GambleEnabled = _gambleEnabledCheck.Checked;
+        config.Minigame.CurrencySingular = _currencySingularBox.Text.Trim();
+        config.Minigame.CurrencyPlural = _currencyPluralBox.Text.Trim();
+        config.Minigame.PointsCommandPunkteEnabled =
+            _pointsCommandPunkteCheck.Checked;
+        config.Minigame.PointsCommandPointsEnabled =
+            _pointsCommandPointsCheck.Checked;
+        config.Minigame.PointsCommandPerlenEnabled =
+            _pointsCommandPerlenCheck.Checked;
+        config.Minigame.CustomPointsCommand =
+            _customPointsCommandBox.Text.Trim();
+        config.Minigame.PointsBlacklist = _pointsBlacklistList.Items
+            .Cast<object>()
+            .Select(item => item.ToString() ?? "")
+            .Where(item => item.Length > 0)
+            .ToList();
         config.Minigame.PointsPerInterval =
             decimal.ToInt32(_pointsPerIntervalControl.Value);
         config.Minigame.LurkerPointsPerInterval =
@@ -3427,6 +3593,9 @@ public sealed class MainForm : Form
         _activeConfig.Twitch.RaidCooldownMinutes =
             updated.Twitch.RaidCooldownMinutes;
         _minigame?.UpdateConfig(updated.Minigame);
+        UpdateCurrencyPreview();
+        if (_minigameTopList.Columns.Count >= 3)
+            _minigameTopList.Columns[2].Text = updated.Minigame.CurrencyPlural;
 
         AppendLog("Laufende Chat- und Minigame-Einstellungen wurden übernommen.");
         if (moduleRestartRequired)
@@ -3441,7 +3610,9 @@ public sealed class MainForm : Form
         message.Contains("Gamble", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Punkte", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Einsatz", StringComparison.OrdinalIgnoreCase) ||
-        message.Contains("Command-Cooldown", StringComparison.OrdinalIgnoreCase);
+        message.Contains("Command-Cooldown", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Währung", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Punkteabfrage", StringComparison.OrdinalIgnoreCase);
 
     private static void SetNumericValue(
         NumericUpDown control,
