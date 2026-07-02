@@ -20,6 +20,12 @@ public sealed class ViewerPointEntry
 
 public sealed record GambleBalanceResult(bool Success, int Balance);
 
+public sealed record PointTransferResult(
+    bool Success,
+    string Error,
+    int SenderBalance,
+    int RecipientBalance);
+
 public sealed class MinigameHistoryEntry
 {
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
