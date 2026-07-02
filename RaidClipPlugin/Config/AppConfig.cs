@@ -9,6 +9,7 @@ public class AppConfig
     public ModerationConfig Moderation { get; set; } = new();
     public MinigameConfig Minigame { get; set; } = new();
     public MusicRequestConfig MusicRequests { get; set; } = new();
+    public StreamCheckConfig StreamCheck { get; set; } = new();
     public UpdateConfig Update { get; set; } = new();
 }
 
@@ -118,10 +119,15 @@ public class MinigameConfig
     public int SlotsMinimumBet { get; set; } = 10;
     public int SlotsMaximumBet { get; set; } = 1000;
     public int SlotsCooldownSeconds { get; set; } = 20;
+    public bool RouletteEnabled { get; set; } = false;
+    public decimal RouletteEvenMoneyMultiplier { get; set; } = 2.0m;
+    public decimal RouletteNumberMultiplier { get; set; } = 36.0m;
+    public int RouletteMinimumBet { get; set; } = 10;
+    public int RouletteMaximumBet { get; set; } = 1000;
+    public int RouletteCooldownSeconds { get; set; } = 20;
     public bool JackpotEnabled { get; set; } = false;
     public int JackpotStartValue { get; set; } = 1000;
     public decimal JackpotContributionPercent { get; set; } = 10m;
-    public decimal JackpotChancePercent { get; set; } = 0.5m;
     public bool MaximumAccountEnabled { get; set; } = false;
     public int MaximumAccountPoints { get; set; } = 1_000_000;
     public bool DailyGambleLimitEnabled { get; set; } = false;
@@ -173,6 +179,24 @@ public class GambleRangeConfig
     public int To { get; set; }
     public decimal Multiplier { get; set; }
     public string ChatText { get; set; } = "";
+}
+
+
+public class StreamCheckConfig
+{
+    public List<string> DisabledChecks { get; set; } = new();
+    public string StartScene { get; set; } = "";
+    public string MicrophoneSource { get; set; } = "Mic/Aux";
+    public string DesktopAudioSource { get; set; } = "Desktop Audio";
+    public string RecordingPath { get; set; } = "";
+    public int MinimumFreeSpaceGb { get; set; } = 10;
+    public bool SelectStartScene { get; set; } = true;
+    public bool StartObsStreaming { get; set; } = true;
+    public bool StartPluginServices { get; set; } = true;
+    public DateTimeOffset? LastCheckUtc { get; set; }
+    public long LastDurationMilliseconds { get; set; }
+    public string LastSummary { get; set; } = "";
+    public List<string> LastFailedChecks { get; set; } = new();
 }
 
 public class UpdateConfig
