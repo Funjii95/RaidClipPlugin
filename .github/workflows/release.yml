@@ -30,8 +30,10 @@ jobs:
         run: |
           [xml]$project = Get-Content "RaidClipPlugin.csproj"
           $version = [string]$project.Project.PropertyGroup.Version
-          $tagVersion = "${{ github.ref_name }}".TrimStart("v")
-          if ($version -ne $tagVersion) { throw "Tag $tagVersion stimmt nicht mit Projektversion $version überein." }
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $tagVersion = "${{ github.ref_name }}".TrimStart("v")
+            if ($version -ne $tagVersion) { throw "Tag $tagVersion stimmt nicht mit Projektversion $version überein." }
+          }
           "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Unit-Tests ausführen
