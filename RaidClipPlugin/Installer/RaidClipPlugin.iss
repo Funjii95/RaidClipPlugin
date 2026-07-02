@@ -1,5 +1,5 @@
 #define MyAppName "Raid Clip Plugin"
-#define MyAppVersion "1.3.0"
+#define MyAppVersion "1.4.0"
 #define MyAppPublisher "RaidClipPlugin"
 #define MyAppExeName "RaidClipPlugin.exe"
 
@@ -19,7 +19,7 @@ SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=..\Assets\RaidClipPlugin.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
-VersionInfoVersion=1.3.0.0
+VersionInfoVersion=1.4.0.0
 CloseApplications=yes
 RestartApplications=no
 UsedUserAreasWarning=no
