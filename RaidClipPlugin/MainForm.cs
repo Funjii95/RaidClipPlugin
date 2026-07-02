@@ -449,14 +449,24 @@ public sealed partial class MainForm : Form
         CreateIntegerControl(1000, 0, 1_000_000_000);
     private readonly NumericUpDown _slotsCooldownControl =
         CreateIntegerControl(20, 0, 3600);
+    private readonly CheckBox _rouletteEnabledCheck = NewCheck(
+        "Roulette aktivieren", false);
+    private readonly NumericUpDown _rouletteEvenMoneyControl =
+        CreateMultiplierControl(2m);
+    private readonly NumericUpDown _rouletteNumberControl =
+        CreateMultiplierControl(36m);
+    private readonly NumericUpDown _rouletteMinControl =
+        CreateIntegerControl(10, 0, 1_000_000_000);
+    private readonly NumericUpDown _rouletteMaxControl =
+        CreateIntegerControl(1000, 0, 1_000_000_000);
+    private readonly NumericUpDown _rouletteCooldownControl =
+        CreateIntegerControl(20, 0, 3600);
     private readonly CheckBox _jackpotEnabledCheck = NewCheck(
         "Jackpot aktivieren", false);
     private readonly NumericUpDown _jackpotStartControl =
         CreateIntegerControl(1000, 0, 1_000_000_000);
     private readonly NumericUpDown _jackpotContributionControl =
         CreateMultiplierControl(10m);
-    private readonly NumericUpDown _jackpotChanceControl =
-        CreateMultiplierControl(0.5m);
     private readonly Label _jackpotValueLabel = new()
         { Text = "Aktueller Jackpot: 1.000", AutoSize = true,
           Font = new Font("Segoe UI", 11F, FontStyle.Bold),
@@ -674,6 +684,7 @@ public sealed partial class MainForm : Form
 
         BuildLayout();
         InitializeMusicRequestEvents();
+        InitializeStreamCheckEvents();
 
         _startButton.Click += async (_, _) => await StartPluginAsync();
         _testButton.Click += async (_, _) => await PlayTestClipAsync();
@@ -1135,11 +1146,13 @@ public sealed partial class MainForm : Form
         var showModeration = section == "moderation";
         var showMinigame = section == "minigame";
         var showMusic = section == "music";
+        var showStreamCheck = section == "stream-check";
 
         _raidPage.Visible = showRaid;
         _moderationPage.Visible = showModeration;
         _minigamePage.Visible = showMinigame;
         _musicPage.Visible = showMusic;
+        _streamCheckPage.Visible = showStreamCheck;
 
         if (showModeration)
             _moderationPage.BringToFront();
@@ -1147,6 +1160,8 @@ public sealed partial class MainForm : Form
             _minigamePage.BringToFront();
         else if (showMusic)
             _musicPage.BringToFront();
+        else if (showStreamCheck)
+            _streamCheckPage.BringToFront();
         else
             _raidPage.BringToFront();
 
@@ -1154,6 +1169,7 @@ public sealed partial class MainForm : Form
         SetNavigationTileState(_moderationNavButton, showModeration);
         SetNavigationTileState(_minigameNavButton, showMinigame);
         SetNavigationTileState(_musicNavButton, showMusic);
+        SetNavigationTileState(_streamCheckNavButton, showStreamCheck);
         if (showMusic) _ = RefreshMusicGridAsync();
         if (showMinigame) _ = RefreshMinigameDashboardAsync();
     }
@@ -1667,16 +1683,22 @@ public sealed partial class MainForm : Form
             "Slots Max.", _slotsMaxControl));
         casinoFlow.Controls.Add(CreateSettingEditor(
             "Slots-Cooldown", _slotsCooldownControl));
-        var rouletteCheck = NewCheck("Roulette (noch nicht verfügbar)", false);
-        rouletteCheck.Enabled = false;
-        casinoFlow.Controls.Add(rouletteCheck);
+        casinoFlow.Controls.Add(_rouletteEnabledCheck);
+        casinoFlow.Controls.Add(CreateSettingEditor(
+            "Roulette 1:1 Multiplikator", _rouletteEvenMoneyControl));
+        casinoFlow.Controls.Add(CreateSettingEditor(
+            "Roulette Zahl Multiplikator", _rouletteNumberControl));
+        casinoFlow.Controls.Add(CreateSettingEditor(
+            "Roulette Min.", _rouletteMinControl));
+        casinoFlow.Controls.Add(CreateSettingEditor(
+            "Roulette Max.", _rouletteMaxControl));
+        casinoFlow.Controls.Add(CreateSettingEditor(
+            "Roulette-Cooldown", _rouletteCooldownControl));
         casinoFlow.Controls.Add(_jackpotEnabledCheck);
         casinoFlow.Controls.Add(CreateSettingEditor(
             "Jackpot-Startwert", _jackpotStartControl));
         casinoFlow.Controls.Add(CreateSettingEditor(
             "Anteil Verluste (%)", _jackpotContributionControl));
-        casinoFlow.Controls.Add(CreateSettingEditor(
-            "Jackpot-Chance (%)", _jackpotChanceControl));
 
         var casinoLayout = new TableLayoutPanel
         {
@@ -1766,6 +1788,7 @@ public sealed partial class MainForm : Form
         minigameLayout.Controls.Add(_minigameSettingsGroup, 0, 2);
         _minigamePage.Controls.Add(minigameLayout);
         BuildMusicRequestPage();
+        BuildStreamCheckPage();
 
         var brand = new PictureBox
         {
@@ -1792,12 +1815,14 @@ public sealed partial class MainForm : Form
         navigation.Controls.Add(_moderationNavButton);
         navigation.Controls.Add(_minigameNavButton);
         navigation.Controls.Add(_musicNavButton);
+        navigation.Controls.Add(_streamCheckNavButton);
 
         var contentHost = new Panel
         {
             Dock = DockStyle.Fill,
             BackColor = BackgroundColor
         };
+        contentHost.Controls.Add(_streamCheckPage);
         contentHost.Controls.Add(_musicPage);
         contentHost.Controls.Add(_minigamePage);
         contentHost.Controls.Add(_moderationPage);
@@ -1824,6 +1849,8 @@ public sealed partial class MainForm : Form
         StylePrimaryButton(_saveModerationSettingsButton);
         StylePrimaryButton(_saveMinigameSettingsButton);
         StylePrimaryButton(_saveMusicSettingsButton);
+        StylePrimaryButton(_startStreamButton);
+        StylePrimaryButton(_saveStreamCheckButton);
         StylePrimaryButton(_updateButton);
         _resetPointsButton.BackColor = Color.FromArgb(72, 14, 17);
         _resetPointsButton.FlatAppearance.BorderColor = AccentColor;
@@ -1939,6 +1966,8 @@ public sealed partial class MainForm : Form
             var twitch = new TwitchService(
                 config.Twitch.ClientId,
                 session.AccessToken);
+            _twitch = twitch;
+            _twitchSession = session;
 
             _broadcaster = await twitch.GetUserAsync(
                 config.Twitch.BroadcasterLogin,
@@ -2948,6 +2977,8 @@ public sealed partial class MainForm : Form
         _obs = null;
         _playback = null;
         _broadcaster = null;
+        _twitch = null;
+        _twitchSession = null;
         _eventSub = null;
         _chatModeration = null;
         _minigame = null;
@@ -3483,10 +3514,15 @@ public sealed partial class MainForm : Form
             SetNumericValue(_slotsMinControl, config.Minigame.SlotsMinimumBet);
             SetNumericValue(_slotsMaxControl, config.Minigame.SlotsMaximumBet);
             SetNumericValue(_slotsCooldownControl, config.Minigame.SlotsCooldownSeconds);
+            _rouletteEnabledCheck.Checked = config.Minigame.RouletteEnabled;
+            _rouletteEvenMoneyControl.Value = config.Minigame.RouletteEvenMoneyMultiplier;
+            _rouletteNumberControl.Value = config.Minigame.RouletteNumberMultiplier;
+            SetNumericValue(_rouletteMinControl, config.Minigame.RouletteMinimumBet);
+            SetNumericValue(_rouletteMaxControl, config.Minigame.RouletteMaximumBet);
+            SetNumericValue(_rouletteCooldownControl, config.Minigame.RouletteCooldownSeconds);
             _jackpotEnabledCheck.Checked = config.Minigame.JackpotEnabled;
             SetNumericValue(_jackpotStartControl, config.Minigame.JackpotStartValue);
             _jackpotContributionControl.Value = config.Minigame.JackpotContributionPercent;
-            _jackpotChanceControl.Value = config.Minigame.JackpotChancePercent;
             _maximumAccountCheck.Checked = config.Minigame.MaximumAccountEnabled;
             SetNumericValue(_maximumAccountControl, config.Minigame.MaximumAccountPoints);
             _dailyGamesCheck.Checked = config.Minigame.DailyGambleLimitEnabled;
@@ -3629,10 +3665,15 @@ public sealed partial class MainForm : Form
         config.Minigame.SlotsMinimumBet = decimal.ToInt32(_slotsMinControl.Value);
         config.Minigame.SlotsMaximumBet = decimal.ToInt32(_slotsMaxControl.Value);
         config.Minigame.SlotsCooldownSeconds = decimal.ToInt32(_slotsCooldownControl.Value);
+        config.Minigame.RouletteEnabled = _rouletteEnabledCheck.Checked;
+        config.Minigame.RouletteEvenMoneyMultiplier = _rouletteEvenMoneyControl.Value;
+        config.Minigame.RouletteNumberMultiplier = _rouletteNumberControl.Value;
+        config.Minigame.RouletteMinimumBet = decimal.ToInt32(_rouletteMinControl.Value);
+        config.Minigame.RouletteMaximumBet = decimal.ToInt32(_rouletteMaxControl.Value);
+        config.Minigame.RouletteCooldownSeconds = decimal.ToInt32(_rouletteCooldownControl.Value);
         config.Minigame.JackpotEnabled = _jackpotEnabledCheck.Checked;
         config.Minigame.JackpotStartValue = decimal.ToInt32(_jackpotStartControl.Value);
         config.Minigame.JackpotContributionPercent = _jackpotContributionControl.Value;
-        config.Minigame.JackpotChancePercent = _jackpotChanceControl.Value;
         config.Minigame.MaximumAccountEnabled = _maximumAccountCheck.Checked;
         config.Minigame.MaximumAccountPoints = decimal.ToInt32(_maximumAccountControl.Value);
         config.Minigame.DailyGambleLimitEnabled = _dailyGamesCheck.Checked;
