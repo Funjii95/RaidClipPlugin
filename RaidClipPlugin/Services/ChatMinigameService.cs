@@ -37,6 +37,48 @@ public sealed class ChatMinigameService : IDisposable
         ? _config.MaximumAccountPoints
         : int.MaxValue;
 
+    private string CurrencyName(long amount) => Math.Abs(amount) == 1
+        ? _config.CurrencySingular
+        : _config.CurrencyPlural;
+
+    private string FormatCurrency(long amount) =>
+        $"{amount:N0} {CurrencyName(amount)}";
+
+    private bool IsPointsBlacklisted(string? login, string? displayName = null)
+    {
+        static string NormalizeName(string? value) =>
+            (value ?? "").Trim().TrimStart('@');
+        var normalizedLogin = NormalizeName(login);
+        var normalizedDisplayName = NormalizeName(displayName);
+        return _config.PointsBlacklist.Any(entry =>
+            entry.Equals(normalizedLogin, StringComparison.OrdinalIgnoreCase) ||
+            entry.Equals(normalizedDisplayName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool IsPointsQueryCommand(string command) =>
+        (_config.PointsCommandPunkteEnabled && command == "!punkte") ||
+        (_config.PointsCommandPointsEnabled && command == "!points") ||
+        (_config.PointsCommandPerlenEnabled && command == "!perlen") ||
+        (!string.IsNullOrWhiteSpace(_config.CustomPointsCommand) &&
+         command.Equals(_config.CustomPointsCommand,
+             StringComparison.OrdinalIgnoreCase));
+
+    private string LocalizeCurrencyText(string text) =>
+        System.Text.RegularExpressions.Regex.Replace(
+            System.Text.RegularExpressions.Regex.Replace(
+                text, @"\bPunkte\b", _config.CurrencyPlural,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+            @"\bPunkt\b", _config.CurrencySingular,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    private bool SkipBlacklisted(string? login, string? displayName = null)
+    {
+        if (!IsPointsBlacklisted(login, displayName)) return false;
+        Console.WriteLine(
+            $"Punktevergabe übersprungen: {displayName ?? login} befindet sich auf der Punkte-Blacklist.");
+        return true;
+    }
+
     public event Action<int, int>? PointsAwarded;
     public event Action? DataChanged;
 
@@ -88,7 +130,9 @@ public sealed class ChatMinigameService : IDisposable
                 _processedMessages.TryAdd(message.Id, 0);
             }
 
-            if (_config.PointsEnabled && !message.IsBroadcaster)
+            var pointsBlacklisted = IsPointsBlacklisted(message.UserName);
+            if (_config.PointsEnabled && !message.IsBroadcaster &&
+                !pointsBlacklisted)
             {
                 lock (_activityLock)
                 {
@@ -96,6 +140,7 @@ public sealed class ChatMinigameService : IDisposable
                 }
             }
             if (_config.ChatPointsEnabled && !message.IsBroadcaster &&
+                !pointsBlacklisted &&
                 await TryPassiveCooldownAsync(message.UserId,
                     _config.ChatMessagePointsCooldownSeconds, cancellationToken))
             {
@@ -169,7 +214,8 @@ public sealed class ChatMinigameService : IDisposable
                 var eligibleChatters = chatters
                     .Where(user =>
                         !user.Id.Equals(_broadcasterId, StringComparison.Ordinal) &&
-                        !user.Id.Equals(_chatUserId, StringComparison.Ordinal))
+                        !user.Id.Equals(_chatUserId, StringComparison.Ordinal) &&
+                        !IsPointsBlacklisted(user.Login, user.DisplayName))
                     .GroupBy(user => user.Id, StringComparer.Ordinal)
                     .Select(group => group.First())
                     .ToArray();
@@ -205,9 +251,9 @@ public sealed class ChatMinigameService : IDisposable
                     DataChanged?.Invoke();
                     Console.WriteLine(
                         $"Minigame-Anwesenheit: {activeCount} aktive Zuschauer " +
-                        $"erhalten je {config.PointsPerInterval} Punkte; " +
+                        $"erhalten je {FormatCurrency(config.PointsPerInterval)}; " +
                         $"{lurkerCount} stille Zuschauer/Lurker erhalten je " +
-                        $"{config.LurkerPointsPerInterval} Punkte.");
+                        $"{FormatCurrency(config.LurkerPointsPerInterval)}.");
                 }
             }
             catch (OperationCanceledException)
@@ -258,13 +304,14 @@ public sealed class ChatMinigameService : IDisposable
 
             if (command == "!daily")
             {
+                if (SkipBlacklisted(message.UserName)) return;
                 if (!_config.DailyEnabled ||
                     !await TryEnterCooldownAsync(message.UserId, null, 0, cancellationToken)) return;
                 var daily = await _points.ClaimDailyAsync(message.UserId,
                     message.UserName, _config.DailyBonusPoints,
                     _config.MinimumPoints, cancellationToken, MaximumPoints);
                 var text = daily.Success
-                    ? $"@{message.UserName} hat den täglichen Bonus abgeholt: +{_config.DailyBonusPoints} Punkte."
+                    ? $"@{message.UserName} hat den täglichen Bonus abgeholt: +{FormatCurrency(_config.DailyBonusPoints)}."
                     : $"@{message.UserName}, dein Daily ist wieder verfügbar in {(int)daily.Remaining.TotalHours:00}:{daily.Remaining.Minutes:00}.";
                 await TrySendChatAsync(text, cancellationToken);
                 if (daily.Success) DataChanged?.Invoke();
@@ -300,7 +347,7 @@ public sealed class ChatMinigameService : IDisposable
                         targetId, cancellationToken);
                     await TrySendChatAsync(
                         $"@{targetName} ist auf Rang #{profile.Rank} " +
-                        $"mit {profile.Entry.Points:N0} Punkten.",
+                        $"mit {FormatCurrency(profile.Entry.Points)}.",
                         cancellationToken);
                 }
                 else
@@ -308,7 +355,8 @@ public sealed class ChatMinigameService : IDisposable
                     var requested = parts.Length > 1 && int.TryParse(parts[1], out var n) ? n : 5;
                     var top = await _points.GetTopAsync(Math.Min(requested,
                         _config.MaximumTopEntries), cancellationToken);
-                    var text = "Top: " + string.Join(" | ", top.Select((x,i) => $"#{i+1} {x.DisplayName}: {x.Points}"));
+                    var text = "Top: " + string.Join(" | ", top.Select((x,i) =>
+                        $"#{i+1} {x.DisplayName}: {FormatCurrency(x.Points)}"));
                     await TrySendChatAsync(text, cancellationToken);
                 }
                 return;
@@ -321,7 +369,12 @@ public sealed class ChatMinigameService : IDisposable
                         _config.ProfileCooldownSeconds, cancellationToken)) return;
                 var p = await _points.GetProfileAsync(message.UserId, cancellationToken);
                 var e = p.Entry;
-                await TrySendChatAsync($"@{message.UserName} | Punkte: {e.Points:N0} | Rang: #{p.Rank} | Watchtime: {e.WatchMinutes / 60}h | Spiele: {e.GamesPlayed} | Gamble: {e.Wins}W/{e.Losses}L | Größter Gewinn: {e.BiggestWin:N0}", cancellationToken);
+                await TrySendChatAsync(
+                    $"@{message.UserName} | {_config.CurrencyPlural}: {e.Points:N0} | " +
+                    $"Rang: #{p.Rank} | Watchtime: {e.WatchMinutes / 60}h | " +
+                    $"Spiele: {e.GamesPlayed} | Gamble: {e.Wins}W/{e.Losses}L | " +
+                    $"Größter Gewinn: {FormatCurrency(e.BiggestWin)}",
+                    cancellationToken);
                 return;
             }
 
@@ -329,13 +382,22 @@ public sealed class ChatMinigameService : IDisposable
             {
                 var action = parts.Length >= 2 ? parts[1].ToLowerInvariant() : "";
                 if (action is "add" or "remove" or "set")
-                { await HandleAdminPointsCommandAsync(message, parts, action, cancellationToken); return; }
+                {
+                    await HandleAdminPointsCommandAsync(
+                        message, parts, action, cancellationToken);
+                    return;
+                }
+            }
+
+            if (IsPointsQueryCommand(command))
+            {
                 if (!await TryEnterCooldownAsync(message.UserId, _pointsCooldowns,
                     _config.PointsCommandCooldownSeconds, cancellationToken)) return;
-                var points = await _points.GetPointsAsync(message.UserId, cancellationToken);
-                await TrySendChatAsync(points == 0
-                    ? $"@{message.UserName}, du hast aktuell 0 Punkte."
-                    : $"@{message.UserName}, du hast {points} Punkte.", cancellationToken);
+                var points = await _points.GetPointsAsync(
+                    message.UserId, cancellationToken);
+                await TrySendChatAsync(
+                    $"@{message.UserName}, du besitzt aktuell {FormatCurrency(points)}.",
+                    cancellationToken);
                 return;
             }
 
@@ -422,7 +484,7 @@ public sealed class ChatMinigameService : IDisposable
             {
                 await TrySendChatAsync(
                     isAllIn
-                        ? $"@{message.UserName}, du hast nicht genug verfügbare Punkte für All-in."
+                        ? $"@{message.UserName}, du hast nicht genug verfügbare {_config.CurrencyPlural} für All-in."
                         : $"@{message.UserName}, nutze !gamble <einsatz|all>.",
                     cancellationToken);
                 return;
@@ -441,19 +503,20 @@ public sealed class ChatMinigameService : IDisposable
             {
                 Console.WriteLine(
                     $"JACKPOT: {message.UserName} gewinnt " +
-                    $"{gambleResult.JackpotWon:N0} Punkte; neuer Jackpot " +
+                    $"{FormatCurrency(gambleResult.JackpotWon)}; neuer Jackpot " +
                     $"{_config.JackpotStartValue:N0}.");
                 await TrySendChatAsync(
                     $"🎉 JACKPOT! {message.UserName} hat eine 100 gewürfelt " +
                     $"und gewinnt den gesamten Jackpot von " +
-                    $"{gambleResult.JackpotWon:N0} Punkten! Der Jackpot wurde " +
-                    $"auf {_config.JackpotStartValue:N0} Punkte zurückgesetzt. " +
+                    $"{FormatCurrency(gambleResult.JackpotWon)}! Der Jackpot wurde " +
+                    $"auf {FormatCurrency(_config.JackpotStartValue)} zurückgesetzt. " +
                     $"Neuer Stand: {gambleResult.Balance:N0}.",
                     cancellationToken);
                 return;
             }
 
-            var resultText = range.ChatText.Replace("{name}", message.UserName)
+            var resultText = LocalizeCurrencyText(range.ChatText)
+                .Replace("{name}", message.UserName)
                 .Replace("{roll}", roll.ToString()).Replace("{stake}", gambleStake.ToString())
                 .Replace("{payout}", gamblePayout.ToString())
                 .Replace("{balance}", gambleResult.Balance.ToString());
@@ -484,7 +547,8 @@ public sealed class ChatMinigameService : IDisposable
                 _ => 0
             };
 
-            if (points <= 0 || string.IsNullOrWhiteSpace(passiveEvent.UserId))
+            if (points <= 0 || string.IsNullOrWhiteSpace(passiveEvent.UserId) ||
+                SkipBlacklisted(passiveEvent.DisplayName))
             {
                 return;
             }
@@ -493,7 +557,7 @@ public sealed class ChatMinigameService : IDisposable
                 passiveEvent.UserId, passiveEvent.DisplayName, points,
                 _config.MinimumPoints, cancellationToken, MaximumPoints);
             Console.WriteLine(
-                $"Minigame: {passiveEvent.DisplayName} erhält {points} Punkte " +
+                $"Minigame: {passiveEvent.DisplayName} erhält {FormatCurrency(points)} " +
                 $"für {passiveEvent.Kind}. Neuer Stand: {balance}.");
             DataChanged?.Invoke();
         }
@@ -513,6 +577,11 @@ public sealed class ChatMinigameService : IDisposable
         ChatMessage message, string game, int stake, int payout,
         CancellationToken cancellationToken, bool forceJackpot = false)
     {
+        if (SkipBlacklisted(message.UserName))
+        {
+            return new CasinoApplyResult(false,
+                "Dieses Konto nimmt nicht am Punktesystem teil", 0, 0);
+        }
         var maximum = _config.MaximumAccountEnabled
             ? _config.MaximumAccountPoints : int.MaxValue;
         var dailyGames = _config.DailyGambleLimitEnabled
@@ -550,9 +619,9 @@ public sealed class ChatMinigameService : IDisposable
         return result;
     }
 
-    private static string JackpotText(CasinoApplyResult result) =>
+    private string JackpotText(CasinoApplyResult result) =>
         result.JackpotWon > 0
-            ? $" · JACKPOT! +{result.JackpotWon} Punkte!"
+            ? $" · JACKPOT! +{FormatCurrency(result.JackpotWon)}!"
             : "";
 
     private async Task<bool> TryPassiveCooldownAsync(
@@ -617,6 +686,8 @@ public sealed class ChatMinigameService : IDisposable
             return;
         }
 
+        if (SkipBlacklisted(user.Login, user.DisplayName)) return;
+
         int newBalance;
         switch (action)
         {
@@ -655,7 +726,7 @@ public sealed class ChatMinigameService : IDisposable
             $"Minigame-Admin: {message.UserName} führt {action} " +
             $"für {user.DisplayName} mit {amount} aus. Neuer Stand: {newBalance}.");
         await TrySendChatAsync(
-            $"@{user.DisplayName} hat jetzt {newBalance} Punkte.",
+            $"@{user.DisplayName} hat jetzt {FormatCurrency(newBalance)}.",
             cancellationToken);
         DataChanged?.Invoke();
     }
@@ -665,6 +736,7 @@ public sealed class ChatMinigameService : IDisposable
         string[] parts,
         CancellationToken cancellationToken)
     {
+        if (SkipBlacklisted(message.UserName)) return;
         if (!await TryEnterCooldownAsync(
                 message.UserId, _giveCooldowns,
                 _config.PointsCommandCooldownSeconds, cancellationToken))
@@ -684,7 +756,7 @@ public sealed class ChatMinigameService : IDisposable
                 amountForAll <= 0)
             {
                 await TrySendChatAsync(
-                    $"@{message.UserName}, nutze !give all <punkte>.",
+                    $"@{message.UserName}, nutze !give all <betrag>.",
                     cancellationToken);
                 return;
             }
@@ -694,7 +766,8 @@ public sealed class ChatMinigameService : IDisposable
             var recipients = chatters
                 .Where(user =>
                     !user.Id.Equals(_broadcasterId, StringComparison.Ordinal) &&
-                    !user.Id.Equals(_chatUserId, StringComparison.Ordinal))
+                    !user.Id.Equals(_chatUserId, StringComparison.Ordinal) &&
+                    !IsPointsBlacklisted(user.Login, user.DisplayName))
                 .Select(user => (user.Id, user.DisplayName))
                 .ToArray();
             var recipientCount = await _points.AddPointsToUsersAsync(
@@ -711,10 +784,10 @@ public sealed class ChatMinigameService : IDisposable
 
             Console.WriteLine(
                 $"Minigame-Admin: {message.UserName} vergibt jeweils " +
-                $"{amountForAll} Punkte an {recipientCount} Chatnutzer.");
+                $"{FormatCurrency(amountForAll)} an {recipientCount} Chatnutzer.");
             await TrySendChatAsync(
                 $"Allen {recipientCount} erfassten Chatnutzern wurden jeweils " +
-                $"{amountForAll:N0} Punkte gutgeschrieben.",
+                $"{FormatCurrency(amountForAll)} gutgeschrieben.",
                 cancellationToken);
             DataChanged?.Invoke();
             return;
@@ -724,7 +797,7 @@ public sealed class ChatMinigameService : IDisposable
             !int.TryParse(parts[2], out var amount) || amount <= 0)
         {
             await TrySendChatAsync(
-                $"@{message.UserName}, nutze !give @name <punkte>.",
+                $"@{message.UserName}, nutze !give @name <betrag>.",
                 cancellationToken);
             return;
         }
@@ -738,6 +811,8 @@ public sealed class ChatMinigameService : IDisposable
                 cancellationToken);
             return;
         }
+
+        if (SkipBlacklisted(recipient.Login, recipient.DisplayName)) return;
 
         var result = await _points.TransferPointsAsync(
             message.UserId, message.UserName,
@@ -753,11 +828,11 @@ public sealed class ChatMinigameService : IDisposable
 
         Console.WriteLine(
             $"Minigame-Geschenk: {message.UserName} schenkt " +
-            $"{recipient.DisplayName} {amount} Punkte. " +
+            $"{recipient.DisplayName} {FormatCurrency(amount)}. " +
             $"Neue Stände: {result.SenderBalance}/{result.RecipientBalance}.");
         await TrySendChatAsync(
             $"@{message.UserName} schenkt @{recipient.DisplayName} " +
-            $"{amount} Punkte! Neuer Stand: {result.SenderBalance}.",
+            $"{FormatCurrency(amount)}! Neuer Stand: {FormatCurrency(result.SenderBalance)}.",
             cancellationToken);
         DataChanged?.Invoke();
     }
@@ -782,7 +857,7 @@ public sealed class ChatMinigameService : IDisposable
             !int.TryParse(parts[2], out var amount) || amount <= 0)
         {
             await TrySendChatAsync(
-                $"@{message.UserName}, nutze !addpoints @name <punkte>.",
+                $"@{message.UserName}, nutze !addpoints @name <betrag>.",
                 cancellationToken);
             return;
         }
@@ -797,15 +872,17 @@ public sealed class ChatMinigameService : IDisposable
             return;
         }
 
+        if (SkipBlacklisted(user.Login, user.DisplayName)) return;
+
         var newBalance = await _points.AddPointsAsync(
             user.Id, user.DisplayName, amount, _config.MinimumPoints,
             cancellationToken, MaximumPoints);
         Console.WriteLine(
-            $"Minigame-Admin: {message.UserName} erzeugt {amount} Punkte " +
+            $"Minigame-Admin: {message.UserName} erzeugt {FormatCurrency(amount)} " +
             $"für {user.DisplayName}. Neuer Stand: {newBalance}.");
         await TrySendChatAsync(
-            $"@{user.DisplayName} erhält {amount} Punkte und hat jetzt " +
-            $"{newBalance} Punkte.", cancellationToken);
+            $"@{user.DisplayName} erhält {FormatCurrency(amount)} und hat jetzt " +
+            $"{FormatCurrency(newBalance)}.", cancellationToken);
         DataChanged?.Invoke();
     }
 
