@@ -62,6 +62,7 @@ public class MinigameConfig
     public bool Enabled { get; set; } = false;
     public bool PointsEnabled { get; set; } = true;
     public int PointsPerInterval { get; set; } = 10;
+    public int LurkerPointsPerInterval { get; set; } = 5;
     public int IntervalMinutes { get; set; } = 5;
     public int MinimumPoints { get; set; } = 0;
     public int PointsCommandCooldownSeconds { get; set; } = 30;
