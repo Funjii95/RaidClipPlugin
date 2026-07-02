@@ -46,11 +46,16 @@ public sealed class SetupWizardForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ClientSize = new Size(640, 500);
-        BackColor = Color.FromArgb(245, 246, 250);
+        BackColor = Color.FromArgb(8, 8, 9);
+        ForeColor = Color.Gainsboro;
+        Icon = System.Drawing.Icon.ExtractAssociatedIcon(
+                   Application.ExecutablePath) ??
+               SystemIcons.Application;
         Font = new Font("Segoe UI", 10F);
         AutoScaleMode = AutoScaleMode.Dpi;
 
         BuildLayout();
+        ApplyDarkTheme(this);
     }
 
     private void BuildLayout()
@@ -60,7 +65,7 @@ public sealed class SetupWizardForm : Form
             Text = "Willkommen!",
             AutoSize = true,
             Font = new Font("Segoe UI", 22F, FontStyle.Bold),
-            ForeColor = Color.FromArgb(35, 39, 47)
+            ForeColor = Color.White
         };
 
         var introduction = new Label
@@ -71,7 +76,7 @@ public sealed class SetupWizardForm : Form
                 "erstelle dort eine Anwendung und trage die beiden Werte ein.",
             AutoSize = true,
             MaximumSize = new Size(560, 0),
-            ForeColor = Color.FromArgb(70, 74, 82)
+            ForeColor = Color.FromArgb(174, 174, 180)
         };
 
         var privacy = new Label
@@ -82,8 +87,8 @@ public sealed class SetupWizardForm : Form
                 "Sie werden weder in config.json noch in der EXE gespeichert.",
             AutoSize = true,
             MaximumSize = new Size(560, 0),
-            ForeColor = Color.FromArgb(45, 90, 65),
-            BackColor = Color.FromArgb(232, 246, 237),
+            ForeColor = Color.Gainsboro,
+            BackColor = Color.FromArgb(32, 18, 20),
             Padding = new Padding(12)
         };
 
@@ -97,10 +102,11 @@ public sealed class SetupWizardForm : Form
 
         var saveButton = new Button
         {
+            Name = "PrimaryButton",
             Text = "Speichern und fortfahren",
             AutoSize = true,
             Padding = new Padding(14, 7, 14, 7),
-            BackColor = Color.FromArgb(96, 55, 190),
+            BackColor = Color.FromArgb(92, 12, 15),
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat
         };
@@ -139,6 +145,48 @@ public sealed class SetupWizardForm : Form
         content.Controls.Add(saveButton);
 
         Controls.Add(content);
+    }
+
+    private static void ApplyDarkTheme(Control root)
+    {
+        if (root is Form or Panel)
+        {
+            root.BackColor = Color.FromArgb(8, 8, 9);
+        }
+
+        foreach (Control control in root.Controls)
+        {
+            switch (control)
+            {
+                case TextBox textBox:
+                    textBox.BackColor = Color.FromArgb(13, 13, 14);
+                    textBox.ForeColor = Color.Gainsboro;
+                    textBox.BorderStyle = BorderStyle.FixedSingle;
+                    break;
+                case Button button:
+                    button.BackColor = button.Name == "PrimaryButton"
+                        ? Color.FromArgb(92, 12, 15)
+                        : Color.FromArgb(22, 22, 24);
+                    button.ForeColor = Color.White;
+                    button.FlatStyle = FlatStyle.Flat;
+                    button.FlatAppearance.BorderColor =
+                        Color.FromArgb(222, 24, 30);
+                    button.FlatAppearance.BorderSize = 1;
+                    break;
+                case CheckBox checkBox:
+                    checkBox.ForeColor = Color.Gainsboro;
+                    checkBox.BackColor = Color.Transparent;
+                    checkBox.FlatStyle = FlatStyle.Flat;
+                    break;
+                case Label label when label.ForeColor == Color.Empty ||
+                                      label.ForeColor == SystemColors.ControlText:
+                    label.ForeColor = Color.Gainsboro;
+                    label.BackColor = Color.Transparent;
+                    break;
+            }
+
+            ApplyDarkTheme(control);
+        }
     }
 
     private static Control CreateField(string labelText, Control editor)
