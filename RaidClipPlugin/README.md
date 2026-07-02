@@ -1,4 +1,4 @@
-# RaidClipPlugin 1.2.7
+# RaidClipPlugin 1.2.8
 
 RaidClipPlugin erkennt eingehende Twitch-Raids und spielt automatisch einen zufälligen Clip des raidenden Kanals in einer OBS-Browserquelle ab.
 
@@ -48,15 +48,16 @@ Der Wortfilter ist standardmäßig deaktiviert. Bei Aktivierung löscht er nur d
 Das optionale Modul läuft unabhängig von Raid-Clips, OBS und Moderation. Seine sieben Reiter trennen Übersicht, Punktequellen, Commands, Casino-Spiele, Rangliste, Historie und Limits.
 
 - Gemeinsame, dauerhaft gespeicherte Punkte für alle Spiele
-- Passive Punkte durch Watchtime, Chat, Follow, Sub, Raid und Channel Rewards
-- Commands `!punkte`, `!give @name <punkte>`, `!daily`, `!top`, `!rang` und `!profil`
+- Anwesenheitspunkte für aktive und stille Chatnutzer; Lurker-Satz frei konfigurierbar
+- Passive Punkte durch Chat, Follow, Sub, Raid und Channel Rewards
+- Commands `!punkte`, `!give @name <punkte>`, `!lurk`, `!unlurk`, `!daily`, `!top`, `!rang` und `!profil`
 - Casino-Spiele `!gamble <einsatz|all>`, `!coinflip` und `!slots`, jeweils separat abschaltbar
 - Optionaler, dauerhaft gespeicherter Jackpot
 - Konfigurierbare Konto-, Spiele-, Verlust- und Gewinnlimits
 - Live-Rangliste, Spielhistorie sowie JSON-Export und sicherer Import mit Backup
-- Admin-Commands `!punkte add/remove/set <user> <betrag>` und `!addpoints @name <punkte>` für Broadcaster und Mods
+- Admin-Commands `!punkte add/remove/set <user> <betrag>`, `!addpoints @name <punkte>` und `!give all <punkte>` für Broadcaster und Mods
 
-„Aktiv“ bedeutet bei Watchtime-Punkten, dass der Nutzer im laufenden Intervall mindestens eine Chatnachricht geschrieben hat. Der Streamer selbst erhält keine automatischen Watchtime-Punkte. Beim ersten Start nach dem Update fordert Twitch die zusätzlichen Rechte für Follow-, Sub- und Channel-Reward-Ereignisse an.
+Aktive Zuschauer erhalten den normalen Anwesenheitssatz. Stille Chatnutzer und Nutzer mit `!lurk` erhalten den konfigurierbaren Lurker-Satz; `!unlurk` stellt den normalen Satz wieder her. Der Streamer und der Bot erhalten keine automatischen Anwesenheitspunkte. Beim ersten Start nach dem Update fordert Twitch die zusätzlichen Rechte für Follow-, Sub- und Channel-Reward-Ereignisse an.
 
 ## EXE erstellen
 
@@ -66,7 +67,7 @@ Den Ordner entpacken und `EXE_ERSTELLEN.cmd` doppelt anklicken. Die fertige App 
 
 1. Einmalig [Inno Setup 6](https://jrsoftware.org/isdl.php) installieren.
 2. `BUILD_INSTALLER.bat` doppelt anklicken.
-3. Der fertige Installer liegt anschließend unter `installer-output/RaidClipPlugin-Setup-1.2.7.exe`.
+3. Der fertige Installer liegt anschließend unter `installer-output/RaidClipPlugin-Setup-1.2.8.exe`.
 
 Der Installer arbeitet ohne Administratorrechte, enthält die benötigte .NET-Laufzeit, legt einen Startmenü-Eintrag an und bietet optional eine Desktop-Verknüpfung.
 
@@ -84,7 +85,7 @@ Beim Installieren wird das ZIP oder die EXE heruntergeladen und über SHA-256 ge
 
 ### GitHub Release veröffentlichen
 
-1. `BUILD_INSTALLER.bat` ausführen. Dadurch entstehen der normale Installer und `RaidClipPlugin-Update-1.2.7.zip`.
+1. `BUILD_INSTALLER.bat` ausführen. Dadurch entstehen der normale Installer und `RaidClipPlugin-Update-1.2.8.zip`.
 2. Ein GitHub Release erstellen und das Update-ZIP hochladen.
 3. `UPDATE_DATEI_ERSTELLEN.cmd` starten und die endgültige GitHub-Downloadadresse des ZIPs eingeben.
 4. Die erzeugte `update.json` ebenfalls als Release-Asset hochladen.
