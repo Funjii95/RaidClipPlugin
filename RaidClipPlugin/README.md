@@ -1,4 +1,4 @@
-# RaidClipPlugin 1.4.1
+# RaidClipPlugin 1.4.2
 
 RaidClipPlugin erkennt eingehende Twitch-Raids und spielt automatisch einen zufälligen Clip des raidenden Kanals in einer OBS-Browserquelle ab.
 
@@ -68,7 +68,7 @@ Den Ordner entpacken und `EXE_ERSTELLEN.cmd` doppelt anklicken. Die fertige App 
 
 1. Einmalig [Inno Setup 6](https://jrsoftware.org/isdl.php) installieren.
 2. `BUILD_INSTALLER.bat` doppelt anklicken.
-3. Der fertige Installer liegt anschließend unter `installer-output/RaidClipPlugin-Setup-1.4.1.exe`.
+3. Der fertige Installer liegt anschließend unter `installer-output/RaidClipPlugin-Setup-1.4.2.exe`.
 
 Der Installer arbeitet ohne Administratorrechte, enthält die benötigte .NET-Laufzeit, legt einen Startmenü-Eintrag an und bietet optional eine Desktop-Verknüpfung.
 
@@ -86,7 +86,7 @@ Beim Installieren wird das ZIP oder die EXE heruntergeladen und über SHA-256 ge
 
 ### GitHub Release veröffentlichen
 
-1. `BUILD_INSTALLER.bat` ausführen. Dadurch entstehen der normale Installer und `RaidClipPlugin-Update-1.4.1.zip`.
+1. `BUILD_INSTALLER.bat` ausführen. Dadurch entstehen der normale Installer und `RaidClipPlugin-Update-1.4.2.zip`.
 2. Ein GitHub Release erstellen und das Update-ZIP hochladen.
 3. `UPDATE_DATEI_ERSTELLEN.cmd` starten und die endgültige GitHub-Downloadadresse des ZIPs eingeben.
 4. Die erzeugte `update.json` ebenfalls als Release-Asset hochladen.
