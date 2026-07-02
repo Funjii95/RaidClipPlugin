@@ -301,6 +301,25 @@ public sealed class ConfigurationService
             .ToList();
         config.Minigame.SlotSymbols =
             (config.Minigame.SlotSymbols ?? "").Trim();
+        config.Minigame.CurrencySingular =
+            (config.Minigame.CurrencySingular ?? "").Trim();
+        config.Minigame.CurrencyPlural =
+            (config.Minigame.CurrencyPlural ?? "").Trim();
+        config.Minigame.CustomPointsCommand =
+            (config.Minigame.CustomPointsCommand ?? "").Trim().ToLowerInvariant();
+        if (config.Minigame.CustomPointsCommand.Length > 0 &&
+            !config.Minigame.CustomPointsCommand.StartsWith('!'))
+        {
+            config.Minigame.CustomPointsCommand =
+                "!" + config.Minigame.CustomPointsCommand;
+        }
+        config.Minigame.PointsBlacklist =
+            (config.Minigame.PointsBlacklist ?? new List<string>())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim().TrimStart('@').ToLowerInvariant())
+            .Where(name => name.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
         config.Minigame.GambleRanges =
             (config.Minigame.GambleRanges is { Count: > 0 }
                 ? config.Minigame.GambleRanges
@@ -409,6 +428,38 @@ public sealed class ConfigurationService
 
     public static void ValidateMinigameSettings(MinigameConfig config)
     {
+        if (string.IsNullOrWhiteSpace(config.CurrencySingular) ||
+            string.IsNullOrWhiteSpace(config.CurrencyPlural) ||
+            config.CurrencySingular.Length > 30 ||
+            config.CurrencyPlural.Length > 30)
+            throw new InvalidOperationException(
+                "Die Währungsnamen dürfen nicht leer und höchstens 30 Zeichen lang sein.");
+        if (!config.PointsCommandPunkteEnabled &&
+            !config.PointsCommandPointsEnabled &&
+            !config.PointsCommandPerlenEnabled &&
+            string.IsNullOrWhiteSpace(config.CustomPointsCommand))
+            throw new InvalidOperationException(
+                "Bitte mindestens einen Command für die Punkteabfrage aktivieren.");
+        if (!string.IsNullOrWhiteSpace(config.CustomPointsCommand))
+        {
+            if (!System.Text.RegularExpressions.Regex.IsMatch(
+                    config.CustomPointsCommand,
+                    "^![a-z0-9_-]{1,29}$",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                throw new InvalidOperationException(
+                    "Der eigene Punkte-Command darf nur Buchstaben, Zahlen, Bindestrich und Unterstrich enthalten.");
+
+            var reservedCommands = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase)
+            {
+                "!punkte", "!points", "!perlen", "!daily", "!top", "!rang",
+                "!profil", "!coinflip", "!slots", "!gamble", "!give",
+                "!addpoints", "!lurk", "!unlurk"
+            };
+            if (reservedCommands.Contains(config.CustomPointsCommand))
+                throw new InvalidOperationException(
+                    $"Der Command {config.CustomPointsCommand} wird bereits verwendet.");
+        }
         if (config.PointsPerInterval is < 0 or > 1_000_000)
             throw new InvalidOperationException(
                 "Punkte pro Intervall müssen zwischen 0 und 1000000 liegen.");
