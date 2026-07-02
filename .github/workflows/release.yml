@@ -1,6 +1,7 @@
 name: Windows Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*"
@@ -33,25 +34,33 @@ jobs:
           if ($version -ne $tagVersion) { throw "Tag $tagVersion stimmt nicht mit Projektversion $version überein." }
           "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Unit-Tests ausführen
+        shell: pwsh
+        run: dotnet test "Tests\RaidClipPlugin.Tests.csproj" -c Release
+
       - name: Windows-App erstellen
         shell: pwsh
         run: dotnet publish "RaidClipPlugin.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o "publish"
 
       - name: Update-ZIP erstellen
+        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force "installer-output" | Out-Null
           Compress-Archive -Path "publish\*" -DestinationPath "installer-output\RaidClipPlugin-Update-$env:APP_VERSION.zip" -Force
 
       - name: Inno Setup installieren
+        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: choco install innosetup -y --no-progress
 
       - name: Windows-Installer erstellen
+        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "Installer\RaidClipPlugin.iss"'
 
       - name: update.json erzeugen
+        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: |
           $zipName = "RaidClipPlugin-Update-$env:APP_VERSION.zip"
@@ -67,6 +76,7 @@ jobs:
           $manifest | ConvertTo-Json | Set-Content "installer-output\update.json" -Encoding UTF8
 
       - name: GitHub Release veröffentlichen
+        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
