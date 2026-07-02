@@ -8,6 +8,7 @@ public class AppConfig
     public ChatConfig Chat { get; set; } = new();
     public ModerationConfig Moderation { get; set; } = new();
     public MinigameConfig Minigame { get; set; } = new();
+    public MusicRequestConfig MusicRequests { get; set; } = new();
     public UpdateConfig Update { get; set; } = new();
 }
 
