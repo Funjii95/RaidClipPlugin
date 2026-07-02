@@ -59,7 +59,7 @@ jobs:
       - name: Windows-Installer erstellen
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
-        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "Installer\RaidClipPlugin.iss"'
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$env:APP_VERSION" "Installer\RaidClipPlugin.iss"'
 
       - name: update.json erzeugen
         if: startsWith(github.ref, 'refs/tags/v')
