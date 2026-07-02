@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+- Minigame-Chat startet wieder zuverlässig bei gleichzeitig aktiven Musikwünschen
+- Musikwünsche und passive Minigame-Ereignisse teilen sich eine EventSub-Verbindung
+- Chat-Verbindung wird beim Start priorisiert
+
 ## 1.4.1
 
 - Neuer vollständiger Stream-Start-Check mit 18 unabhängigen Prüfungen
