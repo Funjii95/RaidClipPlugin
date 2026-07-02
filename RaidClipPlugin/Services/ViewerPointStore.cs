@@ -176,6 +176,100 @@ public sealed class ViewerPointStore
         }
     }
 
+    public async Task<int> AddPointsToUsersAsync(
+        IEnumerable<(string UserId, string DisplayName)> users,
+        int amount,
+        int minimumPoints,
+        int maximumPoints,
+        CancellationToken cancellationToken)
+    {
+        if (amount <= 0)
+        {
+            return 0;
+        }
+
+        var recipients = users
+            .Where(user => !string.IsNullOrWhiteSpace(user.UserId))
+            .GroupBy(user => user.UserId, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToArray();
+        if (recipients.Length == 0)
+        {
+            return 0;
+        }
+
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var ceiling = Math.Max(floor, maximumPoints);
+            foreach (var recipient in recipients)
+            {
+                var entry = GetOrCreateEntry(
+                    recipient.UserId, recipient.DisplayName, floor);
+                entry.Points = (int)Math.Clamp(
+                    (long)entry.Points + amount, floor, ceiling);
+                entry.DisplayName = recipient.DisplayName;
+                entry.UpdatedAt = DateTimeOffset.Now;
+            }
+
+            await SaveAsync(cancellationToken);
+            return recipients.Length;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task<int> AwardAttendanceAsync(
+        IEnumerable<(string UserId, string DisplayName, int Points)> awards,
+        int minutes,
+        int minimumPoints,
+        int maximumPoints,
+        CancellationToken cancellationToken)
+    {
+        var recipients = awards
+            .Where(award => !string.IsNullOrWhiteSpace(award.UserId))
+            .GroupBy(award => award.UserId, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToArray();
+        if (recipients.Length == 0)
+        {
+            return 0;
+        }
+
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var ceiling = Math.Max(floor, maximumPoints);
+            foreach (var recipient in recipients)
+            {
+                var entry = GetOrCreateEntry(
+                    recipient.UserId, recipient.DisplayName, floor);
+                entry.WatchMinutes = (int)Math.Min(
+                    int.MaxValue,
+                    (long)entry.WatchMinutes + Math.Max(0, minutes));
+                entry.Points = (int)Math.Clamp(
+                    (long)entry.Points + Math.Max(0, recipient.Points),
+                    floor,
+                    ceiling);
+                entry.DisplayName = recipient.DisplayName;
+                entry.UpdatedAt = DateTimeOffset.Now;
+            }
+
+            await SaveAsync(cancellationToken);
+            return recipients.Length;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
     public async Task<GambleBalanceResult> ApplyGambleAsync(
         string userId,
         string displayName,
@@ -338,9 +432,16 @@ public sealed class ViewerPointStore
                 ? Math.Max(_jackpot, jackpotStart)
                 : 0;
             if (dailyWin > 0 &&
-                entry.DailyWin + win + jackpotCandidate > dailyWin)
+                (long)entry.DailyWin + win > dailyWin)
                 return new CasinoApplyResult(false,
                     "Tägliches Gewinnlimit erreicht", entry.Points, 0);
+
+            var totalPayout = (long)payout + jackpotCandidate;
+            var projectedBalance = (long)entry.Points - stake + totalPayout;
+            if (projectedBalance > int.MaxValue)
+                return new CasinoApplyResult(false,
+                    "Der Jackpot überschreitet das technische Punktelimit",
+                    entry.Points, 0);
 
             var jackpotWon = 0;
             if (jackpotHit)
@@ -352,12 +453,16 @@ public sealed class ViewerPointStore
             else if (loss > 0)
                 _jackpot = checked(Math.Max(_jackpot, jackpotStart) + jackpotContribution);
 
-            entry.Points = Math.Clamp(checked(entry.Points - stake + payout),
-                minimum, maximum > 0 ? maximum : int.MaxValue);
+            var balanceMaximum = jackpotHit
+                ? int.MaxValue
+                : maximum > 0 ? maximum : int.MaxValue;
+            entry.Points = (int)Math.Clamp(
+                projectedBalance, minimum, balanceMaximum);
             entry.GamesPlayed++;
             entry.DailyGambles++;
             entry.DailyLoss = checked(entry.DailyLoss + loss);
-            entry.DailyWin = checked(entry.DailyWin + win + jackpotWon);
+            entry.DailyWin = (int)Math.Min(
+                int.MaxValue, (long)entry.DailyWin + win + jackpotWon);
             if (payout > stake) entry.Wins++;
             else if (payout < stake) entry.Losses++;
             entry.BiggestWin = Math.Max(entry.BiggestWin, payout);
