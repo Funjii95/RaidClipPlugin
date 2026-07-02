@@ -491,6 +491,7 @@ public sealed partial class MainForm
 
     private async Task ConnectSpotifyAsync()
     {
+        _spotifyConnectButton.Enabled = false;
         try
         {
             var config = ReadSettingsFromControls();
@@ -506,6 +507,10 @@ public sealed partial class MainForm
         {
             SetSpotifyFailureStatus(exception);
             AppendLog("Spotify-Anmeldung fehlgeschlagen: " + exception.Message);
+        }
+        finally
+        {
+            _spotifyConnectButton.Enabled = true;
         }
     }
 
