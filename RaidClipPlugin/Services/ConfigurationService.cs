@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using System.Net;
 using RaidClipPlugin.Config;
 using System.Text.Json;
 
@@ -100,7 +101,8 @@ public sealed class ConfigurationService
             GambleRanges = config.Minigame.GambleRanges
                 .Select(CloneRange)
                 .ToList(),
-            Minigame = config.Minigame
+            Minigame = config.Minigame,
+            MusicRequests = config.MusicRequests
         };
 
         File.WriteAllText(
@@ -269,6 +271,8 @@ public sealed class ConfigurationService
                     .ToList();
             if (settings.Minigame is not null)
                 config.Minigame = settings.Minigame;
+            if (settings.MusicRequests is not null)
+                config.MusicRequests = settings.MusicRequests;
         }
         catch (Exception exception)
         {
@@ -320,6 +324,7 @@ public sealed class ConfigurationService
             .Where(name => name.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+        NormalizeMusicRequests(config.MusicRequests);
         config.Minigame.GambleRanges =
             (config.Minigame.GambleRanges is { Count: > 0 }
                 ? config.Minigame.GambleRanges
@@ -417,6 +422,32 @@ public sealed class ConfigurationService
         }
 
         ValidateMinigameSettings(config.Minigame);
+        ValidateMusicRequestSettings(config.MusicRequests);
+        var pointCommands = new List<string>();
+        if (config.Minigame.PointsCommandPunkteEnabled) pointCommands.Add("!punkte");
+        if (config.Minigame.PointsCommandPointsEnabled) pointCommands.Add("!points");
+        if (config.Minigame.PointsCommandPerlenEnabled) pointCommands.Add("!perlen");
+        if (!string.IsNullOrWhiteSpace(config.Minigame.CustomPointsCommand))
+            pointCommands.Add(config.Minigame.CustomPointsCommand);
+        var musicCommands = new[]
+        {
+            (config.MusicRequests.ModeratorCommands.SongEnabled,
+                config.MusicRequests.ModeratorCommands.Song),
+            (config.MusicRequests.ModeratorCommands.SkipEnabled,
+                config.MusicRequests.ModeratorCommands.Skip),
+            (config.MusicRequests.ModeratorCommands.QueueEnabled,
+                config.MusicRequests.ModeratorCommands.Queue),
+            (config.MusicRequests.ModeratorCommands.RemoveEnabled,
+                config.MusicRequests.ModeratorCommands.Remove),
+            (config.MusicRequests.ModeratorCommands.PauseEnabled,
+                config.MusicRequests.ModeratorCommands.Pause),
+            (config.MusicRequests.ModeratorCommands.ResumeEnabled,
+                config.MusicRequests.ModeratorCommands.Resume)
+        }.Where(item => item.Item1).Select(item => item.Item2);
+        if (pointCommands.Intersect(musicCommands,
+                StringComparer.OrdinalIgnoreCase).Any())
+            throw new InvalidOperationException(
+                "Ein Musik-Command kollidiert mit einem Punkte-Command.");
 
         if (config.Chat.SendRaidMessage &&
             string.IsNullOrWhiteSpace(config.Chat.RaidMessageTemplate))
@@ -553,6 +584,119 @@ public sealed class ConfigurationService
                 "Gamble-Bereiche müssen bei 100 enden.");
     }
 
+    private static void NormalizeMusicRequests(MusicRequestConfig config)
+    {
+        config.ChatMessages ??= new MusicRequestChatMessages();
+        config.ModeratorCommands ??= new MusicModeratorCommands();
+        config.SpotifyClientId = (config.SpotifyClientId ?? "").Trim();
+        config.RedirectUri = (config.RedirectUri ?? "").Trim();
+        config.SelectedRewardId = (config.SelectedRewardId ?? "").Trim();
+        config.SelectedRewardName = (config.SelectedRewardName ?? "").Trim();
+        config.SelectedDeviceId = (config.SelectedDeviceId ?? "").Trim();
+        config.UserBlacklist = NormalizeList(config.UserBlacklist, true);
+        config.ArtistBlacklist = NormalizeList(config.ArtistBlacklist);
+        config.TrackBlacklist = NormalizeList(config.TrackBlacklist);
+        config.SongTitleBlacklist = NormalizeList(config.SongTitleBlacklist);
+        config.BlockedTitleTerms = NormalizeList(config.BlockedTitleTerms);
+        config.ModeratorCommands.Song = NormalizeCommand(config.ModeratorCommands.Song);
+        config.ModeratorCommands.Skip = NormalizeCommand(config.ModeratorCommands.Skip);
+        config.ModeratorCommands.Queue = NormalizeCommand(config.ModeratorCommands.Queue);
+        config.ModeratorCommands.Remove = NormalizeCommand(config.ModeratorCommands.Remove);
+        config.ModeratorCommands.Pause = NormalizeCommand(config.ModeratorCommands.Pause);
+        config.ModeratorCommands.Resume = NormalizeCommand(config.ModeratorCommands.Resume);
+    }
+
+    private static List<string> NormalizeList(
+        List<string>? values, bool twitchNames = false) =>
+        (values ?? new List<string>())
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .Select(value => twitchNames
+            ? value.Trim().TrimStart('@').ToLowerInvariant()
+            : value.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    private static string NormalizeCommand(string? command)
+    {
+        var normalized = (command ?? "").Trim().ToLowerInvariant();
+        return normalized.Length > 0 && !normalized.StartsWith('!')
+            ? "!" + normalized
+            : normalized;
+    }
+
+    public static void ValidateMusicRequestSettings(MusicRequestConfig config)
+    {
+        if (config.MaximumTrackDurationMinutes is < 1 or > 180)
+            throw new InvalidOperationException(
+                "Die maximale Songdauer muss zwischen 1 und 180 Minuten liegen.");
+        if (config.MaximumQueueLength is < 1 or > 500)
+            throw new InvalidOperationException(
+                "Die Musikwunsch-Warteschlange muss zwischen 1 und 500 Einträge erlauben.");
+        if (config.UserCooldownMinutes is < 0 or > 1440 ||
+            config.MaximumRequestsPerUser is < 1 or > 100)
+            throw new InvalidOperationException(
+                "Cooldown oder Nutzerlimit für Musikwünsche ist ungültig.");
+        if (config.Enabled && string.IsNullOrWhiteSpace(config.SpotifyClientId))
+            throw new InvalidOperationException(
+                "Bitte eine Spotify Client-ID eingeben.");
+        if (config.Enabled && string.IsNullOrWhiteSpace(config.SelectedRewardId))
+            throw new InvalidOperationException(
+                "Bitte eine Twitch-Musikwunsch-Belohnung auswählen oder ihre ID eintragen.");
+        if (!Uri.TryCreate(config.RedirectUri, UriKind.Absolute, out var redirect) ||
+            redirect.Scheme != Uri.UriSchemeHttp ||
+            !(redirect.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+              IPAddress.TryParse(redirect.Host, out var redirectAddress) &&
+              IPAddress.IsLoopback(redirectAddress)))
+            throw new InvalidOperationException(
+                "Der Spotify-Redirect muss eine lokale HTTP-Adresse sein.");
+
+        var messages = new[]
+        {
+            config.ChatMessages.Queued, config.ChatMessages.Playing,
+            config.ChatMessages.NotFound, config.ChatMessages.NoDevice,
+            config.ChatMessages.TooLong, config.ChatMessages.ExplicitBlocked,
+            config.ChatMessages.Cooldown, config.ChatMessages.QueueFull,
+            config.ChatMessages.Blacklisted, config.ChatMessages.InvalidInput
+        };
+        if (messages.Any(string.IsNullOrWhiteSpace))
+            throw new InvalidOperationException(
+                "Musikwunsch-Chattexte dürfen nicht leer sein.");
+        var enabledCommands = new[]
+        {
+            (config.ModeratorCommands.SongEnabled, config.ModeratorCommands.Song),
+            (config.ModeratorCommands.SkipEnabled, config.ModeratorCommands.Skip),
+            (config.ModeratorCommands.QueueEnabled, config.ModeratorCommands.Queue),
+            (config.ModeratorCommands.RemoveEnabled, config.ModeratorCommands.Remove),
+            (config.ModeratorCommands.PauseEnabled, config.ModeratorCommands.Pause),
+            (config.ModeratorCommands.ResumeEnabled, config.ModeratorCommands.Resume)
+        };
+        if (enabledCommands.Any(item => item.Item1 &&
+                string.IsNullOrWhiteSpace(item.Item2)))
+            throw new InvalidOperationException(
+                "Aktivierte Musik-Commands dürfen nicht leer sein.");
+
+        var commands = enabledCommands.Where(item => item.Item1)
+            .Select(item => item.Item2).ToArray();
+        if (commands.Any(command =>
+                !System.Text.RegularExpressions.Regex.IsMatch(
+                    command, "^![a-z0-9_-]{1,29}$",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase)) ||
+            commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
+            commands.Length)
+            throw new InvalidOperationException(
+                "Musik-Commands sind ungültig oder doppelt vergeben.");
+
+        var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "!punkte", "!points", "!perlen", "!daily", "!top", "!rang",
+            "!profil", "!coinflip", "!slots", "!gamble", "!give",
+            "!addpoints", "!lurk", "!unlurk"
+        };
+        if (commands.Any(reserved.Contains))
+            throw new InvalidOperationException(
+                "Ein Musik-Command kollidiert mit einem bestehenden Command.");
+    }
+
     private static GambleRangeConfig CloneRange(GambleRangeConfig range) =>
         new()
         {
@@ -598,5 +742,6 @@ public sealed class ConfigurationService
         public int? MaximumBet { get; set; }
         public List<GambleRangeConfig>? GambleRanges { get; set; }
         public MinigameConfig? Minigame { get; set; }
+        public MusicRequestConfig? MusicRequests { get; set; }
     }
 }
