@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 1.4.2
 
 - Minigame-Chat startet wieder zuverlässig bei gleichzeitig aktiven Musikwünschen
 - Musikwünsche und passive Minigame-Ereignisse teilen sich eine EventSub-Verbindung
