@@ -99,6 +99,83 @@ public sealed class ViewerPointStore
             userId, displayName, _ => amount,
             minimumPoints, maximumPoints, cancellationToken);
 
+    public async Task<PointTransferResult> TransferPointsAsync(
+        string senderId,
+        string senderDisplayName,
+        string recipientId,
+        string recipientDisplayName,
+        int amount,
+        int minimumPoints,
+        int maximumPoints,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(senderId) ||
+            string.IsNullOrWhiteSpace(recipientId))
+        {
+            throw new ArgumentException("Die Twitch-User-ID fehlt.");
+        }
+
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var ceiling = Math.Max(floor, maximumPoints);
+            var sender = GetOrCreateEntry(
+                senderId, senderDisplayName, floor);
+
+            if (senderId.Equals(recipientId, StringComparison.Ordinal))
+            {
+                return new PointTransferResult(false,
+                    "Du kannst dir nicht selbst Punkte schenken",
+                    sender.Points, sender.Points);
+            }
+
+            var recipientPoints = _entries!.TryGetValue(
+                recipientId, out var existingRecipient)
+                ? existingRecipient.Points
+                : floor;
+
+            if (amount <= 0)
+            {
+                return new PointTransferResult(false,
+                    "Der Betrag muss größer als 0 sein",
+                    sender.Points, recipientPoints);
+            }
+
+            if (sender.Points - amount < floor)
+            {
+                return new PointTransferResult(false,
+                    "Du hast nicht genug verfügbare Punkte",
+                    sender.Points, recipientPoints);
+            }
+
+            if (amount > ceiling - recipientPoints)
+            {
+                return new PointTransferResult(false,
+                    "Das Punktekonto des Empfängers würde das Maximum überschreiten",
+                    sender.Points, recipientPoints);
+            }
+
+            var recipient = existingRecipient ?? GetOrCreateEntry(
+                recipientId, recipientDisplayName, floor);
+            sender.Points = checked(sender.Points - amount);
+            recipient.Points = checked(recipient.Points + amount);
+            sender.DisplayName = senderDisplayName;
+            recipient.DisplayName = recipientDisplayName;
+            sender.UpdatedAt = DateTimeOffset.Now;
+            recipient.UpdatedAt = DateTimeOffset.Now;
+            await SaveAsync(cancellationToken);
+
+            return new PointTransferResult(true, "",
+                sender.Points, recipient.Points);
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
     public async Task<GambleBalanceResult> ApplyGambleAsync(
         string userId,
         string displayName,
