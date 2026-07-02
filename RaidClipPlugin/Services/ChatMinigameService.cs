@@ -8,11 +8,13 @@ public sealed class ChatMinigameService : IDisposable
 {
     private readonly string _broadcasterId;
     private readonly string _chatUserId;
-    private readonly MinigameConfig _config;
+    private MinigameConfig _config;
     private readonly TwitchService _twitch;
     private readonly ViewerPointStore _points;
     private readonly object _activityLock = new();
     private readonly Dictionary<string, string> _activeUsers =
+        new(StringComparer.Ordinal);
+    private readonly HashSet<string> _lurkingUsers =
         new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _cooldownLock = new(1, 1);
     private readonly Dictionary<string, DateTimeOffset> _pointsCooldowns =
@@ -52,6 +54,12 @@ public sealed class ChatMinigameService : IDisposable
         _points = points;
     }
 
+    public void UpdateConfig(MinigameConfig config)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        _config = config;
+    }
+
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         await RunPointAwardLoopAsync(cancellationToken);
@@ -63,6 +71,11 @@ public sealed class ChatMinigameService : IDisposable
     {
         try
         {
+            if (!_config.Enabled)
+            {
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(message.Id) ||
                 !_processedMessages.TryAdd(message.Id, 0))
             {
@@ -120,51 +133,81 @@ public sealed class ChatMinigameService : IDisposable
                     TimeSpan.FromMinutes(_config.IntervalMinutes),
                     cancellationToken);
 
-                if (!_config.PointsEnabled)
+                if (!_config.Enabled || !_config.PointsEnabled)
                 {
                     continue;
                 }
 
-                KeyValuePair<string, string>[] activeUsers;
+                var config = _config;
+                Dictionary<string, string> activeUsers;
+                HashSet<string> lurkingUsers;
                 lock (_activityLock)
                 {
-                    activeUsers = _activeUsers.ToArray();
+                    activeUsers = new Dictionary<string, string>(
+                        _activeUsers, StringComparer.Ordinal);
+                    lurkingUsers = new HashSet<string>(
+                        _lurkingUsers, StringComparer.Ordinal);
                     _activeUsers.Clear();
                 }
 
-                var awardedUsers = 0;
-                foreach (var user in activeUsers)
+                List<TwitchUser> chatters;
+                try
                 {
-                    try
-                    {
-                        await _points.AddWatchtimeAsync(
-                            user.Key, user.Value, _config.IntervalMinutes,
-                            _config.PointsPerInterval, _config.MinimumPoints,
-                            cancellationToken, MaximumPoints);
-                        awardedUsers++;
-                    }
-                    catch (OperationCanceledException)
-                        when (cancellationToken.IsCancellationRequested)
-                    {
-                        return;
-                    }
-                    catch (Exception exception)
-                    {
-                        Console.WriteLine(
-                            $"Punkte für {user.Value} konnten nicht gespeichert werden: " +
-                            exception.Message);
-                    }
+                    chatters = await _twitch.GetChattersAsync(
+                        _broadcasterId, _chatUserId, cancellationToken);
                 }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(
+                        "Twitch-Chatter konnten nicht geladen werden; " +
+                        "aktive Zuschauer werden als Ersatz verwendet: " +
+                        exception.Message);
+                    chatters = activeUsers.Select(user => new TwitchUser(
+                        user.Key, "", user.Value)).ToList();
+                }
+
+                var eligibleChatters = chatters
+                    .Where(user =>
+                        !user.Id.Equals(_broadcasterId, StringComparison.Ordinal) &&
+                        !user.Id.Equals(_chatUserId, StringComparison.Ordinal))
+                    .GroupBy(user => user.Id, StringComparer.Ordinal)
+                    .Select(group => group.First())
+                    .ToArray();
+                var awards = eligibleChatters.Select(user =>
+                {
+                    var isLurking = lurkingUsers.Contains(user.Id) ||
+                                    !activeUsers.ContainsKey(user.Id);
+                    return (
+                        UserId: user.Id,
+                        DisplayName: user.DisplayName,
+                        Points: isLurking
+                            ? config.LurkerPointsPerInterval
+                            : config.PointsPerInterval);
+                }).ToArray();
+
+                var awardedUsers = await _points.AwardAttendanceAsync(
+                    awards,
+                    config.IntervalMinutes,
+                    config.MinimumPoints,
+                    MaximumPoints,
+                    cancellationToken);
+                var activeCount = awards.Count(award =>
+                    award.Points == config.PointsPerInterval &&
+                    activeUsers.ContainsKey(award.UserId) &&
+                    !lurkingUsers.Contains(award.UserId));
+                var lurkerCount = awards.Length - activeCount;
 
                 if (awardedUsers > 0)
                 {
                     PointsAwarded?.Invoke(
                         awardedUsers,
-                        _config.PointsPerInterval);
+                        config.PointsPerInterval);
                     DataChanged?.Invoke();
                     Console.WriteLine(
-                        $"Minigame: {awardedUsers} aktive Zuschauer erhalten " +
-                        $"je {_config.PointsPerInterval} Punkte.");
+                        $"Minigame-Anwesenheit: {activeCount} aktive Zuschauer " +
+                        $"erhalten je {config.PointsPerInterval} Punkte; " +
+                        $"{lurkerCount} stille Zuschauer/Lurker erhalten je " +
+                        $"{config.LurkerPointsPerInterval} Punkte.");
                 }
             }
             catch (OperationCanceledException)
@@ -190,6 +233,28 @@ public sealed class ChatMinigameService : IDisposable
                 StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0) return;
             var command = parts[0].ToLowerInvariant();
+
+            if (command is "!lurk" or "!unlurk")
+            {
+                lock (_activityLock)
+                {
+                    if (command == "!lurk")
+                    {
+                        _lurkingUsers.Add(message.UserId);
+                    }
+                    else
+                    {
+                        _lurkingUsers.Remove(message.UserId);
+                    }
+                }
+
+                await TrySendChatAsync(
+                    command == "!lurk"
+                        ? $"@{message.UserName} ist jetzt im Lurk und erhält weiterhin Anwesenheitspunkte."
+                        : $"@{message.UserName} ist zurück und erhält wieder normale Anwesenheitspunkte.",
+                    cancellationToken);
+                return;
+            }
 
             if (command == "!daily")
             {
@@ -370,8 +435,24 @@ public sealed class ChatMinigameService : IDisposable
                 ? int.MaxValue
                 : (int)Math.Max(0, payoutValue);
             var gambleResult = await ApplyCasinoAsync(message, "Gamble", gambleStake,
-                gamblePayout, cancellationToken);
+                gamblePayout, cancellationToken, forceJackpot: roll == 100);
             if (!gambleResult.Success) return;
+            if (roll == 100 && gambleResult.JackpotWon > 0)
+            {
+                Console.WriteLine(
+                    $"JACKPOT: {message.UserName} gewinnt " +
+                    $"{gambleResult.JackpotWon:N0} Punkte; neuer Jackpot " +
+                    $"{_config.JackpotStartValue:N0}.");
+                await TrySendChatAsync(
+                    $"🎉 JACKPOT! {message.UserName} hat eine 100 gewürfelt " +
+                    $"und gewinnt den gesamten Jackpot von " +
+                    $"{gambleResult.JackpotWon:N0} Punkten! Der Jackpot wurde " +
+                    $"auf {_config.JackpotStartValue:N0} Punkte zurückgesetzt. " +
+                    $"Neuer Stand: {gambleResult.Balance:N0}.",
+                    cancellationToken);
+                return;
+            }
+
             var resultText = range.ChatText.Replace("{name}", message.UserName)
                 .Replace("{roll}", roll.ToString()).Replace("{stake}", gambleStake.ToString())
                 .Replace("{payout}", gamblePayout.ToString())
@@ -430,7 +511,7 @@ public sealed class ChatMinigameService : IDisposable
 
     private async Task<CasinoApplyResult> ApplyCasinoAsync(
         ChatMessage message, string game, int stake, int payout,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, bool forceJackpot = false)
     {
         var maximum = _config.MaximumAccountEnabled
             ? _config.MaximumAccountPoints : int.MaxValue;
@@ -446,8 +527,8 @@ public sealed class ChatMinigameService : IDisposable
                 _config.JackpotContributionPercent / 100m)
             : 0;
         var jackpotHit = _config.JackpotEnabled &&
-            Random.Shared.NextDouble() <
-            (double)(_config.JackpotChancePercent / 100m);
+            (forceJackpot || Random.Shared.NextDouble() <
+                (double)(_config.JackpotChancePercent / 100m));
 
         var result = await _points.ApplyCasinoAsync(
             message.UserId, message.UserName, game, stake, payout,
@@ -588,6 +669,54 @@ public sealed class ChatMinigameService : IDisposable
                 message.UserId, _giveCooldowns,
                 _config.PointsCommandCooldownSeconds, cancellationToken))
         {
+            return;
+        }
+
+        if (parts.Length == 3 &&
+            parts[1].Equals("all", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!message.IsBroadcaster && !message.IsModerator)
+            {
+                return;
+            }
+
+            if (!int.TryParse(parts[2], out var amountForAll) ||
+                amountForAll <= 0)
+            {
+                await TrySendChatAsync(
+                    $"@{message.UserName}, nutze !give all <punkte>.",
+                    cancellationToken);
+                return;
+            }
+
+            var chatters = await _twitch.GetChattersAsync(
+                _broadcasterId, _chatUserId, cancellationToken);
+            var recipients = chatters
+                .Where(user =>
+                    !user.Id.Equals(_broadcasterId, StringComparison.Ordinal) &&
+                    !user.Id.Equals(_chatUserId, StringComparison.Ordinal))
+                .Select(user => (user.Id, user.DisplayName))
+                .ToArray();
+            var recipientCount = await _points.AddPointsToUsersAsync(
+                recipients, amountForAll, _config.MinimumPoints,
+                MaximumPoints, cancellationToken);
+
+            if (recipientCount == 0)
+            {
+                await TrySendChatAsync(
+                    $"@{message.UserName}, aktuell wurden keine Chatnutzer erfasst.",
+                    cancellationToken);
+                return;
+            }
+
+            Console.WriteLine(
+                $"Minigame-Admin: {message.UserName} vergibt jeweils " +
+                $"{amountForAll} Punkte an {recipientCount} Chatnutzer.");
+            await TrySendChatAsync(
+                $"Allen {recipientCount} erfassten Chatnutzern wurden jeweils " +
+                $"{amountForAll:N0} Punkte gutgeschrieben.",
+                cancellationToken);
+            DataChanged?.Invoke();
             return;
         }
 
