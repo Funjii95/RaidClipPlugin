@@ -230,7 +230,7 @@ public sealed partial class MainForm : Form
 
     private readonly Label _versionLabel = new()
     {
-        Text = "Version 1.4.0\n🟢 Aktuell",
+        Text = "Version 1.4.1\n🟢 Aktuell",
         AutoSize = true,
         ForeColor = Color.ForestGreen,
         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
