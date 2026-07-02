@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.7
+
+- `!gamble all` setzt alle verfügbaren Punkte auf einen Wurf
+- `!give @name <punkte>` überträgt Punkte sicher zwischen Zuschauern
+- `!addpoints @name <punkte>` erzeugt als Broadcaster oder Mod neue Punkte
+
 ## 1.2.6
 
 - Modulares Minigame-System mit gemeinsamer Punkte-Datenbank
@@ -27,23 +33,6 @@
 - Raid Clip und Chat-Moderation sind vollständig getrennte GUI-Seiten
 - Eigene Einstellungen und Statusanzeige pro Modul
 - Übersichtlicheres Layout für den Live-Betrieb
-
-## 1.2.3
-
-- Eigenständiges, optionales Modul „Chat-Moderation“
-- Twitch-Chat über EventSub mitlesen und in einem eigenen GUI-Tab anzeigen
-- Timeout, Ban und Nachrichtenlöschung direkt pro Chatzeile
-- Optionaler Wortfilter, der Treffer sicherheitshalber nur löscht
-- Optionale Whitelist für Streamer, Moderatoren und VIPs
-- Moderationsfehler werden isoliert geloggt und blockieren keine Raid-Clips
-- Neue Twitch-Berechtigungen für Chat und Moderation
-
-## 1.2.2
-
-- Sicherer Einrichtungsassistent für Twitch-Zugangsdaten
-- OBS-Browserquelle auf Knopfdruck erstellen
-- GitHub-Auto-Update mit SHA256-Prüfung
-# Changelog
 
 ## 1.2.3
 
