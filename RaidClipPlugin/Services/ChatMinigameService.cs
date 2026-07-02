@@ -27,6 +27,7 @@ public sealed class ChatMinigameService : IDisposable
     private readonly Dictionary<string, DateTimeOffset> _profileCooldowns = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _coinflipCooldowns = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _slotsCooldowns = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, DateTimeOffset> _rouletteCooldowns = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _chatPointCooldowns = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, byte> _processedMessages =
         new(StringComparer.Ordinal);
@@ -131,16 +132,14 @@ public sealed class ChatMinigameService : IDisposable
             }
 
             var pointsBlacklisted = IsPointsBlacklisted(message.UserName);
-            if (_config.PointsEnabled && !message.IsBroadcaster &&
-                !pointsBlacklisted)
+            if (_config.PointsEnabled && !pointsBlacklisted)
             {
                 lock (_activityLock)
                 {
                     _activeUsers[message.UserId] = message.UserName;
                 }
             }
-            if (_config.ChatPointsEnabled && !message.IsBroadcaster &&
-                !pointsBlacklisted &&
+            if (_config.ChatPointsEnabled && !pointsBlacklisted &&
                 await TryPassiveCooldownAsync(message.UserId,
                     _config.ChatMessagePointsCooldownSeconds, cancellationToken))
             {
@@ -213,8 +212,8 @@ public sealed class ChatMinigameService : IDisposable
 
                 var eligibleChatters = chatters
                     .Where(user =>
-                        !user.Id.Equals(_broadcasterId, StringComparison.Ordinal) &&
-                        !user.Id.Equals(_chatUserId, StringComparison.Ordinal) &&
+                        (!user.Id.Equals(_chatUserId, StringComparison.Ordinal) ||
+                         user.Id.Equals(_broadcasterId, StringComparison.Ordinal)) &&
                         !IsPointsBlacklisted(user.Login, user.DisplayName))
                     .GroupBy(user => user.Id, StringComparer.Ordinal)
                     .Select(group => group.First())
@@ -458,6 +457,72 @@ public sealed class ChatMinigameService : IDisposable
                 return;
             }
 
+            if (command == "!roulette")
+            {
+                if (!_config.RouletteEnabled) return;
+                if (parts.Length != 3 ||
+                    !int.TryParse(parts[2], out var rouletteStake) ||
+                    !RouletteRules.TryParseBet(parts[1], out var rouletteBet))
+                {
+                    await TrySendChatAsync(
+                        $"@{message.UserName}, nutze !roulette " +
+                        "<rot|schwarz|gerade|ungerade|niedrig|hoch|0-36> <einsatz>.",
+                        cancellationToken);
+                    return;
+                }
+                if (!await TryEnterCooldownAsync(message.UserId,
+                    _rouletteCooldowns, _config.RouletteCooldownSeconds,
+                    cancellationToken)) return;
+                if (rouletteStake < _config.RouletteMinimumBet ||
+                    rouletteStake > _config.RouletteMaximumBet)
+                {
+                    await TrySendChatAsync(
+                        $"@{message.UserName}, der Roulette-Einsatz muss zwischen " +
+                        $"{FormatCurrency(_config.RouletteMinimumBet)} und " +
+                        $"{FormatCurrency(_config.RouletteMaximumBet)} liegen.",
+                        cancellationToken);
+                    return;
+                }
+
+                var rouletteNumber = Random.Shared.Next(0, 37);
+                var rouletteWon = RouletteRules.IsWinner(
+                    rouletteBet, rouletteNumber);
+                var rouletteMultiplier = rouletteBet.Kind ==
+                    RouletteBetKind.Number
+                    ? _config.RouletteNumberMultiplier
+                    : _config.RouletteEvenMoneyMultiplier;
+                var roulettePayoutValue = rouletteWon
+                    ? Math.Floor(rouletteStake * rouletteMultiplier)
+                    : 0m;
+                var roulettePayout = roulettePayoutValue >= int.MaxValue
+                    ? int.MaxValue
+                    : (int)Math.Max(0, roulettePayoutValue);
+                var rouletteResult = await ApplyCasinoAsync(
+                    message, "Roulette", rouletteStake, roulettePayout,
+                    cancellationToken);
+                if (!rouletteResult.Success)
+                {
+                    await TrySendChatAsync(
+                        $"@{message.UserName}, {rouletteResult.Error}. " +
+                        $"Stand: {FormatCurrency(rouletteResult.Balance)}.",
+                        cancellationToken);
+                    return;
+                }
+
+                var rouletteOutcome = rouletteWon
+                    ? $"Tipp {rouletteBet.DisplayName} gewinnt · Auszahlung " +
+                      FormatCurrency(roulettePayout)
+                    : $"Tipp {rouletteBet.DisplayName} verliert";
+                await TrySendChatAsync(
+                    $"@{message.UserName}: Die Kugel fällt auf {rouletteNumber} " +
+                    $"{RouletteRules.ColorName(rouletteNumber)}. " +
+                    $"{rouletteOutcome} · Stand " +
+                    $"{FormatCurrency(rouletteResult.Balance)}" +
+                    JackpotText(rouletteResult),
+                    cancellationToken);
+                return;
+            }
+
             if (command != "!gamble" || !_config.GambleEnabled) return;
             if (!await TryEnterCooldownAsync(message.UserId, _gambleCooldowns,
                 _config.GambleCooldownSeconds, cancellationToken)) return;
@@ -595,9 +660,7 @@ public sealed class ChatMinigameService : IDisposable
                 Math.Max(0, stake - payout) *
                 _config.JackpotContributionPercent / 100m)
             : 0;
-        var jackpotHit = _config.JackpotEnabled &&
-            (forceJackpot || Random.Shared.NextDouble() <
-                (double)(_config.JackpotChancePercent / 100m));
+        var jackpotHit = _config.JackpotEnabled && forceJackpot;
 
         var result = await _points.ApplyCasinoAsync(
             message.UserId, message.UserName, game, stake, payout,
