@@ -136,6 +136,58 @@ public sealed class TwitchService
         return clips[Random.Shared.Next(clips.Count)];
     }
 
+    public async Task<List<TwitchUser>> GetChattersAsync(
+        string broadcasterId,
+        string moderatorId,
+        CancellationToken cancellationToken)
+    {
+        var chatters = new Dictionary<string, TwitchUser>(
+            StringComparer.Ordinal);
+        var cursor = "";
+
+        do
+        {
+            var url =
+                "https://api.twitch.tv/helix/chat/chatters" +
+                $"?broadcaster_id={Uri.EscapeDataString(broadcasterId)}" +
+                $"&moderator_id={Uri.EscapeDataString(moderatorId)}" +
+                "&first=1000" +
+                (string.IsNullOrWhiteSpace(cursor)
+                    ? ""
+                    : $"&after={Uri.EscapeDataString(cursor)}");
+
+            using var response = await _http.GetAsync(
+                url, cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
+            using var document = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+
+            foreach (var item in document.RootElement
+                         .GetProperty("data").EnumerateArray())
+            {
+                var id = item.GetProperty("user_id").GetString() ?? "";
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    continue;
+                }
+
+                chatters[id] = new TwitchUser(
+                    id,
+                    item.GetProperty("user_login").GetString() ?? "",
+                    item.GetProperty("user_name").GetString() ?? "");
+            }
+
+            cursor = document.RootElement.TryGetProperty(
+                         "pagination", out var pagination) &&
+                     pagination.TryGetProperty("cursor", out var cursorValue)
+                ? cursorValue.GetString() ?? ""
+                : "";
+        }
+        while (!string.IsNullOrWhiteSpace(cursor));
+
+        return chatters.Values.ToList();
+    }
+
     public async Task SendChatMessageAsync(
         string broadcasterId,
         string senderId,
