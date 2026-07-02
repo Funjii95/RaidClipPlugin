@@ -412,6 +412,9 @@ public sealed class ConfigurationService
         if (config.PointsPerInterval is < 0 or > 1_000_000)
             throw new InvalidOperationException(
                 "Punkte pro Intervall müssen zwischen 0 und 1000000 liegen.");
+        if (config.LurkerPointsPerInterval is < 0 or > 1_000_000)
+            throw new InvalidOperationException(
+                "Lurker-Punkte pro Intervall müssen zwischen 0 und 1000000 liegen.");
         if (config.IntervalMinutes is < 1 or > 1440)
             throw new InvalidOperationException(
                 "Das Punkteintervall muss zwischen 1 und 1440 Minuten liegen.");
