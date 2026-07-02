@@ -63,6 +63,19 @@ public class MinigameConfig
     public bool PointsEnabled { get; set; } = true;
     public int PointsPerInterval { get; set; } = 10;
     public int LurkerPointsPerInterval { get; set; } = 5;
+    public string CurrencySingular { get; set; } = "Punkt";
+    public string CurrencyPlural { get; set; } = "Punkte";
+    public bool PointsCommandPunkteEnabled { get; set; } = true;
+    public bool PointsCommandPointsEnabled { get; set; } = false;
+    public bool PointsCommandPerlenEnabled { get; set; } = false;
+    public string CustomPointsCommand { get; set; } = "";
+    public List<string> PointsBlacklist { get; set; } = new()
+    {
+        "nightbot",
+        "streamelements",
+        "streamlabs",
+        "moobot"
+    };
     public int IntervalMinutes { get; set; } = 5;
     public int MinimumPoints { get; set; } = 0;
     public int PointsCommandCooldownSeconds { get; set; } = 30;
