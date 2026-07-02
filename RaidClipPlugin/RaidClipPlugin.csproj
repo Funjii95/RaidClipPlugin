@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <None Remove="Config\config.template.json" />
+    <Compile Remove="Tests\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
