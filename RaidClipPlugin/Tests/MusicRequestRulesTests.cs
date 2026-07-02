@@ -12,6 +12,8 @@ public sealed class MusicRequestRulesTests
     [Theory]
     [InlineData("https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh")]
     [InlineData("https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh?si=test")]
+    [InlineData("https://open.spotify.com/intl-de/track/4iV5W9uYEdYUVa79Axb7Rh?si=test")]
+    [InlineData("https://open.spotify.com/embed/track/4iV5W9uYEdYUVa79Axb7Rh")]
     [InlineData("spotify:track:4iV5W9uYEdYUVa79Axb7Rh")]
     public void ValidTrackInputIsParsed(string input)
     {
