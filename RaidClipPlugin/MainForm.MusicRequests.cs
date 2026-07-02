@@ -800,7 +800,7 @@ public sealed partial class MainForm
         _musicRequests = new MusicRequestService(
             broadcaster.Id, session.UserId, config.MusicRequests,
             twitch, _spotify!, _musicStore);
-        _musicRequests.RequestUpdated += _ => _ = RefreshMusicGridAsync();
+        _musicRequests.RequestUpdated += entry => _ = RefreshMusicGridAsync();
         _musicRequestTask = _musicRequests.RunAsync(cancellationToken);
         _musicEventSub = new MusicRequestEventSubService(
             config.Twitch.ClientId, session.AccessToken, broadcaster.Id,
