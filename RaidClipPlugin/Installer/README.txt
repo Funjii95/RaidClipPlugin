@@ -1,4 +1,4 @@
-RAID CLIP PLUGIN – RELEASE 1.2.7
+RAID CLIP PLUGIN – RELEASE 1.2.8
 
 1. Inno Setup 6 installieren:
    https://jrsoftware.org/isdl.php
@@ -6,8 +6,8 @@ RAID CLIP PLUGIN – RELEASE 1.2.7
 2. BUILD_INSTALLER.bat doppelt anklicken.
 
 Danach liegen unter installer-output:
-- RaidClipPlugin-Setup-1.2.7.exe
-- RaidClipPlugin-Update-1.2.7.zip
+- RaidClipPlugin-Setup-1.2.8.exe
+- RaidClipPlugin-Update-1.2.8.zip
 
 GITHUB AUTO-UPDATE
 
