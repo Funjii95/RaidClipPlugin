@@ -4,7 +4,7 @@ using RaidClipPlugin.Services;
 
 namespace RaidClipPlugin;
 
-public sealed class MainForm : Form
+public sealed partial class MainForm : Form
 {
     private static readonly Color BackgroundColor = Color.FromArgb(8, 8, 9);
     private static readonly Color SidebarColor = Color.FromArgb(12, 12, 13);
@@ -664,8 +664,8 @@ public sealed class MainForm : Form
                    Application.ExecutablePath) ??
                SystemIcons.Application;
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(1120, 760);
-        Size = new Size(1500, 920);
+        MinimumSize = new Size(1280, 800);
+        Size = new Size(1600, 960);
         BackColor = BackgroundColor;
         ForeColor = TextColor;
         Font = new Font("Segoe UI", 10F);
@@ -673,6 +673,7 @@ public sealed class MainForm : Form
         DoubleBuffered = true;
 
         BuildLayout();
+        InitializeMusicRequestEvents();
 
         _startButton.Click += async (_, _) => await StartPluginAsync();
         _testButton.Click += async (_, _) => await PlayTestClipAsync();
@@ -766,15 +767,15 @@ public sealed class MainForm : Form
         return new Button
         {
             Text = $"{title}{Environment.NewLine}{subtitle}",
-            Width = 228,
-            Height = 76,
+            Width = 242,
+            Height = 88,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
             TextAlign = ContentAlignment.MiddleLeft,
             Font = new Font("Segoe UI", 10F, FontStyle.Bold),
             ForeColor = TextColor,
             BackColor = SidebarColor,
-            Padding = new Padding(18, 5, 8, 5),
+            Padding = new Padding(18, 8, 12, 8),
             Margin = new Padding(5, 5, 5, 2),
             Cursor = Cursors.Hand
         };
@@ -859,6 +860,12 @@ public sealed class MainForm : Form
                     textBox.BorderStyle = BorderStyle.FixedSingle;
                     break;
 
+                case ComboBox comboBox:
+                    comboBox.BackColor = InputColor;
+                    comboBox.ForeColor = TextColor;
+                    comboBox.FlatStyle = FlatStyle.Flat;
+                    break;
+
                 case NumericUpDown numeric:
                     numeric.BackColor = InputColor;
                     numeric.ForeColor = TextColor;
@@ -870,6 +877,14 @@ public sealed class MainForm : Form
                     checkBox.ForeColor = TextColor;
                     checkBox.FlatStyle = FlatStyle.Flat;
                     checkBox.AutoCheck = true;
+                    var checkTextSize = TextRenderer.MeasureText(
+                        checkBox.Text, checkBox.Font,
+                        new Size(int.MaxValue, int.MaxValue),
+                        TextFormatFlags.NoPadding);
+                    checkBox.MinimumSize = new Size(
+                        checkTextSize.Width + 40,
+                        Math.Max(26, checkTextSize.Height + 8));
+                    checkBox.Padding = new Padding(0, 0, 12, 0);
                     checkBox.Paint -= DrawDarkCheckBox;
                     checkBox.Paint += DrawDarkCheckBox;
                     break;
@@ -890,8 +905,10 @@ public sealed class MainForm : Form
                     tabs.BackColor = BackgroundColor;
                     tabs.ForeColor = TextColor;
                     tabs.DrawMode = TabDrawMode.OwnerDrawFixed;
-                    tabs.SizeMode = TabSizeMode.Fixed;
-                    tabs.ItemSize = new Size(150, 30);
+                    tabs.SizeMode = TabSizeMode.Normal;
+                    tabs.Padding = new Point(18, 7);
+                    tabs.ItemSize = new Size(0, 36);
+                    tabs.DrawItem -= DrawDarkTab;
                     tabs.DrawItem += DrawDarkTab;
                     break;
 
@@ -1000,7 +1017,7 @@ public sealed class MainForm : Form
         TextRenderer.DrawText(e.Graphics, checkBox.Text, checkBox.Font,
             textArea, checkBox.Enabled ? TextColor : MutedTextColor,
             TextFormatFlags.Left | TextFormatFlags.VerticalCenter |
-            TextFormatFlags.EndEllipsis);
+            TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding);
         if (checkBox.Focused)
             ControlPaint.DrawFocusRectangle(e.Graphics, textArea);
     }
@@ -1015,7 +1032,60 @@ public sealed class MainForm : Form
         button.FlatAppearance.BorderColor = BorderColor;
         button.FlatAppearance.MouseOverBackColor = AccentDarkColor;
         button.FlatAppearance.MouseDownBackColor = Color.FromArgb(125, 12, 17);
+        button.AutoEllipsis = false;
+        button.UseCompatibleTextRendering = false;
+        button.MinimumSize = new Size(
+            button.MinimumSize.Width, Math.Max(button.MinimumSize.Height, 40));
         button.Cursor = Cursors.Hand;
+        button.Paint -= DrawRaidClipButton;
+        button.Paint += DrawRaidClipButton;
+        button.Invalidate();
+    }
+
+    private static void DrawRaidClipButton(object? sender, PaintEventArgs e)
+    {
+        if (sender is not Button button) return;
+        var bounds = button.ClientRectangle;
+        var hovered = button.Enabled &&
+            bounds.Contains(button.PointToClient(Cursor.Position));
+        var pressed = hovered && button.Capture &&
+            Control.MouseButtons.HasFlag(MouseButtons.Left);
+        var background = !button.Enabled
+            ? Color.FromArgb(31, 31, 34)
+            : pressed
+                ? Color.FromArgb(125, 12, 17)
+                : hovered ? AccentDarkColor : button.BackColor;
+        using var backgroundBrush = new SolidBrush(background);
+        e.Graphics.FillRectangle(backgroundBrush, bounds);
+
+        if (button.FlatAppearance.BorderSize > 0)
+        {
+            using var borderPen = new Pen(
+                button.FlatAppearance.BorderColor,
+                button.FlatAppearance.BorderSize);
+            var border = Rectangle.Inflate(bounds, -1, -1);
+            e.Graphics.DrawRectangle(borderPen, border);
+        }
+
+        var isNavigation = button.Width >= 220 && button.Height >= 70;
+        var textBounds = Rectangle.FromLTRB(
+            button.Padding.Left,
+            button.Padding.Top,
+            Math.Max(button.Padding.Left, button.Width - button.Padding.Right),
+            Math.Max(button.Padding.Top, button.Height - button.Padding.Bottom));
+        var flags = TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding |
+                    TextFormatFlags.WordBreak |
+                    (isNavigation
+                        ? TextFormatFlags.Left | TextFormatFlags.VerticalCenter
+                        : TextFormatFlags.HorizontalCenter |
+                          TextFormatFlags.VerticalCenter);
+        TextRenderer.DrawText(e.Graphics, button.Text, button.Font,
+            textBounds,
+            button.Enabled ? button.ForeColor : Color.FromArgb(174, 174, 180),
+            flags);
+        if (button.Focused)
+            ControlPaint.DrawFocusRectangle(e.Graphics,
+                Rectangle.Inflate(textBounds, -2, -2));
     }
 
     private static void StylePrimaryButton(Button button)
@@ -1045,7 +1115,7 @@ public sealed class MainForm : Form
             selected ? Color.White : MutedTextColor,
             TextFormatFlags.HorizontalCenter |
             TextFormatFlags.VerticalCenter |
-            TextFormatFlags.EndEllipsis);
+            TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding);
 
         if (selected)
         {
@@ -1064,21 +1134,27 @@ public sealed class MainForm : Form
         var showRaid = section == "raid";
         var showModeration = section == "moderation";
         var showMinigame = section == "minigame";
+        var showMusic = section == "music";
 
         _raidPage.Visible = showRaid;
         _moderationPage.Visible = showModeration;
         _minigamePage.Visible = showMinigame;
+        _musicPage.Visible = showMusic;
 
         if (showModeration)
             _moderationPage.BringToFront();
         else if (showMinigame)
             _minigamePage.BringToFront();
+        else if (showMusic)
+            _musicPage.BringToFront();
         else
             _raidPage.BringToFront();
 
         SetNavigationTileState(_raidClipNavButton, showRaid);
         SetNavigationTileState(_moderationNavButton, showModeration);
         SetNavigationTileState(_minigameNavButton, showMinigame);
+        SetNavigationTileState(_musicNavButton, showMusic);
+        if (showMusic) _ = RefreshMusicGridAsync();
         if (showMinigame) _ = RefreshMinigameDashboardAsync();
     }
 
@@ -1342,7 +1418,7 @@ public sealed class MainForm : Form
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 76));
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
+        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 125));
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 220));
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         raidLayout.Controls.Add(headerRow, 0, 0);
@@ -1689,6 +1765,7 @@ public sealed class MainForm : Form
         minigameLayout.Controls.Add(minigameHint, 0, 1);
         minigameLayout.Controls.Add(_minigameSettingsGroup, 0, 2);
         _minigamePage.Controls.Add(minigameLayout);
+        BuildMusicRequestPage();
 
         var brand = new PictureBox
         {
@@ -1714,12 +1791,14 @@ public sealed class MainForm : Form
         navigation.Controls.Add(_raidClipNavButton);
         navigation.Controls.Add(_moderationNavButton);
         navigation.Controls.Add(_minigameNavButton);
+        navigation.Controls.Add(_musicNavButton);
 
         var contentHost = new Panel
         {
             Dock = DockStyle.Fill,
             BackColor = BackgroundColor
         };
+        contentHost.Controls.Add(_musicPage);
         contentHost.Controls.Add(_minigamePage);
         contentHost.Controls.Add(_moderationPage);
         contentHost.Controls.Add(_raidPage);
@@ -1732,7 +1811,7 @@ public sealed class MainForm : Form
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
-        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 252));
+        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 268));
         rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         rootLayout.Controls.Add(navigation, 0, 0);
         rootLayout.Controls.Add(contentHost, 1, 0);
@@ -1744,6 +1823,7 @@ public sealed class MainForm : Form
         StylePrimaryButton(_saveSettingsButton);
         StylePrimaryButton(_saveModerationSettingsButton);
         StylePrimaryButton(_saveMinigameSettingsButton);
+        StylePrimaryButton(_saveMusicSettingsButton);
         StylePrimaryButton(_updateButton);
         _resetPointsButton.BackColor = Color.FromArgb(72, 14, 17);
         _resetPointsButton.FlatAppearance.BorderColor = AccentColor;
@@ -1961,7 +2041,11 @@ public sealed class MainForm : Form
                 _playerIndicator,
                 "Player");
 
-            if (config.Moderation.Enabled || config.Minigame.Enabled)
+            await StartMusicRequestsAsync(
+                config, session, twitch, _broadcaster, cancellationToken);
+
+            if (config.Moderation.Enabled || config.Minigame.Enabled ||
+                config.MusicRequests.Enabled)
             {
                 _chatModeration = new ChatModerationService(
                     config.Twitch.ClientId,
@@ -1983,6 +2067,13 @@ public sealed class MainForm : Form
                 else
                 {
                     SetModerationStatus("Deaktiviert", InactiveColor);
+                }
+
+                if (config.MusicRequests.Enabled && _musicRequests is not null)
+                {
+                    _chatModeration.MessageReceived += message =>
+                        _musicRequests.ProcessModeratorCommandAsync(
+                            message, cancellationToken);
                 }
 
                 if (config.Minigame.Enabled)
@@ -2059,6 +2150,11 @@ public sealed class MainForm : Form
             {
                 SetMinigameStatus("Einstellungen ungültig", ErrorColor);
                 ShowSection("minigame");
+            }
+            else if (IsMusicConfigurationError(exception.Message))
+            {
+                SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
+                ShowSection("music");
             }
             await StopPluginAsync(keepErrorStatus: true);
         }
@@ -2810,7 +2906,9 @@ public sealed class MainForm : Form
             _eventSubTask,
             _chatModerationTask,
             _minigameTask,
-            _minigameEventTask
+            _minigameEventTask,
+            _musicRequestTask,
+            _musicEventSubTask
         }
             .Where(task => task is not null)
             .Cast<Task>()
@@ -2836,6 +2934,7 @@ public sealed class MainForm : Form
             }
         }
 
+        StopMusicRequests();
         _minigameEvents?.Dispose();
         _minigame?.Dispose();
         _chatModeration?.Dispose();
@@ -3397,6 +3496,7 @@ public sealed class MainForm : Form
             _dailyWinCheck.Checked = config.Minigame.DailyWinLimitEnabled;
             SetNumericValue(_dailyWinControl, config.Minigame.DailyWinLimit);
             _chatTemplateBox.Text = config.Chat.RaidMessageTemplate;
+            LoadMusicRequestSettings(config.MusicRequests);
         }
         catch (Exception exception)
         {
@@ -3542,6 +3642,7 @@ public sealed class MainForm : Form
         config.Minigame.DailyWinLimitEnabled = _dailyWinCheck.Checked;
         config.Minigame.DailyWinLimit = decimal.ToInt32(_dailyWinControl.Value);
         config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
+        ReadMusicRequestSettings(config);
         return config;
     }
 
@@ -3566,6 +3667,11 @@ public sealed class MainForm : Form
                 SetMinigameStatus("Einstellungen ungültig", ErrorColor);
                 ShowSection("minigame");
             }
+            else if (IsMusicConfigurationError(exception.Message))
+            {
+                SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
+                ShowSection("music");
+            }
         }
     }
 
@@ -3578,10 +3684,12 @@ public sealed class MainForm : Form
 
         var moduleRestartRequired =
             _activeConfig.Minigame.Enabled != updated.Minigame.Enabled ||
-            _activeConfig.Moderation.Enabled != updated.Moderation.Enabled;
+            _activeConfig.Moderation.Enabled != updated.Moderation.Enabled ||
+            _activeConfig.MusicRequests.Enabled != updated.MusicRequests.Enabled;
         _activeConfig.Chat = updated.Chat;
         _activeConfig.Moderation = updated.Moderation;
         _activeConfig.Minigame = updated.Minigame;
+        _activeConfig.MusicRequests = updated.MusicRequests;
         _activeConfig.Player.DurationSeconds = updated.Player.DurationSeconds;
         _activeConfig.Player.VolumePercent = updated.Player.VolumePercent;
         _activeConfig.Player.BlacklistedClipIds =
@@ -3593,6 +3701,8 @@ public sealed class MainForm : Form
         _activeConfig.Twitch.RaidCooldownMinutes =
             updated.Twitch.RaidCooldownMinutes;
         _minigame?.UpdateConfig(updated.Minigame);
+        _musicRequests?.UpdateConfig(updated.MusicRequests);
+        _spotify?.UpdateConfig(updated.MusicRequests);
         UpdateCurrencyPreview();
         if (_minigameTopList.Columns.Count >= 3)
             _minigameTopList.Columns[2].Text = updated.Minigame.CurrencyPlural;
@@ -3605,6 +3715,12 @@ public sealed class MainForm : Form
                 "dem nächsten Neustart der Plugin-Verbindung wirksam.");
         }
     }
+
+    private static bool IsMusicConfigurationError(string message) =>
+        message.Contains("Spotify", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Musikwunsch", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Musik-Command", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Twitch-Musikwunsch", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsMinigameConfigurationError(string message) =>
         message.Contains("Gamble", StringComparison.OrdinalIgnoreCase) ||
@@ -3689,6 +3805,7 @@ public sealed class MainForm : Form
         _shutdown?.Cancel();
         _obs?.Dispose();
         _player?.Dispose();
+        _spotify?.Dispose();
         base.OnFormClosing(e);
     }
 }
