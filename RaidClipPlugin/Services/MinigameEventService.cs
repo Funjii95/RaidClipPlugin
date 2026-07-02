@@ -19,19 +19,24 @@ public sealed class MinigameEventService : IDisposable
     private readonly string _broadcasterId;
     private readonly string _moderatorId;
     private readonly MinigameConfig _config;
+    private readonly string _musicRewardId;
     private readonly HttpClient _http = new();
 
     public event Func<MinigamePassiveEvent, Task>? EventReceived;
+    public event Func<MusicRequestRedemption, Task>? MusicRedemptionReceived;
+    public event Action? Activated;
 
     public MinigameEventService(
         string clientId, string accessToken, string broadcasterId,
-        string moderatorId, MinigameConfig config)
+        string moderatorId, MinigameConfig config,
+        string musicRewardId = "")
     {
         _clientId = clientId;
         _accessToken = accessToken;
         _broadcasterId = broadcasterId;
         _moderatorId = moderatorId;
         _config = config;
+        _musicRewardId = musicRewardId;
     }
 
     public async Task RunAsync(CancellationToken cancellationToken)
@@ -84,7 +89,8 @@ public sealed class MinigameEventService : IDisposable
                     await CreateSubscriptionsAsync(
                         sessionId, cancellationToken);
                 }
-                Console.WriteLine("Passive Minigame-Ereignisse sind aktiv.");
+                Activated?.Invoke();
+                Console.WriteLine("Gemeinsame Minigame-/Musikwunsch-Ereignisse sind aktiv.");
             }
             else if (type == "notification")
             {
@@ -121,12 +127,15 @@ public sealed class MinigameEventService : IDisposable
                 sessionId, cancellationToken);
         }
 
-        if (_config.ChannelRewardPointsEnabled)
+        if (_config.ChannelRewardPointsEnabled ||
+            !string.IsNullOrWhiteSpace(_musicRewardId))
         {
+            object condition = _config.ChannelRewardPointsEnabled
+                ? new { broadcaster_user_id = _broadcasterId }
+                : new { broadcaster_user_id = _broadcasterId, reward_id = _musicRewardId };
             await TryCreateSubscriptionAsync(
                 "channel.channel_points_custom_reward_redemption.add", "1",
-                new { broadcaster_user_id = _broadcasterId },
-                sessionId, cancellationToken);
+                condition, sessionId, cancellationToken);
         }
     }
 
@@ -191,16 +200,38 @@ public sealed class MinigameEventService : IDisposable
                 MinigamePassiveEventKind.ChannelReward,
             _ => (MinigamePassiveEventKind?)null
         };
-        if (kind is null) return;
-
         var userId = data.TryGetProperty("user_id", out var id)
             ? id.GetString() ?? "" : "";
         var displayName = data.TryGetProperty("user_name", out var name)
             ? name.GetString() ?? userId : userId;
-        if (EventReceived is { } handler)
+        if (kind is not null &&
+            (kind != MinigamePassiveEventKind.ChannelReward ||
+             _config.ChannelRewardPointsEnabled) &&
+            EventReceived is { } handler)
         {
             await handler(new MinigamePassiveEvent(
                 kind.Value, userId, displayName));
+        }
+
+        if (type == "channel.channel_points_custom_reward_redemption.add" &&
+            !string.IsNullOrWhiteSpace(_musicRewardId) &&
+            data.TryGetProperty("reward", out var reward) &&
+            string.Equals(reward.GetProperty("id").GetString(),
+                _musicRewardId, StringComparison.Ordinal) &&
+            MusicRedemptionReceived is { } musicHandler)
+        {
+            await musicHandler(new MusicRequestRedemption(
+                data.GetProperty("id").GetString() ?? "",
+                reward.GetProperty("id").GetString() ?? "",
+                reward.GetProperty("title").GetString() ?? "",
+                userId,
+                data.TryGetProperty("user_login", out var login)
+                    ? login.GetString() ?? "" : "",
+                displayName,
+                data.TryGetProperty("user_input", out var input)
+                    ? input.GetString() ?? "" : "",
+                data.GetProperty("redeemed_at").GetDateTimeOffset(),
+                data.GetProperty("status").GetString() ?? "unknown"));
         }
     }
 
