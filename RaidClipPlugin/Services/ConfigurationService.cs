@@ -102,7 +102,8 @@ public sealed class ConfigurationService
                 .Select(CloneRange)
                 .ToList(),
             Minigame = config.Minigame,
-            MusicRequests = config.MusicRequests
+            MusicRequests = config.MusicRequests,
+            StreamCheck = config.StreamCheck
         };
 
         File.WriteAllText(
@@ -273,6 +274,8 @@ public sealed class ConfigurationService
                 config.Minigame = settings.Minigame;
             if (settings.MusicRequests is not null)
                 config.MusicRequests = settings.MusicRequests;
+            if (settings.StreamCheck is not null)
+                config.StreamCheck = settings.StreamCheck;
         }
         catch (Exception exception)
         {
@@ -297,6 +300,24 @@ public sealed class ConfigurationService
             (config.Chat.RaidMessageTemplate ?? "").Trim();
         config.Update.SkippedVersion =
             (config.Update.SkippedVersion ?? "").Trim();
+        config.StreamCheck ??= new StreamCheckConfig();
+        config.StreamCheck.DisabledChecks =
+            (config.StreamCheck.DisabledChecks ?? new List<string>())
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Select(key => key.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        config.StreamCheck.StartScene =
+            (config.StreamCheck.StartScene ?? "").Trim();
+        config.StreamCheck.MicrophoneSource =
+            (config.StreamCheck.MicrophoneSource ?? "").Trim();
+        config.StreamCheck.DesktopAudioSource =
+            (config.StreamCheck.DesktopAudioSource ?? "").Trim();
+        config.StreamCheck.RecordingPath =
+            (config.StreamCheck.RecordingPath ?? "").Trim();
+        config.StreamCheck.LastSummary =
+            (config.StreamCheck.LastSummary ?? "").Trim();
+        config.StreamCheck.LastFailedChecks ??= new List<string>();
         config.Moderation.BlockedWords =
             (config.Moderation.BlockedWords ?? new List<string>())
             .Where(word => !string.IsNullOrWhiteSpace(word))
@@ -484,7 +505,7 @@ public sealed class ConfigurationService
                 StringComparer.OrdinalIgnoreCase)
             {
                 "!punkte", "!points", "!perlen", "!daily", "!top", "!rang",
-                "!profil", "!coinflip", "!slots", "!gamble", "!give",
+                "!profil", "!coinflip", "!slots", "!roulette", "!gamble", "!give",
                 "!addpoints", "!lurk", "!unlurk"
             };
             if (reservedCommands.Contains(config.CustomPointsCommand))
@@ -524,7 +545,8 @@ public sealed class ConfigurationService
             config.LeaderboardCooldownSeconds is < 0 or > 3600 ||
             config.ProfileCooldownSeconds is < 0 or > 3600 ||
             config.CoinflipCooldownSeconds is < 0 or > 3600 ||
-            config.SlotsCooldownSeconds is < 0 or > 3600)
+            config.SlotsCooldownSeconds is < 0 or > 3600 ||
+            config.RouletteCooldownSeconds is < 0 or > 3600)
             throw new InvalidOperationException(
                 "Minigame-Cooldowns müssen zwischen 0 und 3600 Sekunden liegen.");
         if (config.MaximumTopEntries is < 1 or > 100 ||
@@ -534,23 +556,26 @@ public sealed class ConfigurationService
         if (config.CoinflipMultiplier is < 0 or > 100 ||
             config.SlotsThreeMultiplier is < 0 or > 100 ||
             config.SlotsTwoMultiplier is < 0 or > 100 ||
-            config.SlotsSevenMultiplier is < 0 or > 100)
+            config.SlotsSevenMultiplier is < 0 or > 100 ||
+            config.RouletteEvenMoneyMultiplier is < 0 or > 100 ||
+            config.RouletteNumberMultiplier is < 0 or > 100)
             throw new InvalidOperationException(
                 "Casino-Multiplikatoren müssen zwischen 0 und 100 liegen.");
         if (config.CoinflipMinimumBet < 0 ||
             config.CoinflipMaximumBet < config.CoinflipMinimumBet ||
             config.SlotsMinimumBet < 0 ||
-            config.SlotsMaximumBet < config.SlotsMinimumBet)
+            config.SlotsMaximumBet < config.SlotsMinimumBet ||
+            config.RouletteMinimumBet < 0 ||
+            config.RouletteMaximumBet < config.RouletteMinimumBet)
             throw new InvalidOperationException(
-                "Coinflip- oder Slots-Einsätze sind ungültig.");
+                "Coinflip-, Slots- oder Roulette-Einsätze sind ungültig.");
         if (config.SlotSymbols.Split(',',
                 StringSplitOptions.RemoveEmptyEntries |
                 StringSplitOptions.TrimEntries).Length < 2)
             throw new InvalidOperationException(
                 "Bitte mindestens zwei Slot-Symbole eintragen.");
         if (config.JackpotStartValue < 0 ||
-            config.JackpotContributionPercent is < 0 or > 100 ||
-            config.JackpotChancePercent is < 0 or > 100)
+            config.JackpotContributionPercent is < 0 or > 100)
             throw new InvalidOperationException(
                 "Jackpot-Einstellungen sind ungültig.");
         if (config.MaximumAccountPoints < config.MinimumPoints ||
@@ -689,7 +714,7 @@ public sealed class ConfigurationService
         var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "!punkte", "!points", "!perlen", "!daily", "!top", "!rang",
-            "!profil", "!coinflip", "!slots", "!gamble", "!give",
+            "!profil", "!coinflip", "!slots", "!roulette", "!gamble", "!give",
             "!addpoints", "!lurk", "!unlurk"
         };
         if (commands.Any(reserved.Contains))
@@ -743,5 +768,6 @@ public sealed class ConfigurationService
         public List<GambleRangeConfig>? GambleRanges { get; set; }
         public MinigameConfig? Minigame { get; set; }
         public MusicRequestConfig? MusicRequests { get; set; }
+        public StreamCheckConfig? StreamCheck { get; set; }
     }
 }
