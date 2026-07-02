@@ -1,5 +1,14 @@
 # Changelog
 
+## Unveröffentlicht
+
+- Neues optionales Modul „Musikwünsche“ mit Spotify PKCE und sicherer Tokenablage
+- Twitch-Kanalpunkte-EventSub, persistente Deduplizierung und Statusupdates
+- Spotify-Suche, Queue/Sofortwiedergabe, Geräteauswahl, Filter und Blacklists
+- Konfigurierbare Chattexte und Moderator-Commands
+- Warteschlangen-GUI mit Wiederholen, Abspielen, Überspringen und Sperraktionen
+- Automatisierte Tests für Links, Filter, Limits, Cooldowns und Deduplizierung
+
 ## 1.3.0
 
 - Checkboxen im dunklen GUI-Theme wieder klar sichtbar und bedienbar
