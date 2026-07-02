@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 1.4.1
 
 - Neuer vollständiger Stream-Start-Check mit 18 unabhängigen Prüfungen
 - Konfigurierbares Check-Profil, Wiederholung, sichere Diagnose und Ergebnisexport
