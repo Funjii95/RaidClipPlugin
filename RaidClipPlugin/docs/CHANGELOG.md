@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.8
+
+- Anwesenheitspunkte für stille Zuschauer und Lurker
+- Neue Commands `!lurk`, `!unlurk` und `!give all <punkte>`
+- Garantierte vollständige Jackpot-Auszahlung bei einer gewürfelten 100
+- GUI-Einstellungen bleiben während der Plugin-Verbindung bedienbar
+- Neues RaidClip-Anwendungslogo für Fenster, EXE und Installer
+- Vollständig überarbeitete dunkle GUI mit roter RaidClip-Sidebar, Statuskarten und dunklen Tabs
+
 ## 1.2.7
 
 - `!gamble all` setzt alle verfügbaren Punkte auf einen Wurf
