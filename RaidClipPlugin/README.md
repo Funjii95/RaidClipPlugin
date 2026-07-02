@@ -51,8 +51,9 @@ Das optionale Modul läuft unabhängig von Raid-Clips, OBS und Moderation. Seine
 - Anwesenheitspunkte für aktive und stille Chatnutzer; Lurker-Satz frei konfigurierbar
 - Passive Punkte durch Chat, Follow, Sub, Raid und Channel Rewards
 - Commands `!punkte`, `!give @name <punkte>`, `!lurk`, `!unlurk`, `!daily`, `!top`, `!rang` und `!profil`
-- Casino-Spiele `!gamble <einsatz|all>`, `!coinflip` und `!slots`, jeweils separat abschaltbar
-- Optionaler, dauerhaft gespeicherter Jackpot
+- Casino-Spiele `!gamble <einsatz|all>`, `!coinflip`, `!slots` und `!roulette`, jeweils separat abschaltbar
+- Roulette: `!roulette <rot|schwarz|gerade|ungerade|niedrig|hoch|0-36> <einsatz>`
+- Optionaler, dauerhaft gespeicherter Jackpot; Ausschüttung ausschließlich bei einer 100 in `!gamble`
 - Konfigurierbare Konto-, Spiele-, Verlust- und Gewinnlimits
 - Live-Rangliste, Spielhistorie sowie JSON-Export und sicherer Import mit Backup
 - Admin-Commands `!punkte add/remove/set <user> <betrag>`, `!addpoints @name <punkte>` und `!give all <punkte>` für Broadcaster und Mods
@@ -112,3 +113,7 @@ Einrichtung:
 6. Twitch beim nächsten Start neu autorisieren, damit `channel:manage:redemptions` erteilt wird.
 
 Spotify-Tokens werden mit Windows DPAPI verschlüsselt im Benutzerprofil gespeichert. Für die Player-Steuerung wird in der Regel Spotify Premium benötigt. Twitch kann den Einlösungsstatus nur automatisch erfüllen oder stornieren, wenn die Belohnung mit derselben Twitch-App erstellt wurde; andernfalls bleibt die Einlösung offen und der Fehler wird nur protokolliert.
+
+## Stream-Start-Check
+
+Der Bereich **Stream-Check** prüft vor dem Stream Twitch, Chat, EventSub, OBS-Szene und RaidClip-Quelle, LocalPlayer, Mikrofon, Desktop-Audio, Aufnahmespeicher, Titel, Kategorie, Spotify, Minigames, OAuth und Konfiguration. Einzelne Prüfungen können im Profil deaktiviert werden. Der Diagnoseexport enthält keine Tokens, Passwörter oder Secrets.
