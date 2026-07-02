@@ -123,10 +123,15 @@
     "SlotsMinimumBet": 10,
     "SlotsMaximumBet": 1000,
     "SlotsCooldownSeconds": 20,
+    "RouletteEnabled": false,
+    "RouletteEvenMoneyMultiplier": 2,
+    "RouletteNumberMultiplier": 36,
+    "RouletteMinimumBet": 10,
+    "RouletteMaximumBet": 1000,
+    "RouletteCooldownSeconds": 20,
     "JackpotEnabled": false,
     "JackpotStartValue": 1000,
     "JackpotContributionPercent": 10,
-    "JackpotChancePercent": 0.5,
     "MaximumAccountEnabled": false,
     "MaximumAccountPoints": 1000000,
     "DailyGambleLimitEnabled": false,
@@ -187,5 +192,20 @@
       "Resume": "!musicresume"
     },
     "SongTitleBlacklist": []
+  },
+  "StreamCheck": {
+    "DisabledChecks": [],
+    "StartScene": "",
+    "MicrophoneSource": "Mic/Aux",
+    "DesktopAudioSource": "Desktop Audio",
+    "RecordingPath": "",
+    "MinimumFreeSpaceGb": 10,
+    "SelectStartScene": true,
+    "StartObsStreaming": true,
+    "StartPluginServices": true,
+    "LastCheckUtc": null,
+    "LastDurationMilliseconds": 0,
+    "LastSummary": "",
+    "LastFailedChecks": []
   }
 }
