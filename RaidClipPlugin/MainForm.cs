@@ -1104,7 +1104,7 @@ public sealed class MainForm : Form
         };
         var minigameSubtitle = new Label
         {
-            Text = "Watchtime-Punkte, !punkte, !gamble und Admin-Commands",
+            Text = "Punkte, !give, !gamble all und Mod-Commands",
             AutoSize = true,
             ForeColor = Color.DimGray,
             Margin = new Padding(2, 3, 0, 0)
