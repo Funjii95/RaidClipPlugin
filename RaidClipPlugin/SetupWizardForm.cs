@@ -176,7 +176,8 @@ public sealed class SetupWizardForm : Form
                 case CheckBox checkBox:
                     checkBox.ForeColor = Color.Gainsboro;
                     checkBox.BackColor = Color.Transparent;
-                    checkBox.FlatStyle = FlatStyle.Flat;
+                    checkBox.FlatStyle = FlatStyle.Standard;
+                    checkBox.AutoCheck = true;
                     break;
                 case Label label when label.ForeColor == Color.Empty ||
                                       label.ForeColor == SystemColors.ControlText:
