@@ -44,6 +44,18 @@
     "PointsEnabled": true,
     "PointsPerInterval": 10,
     "LurkerPointsPerInterval": 5,
+    "CurrencySingular": "Punkt",
+    "CurrencyPlural": "Punkte",
+    "PointsCommandPunkteEnabled": true,
+    "PointsCommandPointsEnabled": false,
+    "PointsCommandPerlenEnabled": false,
+    "CustomPointsCommand": "",
+    "PointsBlacklist": [
+      "nightbot",
+      "streamelements",
+      "streamlabs",
+      "moobot"
+    ],
     "IntervalMinutes": 5,
     "MinimumPoints": 0,
     "PointsCommandCooldownSeconds": 30,
