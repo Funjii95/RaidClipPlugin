@@ -6,10 +6,19 @@ namespace RaidClipPlugin;
 
 public sealed class MainForm : Form
 {
-    private static readonly Color ActiveColor = Color.ForestGreen;
+    private static readonly Color BackgroundColor = Color.FromArgb(8, 8, 9);
+    private static readonly Color SidebarColor = Color.FromArgb(12, 12, 13);
+    private static readonly Color SurfaceColor = Color.FromArgb(19, 19, 21);
+    private static readonly Color InputColor = Color.FromArgb(13, 13, 14);
+    private static readonly Color BorderColor = Color.FromArgb(86, 86, 90);
+    private static readonly Color AccentColor = Color.FromArgb(222, 24, 30);
+    private static readonly Color AccentDarkColor = Color.FromArgb(92, 12, 15);
+    private static readonly Color TextColor = Color.FromArgb(235, 235, 238);
+    private static readonly Color MutedTextColor = Color.FromArgb(174, 174, 180);
+    private static readonly Color ActiveColor = Color.FromArgb(239, 36, 42);
     private static readonly Color WaitingColor = Color.DarkOrange;
-    private static readonly Color ErrorColor = Color.Firebrick;
-    private static readonly Color InactiveColor = Color.DimGray;
+    private static readonly Color ErrorColor = Color.OrangeRed;
+    private static readonly Color InactiveColor = Color.FromArgb(145, 145, 150);
 
     private readonly Button _startButton = new()
     {
@@ -221,7 +230,7 @@ public sealed class MainForm : Form
 
     private readonly Label _versionLabel = new()
     {
-        Text = "Version 1.2.6\n🟢 Aktuell",
+        Text = "Version 1.2.8\n🟢 Aktuell",
         AutoSize = true,
         ForeColor = Color.ForestGreen,
         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -337,6 +346,8 @@ public sealed class MainForm : Form
 
     private readonly NumericUpDown _pointsPerIntervalControl =
         CreateIntegerControl(10, 0, 1_000_000);
+    private readonly NumericUpDown _lurkerPointsPerIntervalControl =
+        CreateIntegerControl(5, 0, 1_000_000);
     private readonly NumericUpDown _pointsIntervalControl =
         CreateIntegerControl(5, 1, 1440);
     private readonly NumericUpDown _minimumPointsControl =
@@ -596,15 +607,48 @@ public sealed class MainForm : Form
     private Task? _eventSubTask;
     private UpdateInfo? _availableUpdate;
     private bool _updateBusy;
+    private AppConfig? _activeConfig;
+
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(
+        IntPtr windowHandle,
+        int attribute,
+        ref int attributeValue,
+        int attributeSize);
+
+    protected override void OnHandleCreated(EventArgs eventArgs)
+    {
+        base.OnHandleCreated(eventArgs);
+        try
+        {
+            var enabled = 1;
+            const int immersiveDarkMode = 20;
+            _ = DwmSetWindowAttribute(
+                Handle,
+                immersiveDarkMode,
+                ref enabled,
+                sizeof(int));
+        }
+        catch
+        {
+            // Ältere Windows-Versionen verwenden weiterhin ihre Standard-Titelleiste.
+        }
+    }
 
     public MainForm()
     {
         Text = $"Raid Clip Plugin {_updateService.CurrentDisplayVersion}";
+        Icon = System.Drawing.Icon.ExtractAssociatedIcon(
+                   Application.ExecutablePath) ??
+               SystemIcons.Application;
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(1000, 760);
-        Size = new Size(1250, 920);
-        BackColor = Color.FromArgb(245, 246, 250);
+        MinimumSize = new Size(1120, 760);
+        Size = new Size(1500, 920);
+        BackColor = BackgroundColor;
+        ForeColor = TextColor;
         Font = new Font("Segoe UI", 10F);
+        AutoScaleMode = AutoScaleMode.Dpi;
+        DoubleBuffered = true;
 
         BuildLayout();
 
@@ -683,7 +727,7 @@ public sealed class MainForm : Form
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
             ForeColor = InactiveColor,
-            BackColor = Color.White,
+            BackColor = SurfaceColor,
             BorderStyle = BorderStyle.FixedSingle,
             Font = new Font("Segoe UI", 10F, FontStyle.Bold),
             Margin = new Padding(4)
@@ -695,16 +739,16 @@ public sealed class MainForm : Form
         return new Button
         {
             Text = $"{title}{Environment.NewLine}{subtitle}",
-            Width = 188,
-            Height = 78,
+            Width = 228,
+            Height = 76,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
             TextAlign = ContentAlignment.MiddleLeft,
             Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-            ForeColor = Color.Gainsboro,
-            BackColor = Color.FromArgb(42, 46, 56),
-            Padding = new Padding(12, 5, 8, 5),
-            Margin = new Padding(6, 6, 6, 2),
+            ForeColor = TextColor,
+            BackColor = SidebarColor,
+            Padding = new Padding(18, 5, 8, 5),
+            Margin = new Padding(5, 5, 5, 2),
             Cursor = Cursors.Hand
         };
     }
@@ -756,6 +800,189 @@ public sealed class MainForm : Form
         };
     }
 
+    private static Image LoadBrandImage()
+    {
+        using var stream = new MemoryStream(LogoAssets.GetPngBytes());
+        using var source = Image.FromStream(stream);
+        return new Bitmap(source);
+    }
+
+    private void ApplyRaidClipTheme(Control root)
+    {
+        if (root is Form or Panel)
+        {
+            root.BackColor = root.Name == "SidebarNavigation"
+                ? SidebarColor
+                : root.Name == "SurfacePanel"
+                    ? SurfaceColor
+                    : BackgroundColor;
+        }
+
+        foreach (Control control in root.Controls)
+        {
+            switch (control)
+            {
+                case Button button:
+                    StyleButton(button);
+                    break;
+
+                case TextBox textBox:
+                    textBox.BackColor = InputColor;
+                    textBox.ForeColor = TextColor;
+                    textBox.BorderStyle = BorderStyle.FixedSingle;
+                    break;
+
+                case NumericUpDown numeric:
+                    numeric.BackColor = InputColor;
+                    numeric.ForeColor = TextColor;
+                    numeric.BorderStyle = BorderStyle.FixedSingle;
+                    break;
+
+                case CheckBox checkBox:
+                    checkBox.BackColor = Color.Transparent;
+                    checkBox.ForeColor = TextColor;
+                    checkBox.FlatStyle = FlatStyle.Flat;
+                    break;
+
+                case GroupBox groupBox:
+                    groupBox.BackColor = BackgroundColor;
+                    groupBox.ForeColor = AccentColor;
+                    groupBox.FlatStyle = FlatStyle.Flat;
+                    break;
+
+                case TabControl tabs:
+                    tabs.BackColor = BackgroundColor;
+                    tabs.ForeColor = TextColor;
+                    tabs.DrawMode = TabDrawMode.OwnerDrawFixed;
+                    tabs.SizeMode = TabSizeMode.Fixed;
+                    tabs.ItemSize = new Size(150, 30);
+                    tabs.DrawItem += DrawDarkTab;
+                    break;
+
+                case TabPage tabPage:
+                    tabPage.BackColor = BackgroundColor;
+                    tabPage.ForeColor = TextColor;
+                    break;
+
+                case ListView listView:
+                    listView.BackColor = InputColor;
+                    listView.ForeColor = TextColor;
+                    listView.BorderStyle = BorderStyle.FixedSingle;
+                    break;
+
+                case DataGridView grid:
+                    grid.BackgroundColor = InputColor;
+                    grid.GridColor = Color.FromArgb(50, 50, 54);
+                    grid.BorderStyle = BorderStyle.FixedSingle;
+                    grid.EnableHeadersVisualStyles = false;
+                    grid.ColumnHeadersDefaultCellStyle.BackColor =
+                        Color.FromArgb(28, 28, 31);
+                    grid.ColumnHeadersDefaultCellStyle.ForeColor = TextColor;
+                    grid.DefaultCellStyle.BackColor = InputColor;
+                    grid.DefaultCellStyle.ForeColor = TextColor;
+                    grid.DefaultCellStyle.SelectionBackColor = AccentDarkColor;
+                    grid.DefaultCellStyle.SelectionForeColor = Color.White;
+                    break;
+
+                case Label label:
+                    if (ReferenceEquals(label, _obsIndicator) ||
+                        ReferenceEquals(label, _twitchIndicator) ||
+                        ReferenceEquals(label, _eventSubIndicator) ||
+                        ReferenceEquals(label, _playerIndicator))
+                    {
+                        label.BackColor = SurfaceColor;
+                    }
+                    else if (ReferenceEquals(label, _overallStatusLabel) ||
+                             ReferenceEquals(label, _moderationStatusLabel) ||
+                             ReferenceEquals(label, _minigameStatusLabel) ||
+                             ReferenceEquals(label, _versionLabel))
+                    {
+                        label.BackColor = Color.Transparent;
+                    }
+                    else
+                    {
+                        label.BackColor = Color.Transparent;
+                        if (label.ForeColor == AccentColor)
+                            label.ForeColor = AccentColor;
+                        else if (label.Font.Size >= 16)
+                            label.ForeColor = Color.White;
+                        else if (label.ForeColor == Color.DimGray)
+                            label.ForeColor = MutedTextColor;
+                        else
+                            label.ForeColor = TextColor;
+                    }
+                    break;
+
+                case Panel:
+                    control.BackColor = control.Name == "SidebarNavigation"
+                        ? SidebarColor
+                        : control.Name == "SurfacePanel"
+                            ? SurfaceColor
+                            : BackgroundColor;
+                    break;
+            }
+
+            ApplyRaidClipTheme(control);
+        }
+
+        _versionLabel.ForeColor = ActiveColor;
+        _jackpotValueLabel.ForeColor = AccentColor;
+    }
+
+    private static void StyleButton(Button button)
+    {
+        button.FlatStyle = FlatStyle.Flat;
+        button.UseVisualStyleBackColor = false;
+        button.BackColor = SurfaceColor;
+        button.ForeColor = TextColor;
+        button.FlatAppearance.BorderSize = 1;
+        button.FlatAppearance.BorderColor = BorderColor;
+        button.FlatAppearance.MouseOverBackColor = AccentDarkColor;
+        button.FlatAppearance.MouseDownBackColor = Color.FromArgb(125, 12, 17);
+        button.Cursor = Cursors.Hand;
+    }
+
+    private static void StylePrimaryButton(Button button)
+    {
+        button.BackColor = Color.FromArgb(38, 15, 17);
+        button.ForeColor = Color.White;
+        button.FlatAppearance.BorderColor = AccentColor;
+    }
+
+    private static void DrawDarkTab(object? sender, DrawItemEventArgs e)
+    {
+        if (sender is not TabControl tabs ||
+            e.Index < 0 || e.Index >= tabs.TabPages.Count)
+        {
+            return;
+        }
+
+        var selected = e.Index == tabs.SelectedIndex;
+        var background = selected ? AccentDarkColor : SurfaceColor;
+        using var brush = new SolidBrush(background);
+        e.Graphics.FillRectangle(brush, e.Bounds);
+        TextRenderer.DrawText(
+            e.Graphics,
+            tabs.TabPages[e.Index].Text,
+            tabs.Font,
+            e.Bounds,
+            selected ? Color.White : MutedTextColor,
+            TextFormatFlags.HorizontalCenter |
+            TextFormatFlags.VerticalCenter |
+            TextFormatFlags.EndEllipsis);
+
+        if (selected)
+        {
+            using var pen = new Pen(AccentColor, 2);
+            e.Graphics.DrawLine(
+                pen,
+                e.Bounds.Left,
+                e.Bounds.Bottom - 2,
+                e.Bounds.Right,
+                e.Bounds.Bottom - 2);
+        }
+    }
+
     private void ShowSection(string section)
     {
         var showRaid = section == "raid";
@@ -781,21 +1008,39 @@ public sealed class MainForm : Form
 
     private static void SetNavigationTileState(Button button, bool active)
     {
-        button.BackColor = active
-            ? Color.FromArgb(91, 64, 184)
-            : Color.FromArgb(42, 46, 56);
-        button.ForeColor = active ? Color.White : Color.Gainsboro;
+        button.BackColor = active ? AccentDarkColor : SidebarColor;
+        button.ForeColor = active ? Color.White : TextColor;
+        button.FlatAppearance.BorderSize = active ? 1 : 0;
+        button.FlatAppearance.BorderColor = AccentColor;
     }
 
     private void BuildLayout()
     {
         var title = new Label
         {
-            Text = $"Raid Clip Plugin {_updateService.CurrentDisplayVersion}",
+            Text = "Raid Clip",
             AutoSize = true,
             Font = new Font("Segoe UI", 20F, FontStyle.Bold),
-            ForeColor = Color.FromArgb(35, 39, 47)
+            ForeColor = Color.White,
+            Margin = Padding.Empty
         };
+        var titleAccent = new Label
+        {
+            Text = $" Plugin {_updateService.CurrentDisplayVersion}",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 20F, FontStyle.Bold),
+            ForeColor = AccentColor,
+            Margin = Padding.Empty
+        };
+        var titleRow = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            Margin = Padding.Empty
+        };
+        titleRow.Controls.Add(title);
+        titleRow.Controls.Add(titleAccent);
 
         var subtitle = new Label
         {
@@ -813,7 +1058,7 @@ public sealed class MainForm : Form
             AutoSize = true,
             Padding = new Padding(4, 0, 0, 0)
         };
-        header.Controls.Add(title);
+        header.Controls.Add(titleRow);
         header.Controls.Add(subtitle);
 
         _versionLabel.Text =
@@ -833,6 +1078,7 @@ public sealed class MainForm : Form
 
         var updatePanel = new FlowLayoutPanel
         {
+            Name = "SurfacePanel",
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = false,
             Dock = DockStyle.Fill,
@@ -872,6 +1118,7 @@ public sealed class MainForm : Form
 
         var actions = new FlowLayoutPanel
         {
+            Name = "SurfacePanel",
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = true,
             Dock = DockStyle.Fill,
@@ -1140,7 +1387,10 @@ public sealed class MainForm : Form
 
         var pointsFlow = CreateMinigameFlow();
         pointsFlow.Controls.Add(CreateSettingEditor(
-            "Watchtime-Punkte", _pointsPerIntervalControl));
+            "Aktive Zuschauer pro Intervall", _pointsPerIntervalControl));
+        pointsFlow.Controls.Add(CreateSettingEditor(
+            "Stille Zuschauer/Lurker pro Intervall",
+            _lurkerPointsPerIntervalControl));
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Intervall (Min.)", _pointsIntervalControl));
         pointsFlow.Controls.Add(CreateSettingEditor(
@@ -1312,8 +1562,9 @@ public sealed class MainForm : Form
 
         var minigameHint = new Label
         {
-            Text = "Aktiv bedeutet: Der Zuschauer hat im laufenden Punkteintervall " +
-                   "mindestens eine Chatnachricht geschrieben.",
+            Text = "Aktive Zuschauer erhalten den normalen Satz. Stille Chatnutzer " +
+                   "und Nutzer mit !lurk erhalten den Lurker-Satz; mit !unlurk " +
+                   "wechseln sie zurück.",
             Dock = DockStyle.Fill,
             AutoSize = false,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -1336,24 +1587,23 @@ public sealed class MainForm : Form
         minigameLayout.Controls.Add(_minigameSettingsGroup, 0, 2);
         _minigamePage.Controls.Add(minigameLayout);
 
-        var brand = new Label
+        var brand = new PictureBox
         {
-            Text = "RAIDCLIP",
-            AutoSize = false,
-            Width = 200,
-            Height = 72,
-            TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 16F, FontStyle.Bold),
-            Margin = new Padding(0, 8, 0, 8)
+            Image = LoadBrandImage(),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Width = 238,
+            Height = 205,
+            Margin = new Padding(0, 4, 0, 14),
+            BackColor = SidebarColor
         };
 
         var navigation = new FlowLayoutPanel
         {
+            Name = "SidebarNavigation",
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            BackColor = Color.FromArgb(30, 33, 41),
+            BackColor = SidebarColor,
             Padding = new Padding(6),
             AutoScroll = true
         };
@@ -1365,7 +1615,7 @@ public sealed class MainForm : Form
         var contentHost = new Panel
         {
             Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(245, 246, 250)
+            BackColor = BackgroundColor
         };
         contentHost.Controls.Add(_minigamePage);
         contentHost.Controls.Add(_moderationPage);
@@ -1379,12 +1629,21 @@ public sealed class MainForm : Form
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
-        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 212));
+        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 252));
         rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         rootLayout.Controls.Add(navigation, 0, 0);
         rootLayout.Controls.Add(contentHost, 1, 0);
 
         Controls.Add(rootLayout);
+        ApplyRaidClipTheme(this);
+        StylePrimaryButton(_startButton);
+        StylePrimaryButton(_createObsSourceButton);
+        StylePrimaryButton(_saveSettingsButton);
+        StylePrimaryButton(_saveModerationSettingsButton);
+        StylePrimaryButton(_saveMinigameSettingsButton);
+        StylePrimaryButton(_updateButton);
+        _resetPointsButton.BackColor = Color.FromArgb(72, 14, 17);
+        _resetPointsButton.FlatAppearance.BorderColor = AccentColor;
         ShowSection("raid");
     }
 
@@ -1472,9 +1731,10 @@ public sealed class MainForm : Form
         {
             var config = ReadSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
-            _settingsGroup.Enabled = false;
-            _moderationSettingsGroup.Enabled = false;
-            SetMinigameSettingsEditingEnabled(false);
+            _activeConfig = config;
+            SetConnectionSettingsEditingEnabled(false);
+            _resetPointsButton.Enabled = false;
+            _importMinigameButton.Enabled = false;
             _testConnectionsButton.Enabled = false;
 
             SetServiceStatus(_playerIndicator, "Player", "Startet …", WaitingColor);
@@ -1633,9 +1893,9 @@ public sealed class MainForm : Form
                         _viewerPoints);
                     _chatModeration.Activated += () =>
                         SetMinigameStatus("Aktiv", ActiveColor);
-                    _minigame.PointsAwarded += (users, points) =>
+                    _minigame.PointsAwarded += (users, _) =>
                         SetMinigameStatus(
-                            $"Aktiv · {users} Nutzer +{points}",
+                            $"Anwesenheit · {users} Nutzer belohnt",
                             ActiveColor);
                     _minigame.DataChanged += () =>
                         _ = RefreshMinigameDashboardAsync();
@@ -2420,9 +2680,9 @@ public sealed class MainForm : Form
         if (shutdown is null)
         {
             _startButton.Enabled = true;
-            _settingsGroup.Enabled = true;
-            _moderationSettingsGroup.Enabled = true;
-            SetMinigameSettingsEditingEnabled(true);
+            SetConnectionSettingsEditingEnabled(true);
+            _resetPointsButton.Enabled = true;
+            _importMinigameButton.Enabled = true;
             _testConnectionsButton.Enabled = true;
             return;
         }
@@ -2477,6 +2737,7 @@ public sealed class MainForm : Form
         shutdown.Dispose();
 
         _shutdown = null;
+        _activeConfig = null;
         _player = null;
         _obs = null;
         _playback = null;
@@ -2496,9 +2757,9 @@ public sealed class MainForm : Form
         SetMinigameStatus("Deaktiviert", InactiveColor);
         _testChannelBox.Enabled = true;
         _startButton.Enabled = true;
-        _settingsGroup.Enabled = true;
-        _moderationSettingsGroup.Enabled = true;
-        SetMinigameSettingsEditingEnabled(true);
+        SetConnectionSettingsEditingEnabled(true);
+        _resetPointsButton.Enabled = true;
+        _importMinigameButton.Enabled = true;
         _testConnectionsButton.Enabled = true;
         _raidCooldown.Reset();
 
@@ -2574,6 +2835,14 @@ public sealed class MainForm : Form
         Dock = DockStyle.Fill, AutoScroll = true, WrapContents = true,
         FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(8)
     };
+
+    private void SetConnectionSettingsEditingEnabled(bool enabled)
+    {
+        _twitchChannelBox.Enabled = enabled;
+        _obsHostBox.Enabled = enabled;
+        _obsPortControl.Enabled = enabled;
+        _obsPasswordBox.Enabled = enabled;
+    }
 
     private void SetMinigameSettingsEditingEnabled(bool enabled)
     {
@@ -2903,6 +3172,8 @@ public sealed class MainForm : Form
             _gambleEnabledCheck.Checked = config.Minigame.GambleEnabled;
             SetNumericValue(_pointsPerIntervalControl,
                 config.Minigame.PointsPerInterval);
+            SetNumericValue(_lurkerPointsPerIntervalControl,
+                config.Minigame.LurkerPointsPerInterval);
             SetNumericValue(_pointsIntervalControl,
                 config.Minigame.IntervalMinutes);
             SetNumericValue(_minimumPointsControl,
@@ -3034,6 +3305,8 @@ public sealed class MainForm : Form
         config.Minigame.GambleEnabled = _gambleEnabledCheck.Checked;
         config.Minigame.PointsPerInterval =
             decimal.ToInt32(_pointsPerIntervalControl.Value);
+        config.Minigame.LurkerPointsPerInterval =
+            decimal.ToInt32(_lurkerPointsPerIntervalControl.Value);
         config.Minigame.IntervalMinutes =
             decimal.ToInt32(_pointsIntervalControl.Value);
         config.Minigame.MinimumPoints =
@@ -3112,6 +3385,7 @@ public sealed class MainForm : Form
         {
             var config = ReadSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
+            ApplyRuntimeSettings(config);
             AppendLog("Einstellungen wurden gespeichert.");
             SetOverallStatus("Einstellungen gespeichert", ActiveColor);
         }
@@ -3126,6 +3400,40 @@ public sealed class MainForm : Form
                 SetMinigameStatus("Einstellungen ungültig", ErrorColor);
                 ShowSection("minigame");
             }
+        }
+    }
+
+    private void ApplyRuntimeSettings(AppConfig updated)
+    {
+        if (_activeConfig is null)
+        {
+            return;
+        }
+
+        var moduleRestartRequired =
+            _activeConfig.Minigame.Enabled != updated.Minigame.Enabled ||
+            _activeConfig.Moderation.Enabled != updated.Moderation.Enabled;
+        _activeConfig.Chat = updated.Chat;
+        _activeConfig.Moderation = updated.Moderation;
+        _activeConfig.Minigame = updated.Minigame;
+        _activeConfig.Player.DurationSeconds = updated.Player.DurationSeconds;
+        _activeConfig.Player.VolumePercent = updated.Player.VolumePercent;
+        _activeConfig.Player.BlacklistedClipIds =
+            updated.Player.BlacklistedClipIds;
+        _activeConfig.Twitch.ClipLookbackDays =
+            updated.Twitch.ClipLookbackDays;
+        _activeConfig.Twitch.ClipRetryAttempts =
+            updated.Twitch.ClipRetryAttempts;
+        _activeConfig.Twitch.RaidCooldownMinutes =
+            updated.Twitch.RaidCooldownMinutes;
+        _minigame?.UpdateConfig(updated.Minigame);
+
+        AppendLog("Laufende Chat- und Minigame-Einstellungen wurden übernommen.");
+        if (moduleRestartRequired)
+        {
+            AppendLog(
+                "Das Ein- oder Ausschalten eines ganzen Moduls wird nach " +
+                "dem nächsten Neustart der Plugin-Verbindung wirksam.");
         }
     }
 
