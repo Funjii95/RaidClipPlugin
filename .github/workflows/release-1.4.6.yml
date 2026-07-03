@@ -23,7 +23,17 @@ jobs:
           dotnet-version: "10.0.x"
       - name: Unit-Tests ausführen
         shell: pwsh
-        run: dotnet test "Tests\RaidClipPlugin.Tests.csproj" -c Release
+        run: |
+          $output = dotnet test "Tests\RaidClipPlugin.Tests.csproj" -c Release 2>&1
+          $exitCode = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if ($exitCode -ne 0) {
+            $output | Where-Object { $_ -match "error|failed|exception|fehler" } | Select-Object -First 20 | ForEach-Object {
+              $message = ($_ -replace "%", "%25" -replace "`r", "%0D" -replace "`n", "%0A")
+              Write-Host "::error::$message"
+            }
+            exit $exitCode
+          }
       - name: Windows-App erstellen
         shell: pwsh
         run: dotnet publish "RaidClipPlugin.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o "publish"
