@@ -575,14 +575,35 @@ public sealed partial class MainForm
                     "Twitch-Kanal wurde nicht gefunden.");
             var rewards = await twitch.GetCustomRewardsAsync(
                 broadcaster.Id, token);
-            var selectable = rewards.Where(reward =>
-                reward.IsEnabled && reward.RequiresInput).ToList();
-            _rewardBox.DataSource = selectable;
-            var selectedIndex = selectable.FindIndex(reward =>
+            var allRewards = rewards.ToList();
+            _rewardBox.DataSource = allRewards;
+            var selectedIndex = allRewards.FindIndex(reward =>
                 reward.Id.Equals(config.MusicRequests.SelectedRewardId,
                     StringComparison.Ordinal));
             if (selectedIndex >= 0) _rewardBox.SelectedIndex = selectedIndex;
-            AppendLog($"{rewards.Count} Twitch-Belohnung(en) geladen.");
+
+            var usableCount = allRewards.Count(reward =>
+                reward.IsEnabled && reward.RequiresInput);
+            if (allRewards.Count == 0)
+            {
+                AppendLog(
+                    "Twitch meldet keine benutzerdefinierten Belohnungen. " +
+                    "Der angemeldete Twitch-Nutzer muss der eingestellte " +
+                    "Broadcaster sein und Affiliate oder Partner sein.");
+            }
+            else if (usableCount == 0)
+            {
+                AppendLog(
+                    $"{allRewards.Count} Twitch-Belohnung(en) geladen, " +
+                    "aber keine ist aktiviert und erlaubt Texteingaben. " +
+                    "Alle Einträge werden zur Diagnose angezeigt.");
+            }
+            else
+            {
+                AppendLog(
+                    $"{allRewards.Count} Twitch-Belohnung(en) geladen, " +
+                    $"davon {usableCount} für Musikwünsche geeignet.");
+            }
         }
         catch (Exception exception)
         {
@@ -810,6 +831,9 @@ public sealed partial class MainForm
         if (selectedReward is null)
             throw new InvalidOperationException(
                 "Die ausgewählte Twitch-Musikwunsch-Belohnung wurde nicht gefunden.");
+        if (!selectedReward.IsEnabled)
+            throw new InvalidOperationException(
+                "Die Twitch-Musikwunsch-Belohnung ist deaktiviert.");
         if (!selectedReward.RequiresInput)
             throw new InvalidOperationException(
                 "Die Twitch-Musikwunsch-Belohnung muss Texteingaben erlauben.");
