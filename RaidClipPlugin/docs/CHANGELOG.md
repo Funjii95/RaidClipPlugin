@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.3
+
+- Punktesystem läuft unabhängig von den Chat-Minispielen
+- Zuschauer sammeln weiterhin Anwesenheits-, Chat-, Follow-, Sub-, Raid- und Kanalpunkte, wenn Spiele deaktiviert sind
+- Punktebefehle wie `!punkte`, `!daily`, `!give`, `!addpoints` und `!removepoints` bleiben verfügbar
+- `!gamble`, Roulette, Slots und Coinflip werden separat über „Spiele aktivieren“ gesteuert
+- Getrennte Validierung verhindert, dass deaktivierte Spiele das Punktesystem blockieren
+
 ## 1.4.2
 
 - Minigame-Chat startet wieder zuverlässig bei gleichzeitig aktiven Musikwünschen

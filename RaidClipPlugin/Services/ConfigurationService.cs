@@ -570,79 +570,97 @@ public sealed class ConfigurationService
 
     public static void ValidateMinigameSettings(MinigameConfig config)
     {
+        if (!config.Enabled && !config.PointsEnabled)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(config.CurrencySingular) ||
             string.IsNullOrWhiteSpace(config.CurrencyPlural) ||
             config.CurrencySingular.Length > 30 ||
             config.CurrencyPlural.Length > 30)
             throw new InvalidOperationException(
                 "Die Währungsnamen dürfen nicht leer und höchstens 30 Zeichen lang sein.");
-        if (!config.PointsCommandPunkteEnabled &&
-            !config.PointsCommandPointsEnabled &&
-            !config.PointsCommandPerlenEnabled &&
-            string.IsNullOrWhiteSpace(config.CustomPointsCommand))
+        if (config.MinimumPoints is < 0 or > 1_000_000_000 ||
+            config.MaximumAccountPoints < config.MinimumPoints)
             throw new InvalidOperationException(
-                "Bitte mindestens einen Command für die Punkteabfrage aktivieren.");
-        if (!string.IsNullOrWhiteSpace(config.CustomPointsCommand))
-        {
-            if (!System.Text.RegularExpressions.Regex.IsMatch(
-                    config.CustomPointsCommand,
-                    "^![a-z0-9_-]{1,29}$",
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase))
-                throw new InvalidOperationException(
-                    "Der eigene Punkte-Command darf nur Buchstaben, Zahlen, Bindestrich und Unterstrich enthalten.");
+                "Mindestpunkte oder maximales Kontolimit sind ungültig.");
+        if (config.GlobalCommandCooldownSeconds is < 0 or > 3600)
+            throw new InvalidOperationException(
+                "Der globale Command-Cooldown muss zwischen 0 und 3600 Sekunden liegen.");
+        if (config.HistoryLimit is < 1 or > 10000)
+            throw new InvalidOperationException(
+                "Das Historienlimit muss zwischen 1 und 10000 liegen.");
 
-            var reservedCommands = new HashSet<string>(
-                StringComparer.OrdinalIgnoreCase)
-            {
-                "!punkte", "!points", "!perlen", "!daily", "!top", "!rang",
-                "!profil", "!coinflip", "!slots", "!roulette", "!gamble", "!give",
-                "!addpoints", "!lurk", "!unlurk"
-            };
-            if (reservedCommands.Contains(config.CustomPointsCommand))
+        if (config.PointsEnabled)
+        {
+            if (!config.PointsCommandPunkteEnabled &&
+                !config.PointsCommandPointsEnabled &&
+                !config.PointsCommandPerlenEnabled &&
+                string.IsNullOrWhiteSpace(config.CustomPointsCommand))
                 throw new InvalidOperationException(
-                    $"Der Command {config.CustomPointsCommand} wird bereits verwendet.");
+                    "Bitte mindestens einen Command für die Punkteabfrage aktivieren.");
+            if (!string.IsNullOrWhiteSpace(config.CustomPointsCommand))
+            {
+                if (!System.Text.RegularExpressions.Regex.IsMatch(
+                        config.CustomPointsCommand,
+                        "^![a-z0-9_-]{1,29}$",
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                    throw new InvalidOperationException(
+                        "Der eigene Punkte-Command darf nur Buchstaben, Zahlen, Bindestrich und Unterstrich enthalten.");
+
+                var reservedCommands = new HashSet<string>(
+                    StringComparer.OrdinalIgnoreCase)
+                {
+                    "!punkte", "!points", "!perlen", "!daily", "!top", "!rang",
+                    "!profil", "!coinflip", "!slots", "!roulette", "!gamble", "!give",
+                    "!addpoints", "!removepoints", "!lurk", "!unlurk"
+                };
+                if (reservedCommands.Contains(config.CustomPointsCommand))
+                    throw new InvalidOperationException(
+                        $"Der Command {config.CustomPointsCommand} wird bereits verwendet.");
+            }
+            if (config.PointsPerInterval is < 0 or > 1_000_000 ||
+                config.LurkerPointsPerInterval is < 0 or > 1_000_000)
+                throw new InvalidOperationException(
+                    "Punkte pro Intervall müssen zwischen 0 und 1000000 liegen.");
+            if (config.IntervalMinutes is < 1 or > 1440)
+                throw new InvalidOperationException(
+                    "Das Punkteintervall muss zwischen 1 und 1440 Minuten liegen.");
+            if (config.PointsCommandCooldownSeconds is < 0 or > 3600 ||
+                config.ChatMessagePointsCooldownSeconds is < 0 or > 3600 ||
+                config.LeaderboardCooldownSeconds is < 0 or > 3600 ||
+                config.ProfileCooldownSeconds is < 0 or > 3600)
+                throw new InvalidOperationException(
+                    "Punkte-Cooldowns müssen zwischen 0 und 3600 Sekunden liegen.");
+            if (config.ChatMessagePoints is < 0 or > 1_000_000 ||
+                config.FollowPoints is < 0 or > 1_000_000 ||
+                config.SubPoints is < 0 or > 1_000_000 ||
+                config.RaidPoints is < 0 or > 1_000_000 ||
+                config.ChannelRewardPoints is < 0 or > 1_000_000 ||
+                config.DailyBonusPoints is < 0 or > 1_000_000)
+                throw new InvalidOperationException(
+                    "Passive Punkte und Daily müssen zwischen 0 und 1000000 liegen.");
+            if (config.MaximumTopEntries is < 1 or > 100)
+                throw new InvalidOperationException(
+                    "Die Anzahl der Top-Einträge muss zwischen 1 und 100 liegen.");
         }
-        if (config.PointsPerInterval is < 0 or > 1_000_000)
-            throw new InvalidOperationException(
-                "Punkte pro Intervall müssen zwischen 0 und 1000000 liegen.");
-        if (config.LurkerPointsPerInterval is < 0 or > 1_000_000)
-            throw new InvalidOperationException(
-                "Lurker-Punkte pro Intervall müssen zwischen 0 und 1000000 liegen.");
-        if (config.IntervalMinutes is < 1 or > 1440)
-            throw new InvalidOperationException(
-                "Das Punkteintervall muss zwischen 1 und 1440 Minuten liegen.");
-        if (config.MinimumPoints is < 0 or > 1_000_000_000)
-            throw new InvalidOperationException(
-                "Mindestpunkte müssen zwischen 0 und 1000000000 liegen.");
-        if (config.PointsCommandCooldownSeconds is < 0 or > 3600 ||
-            config.GambleCooldownSeconds is < 0 or > 3600 ||
-            config.GlobalCommandCooldownSeconds is < 0 or > 3600)
-            throw new InvalidOperationException(
-                "Command-Cooldowns müssen zwischen 0 und 3600 Sekunden liegen.");
-        if (config.MinimumBet < 0 || config.MaximumBet < config.MinimumBet ||
-            config.MaximumBet > 1_000_000_000)
-            throw new InvalidOperationException(
-                "Minimale und maximale Einsätze sind ungültig.");
-        if (config.ChatMessagePoints is < 0 or > 1_000_000 ||
-            config.FollowPoints is < 0 or > 1_000_000 ||
-            config.SubPoints is < 0 or > 1_000_000 ||
-            config.RaidPoints is < 0 or > 1_000_000 ||
-            config.ChannelRewardPoints is < 0 or > 1_000_000 ||
-            config.DailyBonusPoints is < 0 or > 1_000_000)
-            throw new InvalidOperationException(
-                "Passive Punkte und Daily müssen zwischen 0 und 1000000 liegen.");
-        if (config.ChatMessagePointsCooldownSeconds is < 0 or > 3600 ||
-            config.LeaderboardCooldownSeconds is < 0 or > 3600 ||
-            config.ProfileCooldownSeconds is < 0 or > 3600 ||
+
+        if (!config.Enabled)
+        {
+            return;
+        }
+
+        if (config.GambleCooldownSeconds is < 0 or > 3600 ||
             config.CoinflipCooldownSeconds is < 0 or > 3600 ||
             config.SlotsCooldownSeconds is < 0 or > 3600 ||
             config.RouletteCooldownSeconds is < 0 or > 3600)
             throw new InvalidOperationException(
                 "Minigame-Cooldowns müssen zwischen 0 und 3600 Sekunden liegen.");
-        if (config.MaximumTopEntries is < 1 or > 100 ||
-            config.HistoryLimit is < 1 or > 10000)
+        if (config.MinimumBet < 0 || config.MaximumBet < config.MinimumBet ||
+            config.MaximumBet > 1_000_000_000)
             throw new InvalidOperationException(
-                "Top-Anzahl oder Historienlimit ist ungültig.");
+                "Minimale und maximale Einsätze sind ungültig.");
         if (config.CoinflipMultiplier is < 0 or > 100 ||
             config.SlotsThreeMultiplier is < 0 or > 100 ||
             config.SlotsTwoMultiplier is < 0 or > 100 ||
@@ -668,8 +686,7 @@ public sealed class ConfigurationService
             config.JackpotContributionPercent is < 0 or > 100)
             throw new InvalidOperationException(
                 "Jackpot-Einstellungen sind ungültig.");
-        if (config.MaximumAccountPoints < config.MinimumPoints ||
-            config.DailyGambleLimit < 0 ||
+        if (config.DailyGambleLimit < 0 ||
             config.DailyLossLimit < 0 || config.DailyWinLimit < 0)
             throw new InvalidOperationException(
                 "Minigame-Limits dürfen nicht negativ sein.");

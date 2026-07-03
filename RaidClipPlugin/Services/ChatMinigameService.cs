@@ -56,6 +56,34 @@ public sealed class ChatMinigameService : IDisposable
             entry.Equals(normalizedDisplayName, StringComparison.OrdinalIgnoreCase));
     }
 
+    public static bool ShouldRun(MinigameConfig config) =>
+        config.Enabled || config.PointsEnabled;
+
+    public static bool IsPointSystemCommand(
+        MinigameConfig config,
+        string command)
+    {
+        var normalized = (command ?? "").Trim().ToLowerInvariant();
+        return normalized is "!punkte" or "!points" or "!perlen" or
+                   "!lurk" or "!unlurk" or "!daily" or "!top" or
+                   "!rang" or "!profil" or "!give" or "!addpoints" or
+                   "!removepoints" ||
+               (!string.IsNullOrWhiteSpace(config.CustomPointsCommand) &&
+                normalized.Equals(config.CustomPointsCommand.Trim(),
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    public static bool IsGameCommand(string command) =>
+        (command ?? "").Trim().ToLowerInvariant() is
+            "!coinflip" or "!slots" or "!roulette" or "!gamble";
+
+    public static bool IsCommandModuleEnabled(
+        MinigameConfig config,
+        string command) =>
+        IsPointSystemCommand(config, command)
+            ? config.PointsEnabled
+            : IsGameCommand(command) && config.Enabled;
+
     private bool IsPointsQueryCommand(string command) =>
         (_config.PointsCommandPunkteEnabled && command == "!punkte") ||
         (_config.PointsCommandPointsEnabled && command == "!points") ||
@@ -114,7 +142,7 @@ public sealed class ChatMinigameService : IDisposable
     {
         try
         {
-            if (!_config.Enabled)
+            if (!ShouldRun(_config))
             {
                 return;
             }
@@ -139,7 +167,8 @@ public sealed class ChatMinigameService : IDisposable
                     _activeUsers[message.UserId] = message.UserName;
                 }
             }
-            if (_config.ChatPointsEnabled && !pointsBlacklisted &&
+            if (_config.PointsEnabled && _config.ChatPointsEnabled &&
+                !pointsBlacklisted &&
                 await TryPassiveCooldownAsync(message.UserId,
                     _config.ChatMessagePointsCooldownSeconds, cancellationToken))
             {
@@ -183,7 +212,7 @@ public sealed class ChatMinigameService : IDisposable
                     TimeSpan.FromMinutes(_config.IntervalMinutes),
                     cancellationToken);
 
-                if (!_config.Enabled || !_config.PointsEnabled)
+                if (!_config.PointsEnabled)
                 {
                     continue;
                 }
@@ -284,6 +313,13 @@ public sealed class ChatMinigameService : IDisposable
                 StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0) return;
             var command = parts[0].ToLowerInvariant();
+
+            if (!IsCommandModuleEnabled(_config, command))
+            {
+                Console.WriteLine(
+                    $"Command {command} ignoriert: zuständiges Modul ist deaktiviert.");
+                return;
+            }
 
             if (command is "!lurk" or "!unlurk")
             {
@@ -611,6 +647,10 @@ public sealed class ChatMinigameService : IDisposable
     {
         try
         {
+            if (!_config.PointsEnabled)
+            {
+                return;
+            }
             var points = passiveEvent.Kind switch
             {
                 MinigamePassiveEventKind.Follow

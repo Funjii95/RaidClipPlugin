@@ -323,7 +323,7 @@ public sealed partial class MainForm : Form
 
     private readonly CheckBox _minigameEnabledCheck = new()
     {
-        Text = "Minigame aktivieren",
+        Text = "Spiele aktivieren (!gamble, Roulette, Slots …)",
         AutoSize = true,
         Margin = new Padding(8, 24, 4, 4)
     };
@@ -2177,7 +2177,7 @@ public sealed partial class MainForm : Form
                         _giveawayService.ProcessMessageAsync(message, cancellationToken);
                 }
 
-                if (config.Minigame.Enabled)
+                if (ChatMinigameService.ShouldRun(config.Minigame))
                 {
                     SetMinigameStatus("Startet …", WaitingColor);
                     _minigame = new ChatMinigameService(
@@ -2187,7 +2187,13 @@ public sealed partial class MainForm : Form
                         twitch,
                         _viewerPoints);
                     _chatModeration.Activated += () =>
-                        SetMinigameStatus("Aktiv", ActiveColor);
+                        SetMinigameStatus(
+                            config.Minigame.Enabled && config.Minigame.PointsEnabled
+                                ? "Spiele & Punktesystem aktiv"
+                                : config.Minigame.PointsEnabled
+                                    ? "Punktesystem aktiv"
+                                    : "Spiele aktiv",
+                            ActiveColor);
                     _minigame.PointsAwarded += (users, _) =>
                         SetMinigameStatus(
                             $"Anwesenheit · {users} Nutzer belohnt",
@@ -2211,7 +2217,7 @@ public sealed partial class MainForm : Form
                     _chatModeration.RunAsync(cancellationToken);
                 ObserveChatModerationTask(_chatModerationTask);
 
-                if ((config.Minigame.Enabled &&
+                if ((config.Minigame.PointsEnabled &&
                      (config.Minigame.FollowPointsEnabled ||
                       config.Minigame.SubPointsEnabled ||
                       config.Minigame.ChannelRewardPointsEnabled)) ||
@@ -3841,6 +3847,7 @@ public sealed partial class MainForm : Form
 
         var moduleRestartRequired =
             _activeConfig.Minigame.Enabled != updated.Minigame.Enabled ||
+            _activeConfig.Minigame.PointsEnabled != updated.Minigame.PointsEnabled ||
             _activeConfig.Moderation.Enabled != updated.Moderation.Enabled ||
             _activeConfig.MusicRequests.Enabled != updated.MusicRequests.Enabled ||
             _activeConfig.ClipCommand.Enabled != updated.ClipCommand.Enabled ||
