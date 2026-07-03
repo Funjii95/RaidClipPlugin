@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.4
+
+- Neuer `!jackpot`-Command zeigt den aktuell gespeicherten Jackpot im Twitch-Chat
+- Eigener Command-Cooldown verhindert Spam
+
 ## 1.5.3
 
 - Punktesystem läuft unabhängig von den Chat-Minispielen

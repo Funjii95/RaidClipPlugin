@@ -613,7 +613,7 @@ public sealed class ConfigurationService
                     StringComparer.OrdinalIgnoreCase)
                 {
                     "!punkte", "!points", "!perlen", "!daily", "!top", "!rang",
-                    "!profil", "!coinflip", "!slots", "!roulette", "!gamble", "!give",
+                    "!profil", "!coinflip", "!slots", "!roulette", "!gamble", "!jackpot", "!give",
                     "!addpoints", "!removepoints", "!lurk", "!unlurk"
                 };
                 if (reservedCommands.Contains(config.CustomPointsCommand))

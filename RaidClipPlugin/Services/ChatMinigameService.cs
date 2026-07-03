@@ -21,6 +21,8 @@ public sealed class ChatMinigameService : IDisposable
         new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _gambleCooldowns =
         new(StringComparer.Ordinal);
+    private readonly Dictionary<string, DateTimeOffset> _jackpotCooldowns =
+        new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _giveCooldowns =
         new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _leaderboardCooldowns = new(StringComparer.Ordinal);
@@ -75,7 +77,8 @@ public sealed class ChatMinigameService : IDisposable
 
     public static bool IsGameCommand(string command) =>
         (command ?? "").Trim().ToLowerInvariant() is
-            "!coinflip" or "!slots" or "!roulette" or "!gamble";
+            "!coinflip" or "!slots" or "!roulette" or "!gamble" or
+            "!jackpot";
 
     public static bool IsCommandModuleEnabled(
         MinigameConfig config,
@@ -459,6 +462,28 @@ public sealed class ChatMinigameService : IDisposable
             {
                 await HandleRemovePointsCommandAsync(
                     message, parts, cancellationToken);
+                return;
+            }
+
+            if (command == "!jackpot")
+            {
+                if (!await TryEnterCooldownAsync(
+                        message.UserId,
+                        _jackpotCooldowns,
+                        _config.GambleCooldownSeconds,
+                        cancellationToken))
+                {
+                    return;
+                }
+
+                var jackpot = await _points.GetJackpotAsync(
+                    _config.JackpotStartValue,
+                    cancellationToken);
+                await TrySendChatAsync(
+                    $"🎰 Aktueller Jackpot: {FormatCurrency(jackpot)}.",
+                    cancellationToken);
+                Console.WriteLine(
+                    $"Jackpot-Abfrage von {message.UserName}: {jackpot}.");
                 return;
             }
 

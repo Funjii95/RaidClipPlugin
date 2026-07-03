@@ -20,6 +20,7 @@ public sealed class PointSystemIndependenceTests
         Assert.True(ChatMinigameService.IsCommandModuleEnabled(config, "!daily"));
         Assert.False(ChatMinigameService.IsCommandModuleEnabled(config, "!gamble"));
         Assert.False(ChatMinigameService.IsCommandModuleEnabled(config, "!roulette"));
+        Assert.False(ChatMinigameService.IsCommandModuleEnabled(config, "!jackpot"));
     }
 
     [Fact]
@@ -33,6 +34,7 @@ public sealed class PointSystemIndependenceTests
 
         Assert.True(ChatMinigameService.ShouldRun(config));
         Assert.True(ChatMinigameService.IsCommandModuleEnabled(config, "!gamble"));
+        Assert.True(ChatMinigameService.IsCommandModuleEnabled(config, "!jackpot"));
         Assert.False(ChatMinigameService.IsCommandModuleEnabled(config, "!punkte"));
         Assert.False(ChatMinigameService.IsCommandModuleEnabled(config, "!give"));
     }
