@@ -6,7 +6,8 @@
     "MinimumRaidViewers": 1,
     "ClipLookbackDays": 365,
     "ClipRetryAttempts": 3,
-    "RaidCooldownMinutes": 5
+    "RaidCooldownMinutes": 5,
+    "RaidDelaySeconds": 0
   },
   "OBS": {
     "Host": "127.0.0.1",

@@ -847,7 +847,7 @@
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
-    "version": "1.5.4",
+    "version": "1.5.5",
     "restore": {
       "projectUniqueName": "D:\\a\\RaidClipPlugin\\RaidClipPlugin\\RaidClipPlugin\\RaidClipPlugin.csproj",
       "projectName": "RaidClipPlugin",

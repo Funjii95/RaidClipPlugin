@@ -140,6 +140,14 @@ public sealed partial class MainForm : Form
         Width = 80
     };
 
+    private readonly NumericUpDown _raidDelayControl = new()
+    {
+        Minimum = 0,
+        Maximum = RaidDelayService.MaximumDelaySeconds,
+        Value = 0,
+        Width = 80
+    };
+
     private readonly TextBox _blacklistBox = new()
     {
         Width = 280,
@@ -1344,6 +1352,8 @@ public sealed partial class MainForm : Form
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Raid-Cooldown (Min.)", _cooldownControl));
         raidSettingsFlow.Controls.Add(
+            CreateSettingEditor("Raid-Verzögerung (Sek.)", _raidDelayControl));
+        raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Clip-Blacklist", _blacklistBox));
         raidSettingsFlow.Controls.Add(_sendRaidMessageCheck);
         raidSettingsFlow.Controls.Add(_sendShoutoutCheck);
@@ -2074,6 +2084,15 @@ public sealed partial class MainForm : Form
                 AppendLog(
                     $"Raid von {raid.FromBroadcasterName} mit " +
                     $"{raid.Viewers} Zuschauern erkannt.");
+
+                var raidDelay = RaidDelayService.GetDelay(
+                    config.Twitch.RaidDelaySeconds);
+                if (raidDelay > TimeSpan.Zero)
+                {
+                    AppendLog(
+                        $"Raid-Aktionen starten in {raidDelay.TotalSeconds:0} Sekunden …");
+                    await Task.Delay(raidDelay, cancellationToken);
+                }
 
                 await HandleRaidChatActionsAsync(
                     twitch,
@@ -3529,6 +3548,9 @@ public sealed partial class MainForm : Form
             SetNumericValue(
                 _cooldownControl,
                 config.Twitch.RaidCooldownMinutes);
+            SetNumericValue(
+                _raidDelayControl,
+                config.Twitch.RaidDelaySeconds);
             _blacklistBox.Text = string.Join(
                 ", ",
                 config.Player.BlacklistedClipIds);
@@ -3677,6 +3699,8 @@ public sealed partial class MainForm : Form
             decimal.ToInt32(_volumeControl.Value);
         config.Twitch.RaidCooldownMinutes =
             decimal.ToInt32(_cooldownControl.Value);
+        config.Twitch.RaidDelaySeconds =
+            decimal.ToInt32(_raidDelayControl.Value);
         config.Player.BlacklistedClipIds = _blacklistBox.Text
             .Split(
                 new[] { ',', ';', '\r', '\n' },
@@ -3871,6 +3895,8 @@ public sealed partial class MainForm : Form
             updated.Twitch.ClipRetryAttempts;
         _activeConfig.Twitch.RaidCooldownMinutes =
             updated.Twitch.RaidCooldownMinutes;
+        _activeConfig.Twitch.RaidDelaySeconds =
+            updated.Twitch.RaidDelaySeconds;
         _minigame?.UpdateConfig(updated.Minigame);
         _musicRequests?.UpdateConfig(updated.MusicRequests);
         _spotify?.UpdateConfig(updated.MusicRequests);

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.5
+
+- Discord-Webhooks werden im laufenden Betrieb direkt an den Clip-Command angebunden
+- Fehlgeschlagene Discord-Zustellungen erscheinen sichtbar als letzter Fehler
+- Neuer echter Webhook-Routingtest verhindert stilles Überspringen
+- Einstellbare Raid-Verzögerung von 0 bis 600 Sekunden in der GUI
+- Chatnachricht, Shoutout und Clip-Wiedergabe starten nach der konfigurierten Verzögerung
+
 ## 1.5.4
 
 - Neuer `!jackpot`-Command zeigt den aktuell gespeicherten Jackpot im Twitch-Chat
@@ -45,64 +53,3 @@
 ## 1.3.0
 
 - Checkboxen im dunklen GUI-Theme wieder klar sichtbar und bedienbar
-- Konfigurierbare Punkte-Währung mit Einzahl, Mehrzahl und Live-Vorschau
-- Auswahl zwischen !punkte, !points, !perlen und eigenem Abfrage-Command
-- Konfigurierbare Punkte-Blacklist mit sicheren Standard-Botkonten
-- Zentrale Blacklist-Prüfung für Anwesenheit, Chat, Events, Casino und Vergaben
-
-- Anwesenheitspunkte für stille Zuschauer und Lurker
-- Neue Commands `!lurk`, `!unlurk` und `!give all <punkte>`
-- Garantierte vollständige Jackpot-Auszahlung bei einer gewürfelten 100
-- GUI-Einstellungen bleiben während der Plugin-Verbindung bedienbar
-- Neues RaidClip-Anwendungslogo für Fenster, EXE und Installer
-- Vollständig überarbeitete dunkle GUI mit roter RaidClip-Sidebar, Statuskarten und dunklen Tabs
-
-## 1.2.7
-
-- `!gamble all` setzt alle verfügbaren Punkte auf einen Wurf
-- `!give @name <punkte>` überträgt Punkte sicher zwischen Zuschauern
-- `!addpoints @name <punkte>` erzeugt als Broadcaster oder Mod neue Punkte
-
-## 1.2.6
-
-- Modulares Minigame-System mit gemeinsamer Punkte-Datenbank
-- Passive Punkte für Watchtime, Chat, Follow, Sub, Raid und Channel Rewards
-- Neue Commands !daily, !top, !rang und !profil
-- Optionale Casino-Spiele Coinflip und Slots
-- Dauerhafter Jackpot mit konfigurierbarer Chance und Einzahlung
-- Kontolimit sowie tägliche Spiele-, Verlust- und Gewinnlimits
-- Sieben übersichtliche Minigame-Reiter mit Rangliste und Historie
-- Sicherer JSON-Export und -Import mit automatischem Backup
-
-## 1.2.5
-
-- Neues optionales Modul „Chat-Minigame“ mit eigener Sidebar-Seite
-- Dauerhaftes Punktesystem für aktive Chat-Zuschauer
-- !punkte mit User-Cooldown
-- !gamble mit W100, Einsatzgrenzen und konfigurierbaren Auszahlungen
-- Admin-Commands add/remove/set für Broadcaster und Mods
-- Globaler Command-Cooldown und thread-sichere lokale Speicherung
-- Punktedaten können in der GUI zurückgesetzt werden
-
-## 1.2.4
-
-- Neue linke Kachelnavigation
-- Raid Clip und Chat-Moderation sind vollständig getrennte GUI-Seiten
-- Eigene Einstellungen und Statusanzeige pro Modul
-- Übersichtlicheres Layout für den Live-Betrieb
-
-## 1.2.3
-
-- Eigenständiges, optionales Modul „Chat-Moderation“
-- Twitch-Chat über EventSub mitlesen und in einem eigenen GUI-Tab anzeigen
-- Timeout, Ban und Nachrichtenlöschung direkt pro Chatzeile
-- Optionaler Wortfilter, der Treffer sicherheitshalber nur löscht
-- Optionale Whitelist für Streamer, Moderatoren und VIPs
-- Moderationsfehler werden isoliert geloggt und blockieren keine Raid-Clips
-- Neue Twitch-Berechtigungen für Chat und Moderation
-
-## 1.2.2
-
-- Sicherer Einrichtungsassistent für Twitch-Zugangsdaten
-- OBS-Browserquelle auf Knopfdruck erstellen
-- GitHub-Auto-Update mit SHA256-Prüfung

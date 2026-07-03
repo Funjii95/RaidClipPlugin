@@ -74,6 +74,7 @@ public sealed class ConfigurationService
             MaxClipDurationSeconds = config.Player.DurationSeconds,
             VolumePercent = config.Player.VolumePercent,
             RaidCooldownMinutes = config.Twitch.RaidCooldownMinutes,
+            RaidDelaySeconds = config.Twitch.RaidDelaySeconds,
             BlacklistedClipIds = config.Player.BlacklistedClipIds,
             SendRaidMessage = config.Chat.SendRaidMessage,
             SendShoutout = config.Chat.SendShoutout,
@@ -236,6 +237,12 @@ public sealed class ConfigurationService
             {
                 config.Twitch.RaidCooldownMinutes =
                     settings.RaidCooldownMinutes.Value;
+            }
+
+            if (settings.RaidDelaySeconds is not null)
+            {
+                config.Twitch.RaidDelaySeconds =
+                    settings.RaidDelaySeconds.Value;
             }
 
             if (settings.BlacklistedClipIds is not null)
@@ -510,6 +517,14 @@ public sealed class ConfigurationService
         {
             throw new InvalidOperationException(
                 "Der Raid-Cooldown muss zwischen 0 und 1440 Minuten liegen.");
+        }
+
+        if (config.Twitch.RaidDelaySeconds is < 0 or >
+            RaidDelayService.MaximumDelaySeconds)
+        {
+            throw new InvalidOperationException(
+                $"Die Raid-Verzögerung muss zwischen 0 und " +
+                $"{RaidDelayService.MaximumDelaySeconds} Sekunden liegen.");
         }
 
         if (config.Moderation.TimeoutSeconds is < 1 or > 1_209_600)
@@ -1093,6 +1108,7 @@ public sealed class ConfigurationService
         public int? MaxClipDurationSeconds { get; set; }
         public int? VolumePercent { get; set; }
         public int? RaidCooldownMinutes { get; set; }
+        public int? RaidDelaySeconds { get; set; }
         public List<string>? BlacklistedClipIds { get; set; }
         public bool? SendRaidMessage { get; set; }
         public bool? SendShoutout { get; set; }

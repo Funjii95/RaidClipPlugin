@@ -26,6 +26,7 @@ public class TwitchConfig
     public int ClipLookbackDays { get; set; } = 365;
     public int ClipRetryAttempts { get; set; } = 3;
     public int RaidCooldownMinutes { get; set; } = 5;
+    public int RaidDelaySeconds { get; set; } = 0;
 }
 
 public class OBSConfig
