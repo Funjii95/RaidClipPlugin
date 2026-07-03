@@ -3851,7 +3851,6 @@ public sealed partial class MainForm : Form
             _activeConfig.Moderation.Enabled != updated.Moderation.Enabled ||
             _activeConfig.MusicRequests.Enabled != updated.MusicRequests.Enabled ||
             _activeConfig.ClipCommand.Enabled != updated.ClipCommand.Enabled ||
-            _activeConfig.DiscordClips.Enabled != updated.DiscordClips.Enabled ||
             _activeConfig.Giveaways.Enabled != updated.Giveaways.Enabled ||
             _activeConfig.ClipCommand.MaximumQueueSize !=
                 updated.ClipCommand.MaximumQueueSize;
@@ -3876,6 +3875,19 @@ public sealed partial class MainForm : Form
         _musicRequests?.UpdateConfig(updated.MusicRequests);
         _spotify?.UpdateConfig(updated.MusicRequests);
         _clipCommandService?.UpdateConfig(updated.ClipCommand);
+        if (_clipCommandService is not null &&
+            updated.DiscordClips.Enabled &&
+            _discordClipService is null)
+        {
+            _discordClipService = new DiscordClipService(
+                updated.DiscordClips,
+                _discordCredentials,
+                new DiscordRestClient(_discordCredentials.BotToken),
+                new ClipTemplateService());
+            _clipCommandService.AttachDiscordService(_discordClipService);
+            AppendLog(
+                "Discord-Webhook-Versand wurde für den laufenden Clip-Command aktiviert.");
+        }
         _discordClipService?.UpdateConfig(updated.DiscordClips);
         _discordInviteService?.UpdateConfig(updated.DiscordClips);
         ApplyUiTheme(updated.UiTheme);

@@ -17,7 +17,7 @@ public sealed class ClipCommandService : IDisposable
     private readonly ClipPermissionService _permissions;
     private readonly ClipCooldownService _cooldowns;
     private readonly ClipTemplateService _templates;
-    private readonly DiscordClipService? _discord;
+    private DiscordClipService? _discord;
     private readonly Channel<ClipCommandRequest> _queue;
     private ClipCommandConfig _config;
     private int _pending;
@@ -65,6 +65,12 @@ public sealed class ClipCommandService : IDisposable
     }
 
     public void UpdateConfig(ClipCommandConfig config) => _config = config;
+
+    public void AttachDiscordService(DiscordClipService service)
+    {
+        ArgumentNullException.ThrowIfNull(service);
+        _discord ??= service;
+    }
 
     public async Task<bool> HandleMessageAsync(
         ChatMessage message,
@@ -238,13 +244,20 @@ public sealed class ClipCommandService : IDisposable
                 await SendAsync(_config.ChatMessages.Success,
                     request.Message, context, 0, cancellationToken);
 
+            var discordError = discordResult is null
+                ? ""
+                : string.Join("; ", discordResult.Deliveries
+                    .Where(delivery => !delivery.Success)
+                    .Select(delivery => string.IsNullOrWhiteSpace(delivery.ChannelId)
+                        ? delivery.Error
+                        : $"Channel {delivery.ChannelId}: {delivery.Error}"));
             StatusChanged?.Invoke(new ClipCommandStatus(
                 DateTimeOffset.Now,
                 clip.Id,
                 clip.Url,
                 discordResult?.SuccessfulChannels ?? 0,
                 discordResult?.FailedChannels ?? 0,
-                ""));
+                discordError));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

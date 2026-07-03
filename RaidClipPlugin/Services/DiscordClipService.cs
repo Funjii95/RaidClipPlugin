@@ -57,7 +57,20 @@ public sealed class DiscordClipService : IDisposable
         if (!_config.Enabled)
             return new DiscordClipPostResult(deliveries);
 
-        foreach (var channel in _config.Channels.Where(item => item.Enabled))
+        var enabledChannels = _config.Channels
+            .Where(item => item.Enabled)
+            .ToArray();
+        if (enabledChannels.Length == 0)
+        {
+            deliveries.Add(new DiscordClipDelivery(
+                "", false,
+                "Discord ist aktiviert, aber es ist kein Ziel-Channel aktiv."));
+            Console.WriteLine(
+                "Discord-Clip übersprungen: kein aktiver Ziel-Channel.");
+            return new DiscordClipPostResult(deliveries);
+        }
+
+        foreach (var channel in enabledChannels)
         {
             try
             {
@@ -72,6 +85,8 @@ public sealed class DiscordClipService : IDisposable
                         string.IsNullOrWhiteSpace(webhook))
                         throw new InvalidOperationException(
                             "Für diesen Channel ist keine Webhook-URL gespeichert.");
+                    Console.WriteLine(
+                        $"Sende Discord-Clip über Webhook für Channel {channel.ChannelId}.");
                     await _client.SendWebhookAsync(
                         webhook, payload, cancellationToken);
                 }

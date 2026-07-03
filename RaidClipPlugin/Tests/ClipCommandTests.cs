@@ -185,6 +185,32 @@ public sealed class ClipCommandTests
     }
 
     [Fact]
+    public async Task DiscordWebhookChannelUsesStoredWebhookUrl()
+    {
+        const string webhookUrl =
+            "https://discord.com/api/webhooks/123/token";
+        var config = DiscordConfig("1");
+        config.Channels[0].UseWebhook = true;
+        var credentials = new DiscordCredentials
+        {
+            WebhookUrls = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["1"] = webhookUrl
+            }
+        };
+        var client = new FakeDiscordClipClient();
+        using var service = new DiscordClipService(
+            config, credentials, client, new ClipTemplateService());
+
+        var result = await service.PostClipAsync(
+            Context(), CancellationToken.None);
+
+        Assert.True(result.AllSucceeded);
+        Assert.Empty(client.Attempts);
+        Assert.Equal(new[] { webhookUrl }, client.WebhookAttempts);
+    }
+
+    [Fact]
     public void DiscordPayloadSuppressesUserMentions()
     {
         var config = DiscordConfig("1");
@@ -270,6 +296,7 @@ public sealed class ClipCommandTests
     {
         public string FailedChannel { get; set; } = "";
         public List<string> Attempts { get; } = new();
+        public List<string> WebhookAttempts { get; } = new();
 
         public Task<DiscordChannelValidation> ValidateChannelAsync(
             string guildId, string channelId,
@@ -294,6 +321,10 @@ public sealed class ClipCommandTests
 
         public Task SendWebhookAsync(
             string webhookUrl, object payload,
-            CancellationToken cancellationToken) => Task.CompletedTask;
+            CancellationToken cancellationToken)
+        {
+            WebhookAttempts.Add(webhookUrl);
+            return Task.CompletedTask;
+        }
     }
 }
