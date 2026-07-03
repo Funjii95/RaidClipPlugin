@@ -489,14 +489,26 @@ public sealed partial class MainForm
         else _spotify.UpdateConfig(config);
     }
 
+    private MusicRequestConfig ReadSpotifyConnectionSettings()
+    {
+        var music = _configurationService.Load().MusicRequests;
+        music.SpotifyClientId = _spotifyClientIdBox.Text.Trim();
+        music.SelectedDeviceId =
+            (_spotifyDeviceBox.SelectedItem as SpotifyDevice)?.Id ??
+            music.SelectedDeviceId;
+        music.UseActiveDevice = _useActiveDeviceCheck.Checked;
+        music.ActivateSelectedDevice = _activateDeviceCheck.Checked;
+        return music;
+    }
+
     private async Task ConnectSpotifyAsync()
     {
         _spotifyConnectButton.Enabled = false;
         try
         {
-            var config = ReadSettingsFromControls();
-            _configurationService.SaveGuiSettings(config);
-            EnsureSpotify(config.MusicRequests);
+            var music = ReadSpotifyConnectionSettings();
+            _configurationService.SaveSpotifyConnectionSettings(music);
+            EnsureSpotify(music);
             SetSpotifyStatus("Anmeldung …", WaitingColor);
             await _spotify!.ConnectAsync(_shutdown?.Token ??
                 CancellationToken.None);
@@ -524,13 +536,13 @@ public sealed partial class MainForm
     {
         try
         {
-            var config = ReadSettingsFromControls();
-            EnsureSpotify(config.MusicRequests);
+            var music = ReadSpotifyConnectionSettings();
+            EnsureSpotify(music);
             var devices = await _spotify!.GetDevicesAsync(
                 _shutdown?.Token ?? CancellationToken.None);
             _spotifyDeviceBox.DataSource = devices.ToList();
             var selectedIndex = devices.ToList().FindIndex(device =>
-                device.Id.Equals(config.MusicRequests.SelectedDeviceId,
+                device.Id.Equals(music.SelectedDeviceId,
                     StringComparison.Ordinal));
             if (selectedIndex >= 0) _spotifyDeviceBox.SelectedIndex = selectedIndex;
             if (devices.Count == 0)
