@@ -482,6 +482,65 @@ public sealed class ViewerPointStore
         finally { _lock.Release(); }
     }
 
+    public async Task<HeistPayoutResult> PayoutHeistJackpotAsync(
+        IReadOnlyList<(string UserId, string DisplayName)> participants,
+        IReadOnlyCollection<int> remainderRecipients,
+        int jackpotStart,
+        bool resetToStart,
+        int historyLimit,
+        CancellationToken cancellationToken)
+    {
+        if (participants.Count == 0)
+            throw new ArgumentException("Mindestens ein Teilnehmer wird benötigt.", nameof(participants));
+
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var jackpot = Math.Max(_jackpot, Math.Max(0, jackpotStart));
+            var baseShare = jackpot / participants.Count;
+            var remainder = jackpot % participants.Count;
+            var extras = remainderRecipients.Distinct().Take(remainder).ToHashSet();
+            if (extras.Count != remainder || extras.Any(index => index < 0 || index >= participants.Count))
+                throw new InvalidOperationException("Die Restpunktverteilung ist ungültig.");
+
+            var payouts = new List<HeistParticipantPayout>(participants.Count);
+            for (var index = 0; index < participants.Count; index++)
+            {
+                var participant = participants[index];
+                var payout = checked(baseShare + (extras.Contains(index) ? 1 : 0));
+                var entry = GetOrCreateEntry(participant.UserId, participant.DisplayName, 0);
+                if ((long)entry.Points + payout > int.MaxValue)
+                    throw new InvalidOperationException("Eine Heist-Auszahlung überschreitet das technische Punktelimit.");
+                payouts.Add(new HeistParticipantPayout(participant.UserId, participant.DisplayName, payout, entry.Points + payout));
+            }
+
+            foreach (var payout in payouts)
+            {
+                var entry = GetOrCreateEntry(payout.UserId, payout.DisplayName, 0);
+                entry.Points = payout.NewBalance;
+                entry.DisplayName = payout.DisplayName;
+                entry.UpdatedAt = DateTimeOffset.Now;
+                _history.Insert(0, new MinigameHistoryEntry
+                {
+                    UserId = payout.UserId,
+                    DisplayName = payout.DisplayName,
+                    Game = "Heist",
+                    Action = $"Jackpot-Anteil {payout.Payout}",
+                    Change = payout.Payout,
+                    Balance = payout.NewBalance
+                });
+            }
+
+            if (_history.Count > Math.Max(1, historyLimit))
+                _history.RemoveRange(Math.Max(1, historyLimit), _history.Count - Math.Max(1, historyLimit));
+            _jackpot = resetToStart ? Math.Max(0, jackpotStart) : 0;
+            await SaveAllAsync(cancellationToken);
+            return new HeistPayoutResult(jackpot, _jackpot, payouts);
+        }
+        finally { _lock.Release(); }
+    }
+
     public async Task<int> GetJackpotAsync(int startValue,
         CancellationToken cancellationToken)
     {

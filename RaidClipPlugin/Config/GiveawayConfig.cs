@@ -7,7 +7,7 @@ public sealed class GiveawayConfig
     public string Description { get; set; } = "";
     public string Prize { get; set; } = "Überraschung";
     public string Command { get; set; } = "!giveaway";
-    public List<string> Aliases { get; set; } = new() { "!join" };
+    public List<string> Aliases { get; set; } = new() { "!join", "!gewinnspiel" };
     public int DurationMinutes { get; set; } = 10;
     public int MaximumWinners { get; set; } = 1;
     public bool PreventDuplicateEntries { get; set; } = true;

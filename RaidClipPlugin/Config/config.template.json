@@ -255,7 +255,8 @@
     "Prize": "Überraschung",
     "Command": "!giveaway",
     "Aliases": [
-      "!join"
+      "!join",
+      "!gewinnspiel"
     ],
     "DurationMinutes": 10,
     "MaximumWinners": 1,
@@ -302,5 +303,48 @@
       "Status": "!giveaway status"
     },
     "ExcludeBroadcasterFromDraw": true
+  },
+  "Heist": {
+    "Enabled": false,
+    "StartCommand": "!heist",
+    "JoinCommand": "!join",
+    "MinimumParticipants": 3,
+    "MaximumParticipants": 50,
+    "JoinDurationSeconds": 60,
+    "SuccessChancePercent": 50,
+    "UserCooldownMinutes": 30,
+    "GlobalCooldownMinutes": 10,
+    "ApplyGlobalCooldownOnCancelledHeist": false,
+    "AllowEveryone": true,
+    "AllowFollowers": true,
+    "AllowSubscribers": true,
+    "AllowVips": true,
+    "AllowModerators": true,
+    "SendParticipantJoinMessages": true,
+    "SendCountdownMessages": false,
+    "SendResultMessages": true,
+    "ResetJackpotAfterSuccess": true,
+    "StartMessage": "@{user} plant einen Heist! Schließt euch innerhalb von {seconds} Sekunden mit {joinCommand} an. Mindestens {minimum} Teilnehmer werden benötigt.",
+    "JoinMessage": "@{user} nimmt am Heist teil! Aktuelle Teilnehmer: {current}/{minimum}",
+    "AlreadyJoinedMessage": "@{user}, du nimmst bereits an diesem Heist teil.",
+    "NoActiveHeistMessage": "@{user}, aktuell läuft kein Heist.",
+    "MaximumParticipantsMessage": "@{user}, der Heist ist bereits voll. Es können maximal {maximum} Teilnehmer mitmachen.",
+    "NotEnoughParticipantsMessage": "Der Heist wurde abgebrochen. Es haben nur {current} von mindestens {minimum} benötigten Teilnehmern mitgemacht.",
+    "EvaluationMessage": "Der Heist beginnt mit {count} Teilnehmern! Ziel ist der aktuelle Jackpot von {jackpot} {currencyName}.",
+    "SuccessMessage": "Der Heist war erfolgreich! {count} Teilnehmer teilen sich den Jackpot von {jackpot} {currencyName}. Jeder erhält ungefähr {share} {currencyName}.",
+    "FailureMessage": "Der Heist ist gescheitert! Der Jackpot von {jackpot} {currencyName} bleibt erhalten."
+  },
+  "Commands": {
+    "Enabled": true,
+    "Command": "!commands",
+    "UserCooldownSeconds": 15,
+    "GlobalCooldownSeconds": 3,
+    "CommandsPerPage": 8,
+    "MaximumMessagesPerRequest": 3,
+    "ShowDescriptions": false,
+    "ShowAliases": false,
+    "GroupByModule": true,
+    "IncludeDisabledCommandsInUi": true,
+    "ExportDirectory": "exports"
   }
 }

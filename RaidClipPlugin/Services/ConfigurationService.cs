@@ -104,6 +104,8 @@ public sealed class ConfigurationService
                 .Select(CloneRange)
                 .ToList(),
             Minigame = config.Minigame,
+            Heist = config.Heist,
+            Commands = config.Commands,
             MusicRequests = config.MusicRequests,
             StreamCheck = config.StreamCheck,
             ClipCommand = config.ClipCommand,
@@ -341,6 +343,10 @@ public sealed class ConfigurationService
                     .ToList();
             if (settings.Minigame is not null)
                 config.Minigame = settings.Minigame;
+            if (settings.Heist is not null)
+                config.Heist = settings.Heist;
+            if (settings.Commands is not null)
+                config.Commands = settings.Commands;
             if (settings.MusicRequests is not null)
                 config.MusicRequests = settings.MusicRequests;
             if (settings.StreamCheck is not null)
@@ -428,6 +434,10 @@ public sealed class ConfigurationService
             .Where(name => name.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+        config.Heist.StartCommand = NormalizeCommand(config.Heist.StartCommand);
+        config.Heist.JoinCommand = NormalizeCommand(config.Heist.JoinCommand);
+        config.Commands.Command = NormalizeCommand(config.Commands.Command);
+        config.Commands.ExportDirectory = (config.Commands.ExportDirectory ?? "exports").Trim();
         NormalizeMusicRequests(config.MusicRequests);
         config.Minigame.GambleRanges =
             (config.Minigame.GambleRanges is { Count: > 0 }
@@ -537,6 +547,7 @@ public sealed class ConfigurationService
         ValidateMusicRequestSettings(config.MusicRequests);
         ValidateClipSettings(config.ClipCommand, config.DiscordClips);
         ValidateGiveawaySettings(config.Giveaways);
+        ValidateHeistAndCommands(config);
         var pointCommands = new List<string>();
         if (config.Minigame.PointsCommandPunkteEnabled) pointCommands.Add("!punkte");
         if (config.Minigame.PointsCommandPointsEnabled) pointCommands.Add("!points");
@@ -580,6 +591,50 @@ public sealed class ConfigurationService
         {
             throw new InvalidOperationException(
                 "Bitte eine Raid-Chatnachricht eingeben.");
+        }
+    }
+
+    public static void ValidateHeistAndCommands(AppConfig config)
+    {
+        var heist = config.Heist;
+        if (heist.MinimumParticipants < 3)
+            throw new InvalidOperationException("Der Heist benötigt mindestens 3 Teilnehmer.");
+        if (heist.MaximumParticipants < heist.MinimumParticipants || heist.MaximumParticipants > 500)
+            throw new InvalidOperationException("Die maximale Heist-Teilnehmerzahl muss zwischen Mindestteilnehmern und 500 liegen.");
+        if (heist.JoinDurationSeconds is < 10 or > 300)
+            throw new InvalidOperationException("Die Heist-Beitrittszeit muss zwischen 10 und 300 Sekunden liegen.");
+        if (heist.SuccessChancePercent is < 0 or > 100)
+            throw new InvalidOperationException("Die Heist-Erfolgschance muss zwischen 0 und 100 Prozent liegen.");
+        if (heist.UserCooldownMinutes < 0 || heist.GlobalCooldownMinutes < 0)
+            throw new InvalidOperationException("Heist-Cooldowns dürfen nicht negativ sein.");
+        if (string.IsNullOrWhiteSpace(heist.StartCommand) || string.IsNullOrWhiteSpace(heist.JoinCommand) ||
+            heist.StartCommand.Equals(heist.JoinCommand, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Heist-Start- und Beitritts-Command müssen unterschiedlich und gültig sein.");
+        if (!(heist.AllowEveryone || heist.AllowFollowers || heist.AllowSubscribers || heist.AllowVips || heist.AllowModerators))
+            throw new InvalidOperationException("Bitte mindestens eine Heist-Berechtigung aktivieren.");
+        var messages = new[] { heist.StartMessage, heist.JoinMessage, heist.AlreadyJoinedMessage,
+            heist.NoActiveHeistMessage, heist.MaximumParticipantsMessage, heist.NotEnoughParticipantsMessage,
+            heist.EvaluationMessage, heist.SuccessMessage, heist.FailureMessage };
+        if (messages.Any(string.IsNullOrWhiteSpace))
+            throw new InvalidOperationException("Alle Heist-Chatnachrichten müssen ausgefüllt sein.");
+
+        var commands = config.Commands;
+        if (string.IsNullOrWhiteSpace(commands.Command))
+            throw new InvalidOperationException("Der Commands-Command darf nicht leer sein.");
+        if (commands.UserCooldownSeconds < 0 || commands.GlobalCooldownSeconds < 0)
+            throw new InvalidOperationException("Commands-Cooldowns dürfen nicht negativ sein.");
+        if (commands.CommandsPerPage < 1)
+            throw new InvalidOperationException("Commands pro Seite muss größer als 0 sein.");
+        if (commands.MaximumMessagesPerRequest is < 1 or > 5)
+            throw new InvalidOperationException("Maximale Commands-Nachrichten müssen zwischen 1 und 5 liegen.");
+
+        var registry = new CommandRegistry();
+        registry.Update(config);
+        var collision = registry.FindCollisions(includeDisabled: false).FirstOrDefault();
+        if (collision is not null)
+        {
+            Console.WriteLine("Command-Kollision: " + collision.Message);
+            throw new InvalidOperationException(collision.Message);
         }
     }
 
@@ -1134,6 +1189,8 @@ public sealed class ConfigurationService
         public int? MaximumBet { get; set; }
         public List<GambleRangeConfig>? GambleRanges { get; set; }
         public MinigameConfig? Minigame { get; set; }
+        public HeistConfig? Heist { get; set; }
+        public CommandsConfig? Commands { get; set; }
         public MusicRequestConfig? MusicRequests { get; set; }
         public StreamCheckConfig? StreamCheck { get; set; }
         public ClipCommandConfig? ClipCommand { get; set; }

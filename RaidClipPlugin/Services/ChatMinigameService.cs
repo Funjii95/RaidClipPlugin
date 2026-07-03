@@ -11,6 +11,9 @@ public sealed class ChatMinigameService : IDisposable
     private MinigameConfig _config;
     private readonly TwitchService _twitch;
     private readonly ViewerPointStore _points;
+    private readonly CommandRegistry _commandRegistry;
+    private readonly HeistService? _heist;
+    private CommandsConfig _commandsConfig;
     private readonly object _activityLock = new();
     private readonly Dictionary<string, string> _activeUsers =
         new(StringComparer.Ordinal);
@@ -31,6 +34,8 @@ public sealed class ChatMinigameService : IDisposable
     private readonly Dictionary<string, DateTimeOffset> _slotsCooldowns = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _rouletteCooldowns = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _chatPointCooldowns = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, DateTimeOffset> _commandsCooldowns = new(StringComparer.Ordinal);
+    private DateTimeOffset _lastCommandsGlobal = DateTimeOffset.MinValue;
     private readonly ConcurrentDictionary<string, byte> _processedMessages =
         new(StringComparer.Ordinal);
     private DateTimeOffset _lastGlobalCommand = DateTimeOffset.MinValue;
@@ -113,19 +118,30 @@ public sealed class ChatMinigameService : IDisposable
 
     public event Action<int, int>? PointsAwarded;
     public event Action? DataChanged;
+    public event Action<HeistStatus>? HeistStatusChanged;
 
     public ChatMinigameService(
         string broadcasterId,
         string chatUserId,
         MinigameConfig config,
         TwitchService twitch,
-        ViewerPointStore points)
+        ViewerPointStore points,
+        HeistConfig? heistConfig = null,
+        CommandsConfig? commandsConfig = null,
+        CommandRegistry? commandRegistry = null)
     {
         _broadcasterId = broadcasterId;
         _chatUserId = chatUserId;
         _config = config;
         _twitch = twitch;
         _points = points;
+        _commandsConfig = commandsConfig ?? new CommandsConfig();
+        _commandRegistry = commandRegistry ?? new CommandRegistry();
+        if (heistConfig is not null)
+        {
+            _heist = new HeistService(broadcasterId, chatUserId, heistConfig, config, twitch, points);
+            _heist.StatusChanged += status => HeistStatusChanged?.Invoke(status);
+        }
     }
 
     public void UpdateConfig(MinigameConfig config)
@@ -133,6 +149,21 @@ public sealed class ChatMinigameService : IDisposable
         ArgumentNullException.ThrowIfNull(config);
         _config = config;
     }
+
+    public void UpdateConfiguration(AppConfig config)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        _config = config.Minigame;
+        _commandsConfig = config.Commands;
+        _commandRegistry.Update(config);
+        _heist?.UpdateConfig(config.Heist, config.Minigame);
+    }
+
+    public Task RunTestHeistAsync(CancellationToken cancellationToken) =>
+        _heist?.RunTestAsync(cancellationToken) ?? Task.CompletedTask;
+
+    public Task CancelHeistAsync(CancellationToken cancellationToken) =>
+        _heist?.CancelAsync(true, cancellationToken) ?? Task.CompletedTask;
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -145,7 +176,7 @@ public sealed class ChatMinigameService : IDisposable
     {
         try
         {
-            if (!ShouldRun(_config))
+            if (!ShouldRun(_config) && _heist is null && !_commandsConfig.Enabled)
             {
                 return;
             }
@@ -316,6 +347,19 @@ public sealed class ChatMinigameService : IDisposable
                 StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0) return;
             var command = parts[0].ToLowerInvariant();
+
+            if (_commandsConfig.Enabled &&
+                command == CommandRegistry.Normalize(_commandsConfig.Command))
+            {
+                await HandleCommandsCommandAsync(message, parts, cancellationToken);
+                return;
+            }
+
+            if (_heist?.Matches(command) == true)
+            {
+                await _heist.ProcessAsync(message, command, cancellationToken);
+                return;
+            }
 
             if (!IsCommandModuleEnabled(_config, command))
             {
@@ -1088,6 +1132,72 @@ public sealed class ChatMinigameService : IDisposable
         DataChanged?.Invoke();
     }
 
+    private async Task HandleCommandsCommandAsync(
+        ChatMessage message,
+        string[] parts,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        await _cooldownLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (now - _lastCommandsGlobal < TimeSpan.FromSeconds(_commandsConfig.GlobalCooldownSeconds) ||
+                _commandsCooldowns.TryGetValue(message.UserId, out var last) &&
+                now - last < TimeSpan.FromSeconds(_commandsConfig.UserCooldownSeconds))
+            {
+                Console.WriteLine($"!commands von {message.UserName} wegen Cooldown abgelehnt.");
+                return;
+            }
+            _lastCommandsGlobal = now;
+            _commandsCooldowns[message.UserId] = now;
+        }
+        finally { _cooldownLock.Release(); }
+
+        var available = _commandRegistry.VisibleFor(message);
+        var request = parts.Length > 1 ? parts[1].Trim().ToLowerInvariant() : "1";
+        Console.WriteLine($"!commands-Aufruf von {message.UserName}; Anforderung: {request}.");
+        if (request == "help")
+        {
+            await TrySendChatAsync($"@{message.UserName}, nutze {_commandsConfig.Command} [Seite] oder {_commandsConfig.Command} <Modul>, z. B. {_commandsConfig.Command} heist.", cancellationToken);
+            return;
+        }
+
+        if (!int.TryParse(request, out var page))
+        {
+            available = available.Where(command =>
+                command.ModuleId.Equals(request, StringComparison.OrdinalIgnoreCase) ||
+                command.ModuleDisplayName.Equals(request, StringComparison.OrdinalIgnoreCase) ||
+                (request == "musik" && command.ModuleId == "music") ||
+                (request == "clips" && command.ModuleId == "clips")).ToArray();
+            page = 1;
+        }
+
+        var pageSize = Math.Max(1, _commandsConfig.CommandsPerPage);
+        var pages = Math.Max(1, (int)Math.Ceiling(available.Count / (double)pageSize));
+        page = Math.Clamp(page, 1, pages);
+        var selected = available.Skip((page - 1) * pageSize).Take(pageSize).ToArray();
+        var messages = new List<string> { $"@{message.UserName}, verfügbare Commands – Seite {page}/{pages}:" };
+        foreach (var group in selected.GroupBy(command => command.ModuleDisplayName))
+        {
+            var entries = group.Select(command => _commandsConfig.ShowDescriptions
+                ? $"{command.Usage} – {command.Description}"
+                : command.Usage + (_commandsConfig.ShowAliases && command.Aliases.Count > 0
+                    ? $" ({string.Join(", ", command.Aliases)})" : ""));
+            messages.Add($"{group.Key}: {string.Join(" | ", entries)}");
+        }
+        if (page < pages) messages.Add($"Weitere Seiten: {_commandsConfig.Command} {page + 1} | Nach Modul: {_commandsConfig.Command} heist");
+
+        var sent = 0;
+        foreach (var raw in messages)
+        {
+            if (sent >= Math.Clamp(_commandsConfig.MaximumMessagesPerRequest, 1, 5)) break;
+            var text = raw.Length <= 480 ? raw : raw[..477] + "…";
+            await TrySendChatAsync(text, cancellationToken);
+            sent++;
+            if (sent < messages.Count) await Task.Delay(250, cancellationToken);
+        }
+    }
+
     private async Task<bool> TryEnterCooldownAsync(
         string userId,
         Dictionary<string, DateTimeOffset>? userCooldowns,
@@ -1155,6 +1265,8 @@ public sealed class ChatMinigameService : IDisposable
             return;
         }
 
+        if (_heist is not null)
+            _heist.DisposeAsync().AsTask().GetAwaiter().GetResult();
         _cooldownLock.Dispose();
         _disposed = true;
     }

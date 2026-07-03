@@ -51,3 +51,13 @@ public sealed record CasinoApplyResult(
     string Error,
     int Balance,
     int JackpotWon);
+public sealed record HeistParticipantPayout(
+    string UserId,
+    string DisplayName,
+    int Payout,
+    int NewBalance);
+
+public sealed record HeistPayoutResult(
+    int JackpotBefore,
+    int JackpotAfter,
+    IReadOnlyList<HeistParticipantPayout> Payouts);

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -9,8 +9,8 @@
     <AssemblyName>RaidClipPlugin</AssemblyName>
     <RootNamespace>RaidClipPlugin</RootNamespace>
     <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
-    <Version>1.5.5</Version>
-    <FileVersion>1.5.5.0</FileVersion>
+    <Version>1.5.6</Version>
+    <FileVersion>1.5.6.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

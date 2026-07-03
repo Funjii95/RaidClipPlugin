@@ -695,6 +695,7 @@ public sealed partial class MainForm : Form
         InitializeStreamCheckEvents();
         InitializeClipDiscordEvents();
         InitializeGiveawayEvents();
+        InitializeHeistCommandEvents();
         InitializeChatDiagnosticsEvents();
         InitializeThemeEvents();
 
@@ -1161,6 +1162,7 @@ public sealed partial class MainForm : Form
         var showStreamCheck = section == "stream-check";
         var showClipDiscord = section == "clip-discord";
         var showGiveaways = section == "giveaways";
+        var showCommands = section == "commands";
 
         _raidPage.Visible = showRaid;
         _moderationPage.Visible = showModeration;
@@ -1169,6 +1171,7 @@ public sealed partial class MainForm : Form
         _streamCheckPage.Visible = showStreamCheck;
         _clipDiscordPage.Visible = showClipDiscord;
         _giveawayPage.Visible = showGiveaways;
+        _commandsPage.Visible = showCommands;
 
         if (showModeration)
             _moderationPage.BringToFront();
@@ -1182,6 +1185,8 @@ public sealed partial class MainForm : Form
             _clipDiscordPage.BringToFront();
         else if (showGiveaways)
             _giveawayPage.BringToFront();
+        else if (showCommands)
+            _commandsPage.BringToFront();
         else
             _raidPage.BringToFront();
 
@@ -1192,6 +1197,7 @@ public sealed partial class MainForm : Form
         SetNavigationTileState(_streamCheckNavButton, showStreamCheck);
         SetNavigationTileState(_clipDiscordNavButton, showClipDiscord);
         SetNavigationTileState(_giveawayNavButton, showGiveaways);
+        SetNavigationTileState(_commandsNavButton, showCommands);
         if (showMusic) _ = RefreshMusicGridAsync();
         if (showMinigame) _ = RefreshMinigameDashboardAsync();
     }
@@ -1785,6 +1791,7 @@ public sealed partial class MainForm : Form
         AddMinigameTab(tabs, "Punkte & Währung", pointsFlow);
         AddMinigameTab(tabs, "Chat-Commands", commandsFlow);
         AddMinigameTab(tabs, "Casino-Spiele", casinoLayout);
+        AddMinigameTab(tabs, "Heist", BuildHeistSettingsPanel());
         AddMinigameTab(tabs, "Limits & Fairness", limitsFlow);
         AddMinigameTab(tabs, "Rangliste", _minigameTopList);
         AddMinigameTab(tabs, "Historie & Daten", historyLayout);
@@ -1820,6 +1827,7 @@ public sealed partial class MainForm : Form
         BuildStreamCheckPage();
         BuildClipDiscordPage();
         BuildGiveawayPage();
+        BuildCommandsPage();
 
         var brand = new PictureBox
         {
@@ -1845,6 +1853,7 @@ public sealed partial class MainForm : Form
         navigation.Controls.Add(_raidClipNavButton);
         navigation.Controls.Add(_moderationNavButton);
         navigation.Controls.Add(_minigameNavButton);
+        navigation.Controls.Add(_commandsNavButton);
         navigation.Controls.Add(_musicNavButton);
         navigation.Controls.Add(_clipDiscordNavButton);
         navigation.Controls.Add(_giveawayNavButton);
@@ -1855,6 +1864,7 @@ public sealed partial class MainForm : Form
             Dock = DockStyle.Fill,
             BackColor = BackgroundColor
         };
+        contentHost.Controls.Add(_commandsPage);
         contentHost.Controls.Add(_giveawayPage);
         contentHost.Controls.Add(_streamCheckPage);
         contentHost.Controls.Add(_clipDiscordPage);
@@ -2196,7 +2206,7 @@ public sealed partial class MainForm : Form
                         _giveawayService.ProcessMessageAsync(message, cancellationToken);
                 }
 
-                if (ChatMinigameService.ShouldRun(config.Minigame))
+                if (ChatMinigameService.ShouldRun(config.Minigame) || config.Heist.Enabled || config.Commands.Enabled)
                 {
                     SetMinigameStatus("Startet …", WaitingColor);
                     _minigame = new ChatMinigameService(
@@ -2204,7 +2214,10 @@ public sealed partial class MainForm : Form
                         session.UserId,
                         config.Minigame,
                         twitch,
-                        _viewerPoints);
+                        _viewerPoints,
+                        config.Heist,
+                        config.Commands,
+                        _commandRegistry);
                     _chatModeration.Activated += () =>
                         SetMinigameStatus(
                             config.Minigame.Enabled && config.Minigame.PointsEnabled
@@ -2219,6 +2232,7 @@ public sealed partial class MainForm : Form
                             ActiveColor);
                     _minigame.DataChanged += () =>
                         _ = RefreshMinigameDashboardAsync();
+                    _minigame.HeistStatusChanged += OnHeistStatusChanged;
                     _chatModeration.MessageReceived += message =>
                         _minigame.ProcessMessageAsync(
                             message,
@@ -3670,6 +3684,7 @@ public sealed partial class MainForm : Form
             LoadMusicRequestSettings(config.MusicRequests);
             LoadClipDiscordSettings(config);
             LoadGiveawaySettings(config.Giveaways);
+            LoadHeistCommandsSettings(config);
         }
         catch (Exception exception)
         {
@@ -3824,6 +3839,7 @@ public sealed partial class MainForm : Form
         config.Minigame.DailyWinLimit = decimal.ToInt32(_dailyWinControl.Value);
         config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
         ReadMusicRequestSettings(config);
+        ReadHeistCommandsSettings(config);
         return config;
     }
 
@@ -3876,11 +3892,15 @@ public sealed partial class MainForm : Form
             _activeConfig.MusicRequests.Enabled != updated.MusicRequests.Enabled ||
             _activeConfig.ClipCommand.Enabled != updated.ClipCommand.Enabled ||
             _activeConfig.Giveaways.Enabled != updated.Giveaways.Enabled ||
+            _activeConfig.Heist.Enabled != updated.Heist.Enabled ||
+            _activeConfig.Commands.Enabled != updated.Commands.Enabled ||
             _activeConfig.ClipCommand.MaximumQueueSize !=
                 updated.ClipCommand.MaximumQueueSize;
         _activeConfig.Chat = updated.Chat;
         _activeConfig.Moderation = updated.Moderation;
         _activeConfig.Minigame = updated.Minigame;
+        _activeConfig.Heist = updated.Heist;
+        _activeConfig.Commands = updated.Commands;
         _activeConfig.MusicRequests = updated.MusicRequests;
         _activeConfig.ClipCommand = updated.ClipCommand;
         _activeConfig.DiscordClips = updated.DiscordClips;
@@ -3897,7 +3917,8 @@ public sealed partial class MainForm : Form
             updated.Twitch.RaidCooldownMinutes;
         _activeConfig.Twitch.RaidDelaySeconds =
             updated.Twitch.RaidDelaySeconds;
-        _minigame?.UpdateConfig(updated.Minigame);
+        _commandRegistry.Update(updated);
+        _minigame?.UpdateConfiguration(updated);
         _musicRequests?.UpdateConfig(updated.MusicRequests);
         _spotify?.UpdateConfig(updated.MusicRequests);
         _clipCommandService?.UpdateConfig(updated.ClipCommand);
@@ -3952,7 +3973,9 @@ public sealed partial class MainForm : Form
         message.Contains("Einsatz", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Command-Cooldown", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Währung", StringComparison.OrdinalIgnoreCase) ||
-        message.Contains("Punkteabfrage", StringComparison.OrdinalIgnoreCase);
+        message.Contains("Punkteabfrage", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Heist", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Command", StringComparison.OrdinalIgnoreCase);
 
     private static void SetNumericValue(
         NumericUpDown control,
