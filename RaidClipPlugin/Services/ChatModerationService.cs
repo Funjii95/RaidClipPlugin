@@ -413,19 +413,26 @@ public sealed class ChatModerationService : IDisposable
 
         _ = Task.Run(async () =>
         {
-            foreach (var handler in handlers)
-            {
-                try
-                {
-                    await handler(message);
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(
-                        "Chat-Command-Handler fehlgeschlagen: " + exception.Message);
-                }
-            }
+            var tasks = handlers
+                .Select(handler => InvokeMessageHandlerAsync(handler, message))
+                .ToArray();
+            await Task.WhenAll(tasks);
         });
+    }
+
+    private static async Task InvokeMessageHandlerAsync(
+        Func<ChatMessage, Task> handler,
+        ChatMessage message)
+    {
+        try
+        {
+            await handler(message);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(
+                "Chat-Command-Handler fehlgeschlagen: " + exception.Message);
+        }
     }
 
     private void PublishDiagnostics(ChatConnectionDiagnostics diagnostics)

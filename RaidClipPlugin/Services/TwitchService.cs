@@ -442,7 +442,9 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
 
         throw new HttpRequestException(
             $"Twitch API meldet {(int)response.StatusCode} " +
-            $"{response.StatusCode}: {body}");
+            $"{response.StatusCode}: {body}",
+            null,
+            response.StatusCode);
     }
 }
 

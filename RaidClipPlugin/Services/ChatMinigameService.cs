@@ -419,6 +419,13 @@ public sealed class ChatMinigameService : IDisposable
                 return;
             }
 
+            if (command == "!removepoints")
+            {
+                await HandleRemovePointsCommandAsync(
+                    message, parts, cancellationToken);
+                return;
+            }
+
             if (command == "!coinflip")
             {
                 if (!_config.CoinflipEnabled || parts.Length != 3 ||
@@ -952,6 +959,67 @@ public sealed class ChatMinigameService : IDisposable
         await TrySendChatAsync(
             $"@{user.DisplayName} erhält {FormatCurrency(amount)} und hat jetzt " +
             $"{FormatCurrency(newBalance)}.", cancellationToken);
+        DataChanged?.Invoke();
+    }
+
+    public static bool CanUseRemovePointsCommand(
+        ChatMessage message,
+        string broadcasterId) =>
+        message.IsBroadcaster ||
+        (!string.IsNullOrWhiteSpace(message.UserId) &&
+         message.UserId.Equals(broadcasterId, StringComparison.Ordinal));
+
+    private async Task HandleRemovePointsCommandAsync(
+        ChatMessage message,
+        string[] parts,
+        CancellationToken cancellationToken)
+    {
+        if (!CanUseRemovePointsCommand(message, _broadcasterId))
+        {
+            Console.WriteLine(
+                $"Minigame-Admin: !removepoints von {message.UserName} abgelehnt; " +
+                "nur der Broadcaster darf diesen Befehl verwenden.");
+            await TrySendChatAsync(
+                $"@{message.UserName}, !removepoints darf nur der Broadcaster verwenden.",
+                cancellationToken);
+            return;
+        }
+
+        if (parts.Length != 2)
+        {
+            await TrySendChatAsync(
+                $"@{message.UserName}, nutze !removepoints @name.",
+                cancellationToken);
+            return;
+        }
+
+        var login = parts[1].Trim().TrimStart('@');
+        if (string.IsNullOrWhiteSpace(login))
+        {
+            await TrySendChatAsync(
+                $"@{message.UserName}, nutze !removepoints @name.",
+                cancellationToken);
+            return;
+        }
+
+        var user = await _twitch.GetUserAsync(login, cancellationToken);
+        if (user is null)
+        {
+            await TrySendChatAsync(
+                $"@{message.UserName}, Twitch-Nutzer @{login} wurde nicht gefunden.",
+                cancellationToken);
+            return;
+        }
+
+        var newBalance = await _points.SetPointsAsync(
+            user.Id, user.DisplayName, 0, 0,
+            cancellationToken, MaximumPoints);
+        Console.WriteLine(
+            $"Minigame-Admin: Broadcaster {message.UserName} setzt die Punkte " +
+            $"von {user.DisplayName} auf 0. Neuer Stand: {newBalance}.");
+        await TrySendChatAsync(
+            $"@{user.DisplayName}s Punktestand wurde vom Broadcaster auf 0 gesetzt.",
+            cancellationToken);
         DataChanged?.Invoke();
     }
 
