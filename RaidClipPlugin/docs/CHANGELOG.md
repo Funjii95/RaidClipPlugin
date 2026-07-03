@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.8
+
+- `!heist` reagiert wieder zuverlässig im Twitch-Chat.
+- Broadcaster mit identischem Botkonto werden nicht länger fälschlich blockiert.
+- Moderatoren dürfen einen Heist starten.
+- Deaktivierte oder nicht erlaubte Heist-Aufrufe liefern eine verständliche Chatantwort.
+- Der Test-Heist sendet drei klar markierte Testmeldungen in den Chat, ohne Punkte oder Jackpot zu verändern.
+
 ## 1.5.7
 
 - Startabsturz der neuen Commands-Tabelle behoben.

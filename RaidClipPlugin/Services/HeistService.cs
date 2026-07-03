@@ -9,6 +9,12 @@ public sealed record HeistParticipant(string UserId,string Login,string DisplayN
 public sealed record HeistStatus(HeistState State,string Creator,int ParticipantCount,int SecondsRemaining,
     int Jackpot,int SuccessChancePercent,IReadOnlyList<string> Participants,bool TestMode=false);
 
+public interface IHeistTwitchClient
+{
+    Task SendChatMessageAsync(string broadcasterId, string senderId, string message, CancellationToken cancellationToken);
+    Task<bool> IsFollowerAsync(string broadcasterId, string userId, CancellationToken cancellationToken);
+}
+
 public interface IHeistRandom
 {
     int NextInclusive(int minimum,int maximum);
@@ -36,7 +42,7 @@ public sealed class HeistService : IAsyncDisposable
 {
     private readonly string _broadcasterId;
     private readonly string _chatUserId;
-    private readonly TwitchService _twitch;
+    private readonly IHeistTwitchClient _twitch;
     private readonly ViewerPointStore _points;
     private readonly IHeistRandom _random;
     private readonly SemaphoreSlim _gate=new(1,1);
@@ -55,7 +61,7 @@ public sealed class HeistService : IAsyncDisposable
     public HeistState State { get; private set; }=HeistState.Inactive;
 
     public HeistService(string broadcasterId,string chatUserId,HeistConfig config,
-        MinigameConfig minigame,TwitchService twitch,ViewerPointStore points,IHeistRandom? random=null)
+        MinigameConfig minigame,IHeistTwitchClient twitch,ViewerPointStore points,IHeistRandom? random=null)
     {
         _broadcasterId=broadcasterId; _chatUserId=chatUserId; _config=config;
         _minigame=minigame; _twitch=twitch; _points=points; _random=random??new CryptoHeistRandom();
@@ -64,12 +70,20 @@ public sealed class HeistService : IAsyncDisposable
     public void UpdateConfig(HeistConfig config,MinigameConfig minigame)
     { _config=config; _minigame=minigame; }
 
-    public bool Matches(string command) => _config.Enabled &&
-        (CommandRegistry.Normalize(command)==CommandRegistry.Normalize(_config.StartCommand) ||
-         CommandRegistry.Normalize(command)==CommandRegistry.Normalize(_config.JoinCommand));
+    public bool Recognizes(string command) =>
+        CommandRegistry.Normalize(command)==CommandRegistry.Normalize(_config.StartCommand) ||
+        CommandRegistry.Normalize(command)==CommandRegistry.Normalize(_config.JoinCommand);
+
+    public bool Matches(string command) => _config.Enabled && Recognizes(command);
 
     public async Task ProcessAsync(ChatMessage message,string command,CancellationToken cancellationToken)
     {
+        if(!Recognizes(command)) return;
+        if(!_config.Enabled)
+        {
+            await SendAsync($"@{message.UserName}, das Heist-Modul ist aktuell deaktiviert.",cancellationToken);
+            return;
+        }
         if(CommandRegistry.Normalize(command)==CommandRegistry.Normalize(_config.StartCommand))
             await StartAsync(message,cancellationToken);
         else await JoinAsync(message,cancellationToken);
@@ -78,8 +92,18 @@ public sealed class HeistService : IAsyncDisposable
     public async Task StartAsync(ChatMessage creator,CancellationToken cancellationToken)
     {
         if(!_config.Enabled)return;
-        if(IsBlocked(creator)) { Console.WriteLine($"Heist-Start von {creator.UserName} abgelehnt: Bot/Blacklist."); return; }
-        if(!await IsAllowedAsync(creator,cancellationToken)) { Console.WriteLine($"Heist-Start von {creator.UserName} abgelehnt: Berechtigung."); return; }
+        if(IsBlocked(creator))
+        {
+            Console.WriteLine($"Heist-Start von {creator.UserName} abgelehnt: Bot/Blacklist.");
+            await SendAsync($"@{creator.UserName}, du darfst keinen Heist starten.",cancellationToken);
+            return;
+        }
+        if(!await IsAllowedAsync(creator,cancellationToken,starting:true))
+        {
+            Console.WriteLine($"Heist-Start von {creator.UserName} abgelehnt: Berechtigung.");
+            await SendAsync($"@{creator.UserName}, du hast keine Berechtigung, einen Heist zu starten.",cancellationToken);
+            return;
+        }
         await _gate.WaitAsync(cancellationToken);
         try
         {
@@ -107,8 +131,18 @@ public sealed class HeistService : IAsyncDisposable
     public async Task JoinAsync(ChatMessage user,CancellationToken cancellationToken)
     {
         if(!_config.Enabled)return;
-        if(IsBlocked(user)) { Console.WriteLine($"Heist-Beitritt von {user.UserName} abgelehnt: Bot/Blacklist."); return; }
-        if(!await IsAllowedAsync(user,cancellationToken)) { Console.WriteLine($"Heist-Beitritt von {user.UserName} abgelehnt: Berechtigung."); return; }
+        if(IsBlocked(user))
+        {
+            Console.WriteLine($"Heist-Beitritt von {user.UserName} abgelehnt: Bot/Blacklist.");
+            await SendAsync($"@{user.UserName}, du darfst diesem Heist nicht beitreten.",cancellationToken);
+            return;
+        }
+        if(!await IsAllowedAsync(user,cancellationToken))
+        {
+            Console.WriteLine($"Heist-Beitritt von {user.UserName} abgelehnt: Berechtigung.");
+            await SendAsync($"@{user.UserName}, du hast keine Berechtigung, diesem Heist beizutreten.",cancellationToken);
+            return;
+        }
         await _gate.WaitAsync(cancellationToken);
         try
         {
@@ -213,19 +247,23 @@ public sealed class HeistService : IAsyncDisposable
     {
         var jackpot=await _points.GetJackpotAsync(_minigame.JackpotStartValue,cancellationToken);
         var count=Math.Max(3,_config.MinimumParticipants); var roll=_random.NextInclusive(1,100);
+        var startText="[TEST] "+Format(_config.StartMessage,"TestStreamer",1,0,0);
+        var evaluationText="[TEST] "+Format(_config.EvaluationMessage,"",count,jackpot,jackpot/count);
+        var resultText="[TEST] "+Format(roll<=_config.SuccessChancePercent?_config.SuccessMessage:_config.FailureMessage,"",count,jackpot,jackpot/count);
         Console.WriteLine("TESTMODUS – keine echte Auszahlung");
-        Console.WriteLine(Format(_config.StartMessage,"TestStreamer",1,0,0));
-        for(var i=2;i<=count;i++)Console.WriteLine(Format(_config.JoinMessage,"TestUser"+i,i,0,0));
-        Console.WriteLine(Format(_config.EvaluationMessage,"",count,jackpot,jackpot/count));
-        Console.WriteLine(Format(roll<=_config.SuccessChancePercent?_config.SuccessMessage:_config.FailureMessage,"",count,jackpot,jackpot/count));
+        Console.WriteLine(startText); Console.WriteLine(evaluationText); Console.WriteLine(resultText);
         Console.WriteLine($"Test-Heist: Chance {_config.SuccessChancePercent}%, Zufallswert {roll}; Jackpot und Punkte unverändert.");
+        await SendAsync(startText,cancellationToken);
+        await SendAsync(evaluationText,cancellationToken);
+        await SendAsync(resultText+" Keine echte Auszahlung.",cancellationToken);
     }
 
-    private bool IsBlocked(ChatMessage user)=>user.UserId==_chatUserId || _minigame.PointsBlacklist.Any(x=>
+    private bool IsBlocked(ChatMessage user)=>(user.UserId==_chatUserId && user.UserId!=_broadcasterId) || _minigame.PointsBlacklist.Any(x=>
         x.Equals(user.UserLogin,StringComparison.OrdinalIgnoreCase)||x.Equals(user.UserName,StringComparison.OrdinalIgnoreCase));
-    private async Task<bool> IsAllowedAsync(ChatMessage user,CancellationToken token)
+    private async Task<bool> IsAllowedAsync(ChatMessage user,CancellationToken token,bool starting=false)
     {
         if(user.IsBroadcaster||user.UserId==_broadcasterId)return true;
+        if(starting&&user.IsModerator)return true;
         if(_config.AllowEveryone)return true;
         if(_config.AllowModerators&&user.IsModerator||_config.AllowVips&&user.IsVip||_config.AllowSubscribers&&user.IsSubscriber)return true;
         return _config.AllowFollowers&&await _twitch.IsFollowerAsync(_broadcasterId,user.UserId,token);

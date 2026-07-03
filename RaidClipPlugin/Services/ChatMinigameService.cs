@@ -355,7 +355,7 @@ public sealed class ChatMinigameService : IDisposable
                 return;
             }
 
-            if (_heist?.Matches(command) == true)
+            if (_heist?.Recognizes(command) == true)
             {
                 await _heist.ProcessAsync(message, command, cancellationToken);
                 return;

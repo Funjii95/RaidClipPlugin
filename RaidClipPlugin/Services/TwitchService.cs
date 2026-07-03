@@ -5,7 +5,7 @@ using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
-public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawayTwitchClient
+public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawayTwitchClient, IHeistTwitchClient
 {
     private readonly HttpClient _http = new();
 
