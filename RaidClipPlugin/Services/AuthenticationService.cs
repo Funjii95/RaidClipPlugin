@@ -16,7 +16,7 @@ public sealed class AuthenticationService
         "user:read:chat user:write:chat moderator:manage:shoutouts " +
         "moderator:manage:banned_users moderator:manage:chat_messages " +
         "moderator:read:chatters moderator:read:followers " +
-        "channel:read:subscriptions channel:manage:redemptions";
+        "channel:read:subscriptions channel:manage:redemptions clips:edit";
     private static readonly string[] RequiredScopes =
         RequiredScopeValue.Split(' ');
     private readonly TwitchConfig _config;
@@ -147,11 +147,16 @@ public sealed class AuthenticationService
         var validation = await response.Content.ReadFromJsonAsync<ValidationResponse>(JsonOptions, cancellationToken);
         if (validation is null ||
             validation.ClientId != _config.ClientId ||
-            validation.Scopes is null ||
-            RequiredScopes.Except(
-                validation.Scopes,
-                StringComparer.Ordinal).Any())
+            validation.Scopes is null)
+            return null;
+
+        var missingScopes = RequiredScopes.Except(
+            validation.Scopes, StringComparer.Ordinal).ToArray();
+        if (missingScopes.Length > 0)
         {
+            Console.WriteLine(
+                "Twitch muss erneut verbunden werden. Fehlende Rechte: " +
+                string.Join(", ", missingScopes));
             return null;
         }
 
@@ -159,7 +164,8 @@ public sealed class AuthenticationService
             accessToken,
             "",
             validation.UserId,
-            validation.Login);
+            validation.Login,
+            validation.Scopes);
     }
 
     private async Task<TokenResponse?> LoadTokenAsync(
@@ -261,4 +267,13 @@ public sealed class AuthenticationService
         [property: JsonPropertyName("refresh_token")] string RefreshToken);
 }
 
-public sealed record TwitchSession(string AccessToken, string RefreshToken, string UserId, string Login);
+public sealed record TwitchSession(
+    string AccessToken,
+    string RefreshToken,
+    string UserId,
+    string Login,
+    IReadOnlyList<string>? Scopes = null)
+{
+    public bool HasScope(string scope) =>
+        Scopes?.Contains(scope, StringComparer.Ordinal) == true;
+}

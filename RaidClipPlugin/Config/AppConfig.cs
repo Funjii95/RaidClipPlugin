@@ -10,6 +10,9 @@ public class AppConfig
     public MinigameConfig Minigame { get; set; } = new();
     public MusicRequestConfig MusicRequests { get; set; } = new();
     public StreamCheckConfig StreamCheck { get; set; } = new();
+    public ClipCommandConfig ClipCommand { get; set; } = new();
+    public DiscordClipsConfig DiscordClips { get; set; } = new();
+    public GiveawayConfig Giveaways { get; set; } = new();
     public UpdateConfig Update { get; set; } = new();
 }
 

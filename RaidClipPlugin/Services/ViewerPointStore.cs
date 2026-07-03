@@ -20,9 +20,9 @@ public sealed class ViewerPointStore
     private List<MinigameHistoryEntry> _history = new();
     private int _jackpot;
 
-    public ViewerPointStore()
+    public ViewerPointStore(string? storageDirectory = null)
     {
-        var directory = Path.Combine(
+        var directory = storageDirectory ?? Path.Combine(
             Environment.GetFolderPath(
                 Environment.SpecialFolder.LocalApplicationData),
             "RaidClipPlugin",

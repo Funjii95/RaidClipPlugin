@@ -685,6 +685,8 @@ public sealed partial class MainForm : Form
         BuildLayout();
         InitializeMusicRequestEvents();
         InitializeStreamCheckEvents();
+        InitializeClipDiscordEvents();
+        InitializeGiveawayEvents();
 
         _startButton.Click += async (_, _) => await StartPluginAsync();
         _testButton.Click += async (_, _) => await PlayTestClipAsync();
@@ -1147,12 +1149,16 @@ public sealed partial class MainForm : Form
         var showMinigame = section == "minigame";
         var showMusic = section == "music";
         var showStreamCheck = section == "stream-check";
+        var showClipDiscord = section == "clip-discord";
+        var showGiveaways = section == "giveaways";
 
         _raidPage.Visible = showRaid;
         _moderationPage.Visible = showModeration;
         _minigamePage.Visible = showMinigame;
         _musicPage.Visible = showMusic;
         _streamCheckPage.Visible = showStreamCheck;
+        _clipDiscordPage.Visible = showClipDiscord;
+        _giveawayPage.Visible = showGiveaways;
 
         if (showModeration)
             _moderationPage.BringToFront();
@@ -1162,6 +1168,10 @@ public sealed partial class MainForm : Form
             _musicPage.BringToFront();
         else if (showStreamCheck)
             _streamCheckPage.BringToFront();
+        else if (showClipDiscord)
+            _clipDiscordPage.BringToFront();
+        else if (showGiveaways)
+            _giveawayPage.BringToFront();
         else
             _raidPage.BringToFront();
 
@@ -1170,6 +1180,8 @@ public sealed partial class MainForm : Form
         SetNavigationTileState(_minigameNavButton, showMinigame);
         SetNavigationTileState(_musicNavButton, showMusic);
         SetNavigationTileState(_streamCheckNavButton, showStreamCheck);
+        SetNavigationTileState(_clipDiscordNavButton, showClipDiscord);
+        SetNavigationTileState(_giveawayNavButton, showGiveaways);
         if (showMusic) _ = RefreshMusicGridAsync();
         if (showMinigame) _ = RefreshMinigameDashboardAsync();
     }
@@ -1789,6 +1801,8 @@ public sealed partial class MainForm : Form
         _minigamePage.Controls.Add(minigameLayout);
         BuildMusicRequestPage();
         BuildStreamCheckPage();
+        BuildClipDiscordPage();
+        BuildGiveawayPage();
 
         var brand = new PictureBox
         {
@@ -1815,6 +1829,8 @@ public sealed partial class MainForm : Form
         navigation.Controls.Add(_moderationNavButton);
         navigation.Controls.Add(_minigameNavButton);
         navigation.Controls.Add(_musicNavButton);
+        navigation.Controls.Add(_clipDiscordNavButton);
+        navigation.Controls.Add(_giveawayNavButton);
         navigation.Controls.Add(_streamCheckNavButton);
 
         var contentHost = new Panel
@@ -1822,7 +1838,9 @@ public sealed partial class MainForm : Form
             Dock = DockStyle.Fill,
             BackColor = BackgroundColor
         };
+        contentHost.Controls.Add(_giveawayPage);
         contentHost.Controls.Add(_streamCheckPage);
+        contentHost.Controls.Add(_clipDiscordPage);
         contentHost.Controls.Add(_musicPage);
         contentHost.Controls.Add(_minigamePage);
         contentHost.Controls.Add(_moderationPage);
@@ -1851,6 +1869,10 @@ public sealed partial class MainForm : Form
         StylePrimaryButton(_saveMusicSettingsButton);
         StylePrimaryButton(_startStreamButton);
         StylePrimaryButton(_saveStreamCheckButton);
+        StylePrimaryButton(_saveClipDiscordButton);
+        StylePrimaryButton(_giveawaySaveButton);
+        StylePrimaryButton(_giveawayStartButton);
+        StylePrimaryButton(_giveawayDrawButton);
         StylePrimaryButton(_updateButton);
         _resetPointsButton.BackColor = Color.FromArgb(72, 14, 17);
         _resetPointsButton.FlatAppearance.BorderColor = AccentColor;
@@ -2072,9 +2094,14 @@ public sealed partial class MainForm : Form
 
             await StartMusicRequestsAsync(
                 config, session, twitch, _broadcaster, cancellationToken);
+            await StartClipCommandAsync(
+                config, session, twitch, _broadcaster, cancellationToken);
+            await StartGiveawayModuleAsync(
+                config, session, twitch, _broadcaster, cancellationToken);
 
             if (config.Moderation.Enabled || config.Minigame.Enabled ||
-                config.MusicRequests.Enabled)
+                config.MusicRequests.Enabled || config.ClipCommand.Enabled ||
+                config.Giveaways.Enabled)
             {
                 _chatModeration = new ChatModerationService(
                     config.Twitch.ClientId,
@@ -2103,6 +2130,19 @@ public sealed partial class MainForm : Form
                     _chatModeration.MessageReceived += message =>
                         _musicRequests.ProcessModeratorCommandAsync(
                             message, cancellationToken);
+                }
+
+                if (config.ClipCommand.Enabled && _clipCommandService is not null)
+                {
+                    _chatModeration.MessageReceived += message =>
+                        _clipCommandService.HandleMessageAsync(
+                            message, cancellationToken);
+                }
+
+                if (config.Giveaways.Enabled && _giveawayService is not null)
+                {
+                    _chatModeration.MessageReceived += message =>
+                        _giveawayService.ProcessMessageAsync(message, cancellationToken);
                 }
 
                 if (config.Minigame.Enabled)
@@ -2204,6 +2244,12 @@ public sealed partial class MainForm : Form
             {
                 SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
                 ShowSection("music");
+            }
+            else if (IsClipConfigurationError(exception.Message))
+            {
+                _clipLastErrorStatus.Text = "Letzter Fehler: " + exception.Message;
+                _clipLastErrorStatus.ForeColor = ErrorColor;
+                ShowSection("clip-discord");
             }
             await StopPluginAsync(keepErrorStatus: true);
         }
@@ -2957,7 +3003,9 @@ public sealed partial class MainForm : Form
             _minigameTask,
             _minigameEventTask,
             _musicRequestTask,
-            _musicEventSubTask
+            _musicEventSubTask,
+            _clipCommandTask,
+            _giveawayTask
         }
             .Where(task => task is not null)
             .Cast<Task>()
@@ -2984,6 +3032,8 @@ public sealed partial class MainForm : Form
         }
 
         StopMusicRequests();
+        StopClipCommand();
+        StopGiveawayModule();
         _minigameEvents?.Dispose();
         _minigame?.Dispose();
         _chatModeration?.Dispose();
@@ -3008,6 +3058,8 @@ public sealed partial class MainForm : Form
         _minigameEventTask = null;
         _playerTask = null;
         _eventSubTask = null;
+        _clipCommandTask = null;
+        _giveawayTask = null;
 
         ResetServiceIndicators();
         SetModerationStatus("Deaktiviert", InactiveColor);
@@ -3553,6 +3605,8 @@ public sealed partial class MainForm : Form
             SetNumericValue(_dailyWinControl, config.Minigame.DailyWinLimit);
             _chatTemplateBox.Text = config.Chat.RaidMessageTemplate;
             LoadMusicRequestSettings(config.MusicRequests);
+            LoadClipDiscordSettings(config);
+            LoadGiveawaySettings(config.Giveaways);
         }
         catch (Exception exception)
         {
@@ -3733,6 +3787,12 @@ public sealed partial class MainForm : Form
                 SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
                 ShowSection("music");
             }
+            else if (IsClipConfigurationError(exception.Message))
+            {
+                _clipLastErrorStatus.Text = "Letzter Fehler: " + exception.Message;
+                _clipLastErrorStatus.ForeColor = ErrorColor;
+                ShowSection("clip-discord");
+            }
         }
     }
 
@@ -3746,11 +3806,19 @@ public sealed partial class MainForm : Form
         var moduleRestartRequired =
             _activeConfig.Minigame.Enabled != updated.Minigame.Enabled ||
             _activeConfig.Moderation.Enabled != updated.Moderation.Enabled ||
-            _activeConfig.MusicRequests.Enabled != updated.MusicRequests.Enabled;
+            _activeConfig.MusicRequests.Enabled != updated.MusicRequests.Enabled ||
+            _activeConfig.ClipCommand.Enabled != updated.ClipCommand.Enabled ||
+            _activeConfig.DiscordClips.Enabled != updated.DiscordClips.Enabled ||
+            _activeConfig.Giveaways.Enabled != updated.Giveaways.Enabled ||
+            _activeConfig.ClipCommand.MaximumQueueSize !=
+                updated.ClipCommand.MaximumQueueSize;
         _activeConfig.Chat = updated.Chat;
         _activeConfig.Moderation = updated.Moderation;
         _activeConfig.Minigame = updated.Minigame;
         _activeConfig.MusicRequests = updated.MusicRequests;
+        _activeConfig.ClipCommand = updated.ClipCommand;
+        _activeConfig.DiscordClips = updated.DiscordClips;
+        _activeConfig.Giveaways = updated.Giveaways;
         _activeConfig.Player.DurationSeconds = updated.Player.DurationSeconds;
         _activeConfig.Player.VolumePercent = updated.Player.VolumePercent;
         _activeConfig.Player.BlacklistedClipIds =
@@ -3764,6 +3832,9 @@ public sealed partial class MainForm : Form
         _minigame?.UpdateConfig(updated.Minigame);
         _musicRequests?.UpdateConfig(updated.MusicRequests);
         _spotify?.UpdateConfig(updated.MusicRequests);
+        _clipCommandService?.UpdateConfig(updated.ClipCommand);
+        _discordClipService?.UpdateConfig(updated.DiscordClips);
+        _giveawayService?.UpdateConfig(updated.Giveaways, updated.Minigame);
         UpdateCurrencyPreview();
         if (_minigameTopList.Columns.Count >= 3)
             _minigameTopList.Columns[2].Text = updated.Minigame.CurrencyPlural;
@@ -3776,6 +3847,15 @@ public sealed partial class MainForm : Form
                 "dem nächsten Neustart der Plugin-Verbindung wirksam.");
         }
     }
+
+    private static bool IsClipConfigurationError(string message) =>
+        message.Contains("Clip-Command", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Clip-Dauer", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Clip-Titel", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Clip-Cooldown", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Clip-Limit", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Clip-Warteschlange", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Discord", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsMusicConfigurationError(string message) =>
         message.Contains("Spotify", StringComparison.OrdinalIgnoreCase) ||

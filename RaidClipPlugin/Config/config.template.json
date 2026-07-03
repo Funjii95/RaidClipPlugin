@@ -207,5 +207,99 @@
     "LastDurationMilliseconds": 0,
     "LastSummary": "",
     "LastFailedChecks": []
+  },
+  "ClipCommand": {
+    "Enabled": false,
+    "Command": "!clip",
+    "Aliases": [
+      "!createclip"
+    ],
+    "DefaultTitle": "Clip von {username}",
+    "DurationSeconds": 30,
+    "MaximumTitleLength": 100,
+    "AllowedRoles": {
+      "Broadcaster": true,
+      "Moderators": true,
+      "Vips": true,
+      "Subscribers": false,
+      "Followers": false,
+      "Everyone": false
+    },
+    "AllowedUsers": [],
+    "BlockedUsers": [],
+    "GlobalCooldownSeconds": 30,
+    "UserCooldownSeconds": 120,
+    "MaximumClipsPerStream": 50,
+    "MaximumClipsPerUserPerStream": 5,
+    "QueueEnabled": false,
+    "MaximumQueueSize": 5,
+    "DuplicateWindowSeconds": 5,
+    "ChatResponsesEnabled": true
+  },
+  "DiscordClips": {
+    "Enabled": false,
+    "GuildId": "",
+    "Channels": [],
+    "MessageTemplate": "🎬 **{clipTitle}**\nErstellt von {username}\n{clipUrl}",
+    "UseEmbed": true,
+    "EmbedColor": "#9146FF",
+    "FooterText": "RaidClipPlugin",
+    "MentionRoleId": null,
+    "UseThumbnail": true
+  },
+  "Giveaways": {
+    "Enabled": false,
+    "Title": "Community Giveaway",
+    "Description": "",
+    "Prize": "Überraschung",
+    "Command": "!giveaway",
+    "Aliases": [
+      "!join"
+    ],
+    "DurationMinutes": 10,
+    "MaximumWinners": 1,
+    "PreventDuplicateEntries": true,
+    "PreventReentryAfterLeaving": true,
+    "AutoDrawWhenExpired": true,
+    "LiveOnly": true,
+    "AnnounceWinners": true,
+    "AnnounceParticipantCount": false,
+    "ParticipantCountIntervalMinutes": 5,
+    "ShowParticipantList": true,
+    "AutoCloseAfterDraw": true,
+    "AllowedRoles": {
+      "Everyone": true,
+      "Followers": true,
+      "Subscribers": true,
+      "Vips": true,
+      "Moderators": true,
+      "Broadcaster": false
+    },
+    "MinimumFollowMinutes": 0,
+    "MinimumPoints": 0,
+    "EntryCost": 0,
+    "DeductPointsAtJoin": true,
+    "RefundPointsOnCancel": true,
+    "AllowedUsers": [],
+    "BlockedUsers": [],
+    "ExcludeBots": true,
+    "AllowPreviousWinners": false,
+    "SubscriberDoubleChance": false,
+    "VipIncreasedChance": false,
+    "VipTicketMultiplier": 2,
+    "ExtraTicketsEnabled": false,
+    "ExtraTicketCost": 100,
+    "MaximumExtraTickets": 5,
+    "ModeratorCommands": {
+      "Enabled": true,
+      "Start": "!giveaway start",
+      "Stop": "!giveaway stop",
+      "Pause": "!giveaway pause",
+      "Resume": "!giveaway resume",
+      "Draw": "!giveaway draw",
+      "Reroll": "!giveaway reroll",
+      "Status": "!giveaway status"
+    },
+    "ExcludeBroadcasterFromDraw": true
   }
 }

@@ -10,6 +10,7 @@ public sealed class ChatMessage
     public DateTimeOffset ReceivedAt { get; init; } = DateTimeOffset.Now;
     public bool IsModerator { get; init; }
     public bool IsVip { get; init; }
+    public bool IsSubscriber { get; init; }
     public bool IsBroadcaster { get; init; }
 
     public bool IsWhitelisted => IsModerator || IsVip || IsBroadcaster;

@@ -280,6 +280,8 @@ public sealed class ChatModerationService : IDisposable
             ReceivedAt = DateTimeOffset.Now,
             IsModerator = badgeIds.Contains("moderator") || badgeIds.Contains("staff"),
             IsVip = badgeIds.Contains("vip"),
+            IsSubscriber = badgeIds.Contains("subscriber") ||
+                           badgeIds.Contains("founder"),
             IsBroadcaster = badgeIds.Contains("broadcaster")
         };
 

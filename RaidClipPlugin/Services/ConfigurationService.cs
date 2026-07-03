@@ -103,7 +103,10 @@ public sealed class ConfigurationService
                 .ToList(),
             Minigame = config.Minigame,
             MusicRequests = config.MusicRequests,
-            StreamCheck = config.StreamCheck
+            StreamCheck = config.StreamCheck,
+            ClipCommand = config.ClipCommand,
+            DiscordClips = config.DiscordClips,
+            Giveaways = config.Giveaways
         };
 
         File.WriteAllText(
@@ -276,6 +279,12 @@ public sealed class ConfigurationService
                 config.MusicRequests = settings.MusicRequests;
             if (settings.StreamCheck is not null)
                 config.StreamCheck = settings.StreamCheck;
+            if (settings.ClipCommand is not null)
+                config.ClipCommand = settings.ClipCommand;
+            if (settings.DiscordClips is not null)
+                config.DiscordClips = settings.DiscordClips;
+            if (settings.Giveaways is not null)
+                config.Giveaways = settings.Giveaways;
         }
         catch (Exception exception)
         {
@@ -301,6 +310,11 @@ public sealed class ConfigurationService
         config.Update.SkippedVersion =
             (config.Update.SkippedVersion ?? "").Trim();
         config.StreamCheck ??= new StreamCheckConfig();
+        config.ClipCommand ??= new ClipCommandConfig();
+        config.DiscordClips ??= new DiscordClipsConfig();
+        config.Giveaways ??= new GiveawayConfig();
+        NormalizeClipSettings(config.ClipCommand, config.DiscordClips);
+        NormalizeGiveawaySettings(config.Giveaways);
         config.StreamCheck.DisabledChecks =
             (config.StreamCheck.DisabledChecks ?? new List<string>())
             .Where(key => !string.IsNullOrWhiteSpace(key))
@@ -444,6 +458,8 @@ public sealed class ConfigurationService
 
         ValidateMinigameSettings(config.Minigame);
         ValidateMusicRequestSettings(config.MusicRequests);
+        ValidateClipSettings(config.ClipCommand, config.DiscordClips);
+        ValidateGiveawaySettings(config.Giveaways);
         var pointCommands = new List<string>();
         if (config.Minigame.PointsCommandPunkteEnabled) pointCommands.Add("!punkte");
         if (config.Minigame.PointsCommandPointsEnabled) pointCommands.Add("!points");
@@ -469,6 +485,18 @@ public sealed class ConfigurationService
                 StringComparer.OrdinalIgnoreCase).Any())
             throw new InvalidOperationException(
                 "Ein Musik-Command kollidiert mit einem Punkte-Command.");
+        var clipCommands = new[] { config.ClipCommand.Command }
+            .Concat(config.ClipCommand.Aliases);
+        if (clipCommands.Intersect(pointCommands.Concat(musicCommands),
+                StringComparer.OrdinalIgnoreCase).Any())
+            throw new InvalidOperationException(
+                "Ein Clip-Command kollidiert mit einem bestehenden Chat-Command.");
+        var giveawayCommands = GetGiveawayCommands(config.Giveaways);
+        if (giveawayCommands.Intersect(
+                pointCommands.Concat(musicCommands).Concat(clipCommands),
+                StringComparer.OrdinalIgnoreCase).Any())
+            throw new InvalidOperationException(
+                "Ein Giveaway-Command kollidiert mit einem bestehenden Chat-Command.");
 
         if (config.Chat.SendRaidMessage &&
             string.IsNullOrWhiteSpace(config.Chat.RaidMessageTemplate))
@@ -722,6 +750,226 @@ public sealed class ConfigurationService
                 "Ein Musik-Command kollidiert mit einem bestehenden Command.");
     }
 
+    public static void ValidateClipSettings(
+        ClipCommandConfig clip,
+        DiscordClipsConfig discord)
+    {
+        if (string.IsNullOrWhiteSpace(clip.Command) ||
+            !System.Text.RegularExpressions.Regex.IsMatch(
+                clip.Command, "^![a-z0-9_-]{1,29}$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            throw new InvalidOperationException(
+                "Der Clip-Command muss mit ! beginnen und darf nur Buchstaben, Zahlen, _ und - enthalten.");
+        var clipCommands = new[] { clip.Command }.Concat(clip.Aliases).ToArray();
+        if (clipCommands.Any(command =>
+                !System.Text.RegularExpressions.Regex.IsMatch(
+                    command, "^![a-z0-9_-]{1,29}$",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase)) ||
+            clipCommands.Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
+            clipCommands.Length)
+            throw new InvalidOperationException(
+                "Clip-Command und Aliase sind ungültig oder doppelt vergeben.");
+        if (clip.DurationSeconds is < 5 or > 60)
+            throw new InvalidOperationException(
+                "Die Clip-Dauer muss zwischen 5 und 60 Sekunden liegen.");
+        if (clip.MaximumTitleLength is < 1 or > 140)
+            throw new InvalidOperationException(
+                "Die maximale Clip-Titellänge muss zwischen 1 und 140 liegen.");
+        if (clip.GlobalCooldownSeconds is < 0 or > 86400 ||
+            clip.UserCooldownSeconds is < 0 or > 86400)
+            throw new InvalidOperationException(
+                "Clip-Cooldowns müssen zwischen 0 und 86400 Sekunden liegen.");
+        if (clip.MaximumClipsPerStream is < 1 or > 1000 ||
+            clip.MaximumClipsPerUserPerStream is < 1 or > 1000)
+            throw new InvalidOperationException(
+                "Clip-Limits müssen zwischen 1 und 1000 liegen.");
+        if (clip.MaximumQueueSize is < 1 or > 100)
+            throw new InvalidOperationException(
+                "Die Clip-Warteschlange muss zwischen 1 und 100 Einträge erlauben.");
+        if (discord.Enabled && !discord.Channels.Any(channel => channel.Enabled))
+            throw new InvalidOperationException(
+                "Bitte mindestens einen Discord-Channel aktivieren.");
+        if (discord.Enabled && string.IsNullOrWhiteSpace(discord.MessageTemplate))
+            throw new InvalidOperationException(
+                "Bitte ein Discord-Nachrichtenformat eingeben.");
+        if (discord.Enabled && string.IsNullOrWhiteSpace(discord.GuildId))
+            throw new InvalidOperationException(
+                "Bitte eine Discord-Server-ID eingeben.");
+        if (discord.Enabled && !ulong.TryParse(discord.GuildId, out _))
+            throw new InvalidOperationException(
+                "Die Discord-Server-ID ist ungültig.");
+        if (!string.IsNullOrWhiteSpace(discord.MentionRoleId) &&
+            !ulong.TryParse(discord.MentionRoleId, out _))
+            throw new InvalidOperationException(
+                "Die Discord-Rollen-ID ist ungültig.");
+        if (discord.Channels.Any(channel =>
+                !ulong.TryParse(channel.ChannelId, out _)))
+            throw new InvalidOperationException(
+                "Mindestens eine Discord-Channel-ID ist ungültig.");
+        var color = (discord.EmbedColor ?? "").Trim().TrimStart('#');
+        if (discord.UseEmbed &&
+            (!int.TryParse(color,
+                System.Globalization.NumberStyles.HexNumber,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var parsed) || parsed is < 0 or > 0xFFFFFF))
+            throw new InvalidOperationException(
+                "Die Discord-Embed-Farbe muss als #RRGGBB angegeben werden.");
+    }
+
+
+    public static void ValidateGiveawaySettings(GiveawayConfig config)
+    {
+        if (string.IsNullOrWhiteSpace(config.Title) ||
+            string.IsNullOrWhiteSpace(config.Prize))
+            throw new InvalidOperationException(
+                "Giveaway-Titel und Gewinn dürfen nicht leer sein.");
+        if (config.DurationMinutes is < 1 or > 10080)
+            throw new InvalidOperationException(
+                "Die Giveaway-Dauer muss zwischen 1 Minute und 7 Tagen liegen.");
+        if (config.MaximumWinners is < 1 or > 100)
+            throw new InvalidOperationException(
+                "Die Gewinneranzahl muss zwischen 1 und 100 liegen.");
+        if (config.MinimumFollowMinutes < 0 || config.MinimumPoints < 0 ||
+            config.EntryCost < 0)
+            throw new InvalidOperationException(
+                "Giveaway-Punkte und Followdauer dürfen nicht negativ sein.");
+        if (config.ParticipantCountIntervalMinutes is < 1 or > 1440)
+            throw new InvalidOperationException(
+                "Das Teilnehmerintervall muss zwischen 1 und 1440 Minuten liegen.");
+        if (config.VipTicketMultiplier is < 1 or > 100 ||
+            config.ExtraTicketCost < 0 ||
+            config.MaximumExtraTickets is < 0 or > 100)
+            throw new InvalidOperationException(
+                "Die Giveaway-Loseinstellungen sind ungültig.");
+        if (!config.AllowedRoles.Everyone && !config.AllowedRoles.Followers &&
+            !config.AllowedRoles.Subscribers && !config.AllowedRoles.Vips &&
+            !config.AllowedRoles.Moderators && !config.AllowedRoles.Broadcaster)
+            throw new InvalidOperationException(
+                "Mindestens eine Giveaway-Rolle muss zugelassen sein.");
+
+        var commands = GetGiveawayCommands(config).ToArray();
+        if (commands.Any(command =>
+                !System.Text.RegularExpressions.Regex.IsMatch(
+                    command, "^![a-z0-9_-]+(?: [a-z0-9_-]+)*$",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase)) ||
+            commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
+            commands.Length)
+            throw new InvalidOperationException(
+                "Giveaway-Commands sind ungültig oder doppelt vergeben.");
+    }
+
+    private static IEnumerable<string> GetGiveawayCommands(GiveawayConfig config)
+    {
+        var commands = new List<string> { config.Command };
+        commands.AddRange(config.Aliases);
+        if (config.ModeratorCommands.Enabled)
+            commands.AddRange(new[]
+            {
+                config.ModeratorCommands.Start, config.ModeratorCommands.Stop,
+                config.ModeratorCommands.Pause, config.ModeratorCommands.Resume,
+                config.ModeratorCommands.Draw, config.ModeratorCommands.Reroll,
+                config.ModeratorCommands.Status
+            });
+        return commands.Where(command => !string.IsNullOrWhiteSpace(command));
+    }
+
+    private static void NormalizeGiveawaySettings(GiveawayConfig config)
+    {
+        config.AllowedRoles ??= new GiveawayAllowedRoles();
+        config.ModeratorCommands ??= new GiveawayModeratorCommands();
+        config.ChatMessages ??= new GiveawayChatMessages();
+        config.Title = (config.Title ?? "").Trim();
+        config.Description = (config.Description ?? "").Trim();
+        config.Prize = (config.Prize ?? "").Trim();
+        config.Command = NormalizeCommand(config.Command, "!giveaway");
+        config.Aliases = (config.Aliases ?? new List<string>())
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => NormalizeCommand(value, ""))
+            .Where(value => value.Length > 0 &&
+                !value.Equals(config.Command, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        config.AllowedUsers = NormalizeUsers(config.AllowedUsers);
+        config.BlockedUsers = NormalizeUsers(config.BlockedUsers);
+        config.ModeratorCommands.Start = NormalizeCommandText(config.ModeratorCommands.Start);
+        config.ModeratorCommands.Stop = NormalizeCommandText(config.ModeratorCommands.Stop);
+        config.ModeratorCommands.Pause = NormalizeCommandText(config.ModeratorCommands.Pause);
+        config.ModeratorCommands.Resume = NormalizeCommandText(config.ModeratorCommands.Resume);
+        config.ModeratorCommands.Draw = NormalizeCommandText(config.ModeratorCommands.Draw);
+        config.ModeratorCommands.Reroll = NormalizeCommandText(config.ModeratorCommands.Reroll);
+        config.ModeratorCommands.Status = NormalizeCommandText(config.ModeratorCommands.Status);
+    }
+
+    private static string NormalizeCommandText(string? value)
+    {
+        var command = System.Text.RegularExpressions.Regex.Replace(
+            (value ?? "").Trim().ToLowerInvariant(), "\\s+", " ");
+        if (command.Length == 0) return command;
+        return command.StartsWith('!') ? command : "!" + command;
+    }
+
+    private static void NormalizeClipSettings(
+        ClipCommandConfig clip,
+        DiscordClipsConfig discord)
+    {
+        clip.AllowedRoles ??= new ClipAllowedRolesConfig();
+        clip.ChatMessages ??= new ClipChatMessages();
+        var defaultMessages = new ClipChatMessages();
+        clip.ChatMessages.Starting ??= defaultMessages.Starting;
+        clip.ChatMessages.Success ??= defaultMessages.Success;
+        clip.ChatMessages.SuccessDiscord ??= defaultMessages.SuccessDiscord;
+        clip.ChatMessages.Cooldown ??= defaultMessages.Cooldown;
+        clip.ChatMessages.Offline ??= defaultMessages.Offline;
+        clip.ChatMessages.Forbidden ??= defaultMessages.Forbidden;
+        clip.ChatMessages.TwitchError ??= defaultMessages.TwitchError;
+        clip.ChatMessages.PartialDiscord ??= defaultMessages.PartialDiscord;
+        clip.ChatMessages.QueueFull ??= defaultMessages.QueueFull;
+        clip.ChatMessages.Busy ??= defaultMessages.Busy;
+        clip.ChatMessages.LimitReached ??= defaultMessages.LimitReached;
+        clip.ChatMessages.MissingScope ??= defaultMessages.MissingScope;
+        clip.Command = NormalizeCommand(clip.Command, "!clip");
+        clip.Aliases = (clip.Aliases ?? new List<string>())
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => NormalizeCommand(value, ""))
+            .Where(value => value.Length > 0 &&
+                            !value.Equals(clip.Command, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        clip.DefaultTitle = (clip.DefaultTitle ?? "").Trim();
+        clip.AllowedUsers = NormalizeUsers(clip.AllowedUsers);
+        clip.BlockedUsers = NormalizeUsers(clip.BlockedUsers);
+        discord.GuildId = (discord.GuildId ?? "").Trim();
+        discord.MessageTemplate = (discord.MessageTemplate ?? "").Trim();
+        discord.EmbedColor = (discord.EmbedColor ?? "#9146FF").Trim();
+        discord.FooterText = (discord.FooterText ?? "").Trim();
+        discord.MentionRoleId = string.IsNullOrWhiteSpace(discord.MentionRoleId)
+            ? null : discord.MentionRoleId.Trim();
+        discord.Channels = (discord.Channels ?? new List<DiscordClipChannelConfig>())
+            .Where(channel => !string.IsNullOrWhiteSpace(channel.ChannelId))
+            .GroupBy(channel => channel.ChannelId.Trim(), StringComparer.Ordinal)
+            .Select(group =>
+            {
+                var channel = group.First();
+                channel.ChannelId = channel.ChannelId.Trim();
+                channel.Name = (channel.Name ?? "").Trim();
+                channel.MessageTemplate = (channel.MessageTemplate ?? "").Trim();
+                return channel;
+            }).ToList();
+    }
+
+    private static List<string> NormalizeUsers(List<string>? users) =>
+        (users ?? new List<string>())
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim().TrimStart('@').ToLowerInvariant())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private static string NormalizeCommand(string? value, string fallback)
+    {
+        var command = (value ?? "").Trim().ToLowerInvariant();
+        if (command.Length == 0) return fallback;
+        return command.StartsWith('!') ? command : "!" + command;
+    }
+
     private static GambleRangeConfig CloneRange(GambleRangeConfig range) =>
         new()
         {
@@ -769,5 +1017,8 @@ public sealed class ConfigurationService
         public MinigameConfig? Minigame { get; set; }
         public MusicRequestConfig? MusicRequests { get; set; }
         public StreamCheckConfig? StreamCheck { get; set; }
+        public ClipCommandConfig? ClipCommand { get; set; }
+        public DiscordClipsConfig? DiscordClips { get; set; }
+        public GiveawayConfig? Giveaways { get; set; }
     }
 }

@@ -117,3 +117,13 @@ Spotify-Tokens werden mit Windows DPAPI verschlüsselt im Benutzerprofil gespeic
 ## Stream-Start-Check
 
 Der Bereich **Stream-Check** prüft vor dem Stream Twitch, Chat, EventSub, OBS-Szene und RaidClip-Quelle, LocalPlayer, Mikrofon, Desktop-Audio, Aufnahmespeicher, Titel, Kategorie, Spotify, Minigames, OAuth und Konfiguration. Einzelne Prüfungen können im Profil deaktiviert werden. Der Diagnoseexport enthält keine Tokens, Passwörter oder Secrets.
+
+
+## Clips & Discord
+
+Mit dem optionalen Chat-Command `!clip <Titel>` können berechtigte Zuschauer während eines Livestreams einen Twitch-Clip anfordern. Erfolgreiche Clips lassen sich automatisch als sichere Discord-Embeds in mehrere Kanäle oder über Webhooks senden. Einrichtung: [docs/CLIPS_DISCORD.md](docs/CLIPS_DISCORD.md).
+
+
+## Giveaways
+
+Eigenständige Verlosungen mit Rollen- und Punktebedingungen, sicheren Zufallsziehungen, Chatvorlagen, Teilnehmerverwaltung und automatischer Wiederherstellung. Details: [docs/GIVEAWAYS.md](docs/GIVEAWAYS.md).

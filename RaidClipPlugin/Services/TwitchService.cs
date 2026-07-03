@@ -5,7 +5,7 @@ using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
-public sealed class TwitchService
+public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawayTwitchClient
 {
     private readonly HttpClient _http = new();
 
@@ -42,7 +42,9 @@ public sealed class TwitchService
         return new TwitchUser(
             user.GetProperty("id").GetString() ?? "",
             user.GetProperty("login").GetString() ?? "",
-            user.GetProperty("display_name").GetString() ?? "");
+            user.GetProperty("display_name").GetString() ?? "",
+            user.TryGetProperty("profile_image_url", out var profileImage)
+                ? profileImage.GetString() ?? "" : "");
     }
 
     public async Task<TwitchChannelInfo?> GetChannelInfoAsync(
@@ -310,6 +312,114 @@ public sealed class TwitchService
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+    public async Task<TwitchCreatedClip> CreateClipAsync(
+        TwitchClipRequest request,
+        CancellationToken cancellationToken)
+    {
+        var url = "https://api.twitch.tv/helix/clips" +
+                  "?broadcaster_id=" +
+                  Uri.EscapeDataString(request.BroadcasterId) +
+                  "&has_delay=false";
+        using var response = await _http.PostAsync(url, null, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(cancellationToken));
+        var data = document.RootElement.GetProperty("data");
+        if (data.GetArrayLength() == 0)
+            throw new InvalidOperationException(
+                "Twitch hat keine Clip-ID zurückgegeben.");
+        var item = data[0];
+        return new TwitchCreatedClip(
+            item.GetProperty("id").GetString() ?? "",
+            item.TryGetProperty("edit_url", out var editUrl)
+                ? editUrl.GetString() ?? "" : "");
+    }
+
+    public async Task<PublishedClip?> GetClipByIdAsync(
+        string clipId,
+        CancellationToken cancellationToken)
+    {
+        using var response = await _http.GetAsync(
+            "https://api.twitch.tv/helix/clips?id=" +
+            Uri.EscapeDataString(clipId), cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(cancellationToken));
+        var data = document.RootElement.GetProperty("data");
+        if (data.GetArrayLength() == 0) return null;
+        var item = data[0];
+        return new PublishedClip(
+            item.GetProperty("id").GetString() ?? "",
+            item.GetProperty("url").GetString() ?? "",
+            item.TryGetProperty("title", out var title)
+                ? title.GetString() ?? "" : "",
+            item.TryGetProperty("thumbnail_url", out var thumbnail)
+                ? thumbnail.GetString() ?? "" : "",
+            item.TryGetProperty("duration", out var duration)
+                ? duration.GetDouble() : 0);
+    }
+
+    public async Task<TwitchLiveStream?> GetLiveStreamAsync(
+        string broadcasterId,
+        CancellationToken cancellationToken)
+    {
+        using var response = await _http.GetAsync(
+            "https://api.twitch.tv/helix/streams?user_id=" +
+            Uri.EscapeDataString(broadcasterId), cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(cancellationToken));
+        var data = document.RootElement.GetProperty("data");
+        if (data.GetArrayLength() == 0) return null;
+        var item = data[0];
+        var startedAt = item.TryGetProperty("started_at", out var started) &&
+                        DateTimeOffset.TryParse(started.GetString(), out var parsed)
+            ? parsed : DateTimeOffset.UtcNow;
+        return new TwitchLiveStream(
+            item.GetProperty("id").GetString() ?? "",
+            item.GetProperty("user_id").GetString() ?? broadcasterId,
+            item.GetProperty("user_login").GetString() ?? "",
+            item.GetProperty("user_name").GetString() ?? "",
+            item.GetProperty("game_id").GetString() ?? "",
+            item.GetProperty("game_name").GetString() ?? "",
+            startedAt,
+            true);
+    }
+
+    public async Task<DateTimeOffset?> GetFollowedAtAsync(
+        string broadcasterId,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var url = "https://api.twitch.tv/helix/channels/followers" +
+                  "?broadcaster_id=" + Uri.EscapeDataString(broadcasterId) +
+                  "&user_id=" + Uri.EscapeDataString(userId);
+        using var response = await _http.GetAsync(url, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(cancellationToken));
+        var data = document.RootElement.GetProperty("data");
+        if (data.GetArrayLength() == 0) return null;
+        return data[0].TryGetProperty("followed_at", out var followedAt) &&
+               DateTimeOffset.TryParse(followedAt.GetString(), out var parsed)
+            ? parsed : null;
+    }
+
+    public async Task<bool> IsFollowerAsync(
+        string broadcasterId,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var url = "https://api.twitch.tv/helix/channels/followers" +
+                  "?broadcaster_id=" + Uri.EscapeDataString(broadcasterId) +
+                  "&user_id=" + Uri.EscapeDataString(userId);
+        using var response = await _http.GetAsync(url, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(cancellationToken));
+        return document.RootElement.GetProperty("data").GetArrayLength() > 0;
+    }
+
     private static async Task EnsureSuccessAsync(
         HttpResponseMessage response,
         CancellationToken cancellationToken)
@@ -330,6 +440,7 @@ public sealed class TwitchService
 public sealed record TwitchUser(
     string Id,
     string Login,
-    string DisplayName);
+    string DisplayName,
+    string ProfileImageUrl = "");
 
 public sealed record TwitchChannelInfo(string Title, string GameId, string GameName);
