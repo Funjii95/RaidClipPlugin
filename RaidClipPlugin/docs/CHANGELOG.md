@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.7
+
+- Startabsturz der neuen Commands-Tabelle behoben.
+- Rekursive Aktualisierung des Commands-Modulfilters verhindert.
+- Automatisches Startfehler-Log unter `%LOCALAPPDATA%\RaidClipPlugin\logs` ergänzt.
+- GUI-Starttest ergänzt, damit Fehler beim Fensteraufbau vor Releases erkannt werden.
+
 ## 1.5.6
 
 - Neues gemeinschaftliches Heist-Minispiel mit konfigurierbaren Commands, Beitrittsphase, Berechtigungen und Cooldowns

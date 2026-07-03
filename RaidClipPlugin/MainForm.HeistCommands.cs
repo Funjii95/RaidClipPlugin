@@ -19,6 +19,7 @@ public sealed partial class MainForm
     private readonly Button _copyCommandButton = NewHeistActionButton("Command kopieren", 160);
     private readonly Button _copyAllCommandsButton = NewHeistActionButton("Alle Commands kopieren", 190);
     private readonly Button _exportCommandsButton = NewHeistActionButton("Command-Liste exportieren", 210);
+    private bool _refreshingCommandGrid;
 
     private readonly CheckBox _heistEnabledCheck = NewCheck("Heist aktivieren", false);
     private readonly TextBox _heistStartCommandBox = new() { Width = 140 };
@@ -119,10 +120,16 @@ public sealed partial class MainForm
         _commandModuleFilter.Items.Add("Alle Module"); _commandModuleFilter.SelectedIndex = 0;
         filters.Controls.AddRange(new Control[] { _commandSearchBox, _commandModuleFilter, _commandActiveFilter,
             _commandRoleFilter, _copyCommandButton, _copyAllCommandsButton, _exportCommandsButton });
-        foreach (var column in new[] { "Aktiv", "Command", "Aliase", "Modul", "Beschreibung", "Verwendung",
+        _commandsGrid.Columns.Add(new DataGridViewCheckBoxColumn
+        {
+            Name = "Aktiv",
+            HeaderText = "Aktiv",
+            ReadOnly = true,
+            SortMode = DataGridViewColumnSortMode.Automatic
+        });
+        foreach (var column in new[] { "Command", "Aliase", "Modul", "Beschreibung", "Verwendung",
                      "Berechtigung", "Benutzer-Cooldown", "Globaler Cooldown", "Punktekosten", "Beispiel" })
             _commandsGrid.Columns.Add(column, column);
-        _commandsGrid.Columns[0].CellTemplate = new DataGridViewCheckBoxCell();
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, ColumnCount = 1, Padding = new Padding(20) };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 92)); layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -202,21 +209,69 @@ public sealed partial class MainForm
 
     private void RefreshCommandGrid()
     {
-        if(IsDisposed)return; if(InvokeRequired){BeginInvoke(new Action(RefreshCommandGrid));return;}
-        var commands=_commandRegistry.Commands; var modules=commands.Select(x=>x.ModuleDisplayName).Distinct().OrderBy(x=>x).ToArray();
-        var selected=_commandModuleFilter.SelectedItem?.ToString()??"Alle Module"; _commandModuleFilter.Items.Clear();
-        _commandModuleFilter.Items.Add("Alle Module"); _commandModuleFilter.Items.AddRange(modules.Cast<object>().ToArray());
-        _commandModuleFilter.SelectedItem=_commandModuleFilter.Items.Contains(selected)?selected:"Alle Module";
-        var search=_commandSearchBox.Text.Trim(); IEnumerable<ChatCommandDefinition> filtered=commands;
-        if(search.Length>0)filtered=filtered.Where(x=>(x.CommandText+" "+x.Description+" "+x.ModuleDisplayName).Contains(search,StringComparison.OrdinalIgnoreCase));
-        if(_commandModuleFilter.SelectedIndex>0)filtered=filtered.Where(x=>x.ModuleDisplayName==_commandModuleFilter.SelectedItem?.ToString());
-        if(_commandActiveFilter.SelectedIndex==1)filtered=filtered.Where(x=>x.Enabled); else if(_commandActiveFilter.SelectedIndex==2)filtered=filtered.Where(x=>!x.Enabled);
-        if(_commandRoleFilter.SelectedIndex>0)filtered=filtered.Where(x=>(int)x.RequiredRole==_commandRoleFilter.SelectedIndex-1);
-        var collisions=_commandRegistry.FindCollisions().Select(x=>x.Command).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        _commandsGrid.Rows.Clear(); foreach(var c in filtered.OrderBy(x=>x.ModuleDisplayName).ThenBy(x=>x.CommandText))
-        { var index=_commandsGrid.Rows.Add(c.Enabled,c.CommandText,string.Join(", ",c.Aliases),c.ModuleDisplayName,c.Description,c.Usage,c.RequiredRole,
-            c.UserCooldown.TotalSeconds+"s",c.GlobalCooldown.TotalSeconds+"s",c.PointCost,c.Example); var row=_commandsGrid.Rows[index]; row.Tag=c;
-          if(!c.Enabled)row.DefaultCellStyle.ForeColor=MutedTextColor; if(collisions.Contains(c.CommandText)){row.DefaultCellStyle.BackColor=Color.FromArgb(80,20,20);row.ErrorText="Command-Kollision";} }
+        if (IsDisposed || _refreshingCommandGrid) return;
+        if (InvokeRequired) { BeginInvoke(new Action(RefreshCommandGrid)); return; }
+
+        _refreshingCommandGrid = true;
+        try
+        {
+            var commands = _commandRegistry.Commands;
+            var modules = commands.Select(x => x.ModuleDisplayName).Distinct().OrderBy(x => x).ToArray();
+            var selected = _commandModuleFilter.SelectedItem?.ToString() ?? "Alle Module";
+            var desiredModules = new[] { "Alle Module" }.Concat(modules).ToArray();
+            var currentModules = _commandModuleFilter.Items.Cast<object>().Select(x => x.ToString() ?? "").ToArray();
+            if (!currentModules.SequenceEqual(desiredModules, StringComparer.Ordinal))
+            {
+                _commandModuleFilter.BeginUpdate();
+                try
+                {
+                    _commandModuleFilter.Items.Clear();
+                    _commandModuleFilter.Items.AddRange(desiredModules.Cast<object>().ToArray());
+                    _commandModuleFilter.SelectedItem = _commandModuleFilter.Items.Contains(selected)
+                        ? selected
+                        : "Alle Module";
+                }
+                finally
+                {
+                    _commandModuleFilter.EndUpdate();
+                }
+            }
+
+            var search = _commandSearchBox.Text.Trim();
+            IEnumerable<ChatCommandDefinition> filtered = commands;
+            if (search.Length > 0)
+                filtered = filtered.Where(x => (x.CommandText + " " + x.Description + " " + x.ModuleDisplayName)
+                    .Contains(search, StringComparison.OrdinalIgnoreCase));
+            if (_commandModuleFilter.SelectedIndex > 0)
+                filtered = filtered.Where(x => x.ModuleDisplayName == _commandModuleFilter.SelectedItem?.ToString());
+            if (_commandActiveFilter.SelectedIndex == 1) filtered = filtered.Where(x => x.Enabled);
+            else if (_commandActiveFilter.SelectedIndex == 2) filtered = filtered.Where(x => !x.Enabled);
+            if (_commandRoleFilter.SelectedIndex > 0)
+                filtered = filtered.Where(x => (int)x.RequiredRole == _commandRoleFilter.SelectedIndex - 1);
+
+            var collisions = _commandRegistry.FindCollisions().Select(x => x.Command)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            _commandsGrid.Rows.Clear();
+            foreach (var command in filtered.OrderBy(x => x.ModuleDisplayName).ThenBy(x => x.CommandText))
+            {
+                var index = _commandsGrid.Rows.Add(command.Enabled, command.CommandText,
+                    string.Join(", ", command.Aliases), command.ModuleDisplayName, command.Description, command.Usage,
+                    command.RequiredRole, command.UserCooldown.TotalSeconds + "s",
+                    command.GlobalCooldown.TotalSeconds + "s", command.PointCost, command.Example);
+                var row = _commandsGrid.Rows[index];
+                row.Tag = command;
+                if (!command.Enabled) row.DefaultCellStyle.ForeColor = MutedTextColor;
+                if (collisions.Contains(command.CommandText))
+                {
+                    row.DefaultCellStyle.BackColor = Color.FromArgb(80, 20, 20);
+                    row.ErrorText = "Command-Kollision";
+                }
+            }
+        }
+        finally
+        {
+            _refreshingCommandGrid = false;
+        }
     }
 
     private void CopySelectedCommand(){if(_commandsGrid.SelectedRows.Count==1&&_commandsGrid.SelectedRows[0].Tag is ChatCommandDefinition c)Clipboard.SetText(c.Usage);}
