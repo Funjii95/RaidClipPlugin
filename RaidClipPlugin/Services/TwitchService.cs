@@ -214,7 +214,8 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
         CancellationToken cancellationToken)
     {
         var url = "https://api.twitch.tv/helix/channel_points/custom_rewards" +
-                  "?broadcaster_id=" + Uri.EscapeDataString(broadcasterId);
+                  "?broadcaster_id=" + Uri.EscapeDataString(broadcasterId) +
+                  "&only_manageable_rewards=false";
         using var response = await _http.GetAsync(url, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
         using var document = JsonDocument.Parse(
