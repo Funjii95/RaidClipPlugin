@@ -19,6 +19,9 @@ public sealed class AuthenticationService
         "channel:read:subscriptions channel:manage:redemptions clips:edit";
     private static readonly string[] RequiredScopes =
         RequiredScopeValue.Split(' ');
+
+    public static IReadOnlyList<string> RequiredChatScopes { get; } =
+        new[] { "user:read:chat", "user:write:chat" };
     private readonly TwitchConfig _config;
     private readonly HttpClient _http = new();
     private readonly string _tokenPath;
@@ -34,6 +37,13 @@ public sealed class AuthenticationService
         Directory.CreateDirectory(directory);
         _tokenPath = Path.Combine(directory, "twitch-token.dat");
         _legacyTokenPath = Path.Combine(directory, "twitch-token.json");
+    }
+
+    public void DeleteSavedToken()
+    {
+        if (File.Exists(_tokenPath)) File.Delete(_tokenPath);
+        if (File.Exists(_legacyTokenPath)) File.Delete(_legacyTokenPath);
+        Console.WriteLine("Gespeicherte Twitch-Anmeldung wurde entfernt.");
     }
 
     public async Task<TwitchSession> GetSessionAsync(CancellationToken cancellationToken)
@@ -155,17 +165,25 @@ public sealed class AuthenticationService
         if (missingScopes.Length > 0)
         {
             Console.WriteLine(
-                "Twitch muss erneut verbunden werden. Fehlende Rechte: " +
+                "Chatberechtigungen fehlen – Twitch neu verbinden. Fehlend: " +
                 string.Join(", ", missingScopes));
             return null;
         }
+
+        Console.WriteLine("Twitch-Token erfolgreich validiert.");
+        Console.WriteLine(
+            $"Angemeldeter Benutzer: {validation.Login} " +
+            $"({validation.UserId}); Client-ID: {validation.ClientId}; " +
+            $"Ablauf in: {validation.ExpiresIn} Sekunden.");
+        Console.WriteLine("Scopes: " + string.Join(", ", validation.Scopes));
 
         return new TwitchSession(
             accessToken,
             "",
             validation.UserId,
             validation.Login,
-            validation.Scopes);
+            validation.Scopes,
+            validation.ExpiresIn);
     }
 
     private async Task<TokenResponse?> LoadTokenAsync(
@@ -261,7 +279,8 @@ public sealed class AuthenticationService
         [property: JsonPropertyName("client_id")] string ClientId,
         [property: JsonPropertyName("user_id")] string UserId,
         [property: JsonPropertyName("login")] string Login,
-        [property: JsonPropertyName("scopes")] string[]? Scopes);
+        [property: JsonPropertyName("scopes")] string[]? Scopes,
+        [property: JsonPropertyName("expires_in")] int ExpiresIn);
     private sealed record TokenResponse(
         [property: JsonPropertyName("access_token")] string AccessToken,
         [property: JsonPropertyName("refresh_token")] string RefreshToken);
@@ -272,7 +291,8 @@ public sealed record TwitchSession(
     string RefreshToken,
     string UserId,
     string Login,
-    IReadOnlyList<string>? Scopes = null)
+    IReadOnlyList<string>? Scopes = null,
+    int ExpiresInSeconds = 0)
 {
     public bool HasScope(string scope) =>
         Scopes?.Contains(scope, StringComparer.Ordinal) == true;

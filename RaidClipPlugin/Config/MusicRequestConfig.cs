@@ -9,6 +9,9 @@ public sealed class MusicRequestConfig
     public string RedirectUri { get; set; } = "http://127.0.0.1:17892/callback/";
     public string SelectedRewardId { get; set; } = "";
     public string SelectedRewardName { get; set; } = "";
+    public bool ChatCommandEnabled { get; set; } = true;
+    public string ChatCommand { get; set; } = "!songrequest";
+    public List<string> ChatCommandAliases { get; set; } = new() { "!sr" };
     public MusicPlaybackMode PlaybackMode { get; set; } = MusicPlaybackMode.AddToQueue;
     public string SelectedDeviceId { get; set; } = "";
     public bool UseActiveDevice { get; set; } = true;

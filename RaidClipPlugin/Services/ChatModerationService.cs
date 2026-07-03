@@ -7,6 +7,13 @@ using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
+public sealed record ChatConnectionDiagnostics(
+    bool WebSocketConnected = false,
+    bool SubscriptionEnabled = false,
+    string SessionId = "",
+    DateTimeOffset? LastReceivedAt = null,
+    string LastError = "");
+
 public sealed class ChatModerationService : IDisposable
 {
     private const string EventSubUrl = "wss://eventsub.wss.twitch.tv/ws";
@@ -20,6 +27,11 @@ public sealed class ChatModerationService : IDisposable
     private readonly string _moderatorId;
     private readonly HttpClient _http = new();
     private bool _disposed;
+
+    private ChatConnectionDiagnostics _diagnostics = new();
+
+    public ChatConnectionDiagnostics Diagnostics => _diagnostics;
+    public event Action<ChatConnectionDiagnostics>? StatusChanged;
 
     public event Func<ChatMessage, Task>? MessageReceived;
     public event Action? Activated;
@@ -68,6 +80,12 @@ public sealed class ChatModerationService : IDisposable
             }
             catch (Exception exception)
             {
+                PublishDiagnostics(_diagnostics with
+                {
+                    WebSocketConnected = false,
+                    SubscriptionEnabled = false,
+                    LastError = exception.Message
+                });
                 Console.WriteLine(
                     "Chat-Moderation wurde unterbrochen: " + exception.Message);
             }
@@ -163,6 +181,12 @@ public sealed class ChatModerationService : IDisposable
     {
         using var socket = new ClientWebSocket();
         await socket.ConnectAsync(new Uri(url), cancellationToken);
+        PublishDiagnostics(_diagnostics with
+        {
+            WebSocketConnected = true,
+            LastError = ""
+        });
+        Console.WriteLine("EventSub WebSocket verbunden.");
 
         while (socket.State == WebSocketState.Open)
         {
@@ -188,14 +212,36 @@ public sealed class ChatModerationService : IDisposable
                         .GetProperty("id")
                         .GetString();
 
-                    if (subscribe && !string.IsNullOrWhiteSpace(sessionId))
+                    if (string.IsNullOrWhiteSpace(sessionId))
+                    {
+                        throw new InvalidOperationException(
+                            "Twitch hat keine EventSub-Session-ID geliefert.");
+                    }
+
+                    PublishDiagnostics(_diagnostics with
+                    {
+                        WebSocketConnected = true,
+                        SessionId = sessionId,
+                        LastError = ""
+                    });
+                    Console.WriteLine(
+                        "Session-Welcome erhalten: " + MaskSessionId(sessionId));
+
+                    if (subscribe)
                     {
                         await CreateSubscriptionAsync(
                             sessionId,
                             cancellationToken);
                     }
+                    else
+                    {
+                        PublishDiagnostics(_diagnostics with
+                        {
+                            SubscriptionEnabled = true
+                        });
+                    }
 
-                    Console.WriteLine("Chat-Moderation ist aktiv.");
+                    Console.WriteLine("Chatbot ist aktiv.");
                     Activated?.Invoke();
                     break;
 
@@ -247,7 +293,34 @@ public sealed class ChatModerationService : IDisposable
         });
 
         using var response = await _http.SendAsync(request, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Chat-Subscription meldet {(int)response.StatusCode} " +
+                $"{response.StatusCode}: {body}");
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var data = document.RootElement.GetProperty("data");
+        var status = data.GetArrayLength() > 0 &&
+                     data[0].TryGetProperty("status", out var statusValue)
+            ? statusValue.GetString() ?? ""
+            : "";
+        if (!status.Equals("enabled", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "channel.chat.message wurde nicht aktiviert. Status: " +
+                (string.IsNullOrWhiteSpace(status) ? "unbekannt" : status));
+        }
+
+        PublishDiagnostics(_diagnostics with
+        {
+            SubscriptionEnabled = true,
+            LastError = ""
+        });
+        Console.WriteLine(
+            "channel.chat.message Subscription erstellt: enabled.");
     }
 
     private void HandleNotification(JsonElement root)
@@ -285,6 +358,20 @@ public sealed class ChatModerationService : IDisposable
             IsBroadcaster = badgeIds.Contains("broadcaster")
         };
 
+        PublishDiagnostics(_diagnostics with
+        {
+            LastReceivedAt = message.ReceivedAt,
+            LastError = ""
+        });
+        var broadcasterLogin = data.TryGetProperty(
+            "broadcaster_user_login", out var broadcasterLoginValue)
+            ? broadcasterLoginValue.GetString() ?? "" : "";
+        Console.WriteLine(
+            $"Chatnachricht empfangen: Kanal {broadcasterLogin} " +
+            $"({_broadcasterId}), Nutzer {message.UserName} " +
+            $"({message.UserId}) -> {message.Text}");
+        LogCommandDetection(message.Text);
+
         if (MessageReceived is { } handler)
         {
             _ = Task.Run(async () =>
@@ -301,6 +388,35 @@ public sealed class ChatModerationService : IDisposable
                 }
             });
         }
+    }
+
+    private void PublishDiagnostics(ChatConnectionDiagnostics diagnostics)
+    {
+        _diagnostics = diagnostics;
+        StatusChanged?.Invoke(diagnostics);
+    }
+
+    private static string MaskSessionId(string sessionId) =>
+        sessionId.Length <= 8
+            ? "***"
+            : sessionId[..4] + "…" + sessionId[^4..];
+
+    private static void LogCommandDetection(string text)
+    {
+        var trimmed = (text ?? "").Trim();
+        if (!trimmed.StartsWith('!'))
+        {
+            Console.WriteLine("Chatnachricht ignoriert: kein Command-Prefix.");
+            return;
+        }
+
+        var parts = trimmed.Split(' ', 2,
+            StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries);
+        var command = parts[0][1..].ToLowerInvariant();
+        var arguments = parts.Length > 1 ? parts[1] : "";
+        Console.WriteLine(
+            $"Command erkannt: {command}; Argumente: {arguments}");
     }
 
     private static string LimitReason(string reason)

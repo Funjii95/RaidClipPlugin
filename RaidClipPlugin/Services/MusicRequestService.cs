@@ -350,11 +350,13 @@ public sealed class MusicRequestService : IDisposable
         await ProcessMusicRequestAsync(retry, cancellationToken);
     }
 
-    public async Task ProcessModeratorCommandAsync(
+    public async Task ProcessChatMessageAsync(
         ChatMessage message, CancellationToken cancellationToken)
     {
         try
         {
+            if (await TryProcessSongRequestCommandAsync(
+                    message, cancellationToken)) return;
             await ProcessModeratorCommandCoreAsync(message, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -362,8 +364,57 @@ public sealed class MusicRequestService : IDisposable
         }
         catch (Exception exception)
         {
-            Console.WriteLine("Spotify-Mod-Command fehlgeschlagen: " + exception.Message);
+            Console.WriteLine("Spotify-Chat-Command fehlgeschlagen: " + exception.Message);
         }
+    }
+
+    public Task ProcessModeratorCommandAsync(
+        ChatMessage message, CancellationToken cancellationToken) =>
+        ProcessChatMessageAsync(message, cancellationToken);
+
+    private async Task<bool> TryProcessSongRequestCommandAsync(
+        ChatMessage message, CancellationToken cancellationToken)
+    {
+        if (!_config.ChatCommandEnabled) return false;
+        var parts = message.Text.Trim().Split(' ', 2,
+            StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries);
+        if (parts.Length == 0) return false;
+        var command = parts[0];
+        var matches = command.Equals(
+                _config.ChatCommand, StringComparison.OrdinalIgnoreCase) ||
+            (_config.ChatCommandAliases ?? new List<string>()).Contains(
+                command, StringComparer.OrdinalIgnoreCase);
+        if (!matches) return false;
+
+        if (parts.Length < 2 || string.IsNullOrWhiteSpace(parts[1]))
+        {
+            await SendChatOnceAsync(
+                $"@{message.UserName}, Nutzung: {_config.ChatCommand} <Spotify-Link oder Songname>.",
+                cancellationToken);
+            return true;
+        }
+
+        var redemption = new MusicRequestRedemption(
+            "chat:" + message.Id,
+            _config.SelectedRewardId,
+            "Chat-Command",
+            message.UserId,
+            message.UserLogin,
+            message.UserName,
+            parts[1],
+            message.ReceivedAt,
+            "unfulfilled");
+        var accepted = await EnqueueAsync(redemption, cancellationToken);
+        if (!accepted)
+        {
+            await SendChatOnceAsync(
+                $"@{message.UserName}, der Musikwunsch konnte nicht angenommen werden.",
+                cancellationToken);
+        }
+        Console.WriteLine(
+            $"Musikwunsch-Command von {message.UserName}: {parts[1]}");
+        return true;
     }
 
     private async Task ProcessModeratorCommandCoreAsync(
@@ -424,6 +475,8 @@ public sealed class MusicRequestService : IDisposable
         MusicRequestEntry entry, MusicRequestResult result,
         CancellationToken cancellationToken)
     {
+        if (entry.RedemptionId.StartsWith("chat:", StringComparison.Ordinal))
+            return;
         try
         {
             if (result.Success && _config.AutoFulfillRedemptions)

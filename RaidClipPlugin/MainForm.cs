@@ -687,6 +687,7 @@ public sealed partial class MainForm : Form
         InitializeStreamCheckEvents();
         InitializeClipDiscordEvents();
         InitializeGiveawayEvents();
+        InitializeChatDiagnosticsEvents();
 
         _startButton.Click += async (_, _) => await StartPluginAsync();
         _testButton.Click += async (_, _) => await PlayTestClipAsync();
@@ -1505,21 +1506,24 @@ public sealed partial class MainForm : Form
             Padding = new Padding(8, 0, 0, 0)
         };
 
+        BuildChatDiagnosticsPanel();
         var moderationLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 5,
             Padding = new Padding(20)
         };
         moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
         moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
         moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 190));
+        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 235));
         moderationLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         moderationLayout.Controls.Add(moderationHeader, 0, 0);
         moderationLayout.Controls.Add(moderationHint, 0, 1);
         moderationLayout.Controls.Add(_moderationSettingsGroup, 0, 2);
-        moderationLayout.Controls.Add(_chatGrid, 0, 3);
+        moderationLayout.Controls.Add(_chatDiagnosticsGroup, 0, 3);
+        moderationLayout.Controls.Add(_chatGrid, 0, 4);
         _moderationPage.Controls.Add(moderationLayout);
 
         var minigameTitle = new Label
@@ -2010,6 +2014,11 @@ public sealed partial class MainForm : Form
                     "Der konfigurierte Twitch-Kanal wurde nicht gefunden.");
             }
 
+            UpdateChatAuthenticationDiagnostics(session, _broadcaster);
+            AppendLog(
+                $"Twitch-Token validiert: {session.Login} ({session.UserId}); " +
+                $"Broadcaster: {_broadcaster.DisplayName} ({_broadcaster.Id}); " +
+                "Scopes: " + string.Join(", ", session.Scopes ?? Array.Empty<string>()));
             SetServiceStatus(_twitchIndicator, "Twitch", "Verbunden", ActiveColor);
 
             _playback = new PlaybackService(
@@ -2117,6 +2126,10 @@ public sealed partial class MainForm : Form
                     session.AccessToken,
                     _broadcaster.Id,
                     session.UserId);
+                _chatModeration.StatusChanged +=
+                    UpdateChatConnectionDiagnostics;
+                _chatModeration.Activated += () =>
+                    AppendLog("Chatbot verbunden: WebSocket und channel.chat.message aktiv.");
 
                 if (config.Moderation.Enabled)
                 {
@@ -2137,7 +2150,7 @@ public sealed partial class MainForm : Form
                 if (config.MusicRequests.Enabled && _musicRequests is not null)
                 {
                     _chatModeration.MessageReceived += message =>
-                        _musicRequests.ProcessModeratorCommandAsync(
+                        _musicRequests.ProcessChatMessageAsync(
                             message, cancellationToken);
                 }
 
@@ -3071,6 +3084,7 @@ public sealed partial class MainForm : Form
         _giveawayTask = null;
 
         ResetServiceIndicators();
+        ResetChatDiagnosticConnection();
         SetModerationStatus("Deaktiviert", InactiveColor);
         SetMinigameStatus("Deaktiviert", InactiveColor);
         _testChannelBox.Enabled = true;

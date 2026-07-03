@@ -290,8 +290,11 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
                          dropReason.ValueKind == JsonValueKind.Object
                 ? dropReason.GetProperty("message").GetString()
                 : "Twitch hat die Nachricht verworfen.";
+            Console.WriteLine("Twitch-Antwort: is_sent=false; " + reason);
             throw new InvalidOperationException(reason);
         }
+
+        Console.WriteLine("Twitch-Antwort: is_sent=true.");
     }
 
     public async Task SendShoutoutAsync(
