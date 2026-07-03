@@ -9,48 +9,8 @@
     <AssemblyName>RaidClipPlugin</AssemblyName>
     <RootNamespace>RaidClipPlugin</RootNamespace>
     <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
-    <Version>1.4.9</Version>
-    <FileVersion>1.4.9.0</FileVersion>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Config\config.template.json" />
-    <Compile Remove="Tests\**\*.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="Config\config.template.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.9" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.9" />
-    <PackageReference Include="obs-websocket-dotnet" Version="5.0.1" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.9" />
-  </ItemGroup>
-
-  <Target Name="GenerateApplicationIcon" BeforeTargets="PrepareForBuild">
-    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\Tools\GenerateIcon.ps1&quot; -ProjectDirectory &quot;$(MSBuildProjectDirectory)&quot;" />
-  </Target>
-
-</Project>
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AssemblyName>RaidClipPlugin</AssemblyName>
-    <RootNamespace>RaidClipPlugin</RootNamespace>
-    <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
-    <Version>1.4.8</Version>
-    <FileVersion>1.4.8.0</FileVersion>
+    <Version>1.4.10</Version>
+    <FileVersion>1.4.10.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
