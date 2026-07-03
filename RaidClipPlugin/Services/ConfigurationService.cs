@@ -64,6 +64,7 @@ public sealed class ConfigurationService
 
         var settings = new GuiSettings
         {
+            UiTheme = config.UiTheme,
             TwitchChannel = config.Twitch.BroadcasterLogin,
             ObsHost = config.OBS.Host,
             ObsPort = config.OBS.Port,
@@ -183,6 +184,11 @@ public sealed class ConfigurationService
             if (settings is null)
             {
                 return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(settings.UiTheme))
+            {
+                config.UiTheme = settings.UiTheme;
             }
 
             if (!string.IsNullOrWhiteSpace(settings.TwitchChannel))
@@ -349,6 +355,9 @@ public sealed class ConfigurationService
 
     private static void Normalize(AppConfig config)
     {
+        config.UiTheme = (config.UiTheme ?? "RaidRed").Trim();
+        if (config.UiTheme is not ("RaidRed" or "NeonGreen" or "TwitchPurple"))
+            config.UiTheme = "RaidRed";
         config.Twitch.BroadcasterLogin =
             (config.Twitch.BroadcasterLogin ?? "").Trim().TrimStart('@');
         config.OBS.Host = (config.OBS.Host ?? "").Trim();
@@ -845,6 +854,23 @@ public sealed class ConfigurationService
         if (discord.Enabled && string.IsNullOrWhiteSpace(discord.MessageTemplate))
             throw new InvalidOperationException(
                 "Bitte ein Discord-Nachrichtenformat eingeben.");
+        if (discord.InviteCommandEnabled &&
+            !System.Text.RegularExpressions.Regex.IsMatch(
+                discord.InviteCommand, "^![a-z0-9_-]{1,29}$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            throw new InvalidOperationException(
+                "Der Discord-Einladungsbefehl ist ungültig.");
+        if (discord.InviteCommandEnabled &&
+            !DiscordInviteCommandService.IsValidInviteUrl(discord.InviteUrl))
+            throw new InvalidOperationException(
+                "Bitte einen gültigen permanenten Discord-Einladungslink eingeben.");
+        if (discord.InviteCommandEnabled &&
+            string.IsNullOrWhiteSpace(discord.InviteMessage))
+            throw new InvalidOperationException(
+                "Bitte einen Chattext für den Discord-Einladungsbefehl eingeben.");
+        if (discord.InviteCooldownSeconds is < 0 or > 86400)
+            throw new InvalidOperationException(
+                "Der Discord-Einladungs-Cooldown muss zwischen 0 und 86400 Sekunden liegen.");
         if (discord.Enabled && string.IsNullOrWhiteSpace(discord.GuildId))
             throw new InvalidOperationException(
                 "Bitte eine Discord-Server-ID eingeben.");
@@ -990,6 +1016,12 @@ public sealed class ConfigurationService
         clip.DefaultTitle = (clip.DefaultTitle ?? "").Trim();
         clip.AllowedUsers = NormalizeUsers(clip.AllowedUsers);
         clip.BlockedUsers = NormalizeUsers(clip.BlockedUsers);
+        discord.InviteCommand = string.IsNullOrWhiteSpace(discord.InviteCommand)
+            ? "!raidpluginjoindc" : discord.InviteCommand.Trim().ToLowerInvariant();
+        discord.InviteUrl = (discord.InviteUrl ?? "").Trim();
+        discord.InviteMessage = (discord.InviteMessage ?? "").Trim();
+        discord.InviteCooldownSeconds = Math.Clamp(
+            discord.InviteCooldownSeconds, 0, 86400);
         discord.GuildId = (discord.GuildId ?? "").Trim();
         discord.MessageTemplate = (discord.MessageTemplate ?? "").Trim();
         discord.EmbedColor = (discord.EmbedColor ?? "#9146FF").Trim();
@@ -1034,6 +1066,7 @@ public sealed class ConfigurationService
 
     private sealed class GuiSettings
     {
+        public string? UiTheme { get; set; }
         public string? TwitchChannel { get; set; }
         public string? ObsHost { get; set; }
         public int? ObsPort { get; set; }

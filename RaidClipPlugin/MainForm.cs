@@ -6,16 +6,16 @@ namespace RaidClipPlugin;
 
 public sealed partial class MainForm : Form
 {
-    private static readonly Color BackgroundColor = Color.FromArgb(8, 8, 9);
-    private static readonly Color SidebarColor = Color.FromArgb(12, 12, 13);
-    private static readonly Color SurfaceColor = Color.FromArgb(19, 19, 21);
-    private static readonly Color InputColor = Color.FromArgb(13, 13, 14);
-    private static readonly Color BorderColor = Color.FromArgb(86, 86, 90);
-    private static readonly Color AccentColor = Color.FromArgb(222, 24, 30);
-    private static readonly Color AccentDarkColor = Color.FromArgb(92, 12, 15);
-    private static readonly Color TextColor = Color.FromArgb(235, 235, 238);
-    private static readonly Color MutedTextColor = Color.FromArgb(174, 174, 180);
-    private static readonly Color ActiveColor = Color.FromArgb(239, 36, 42);
+    private static Color BackgroundColor = Color.FromArgb(8, 8, 9);
+    private static Color SidebarColor = Color.FromArgb(12, 12, 13);
+    private static Color SurfaceColor = Color.FromArgb(19, 19, 21);
+    private static Color InputColor = Color.FromArgb(13, 13, 14);
+    private static Color BorderColor = Color.FromArgb(86, 86, 90);
+    private static Color AccentColor = Color.FromArgb(222, 24, 30);
+    private static Color AccentDarkColor = Color.FromArgb(92, 12, 15);
+    private static Color TextColor = Color.FromArgb(235, 235, 238);
+    private static Color MutedTextColor = Color.FromArgb(174, 174, 180);
+    private static Color ActiveColor = Color.FromArgb(239, 36, 42);
     private static readonly Color WaitingColor = Color.DarkOrange;
     private static readonly Color ErrorColor = Color.OrangeRed;
     private static readonly Color InactiveColor = Color.FromArgb(145, 145, 150);
@@ -688,6 +688,7 @@ public sealed partial class MainForm : Form
         InitializeClipDiscordEvents();
         InitializeGiveawayEvents();
         InitializeChatDiagnosticsEvents();
+        InitializeThemeEvents();
 
         _startButton.Click += async (_, _) => await StartPluginAsync();
         _testButton.Click += async (_, _) => await PlayTestClipAsync();
@@ -1322,6 +1323,8 @@ public sealed partial class MainForm : Form
             FlowDirection = FlowDirection.LeftToRight,
             Padding = new Padding(4)
         };
+        raidSettingsFlow.Controls.Add(
+            CreateSettingEditor("UI-Theme", _uiThemeBox));
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Twitch-Kanal", _twitchChannelBox));
         raidSettingsFlow.Controls.Add(
@@ -2002,6 +2005,7 @@ public sealed partial class MainForm : Form
                 config.Twitch.ClientId,
                 session.AccessToken);
             _twitch = twitch;
+            twitch.ChatMessageSent += UpdateChatLastSent;
             _twitchSession = session;
 
             _broadcaster = await twitch.GetUserAsync(
@@ -2117,9 +2121,8 @@ public sealed partial class MainForm : Form
             await StartGiveawayModuleAsync(
                 config, session, twitch, _broadcaster, cancellationToken);
 
-            if (config.Moderation.Enabled || config.Minigame.Enabled ||
-                config.MusicRequests.Enabled || config.ClipCommand.Enabled ||
-                config.Giveaways.Enabled)
+            var startChatTransport = true;
+            if (startChatTransport)
             {
                 _chatModeration = new ChatModerationService(
                     config.Twitch.ClientId,
@@ -2158,6 +2161,13 @@ public sealed partial class MainForm : Form
                 {
                     _chatModeration.MessageReceived += message =>
                         _clipCommandService.HandleMessageAsync(
+                            message, cancellationToken);
+                }
+
+                if (_discordInviteService is not null)
+                {
+                    _chatModeration.MessageReceived += message =>
+                        _discordInviteService.ProcessMessageAsync(
                             message, cancellationToken);
                 }
 
@@ -3492,6 +3502,8 @@ public sealed partial class MainForm : Form
         try
         {
             var config = _configurationService.Load();
+            SelectUiTheme(config.UiTheme);
+            ApplyUiTheme(config.UiTheme);
             _twitchChannelBox.Text = config.Twitch.BroadcasterLogin;
             _obsHostBox.Text = config.OBS.Host;
             _obsPasswordBox.Text = config.OBS.Password;
@@ -3642,6 +3654,7 @@ public sealed partial class MainForm : Form
     private AppConfig ReadSettingsFromControls()
     {
         var config = _configurationService.Load();
+        config.UiTheme = ThemeKeyFromSelection();
         config.Twitch.BroadcasterLogin = _twitchChannelBox.Text
             .Trim()
             .TrimStart('@');
@@ -3857,6 +3870,8 @@ public sealed partial class MainForm : Form
         _spotify?.UpdateConfig(updated.MusicRequests);
         _clipCommandService?.UpdateConfig(updated.ClipCommand);
         _discordClipService?.UpdateConfig(updated.DiscordClips);
+        _discordInviteService?.UpdateConfig(updated.DiscordClips);
+        ApplyUiTheme(updated.UiTheme);
         _giveawayService?.UpdateConfig(updated.Giveaways, updated.Minigame);
         UpdateCurrencyPreview();
         if (_minigameTopList.Columns.Count >= 3)

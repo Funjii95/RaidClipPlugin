@@ -76,6 +76,12 @@ public sealed class ClipChatMessage
 public sealed class DiscordClipsConfig
 {
     public bool Enabled { get; set; } = false;
+    public bool InviteCommandEnabled { get; set; } = false;
+    public string InviteCommand { get; set; } = "!raidpluginjoindc";
+    public string InviteUrl { get; set; } = "";
+    public string InviteMessage { get; set; } =
+        "@{username}, komm auf unseren Discord: {inviteUrl}";
+    public int InviteCooldownSeconds { get; set; } = 30;
     public string GuildId { get; set; } = "";
     public List<DiscordClipChannelConfig> Channels { get; set; } = new();
     public string MessageTemplate { get; set; } =

@@ -2,6 +2,7 @@ namespace RaidClipPlugin.Config;
 
 public class AppConfig
 {
+    public string UiTheme { get; set; } = "RaidRed";
     public TwitchConfig Twitch { get; set; } = new();
     public OBSConfig OBS { get; set; } = new();
     public PlayerConfig Player { get; set; } = new();

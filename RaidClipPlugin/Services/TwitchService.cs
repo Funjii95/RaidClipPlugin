@@ -9,6 +9,8 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
 {
     private readonly HttpClient _http = new();
 
+    public event Action<DateTimeOffset>? ChatMessageSent;
+
     public TwitchService(string clientId, string accessToken)
     {
         _http.DefaultRequestHeaders.Add("Client-Id", clientId);
@@ -294,7 +296,10 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             throw new InvalidOperationException(reason);
         }
 
-        Console.WriteLine("Twitch-Antwort: is_sent=true.");
+        var sentAt = DateTimeOffset.Now;
+        ChatMessageSent?.Invoke(sentAt);
+        Console.WriteLine("Twitch-Antwort: is_sent=true um " +
+            sentAt.ToString("HH:mm:ss") + ".");
     }
 
     public async Task SendShoutoutAsync(

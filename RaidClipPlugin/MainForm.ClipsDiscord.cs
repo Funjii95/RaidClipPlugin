@@ -49,6 +49,16 @@ public partial class MainForm
         CreateIntegerControl(5, 1, 100);
     private readonly CheckBox _discordClipsEnabledCheck =
         NewCheck("Discord-Veröffentlichung aktivieren", false);
+    private readonly CheckBox _discordInviteEnabledCheck =
+        NewCheck("Discord-Einladungsbefehl aktivieren", false);
+    private readonly TextBox _discordInviteCommandBox = new()
+        { Text = "!raidpluginjoindc", Width = 210, MaxLength = 30 };
+    private readonly TextBox _discordInviteUrlBox = new()
+        { Width = 360, PlaceholderText = "https://discord.gg/..." };
+    private readonly TextBox _discordInviteMessageBox = new()
+        { Width = 560, Text = "@{username}, komm auf unseren Discord: {inviteUrl}" };
+    private readonly NumericUpDown _discordInviteCooldownControl =
+        CreateIntegerControl(30, 0, 86400);
     private readonly TextBox _discordBotTokenBox = new()
         { Width = 420, UseSystemPasswordChar = true };
     private readonly TextBox _discordGuildIdBox = new()
@@ -94,6 +104,7 @@ public partial class MainForm
     private DiscordCredentials _discordCredentials = new();
     private ClipCommandService? _clipCommandService;
     private DiscordClipService? _discordClipService;
+    private DiscordInviteCommandService? _discordInviteService;
     private Task? _clipCommandTask;
 
     private static Label NewClipStatus(string text) => new()
@@ -233,6 +244,11 @@ public partial class MainForm
     private Control BuildDiscordTab()
     {
         var options = NewClipFlow();
+        options.Controls.Add(_discordInviteEnabledCheck);
+        options.Controls.Add(CreateSettingEditor("Twitch-Command", _discordInviteCommandBox));
+        options.Controls.Add(CreateSettingEditor("Discord-Einladungslink", _discordInviteUrlBox));
+        options.Controls.Add(CreateSettingEditor("Einladungs-Chattext", _discordInviteMessageBox));
+        options.Controls.Add(CreateSettingEditor("Nutzer-Cooldown (Sek.)", _discordInviteCooldownControl));
         options.Controls.Add(_discordClipsEnabledCheck);
         options.Controls.Add(CreateSettingEditor("Bot-Token (verschlüsselt)", _discordBotTokenBox));
         options.Controls.Add(CreateSettingEditor("Server-ID", _discordGuildIdBox));
@@ -248,7 +264,7 @@ public partial class MainForm
         options.Controls.Add(_testDiscordButton);
         options.Controls.Add(_previewDiscordButton);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2 };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 280));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 390));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(options, 0, 0);
         layout.Controls.Add(_discordChannelsGrid, 0, 1);
@@ -336,6 +352,12 @@ public partial class MainForm
         SetNumericValue(_clipMaximumUserControl, clip.MaximumClipsPerUserPerStream);
         _clipQueueCheck.Checked = clip.QueueEnabled;
         SetNumericValue(_clipQueueSizeControl, clip.MaximumQueueSize);
+        _discordInviteEnabledCheck.Checked = discord.InviteCommandEnabled;
+        _discordInviteCommandBox.Text = discord.InviteCommand;
+        _discordInviteUrlBox.Text = discord.InviteUrl;
+        _discordInviteMessageBox.Text = discord.InviteMessage;
+        SetNumericValue(_discordInviteCooldownControl,
+            discord.InviteCooldownSeconds);
         _discordClipsEnabledCheck.Checked = discord.Enabled;
         _discordBotTokenBox.Text = _discordCredentials.BotToken;
         _discordGuildIdBox.Text = discord.GuildId;
@@ -378,6 +400,12 @@ public partial class MainForm
         ReadClipMessageRows(clip.ChatMessages);
 
         var discord = config.DiscordClips;
+        discord.InviteCommandEnabled = _discordInviteEnabledCheck.Checked;
+        discord.InviteCommand = _discordInviteCommandBox.Text.Trim();
+        discord.InviteUrl = _discordInviteUrlBox.Text.Trim();
+        discord.InviteMessage = _discordInviteMessageBox.Text.Trim();
+        discord.InviteCooldownSeconds =
+            decimal.ToInt32(_discordInviteCooldownControl.Value);
         discord.Enabled = _discordClipsEnabledCheck.Checked;
         discord.GuildId = _discordGuildIdBox.Text;
         discord.UseEmbed = _discordEmbedCheck.Checked;
@@ -628,6 +656,15 @@ public partial class MainForm
         CancellationToken cancellationToken)
     {
         SetClipDiscordStatus(config, session);
+        _discordInviteService = config.DiscordClips.InviteCommandEnabled
+            ? new DiscordInviteCommandService(
+                broadcaster.Id, session.UserId,
+                config.DiscordClips, twitch)
+            : null;
+        if (_discordInviteService is not null)
+            AppendLog(
+                "Discord-Einladungsbefehl ist aktiv: " +
+                config.DiscordClips.InviteCommand);
         if (!config.ClipCommand.Enabled)
             return;
 
@@ -693,6 +730,7 @@ public partial class MainForm
         _clipCommandService?.Dispose();
         _clipCommandService = null;
         _discordClipService = null;
+        _discordInviteService = null;
         _clipCommandTask = null;
         _clipTwitchStatus.Text = "Twitch: Nicht verbunden";
         _clipTwitchStatus.ForeColor = InactiveColor;

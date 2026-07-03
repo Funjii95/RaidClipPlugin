@@ -149,9 +149,15 @@ public sealed class ChatMinigameService : IDisposable
                 DataChanged?.Invoke();
             }
 
-            if (message.Text.StartsWith("!", StringComparison.Ordinal))
+            var parsedCommand = ChatCommandParser.Parse(message.Text);
+            if (parsedCommand.IsCommand)
             {
                 await HandleCommandAsync(message, cancellationToken);
+            }
+            else
+            {
+                Console.WriteLine(
+                    $"Minigame ignoriert Nachricht von {message.UserName}: {parsedCommand.IgnoreReason}");
             }
         }
         catch (OperationCanceledException)

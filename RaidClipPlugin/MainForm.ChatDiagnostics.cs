@@ -194,6 +194,18 @@ public sealed partial class MainForm
         });
     }
 
+    private void UpdateChatLastSent(DateTimeOffset sentAt)
+    {
+        RunOnUiThread(() =>
+        {
+            _chatLastSentDiagnostic.Text =
+                "Letzter Versand: " + sentAt.ToLocalTime().ToString("HH:mm:ss");
+            _chatLastSentDiagnostic.ForeColor = ActiveColor;
+            _chatLastErrorDiagnostic.Text = "Letzter Fehler: –";
+            _chatLastErrorDiagnostic.ForeColor = MutedTextColor;
+        });
+    }
+
     private void ResetChatDiagnosticConnection()
     {
         RunOnUiThread(() =>

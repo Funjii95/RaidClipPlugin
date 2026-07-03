@@ -27,6 +27,7 @@ public sealed class ChatModerationService : IDisposable
     private readonly string _moderatorId;
     private readonly HttpClient _http = new();
     private bool _disposed;
+    private int _runState;
 
     private ChatConnectionDiagnostics _diagnostics = new();
 
@@ -54,54 +55,74 @@ public sealed class ChatModerationService : IDisposable
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        var url = EventSubUrl;
-        var subscribe = true;
-
-        while (!cancellationToken.IsCancellationRequested)
+        if (Interlocked.CompareExchange(ref _runState, 1, 0) != 0)
         {
-            try
-            {
-                var reconnectUrl = await ConnectAndListenAsync(
-                    url,
-                    subscribe,
-                    cancellationToken);
+            Console.WriteLine("Chat-Service läuft bereits; doppelter WebSocket-Start wurde verhindert.");
+            return;
+        }
 
-                if (!string.IsNullOrWhiteSpace(reconnectUrl))
+        try
+        {
+            var url = EventSubUrl;
+            var subscribe = true;
+    
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
                 {
-                    url = reconnectUrl;
-                    subscribe = false;
-                    continue;
+                    var reconnectUrl = await ConnectAndListenAsync(
+                        url,
+                        subscribe,
+                        cancellationToken);
+    
+                    if (!string.IsNullOrWhiteSpace(reconnectUrl))
+                    {
+                        url = reconnectUrl;
+                        subscribe = false;
+                        continue;
+                    }
+                }
+                catch (OperationCanceledException)
+                    when (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception exception)
+                {
+                    PublishDiagnostics(_diagnostics with
+                    {
+                        WebSocketConnected = false,
+                        SubscriptionEnabled = false,
+                        LastError = exception.Message
+                    });
+                    Console.WriteLine(
+                        "Chat-Moderation wurde unterbrochen: " + exception.Message);
+                }
+    
+                url = EventSubUrl;
+                subscribe = true;
+    
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                }
+                catch (OperationCanceledException)
+                    when (cancellationToken.IsCancellationRequested)
+                {
+                    break;
                 }
             }
-            catch (OperationCanceledException)
-                when (cancellationToken.IsCancellationRequested)
+        
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _runState, 0);
+            PublishDiagnostics(_diagnostics with
             {
-                break;
-            }
-            catch (Exception exception)
-            {
-                PublishDiagnostics(_diagnostics with
-                {
-                    WebSocketConnected = false,
-                    SubscriptionEnabled = false,
-                    LastError = exception.Message
-                });
-                Console.WriteLine(
-                    "Chat-Moderation wurde unterbrochen: " + exception.Message);
-            }
-
-            url = EventSubUrl;
-            subscribe = true;
-
-            try
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
-            }
-            catch (OperationCanceledException)
-                when (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
+                WebSocketConnected = false,
+                SubscriptionEnabled = false,
+                SessionId = ""
+            });
         }
     }
 
@@ -257,9 +278,18 @@ public sealed class ChatModerationService : IDisposable
                         .GetString();
 
                 case "revocation":
-                    Console.WriteLine(
-                        "Twitch hat die Chat-Subscription widerrufen.");
-                    break;
+                    var revocationStatus = root.GetProperty("payload")
+                        .GetProperty("subscription")
+                        .TryGetProperty("status", out var revokedStatus)
+                            ? revokedStatus.GetString() ?? "unbekannt"
+                            : "unbekannt";
+                    PublishDiagnostics(_diagnostics with
+                    {
+                        SubscriptionEnabled = false,
+                        LastError = "Chat-Subscription widerrufen: " + revocationStatus
+                    });
+                    throw new InvalidOperationException(
+                        "Twitch hat channel.chat.message widerrufen: " + revocationStatus);
             }
         }
 
@@ -372,9 +402,18 @@ public sealed class ChatModerationService : IDisposable
             $"({message.UserId}) -> {message.Text}");
         LogCommandDetection(message.Text);
 
-        if (MessageReceived is { } handler)
+        var handlers = MessageReceived?.GetInvocationList()
+            .Cast<Func<ChatMessage, Task>>()
+            .ToArray() ?? Array.Empty<Func<ChatMessage, Task>>();
+        if (handlers.Length == 0)
         {
-            _ = Task.Run(async () =>
+            Console.WriteLine("Chatnachricht ignoriert: kein aktiver Command-Handler.");
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            foreach (var handler in handlers)
             {
                 try
                 {
@@ -383,11 +422,10 @@ public sealed class ChatModerationService : IDisposable
                 catch (Exception exception)
                 {
                     Console.WriteLine(
-                        "Chatnachricht konnte nicht verarbeitet werden: " +
-                        exception.Message);
+                        "Chat-Command-Handler fehlgeschlagen: " + exception.Message);
                 }
-            });
-        }
+            }
+        });
     }
 
     private void PublishDiagnostics(ChatConnectionDiagnostics diagnostics)
@@ -403,20 +441,16 @@ public sealed class ChatModerationService : IDisposable
 
     private static void LogCommandDetection(string text)
     {
-        var trimmed = (text ?? "").Trim();
-        if (!trimmed.StartsWith('!'))
+        var parsed = ChatCommandParser.Parse(text);
+        if (!parsed.IsCommand)
         {
-            Console.WriteLine("Chatnachricht ignoriert: kein Command-Prefix.");
+            Console.WriteLine("Chatnachricht ignoriert: " + parsed.IgnoreReason);
             return;
         }
 
-        var parts = trimmed.Split(' ', 2,
-            StringSplitOptions.RemoveEmptyEntries |
-            StringSplitOptions.TrimEntries);
-        var command = parts[0][1..].ToLowerInvariant();
-        var arguments = parts.Length > 1 ? parts[1] : "";
         Console.WriteLine(
-            $"Command erkannt: {command}; Argumente: {arguments}");
+            $"Command erkannt: Prefix {parsed.Prefix}; " +
+            $"Command {parsed.Command}; Argumente: {parsed.Arguments}");
     }
 
     private static string LimitReason(string reason)
