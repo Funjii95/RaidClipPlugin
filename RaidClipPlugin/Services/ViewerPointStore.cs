@@ -176,6 +176,133 @@ public sealed class ViewerPointStore
         }
     }
 
+    public async Task<DuelReserveResult> ReserveDuelStakeAsync(
+        string userId,
+        string displayName,
+        int amount,
+        int minimumPoints,
+        int historyLimit,
+        CancellationToken cancellationToken)
+    {
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var entry = GetOrCreateEntry(userId, displayName, floor);
+            if (amount <= 0 || entry.Points - amount < floor)
+                return new DuelReserveResult(false, "Nicht genug verfügbare Punkte", entry.Points);
+
+            var previous = entry.Points;
+            var historyBefore = _history.ToList();
+            entry.Points -= amount;
+            entry.DisplayName = displayName;
+            entry.UpdatedAt = DateTimeOffset.Now;
+            AddDuelHistory(userId, displayName, "Einsatz reserviert", -amount, entry.Points, historyLimit);
+            try { await SaveAllAsync(cancellationToken); }
+            catch { entry.Points = previous; _history = historyBefore; throw; }
+            return new DuelReserveResult(true, "", entry.Points);
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<int> RefundDuelStakeAsync(
+        string userId,
+        string displayName,
+        int amount,
+        int historyLimit,
+        CancellationToken cancellationToken)
+    {
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var entry = GetOrCreateEntry(userId, displayName, 0);
+            var previous = entry.Points;
+            var historyBefore = _history.ToList();
+            entry.Points = checked(entry.Points + Math.Max(0, amount));
+            entry.DisplayName = displayName;
+            entry.UpdatedAt = DateTimeOffset.Now;
+            AddDuelHistory(userId, displayName, "Einsatz zurückgegeben", amount, entry.Points, historyLimit);
+            try { await SaveAllAsync(cancellationToken); }
+            catch { entry.Points = previous; _history = historyBefore; throw; }
+            return entry.Points;
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<DuelResolutionResult> ResolveDuelAsync(
+        string challengerId,
+        string challengerName,
+        string targetId,
+        string targetName,
+        string winnerId,
+        int stake,
+        int minimumPoints,
+        int maximumPoints,
+        int historyLimit,
+        CancellationToken cancellationToken)
+    {
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var ceiling = Math.Max(floor, maximumPoints);
+            var challenger = GetOrCreateEntry(challengerId, challengerName, floor);
+            var target = GetOrCreateEntry(targetId, targetName, floor);
+            if (stake <= 0 || target.Points - stake < floor)
+                return new DuelResolutionResult(false, "Zielspieler hat nicht genug Punkte", challenger.Points, target.Points, stake * 2);
+
+            var pot = checked(stake * 2);
+            var challengerBefore = challenger.Points;
+            var targetBefore = target.Points;
+            var historyBefore = _history.ToList();
+            var challengerAfter = challengerBefore;
+            var targetAfter = targetBefore - stake;
+            if (winnerId.Equals(challengerId, StringComparison.Ordinal))
+                challengerAfter = checked(challengerAfter + pot);
+            else if (winnerId.Equals(targetId, StringComparison.Ordinal))
+                targetAfter = checked(targetAfter + pot);
+            else
+                throw new ArgumentException("Der Duel-Gewinner ist kein Teilnehmer.", nameof(winnerId));
+
+            if (challengerAfter > ceiling || targetAfter > ceiling)
+                return new DuelResolutionResult(false, "Die Auszahlung würde das technische Punktelimit überschreiten", challengerBefore, targetBefore, pot);
+
+            challenger.Points = challengerAfter;
+            target.Points = targetAfter;
+            challenger.DisplayName = challengerName;
+            target.DisplayName = targetName;
+            challenger.UpdatedAt = target.UpdatedAt = DateTimeOffset.Now;
+            var challengerChange = winnerId.Equals(challengerId, StringComparison.Ordinal) ? pot : 0;
+            var targetChange = winnerId.Equals(targetId, StringComparison.Ordinal) ? pot - stake : -stake;
+            AddDuelHistory(challengerId, challengerName, winnerId == challengerId ? "Duel gewonnen" : "Duel verloren", challengerChange, challengerAfter, historyLimit);
+            AddDuelHistory(targetId, targetName, winnerId == targetId ? "Duel gewonnen" : "Duel verloren", targetChange, targetAfter, historyLimit);
+            try { await SaveAllAsync(cancellationToken); }
+            catch { challenger.Points = challengerBefore; target.Points = targetBefore; _history = historyBefore; throw; }
+            return new DuelResolutionResult(true, "", challengerAfter, targetAfter, pot);
+        }
+        finally { _lock.Release(); }
+    }
+
+    private void AddDuelHistory(string userId, string displayName, string action,
+        int change, int balance, int historyLimit)
+    {
+        _history.Insert(0, new MinigameHistoryEntry
+        {
+            Timestamp = DateTimeOffset.Now,
+            UserId = userId,
+            DisplayName = displayName,
+            Game = "Duel",
+            Action = action,
+            Change = change,
+            Balance = balance
+        });
+        var limit = Math.Max(1, historyLimit);
+        if (_history.Count > limit) _history.RemoveRange(limit, _history.Count - limit);
+    }
+
     public async Task<int> AddPointsToUsersAsync(
         IEnumerable<(string UserId, string DisplayName)> users,
         int amount,

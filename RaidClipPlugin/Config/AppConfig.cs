@@ -10,6 +10,7 @@ public class AppConfig
     public ModerationConfig Moderation { get; set; } = new();
     public MinigameConfig Minigame { get; set; } = new();
     public HeistConfig Heist { get; set; } = new();
+    public DuelConfig Duel { get; set; } = new();
     public CommandsConfig Commands { get; set; } = new();
     public MusicRequestConfig MusicRequests { get; set; } = new();
     public StreamCheckConfig StreamCheck { get; set; } = new();

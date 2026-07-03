@@ -105,6 +105,7 @@ public sealed class ConfigurationService
                 .ToList(),
             Minigame = config.Minigame,
             Heist = config.Heist,
+            Duel = config.Duel,
             Commands = config.Commands,
             MusicRequests = config.MusicRequests,
             StreamCheck = config.StreamCheck,
@@ -345,6 +346,8 @@ public sealed class ConfigurationService
                 config.Minigame = settings.Minigame;
             if (settings.Heist is not null)
                 config.Heist = settings.Heist;
+            if (settings.Duel is not null)
+                config.Duel = settings.Duel;
             if (settings.Commands is not null)
                 config.Commands = settings.Commands;
             if (settings.MusicRequests is not null)
@@ -388,6 +391,7 @@ public sealed class ConfigurationService
         config.ClipCommand ??= new ClipCommandConfig();
         config.DiscordClips ??= new DiscordClipsConfig();
         config.Giveaways ??= new GiveawayConfig();
+        config.Duel ??= new DuelConfig();
         NormalizeClipSettings(config.ClipCommand, config.DiscordClips);
         NormalizeGiveawaySettings(config.Giveaways);
         config.StreamCheck.DisabledChecks =
@@ -436,6 +440,9 @@ public sealed class ConfigurationService
             .ToList();
         config.Heist.StartCommand = NormalizeCommand(config.Heist.StartCommand);
         config.Heist.JoinCommand = NormalizeCommand(config.Heist.JoinCommand);
+        config.Duel.DuelCommand = NormalizeCommand(config.Duel.DuelCommand);
+        config.Duel.AcceptCommand = NormalizeCommand(config.Duel.AcceptCommand);
+        config.Duel.DenyCommand = NormalizeCommand(config.Duel.DenyCommand);
         config.Commands.Command = NormalizeCommand(config.Commands.Command);
         config.Commands.ExportDirectory = (config.Commands.ExportDirectory ?? "exports").Trim();
         NormalizeMusicRequests(config.MusicRequests);
@@ -547,6 +554,7 @@ public sealed class ConfigurationService
         ValidateMusicRequestSettings(config.MusicRequests);
         ValidateClipSettings(config.ClipCommand, config.DiscordClips);
         ValidateGiveawaySettings(config.Giveaways);
+        ValidateDuelSettings(config.Duel);
         ValidateHeistAndCommands(config);
         var pointCommands = new List<string>();
         if (config.Minigame.PointsCommandPunkteEnabled) pointCommands.Add("!punkte");
@@ -592,6 +600,32 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Bitte eine Raid-Chatnachricht eingeben.");
         }
+    }
+
+    public static void ValidateDuelSettings(DuelConfig duel)
+    {
+        var commands = new[] { duel.DuelCommand, duel.AcceptCommand, duel.DenyCommand };
+        if (commands.Any(string.IsNullOrWhiteSpace) ||
+            commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() != commands.Length)
+            throw new InvalidOperationException("Duel-, Accept- und Deny-Command müssen gültig und unterschiedlich sein.");
+        if (duel.MinimumBet <= 0)
+            throw new InvalidOperationException("Der Duel-Mindesteinsatz muss größer als 0 sein.");
+        if (duel.MaximumBet < duel.MinimumBet || duel.MaximumBet > int.MaxValue / 2)
+            throw new InvalidOperationException("Der Duel-Maximaleinsatz muss mindestens dem Mindesteinsatz entsprechen.");
+        if (duel.RequestTimeoutSeconds is < 10 or > 300)
+            throw new InvalidOperationException("Der Duel-Timeout muss zwischen 10 und 300 Sekunden liegen.");
+        if (duel.UserCooldownSeconds < 0 || duel.GlobalCooldownSeconds < 0)
+            throw new InvalidOperationException("Duel-Cooldowns dürfen nicht negativ sein.");
+        if (duel.ChallengerWinChancePercent is < 1 or > 99)
+            throw new InvalidOperationException("Die Duel-Gewinnchance muss zwischen 1 und 99 Prozent liegen.");
+        if (!(duel.AllowEveryone || duel.AllowFollowers || duel.AllowSubscribers || duel.AllowVips || duel.AllowModerators))
+            throw new InvalidOperationException("Bitte mindestens eine Duel-Berechtigung aktivieren.");
+        var messages = new[] { duel.DuelRequestMessage, duel.DuelAcceptedMessage, duel.DuelWinMessage,
+            duel.DuelDeniedMessage, duel.DuelTimeoutMessage, duel.NotEnoughPointsChallengerMessage,
+            duel.NotEnoughPointsTargetMessage, duel.SelfDuelMessage, duel.NoPendingDuelMessage,
+            duel.WrongTargetMessage, duel.AlreadyPendingDuelMessage, duel.InvalidBetMessage };
+        if (messages.Any(string.IsNullOrWhiteSpace))
+            throw new InvalidOperationException("Alle Duel-Chatnachrichten müssen ausgefüllt sein.");
     }
 
     public static void ValidateHeistAndCommands(AppConfig config)
@@ -1190,6 +1224,7 @@ public sealed class ConfigurationService
         public List<GambleRangeConfig>? GambleRanges { get; set; }
         public MinigameConfig? Minigame { get; set; }
         public HeistConfig? Heist { get; set; }
+        public DuelConfig? Duel { get; set; }
         public CommandsConfig? Commands { get; set; }
         public MusicRequestConfig? MusicRequests { get; set; }
         public StreamCheckConfig? StreamCheck { get; set; }

@@ -696,6 +696,7 @@ public sealed partial class MainForm : Form
         InitializeClipDiscordEvents();
         InitializeGiveawayEvents();
         InitializeHeistCommandEvents();
+        InitializeDuelEvents();
         InitializeChatDiagnosticsEvents();
         InitializeThemeEvents();
 
@@ -1792,6 +1793,7 @@ public sealed partial class MainForm : Form
         AddMinigameTab(tabs, "Chat-Commands", commandsFlow);
         AddMinigameTab(tabs, "Casino-Spiele", casinoLayout);
         AddMinigameTab(tabs, "Heist", BuildHeistSettingsPanel());
+        AddMinigameTab(tabs, "Duel", BuildDuelSettingsPanel());
         AddMinigameTab(tabs, "Limits & Fairness", limitsFlow);
         AddMinigameTab(tabs, "Rangliste", _minigameTopList);
         AddMinigameTab(tabs, "Historie & Daten", historyLayout);
@@ -2206,7 +2208,7 @@ public sealed partial class MainForm : Form
                         _giveawayService.ProcessMessageAsync(message, cancellationToken);
                 }
 
-                if (ChatMinigameService.ShouldRun(config.Minigame) || config.Heist.Enabled || config.Commands.Enabled)
+                if (ChatMinigameService.ShouldRun(config.Minigame) || config.Heist.Enabled || config.Duel.Enabled || config.Commands.Enabled)
                 {
                     SetMinigameStatus("Startet …", WaitingColor);
                     _minigame = new ChatMinigameService(
@@ -2216,6 +2218,7 @@ public sealed partial class MainForm : Form
                         twitch,
                         _viewerPoints,
                         config.Heist,
+                        config.Duel,
                         config.Commands,
                         _commandRegistry);
                     _chatModeration.Activated += () =>
@@ -2233,6 +2236,7 @@ public sealed partial class MainForm : Form
                     _minigame.DataChanged += () =>
                         _ = RefreshMinigameDashboardAsync();
                     _minigame.HeistStatusChanged += OnHeistStatusChanged;
+                    _minigame.DuelStatusChanged += OnDuelStatusChanged;
                     _chatModeration.MessageReceived += message =>
                         _minigame.ProcessMessageAsync(
                             message,
@@ -3685,6 +3689,7 @@ public sealed partial class MainForm : Form
             LoadClipDiscordSettings(config);
             LoadGiveawaySettings(config.Giveaways);
             LoadHeistCommandsSettings(config);
+            LoadDuelSettings(config.Duel);
         }
         catch (Exception exception)
         {
@@ -3840,6 +3845,7 @@ public sealed partial class MainForm : Form
         config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
         ReadMusicRequestSettings(config);
         ReadHeistCommandsSettings(config);
+        ReadDuelSettings(config);
         return config;
     }
 
@@ -3893,6 +3899,7 @@ public sealed partial class MainForm : Form
             _activeConfig.ClipCommand.Enabled != updated.ClipCommand.Enabled ||
             _activeConfig.Giveaways.Enabled != updated.Giveaways.Enabled ||
             _activeConfig.Heist.Enabled != updated.Heist.Enabled ||
+            _activeConfig.Duel.Enabled != updated.Duel.Enabled ||
             _activeConfig.Commands.Enabled != updated.Commands.Enabled ||
             _activeConfig.ClipCommand.MaximumQueueSize !=
                 updated.ClipCommand.MaximumQueueSize;
@@ -3900,6 +3907,7 @@ public sealed partial class MainForm : Form
         _activeConfig.Moderation = updated.Moderation;
         _activeConfig.Minigame = updated.Minigame;
         _activeConfig.Heist = updated.Heist;
+        _activeConfig.Duel = updated.Duel;
         _activeConfig.Commands = updated.Commands;
         _activeConfig.MusicRequests = updated.MusicRequests;
         _activeConfig.ClipCommand = updated.ClipCommand;

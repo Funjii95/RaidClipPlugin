@@ -61,3 +61,12 @@ public sealed record HeistPayoutResult(
     int JackpotBefore,
     int JackpotAfter,
     IReadOnlyList<HeistParticipantPayout> Payouts);
+
+public sealed record DuelReserveResult(bool Success, string Error, int Balance);
+
+public sealed record DuelResolutionResult(
+    bool Success,
+    string Error,
+    int ChallengerBalance,
+    int TargetBalance,
+    int Pot);

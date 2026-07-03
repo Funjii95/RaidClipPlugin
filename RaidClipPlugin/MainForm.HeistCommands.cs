@@ -61,7 +61,7 @@ public sealed partial class MainForm
 
     private static NumericUpDown NewNumber(int value, int minimum, int maximum) => new()
     {
-        Value = value, Minimum = minimum, Maximum = maximum, Width = 120,
+        Minimum = minimum, Maximum = maximum, Value = value, Width = 120,
         ThousandsSeparator = true, Margin = new Padding(5, 2, 5, 2)
     };
 

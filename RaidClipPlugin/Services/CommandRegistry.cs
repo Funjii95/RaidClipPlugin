@@ -90,6 +90,17 @@ public sealed class CommandRegistry
         Add("heist.join", config.Heist.JoinCommand, null, "heist", "Heist", "Heist beitreten",
             "Tritt der laufenden Beitrittsphase bei.", config.Heist.JoinCommand,
             config.Heist.JoinCommand, config.Heist.Enabled, order:61);
+        Add("duel.challenge", config.Duel.DuelCommand, null, "duel", "Duel", "Duel starten",
+            "Fordert einen Zuschauer zu einem Punkte-Duell heraus.", config.Duel.DuelCommand+" <user> <punkte|all>",
+            config.Duel.DuelCommand+" Funjii 100", config.Duel.Enabled,
+            userCooldown:config.Duel.UserCooldownSeconds, globalCooldown:config.Duel.GlobalCooldownSeconds,
+            cost:config.Duel.MinimumBet, order:65);
+        Add("duel.accept", config.Duel.AcceptCommand, null, "duel", "Duel", "Duel annehmen",
+            "Nimmt eine offene Duel-Anfrage an.", config.Duel.AcceptCommand,
+            config.Duel.AcceptCommand, config.Duel.Enabled, order:66);
+        Add("duel.deny", config.Duel.DenyCommand, null, "duel", "Duel", "Duel ablehnen",
+            "Lehnt eine offene Duel-Anfrage ab.", config.Duel.DenyCommand,
+            config.Duel.DenyCommand, config.Duel.Enabled, order:67);
         Add("commands.list", config.Commands.Command, null, "commands", "Commands", "Command-Liste",
             "Zeigt verfügbare Chat-Commands.", config.Commands.Command+" [Seite|Modul]",
             config.Commands.Command+" heist", config.Commands.Enabled,

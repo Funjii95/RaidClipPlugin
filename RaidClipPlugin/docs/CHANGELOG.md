@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.9
+
+- Neues Twitch-Minispiel Duel mit `!duel <user> <punkte|all>`, `!accept` und `!deny`.
+- Thread-sichere Einsatzreservierung, Rückerstattung bei Ablehnung, Timeout und Bot-Stopp sowie atomare Pot-Auszahlung.
+- Fairer 50/50-Modus oder konfigurierbare Gewinnchance für Herausforderer.
+- Neuer Duel-Reiter mit Commands, Limits, Rollen, Chatvorlagen, Live-Status, Abbruch und Testmodus.
+- Duel-Commands in zentraler CommandRegistry, Commands-Seite, Kollisionsprüfung und `!commands` integriert.
+- Umfangreiche Unit- und Integrationstests für Punkteerhalt, Race Conditions, All-In und Command-Kollisionen.
+
 ## 1.5.8
 
 - `!heist` reagiert wieder zuverlässig im Twitch-Chat.

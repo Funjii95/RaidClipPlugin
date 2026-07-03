@@ -13,6 +13,7 @@ public sealed class ChatMinigameService : IDisposable
     private readonly ViewerPointStore _points;
     private readonly CommandRegistry _commandRegistry;
     private readonly HeistService? _heist;
+    private readonly DuelService? _duel;
     private CommandsConfig _commandsConfig;
     private readonly object _activityLock = new();
     private readonly Dictionary<string, string> _activeUsers =
@@ -119,6 +120,7 @@ public sealed class ChatMinigameService : IDisposable
     public event Action<int, int>? PointsAwarded;
     public event Action? DataChanged;
     public event Action<HeistStatus>? HeistStatusChanged;
+    public event Action<DuelStatus>? DuelStatusChanged;
 
     public ChatMinigameService(
         string broadcasterId,
@@ -127,6 +129,7 @@ public sealed class ChatMinigameService : IDisposable
         TwitchService twitch,
         ViewerPointStore points,
         HeistConfig? heistConfig = null,
+        DuelConfig? duelConfig = null,
         CommandsConfig? commandsConfig = null,
         CommandRegistry? commandRegistry = null)
     {
@@ -141,6 +144,11 @@ public sealed class ChatMinigameService : IDisposable
         {
             _heist = new HeistService(broadcasterId, chatUserId, heistConfig, config, twitch, points);
             _heist.StatusChanged += status => HeistStatusChanged?.Invoke(status);
+        }
+        if (duelConfig is not null)
+        {
+            _duel = new DuelService(broadcasterId, chatUserId, duelConfig, config, twitch, points);
+            _duel.StatusChanged += status => DuelStatusChanged?.Invoke(status);
         }
     }
 
@@ -157,6 +165,7 @@ public sealed class ChatMinigameService : IDisposable
         _commandsConfig = config.Commands;
         _commandRegistry.Update(config);
         _heist?.UpdateConfig(config.Heist, config.Minigame);
+        _duel?.UpdateConfig(config.Duel, config.Minigame);
     }
 
     public Task RunTestHeistAsync(CancellationToken cancellationToken) =>
@@ -164,6 +173,12 @@ public sealed class ChatMinigameService : IDisposable
 
     public Task CancelHeistAsync(CancellationToken cancellationToken) =>
         _heist?.CancelAsync(true, cancellationToken) ?? Task.CompletedTask;
+
+    public Task RunTestDuelAsync(CancellationToken cancellationToken) =>
+        _duel?.RunTestAsync(cancellationToken) ?? Task.CompletedTask;
+
+    public Task CancelDuelsAsync(CancellationToken cancellationToken) =>
+        _duel?.CancelAllAsync(true, cancellationToken) ?? Task.CompletedTask;
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -176,7 +191,7 @@ public sealed class ChatMinigameService : IDisposable
     {
         try
         {
-            if (!ShouldRun(_config) && _heist is null && !_commandsConfig.Enabled)
+            if (!ShouldRun(_config) && _heist is null && _duel is null && !_commandsConfig.Enabled)
             {
                 return;
             }
@@ -352,6 +367,12 @@ public sealed class ChatMinigameService : IDisposable
                 command == CommandRegistry.Normalize(_commandsConfig.Command))
             {
                 await HandleCommandsCommandAsync(message, parts, cancellationToken);
+                return;
+            }
+
+            if (_duel?.Recognizes(command) == true)
+            {
+                await _duel.ProcessAsync(message, cancellationToken);
                 return;
             }
 
@@ -1267,6 +1288,8 @@ public sealed class ChatMinigameService : IDisposable
 
         if (_heist is not null)
             _heist.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        if (_duel is not null)
+            _duel.DisposeAsync().AsTask().GetAwaiter().GetResult();
         _cooldownLock.Dispose();
         _disposed = true;
     }
