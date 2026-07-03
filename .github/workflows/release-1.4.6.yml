@@ -1,0 +1,69 @@
+name: Build Release 1.4.6
+
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/release-1.4.6.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: RaidClipPlugin
+    steps:
+      - name: Quellcode laden
+        uses: actions/checkout@v4
+      - name: .NET 10 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Unit-Tests ausführen
+        shell: pwsh
+        run: dotnet test "Tests\RaidClipPlugin.Tests.csproj" -c Release
+      - name: Windows-App erstellen
+        shell: pwsh
+        run: dotnet publish "RaidClipPlugin.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o "publish"
+      - name: Update-ZIP erstellen
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force "installer-output" | Out-Null
+          Compress-Archive -Path "publish\*" -DestinationPath "installer-output\RaidClipPlugin-Update-1.4.6.zip" -Force
+      - name: Inno Setup installieren
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+      - name: Windows-Installer erstellen
+        shell: pwsh
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=1.4.6" "Installer\RaidClipPlugin.iss"'
+      - name: update.json erzeugen
+        shell: pwsh
+        run: |
+          $zipName = "RaidClipPlugin-Update-1.4.6.zip"
+          $zipPath = Join-Path "installer-output" $zipName
+          $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash
+          $manifest = [ordered]@{
+            latestVersion = "1.4.6"
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v1.4.6/$zipName"
+            changelog = "Giveaways sowie Clip- und Discord-Funktionen."
+            sha256 = $hash
+          }
+          $manifest | ConvertTo-Json | Set-Content "installer-output\update.json" -Encoding UTF8
+      - name: Release-Dateien hochladen
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload v1.4.6 "installer-output\RaidClipPlugin-Setup-1.4.6.exe" "installer-output\RaidClipPlugin-Update-1.4.6.zip" "installer-output\update.json" --clobber
+      - name: Einmaligen Workflow entfernen
+        if: success()
+        shell: pwsh
+        working-directory: .
+        run: |
+          Remove-Item ".github/workflows/release-1.4.6.yml"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/release-1.4.6.yml
+          git commit -m "Temporären Release-Workflow entfernen"
+          git push
