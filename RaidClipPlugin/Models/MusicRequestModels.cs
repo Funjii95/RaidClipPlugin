@@ -47,8 +47,15 @@ public sealed record TwitchCustomReward(
     bool RequiresInput,
     bool IsEnabled)
 {
-    public override string ToString() =>
-        $"{Title}{(RequiresInput ? "" : " · keine Texteingabe")}";
+    public override string ToString()
+    {
+        var details = new List<string>();
+        if (!IsEnabled) details.Add("deaktiviert");
+        if (!RequiresInput) details.Add("keine Texteingabe");
+        return details.Count == 0
+            ? Title
+            : $"{Title} · {string.Join(" · ", details)}";
+    }
 }
 
 public sealed record MusicRequestRedemption(
