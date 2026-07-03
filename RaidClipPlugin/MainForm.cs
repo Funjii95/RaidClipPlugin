@@ -1977,7 +1977,16 @@ public sealed partial class MainForm : Form
             SetServiceStatus(_obsIndicator, "OBS", "Verbindet …", WaitingColor);
             _obs = new ObsService(config);
             await Task.Run(_obs.Connect, cancellationToken);
+            var sourceSetup = await Task.Run(
+                () => _obs.EnsureBrowserSourceInCurrentScene(_player.IdleUrl),
+                cancellationToken);
             _obs.SetBrowserUrl(_player.IdleUrl);
+            if (sourceSetup.CreatedInput || sourceSetup.AddedToScene)
+            {
+                AppendLog(
+                    $"OBS-Quelle {sourceSetup.SourceName} wurde in Szene " +
+                    $"{sourceSetup.SceneName} automatisch eingerichtet.");
+            }
             SetServiceStatus(_obsIndicator, "OBS", "Verbunden", ActiveColor);
 
             SetServiceStatus(_twitchIndicator, "Twitch", "Anmeldung …", WaitingColor);
