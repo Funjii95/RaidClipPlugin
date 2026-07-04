@@ -38,8 +38,10 @@ jobs:
         run: dotnet restore "RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj"
       - name: Build
         run: dotnet build "RaidClipPlugin/RaidClipPlugin.csproj" -c Release --no-restore
+      - name: Run gamble regression tests
+        run: dotnet test "RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj" -c Release --no-restore --filter "FullyQualifiedName~GambleOverflowTests" --logger "console;verbosity=detailed"
       - name: Run full test suite
-        run: dotnet test "RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj" -c Release --no-restore --logger "console;verbosity=normal"
+        run: dotnet test "RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj" -c Release --no-restore --logger "console;verbosity=detailed"
       - name: Commit version 1.6.7
         shell: pwsh
         run: |
