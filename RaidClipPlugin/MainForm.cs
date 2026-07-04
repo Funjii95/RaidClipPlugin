@@ -733,6 +733,7 @@ public sealed partial class MainForm : Form
         _raidClipNavButton.Click += (_, _) => ShowSection("raid");
         _moderationNavButton.Click += (_, _) => ShowSection("moderation");
         _minigameNavButton.Click += (_, _) => ShowSection("minigame");
+        _liveChatNavButton.Click += (_, _) => ShowSection("livechat");
         _updateButton.Click += async (_, _) =>
             await CheckForUpdatesAsync(silent: false);
         _changelogButton.Click += (_, _) => ShowUpdateChangelog();
@@ -1166,6 +1167,7 @@ public sealed partial class MainForm : Form
         var showClipDiscord = section == "clip-discord";
         var showGiveaways = section == "giveaways";
         var showCommands = section == "commands";
+        var showLiveChat = section == "livechat";
 
         _raidPage.Visible = showRaid;
         _moderationPage.Visible = showModeration;
@@ -1175,6 +1177,7 @@ public sealed partial class MainForm : Form
         _clipDiscordPage.Visible = showClipDiscord;
         _giveawayPage.Visible = showGiveaways;
         _commandsPage.Visible = showCommands;
+        _liveChatPage.Visible = showLiveChat;
 
         if (showModeration)
             _moderationPage.BringToFront();
@@ -1190,6 +1193,8 @@ public sealed partial class MainForm : Form
             _giveawayPage.BringToFront();
         else if (showCommands)
             _commandsPage.BringToFront();
+        else if (showLiveChat)
+            _liveChatPage.BringToFront();
         else
             _raidPage.BringToFront();
 
@@ -1201,6 +1206,7 @@ public sealed partial class MainForm : Form
         SetNavigationTileState(_clipDiscordNavButton, showClipDiscord);
         SetNavigationTileState(_giveawayNavButton, showGiveaways);
         SetNavigationTileState(_commandsNavButton, showCommands);
+        SetNavigationTileState(_liveChatNavButton, showLiveChat);
         if (showMusic) _ = RefreshMusicGridAsync();
         if (showMinigame) _ = RefreshMinigameDashboardAsync();
     }
@@ -1458,7 +1464,6 @@ public sealed partial class MainForm : Form
         };
         raidTabs.TabPages.Add(logPage);
         raidTabs.TabPages.Add(historyPage);
-        raidTabs.TabPages.Add(BuildLiveChatTab());
 
         var raidLayout = new TableLayoutPanel
         {
@@ -1833,6 +1838,7 @@ public sealed partial class MainForm : Form
         BuildClipDiscordPage();
         BuildGiveawayPage();
         BuildCommandsPage();
+        _liveChatPage.Controls.Add(BuildLiveChatSection());
 
         var brand = new PictureBox
         {
@@ -1857,6 +1863,7 @@ public sealed partial class MainForm : Form
         navigation.Controls.Add(brand);
         navigation.Controls.Add(_raidClipNavButton);
         navigation.Controls.Add(_moderationNavButton);
+        navigation.Controls.Add(_liveChatNavButton);
         navigation.Controls.Add(_minigameNavButton);
         navigation.Controls.Add(_commandsNavButton);
         navigation.Controls.Add(_musicNavButton);
@@ -1870,6 +1877,7 @@ public sealed partial class MainForm : Form
             BackColor = BackgroundColor
         };
         contentHost.Controls.Add(_commandsPage);
+        contentHost.Controls.Add(_liveChatPage);
         contentHost.Controls.Add(_giveawayPage);
         contentHost.Controls.Add(_streamCheckPage);
         contentHost.Controls.Add(_clipDiscordPage);
@@ -4078,6 +4086,7 @@ public sealed partial class MainForm : Form
         _spotify?.Dispose();
         _liveChatTimer.Stop();
         StopLiveChat();
+        CloseOfficialLiveChat();
         base.OnFormClosing(e);
     }
 }

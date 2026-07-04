@@ -83,6 +83,7 @@ public sealed partial class MainForm
 
     private void InitializeLiveChatEvents()
     {
+        InitializeOfficialLiveChatEvents();
         _liveChatTimer.Tick += (_, _) => FlushLiveChatQueue();
         _liveChatTimer.Start();
         _liveChatPauseButton.Click += (_, _) =>
@@ -258,7 +259,12 @@ public sealed partial class MainForm
         EnableSevenTvEmotes = _liveChatSevenTvCheck.Checked,
         EnableAnimatedEmotes = _liveChatAnimatedCheck.Checked,
         EmoteSize = (int)_liveChatEmoteSizeControl.Value,
-        CacheEmotes = _liveChatCacheCheck.Checked
+        CacheEmotes = _liveChatCacheCheck.Checked,
+        PopoutWidth = _chatPopoutBounds.Width,
+        PopoutHeight = _chatPopoutBounds.Height,
+        PopoutLeft = _chatPopoutBounds.Left,
+        PopoutTop = _chatPopoutBounds.Top,
+        PopoutTopMost = _officialChatTopMostCheck.Checked
     });
 
     private void LoadLiveChatSettings(LiveChatConfig config)
@@ -279,6 +285,9 @@ public sealed partial class MainForm
         _liveChatCacheCheck.Checked = config.CacheEmotes;
         SetNumericValue(_liveChatMaxControl, config.MaxMessages);
         SetNumericValue(_liveChatEmoteSizeControl, config.EmoteSize);
+        _officialChatTopMostCheck.Checked = config.PopoutTopMost;
+        _chatPopoutBounds = new Rectangle(config.PopoutLeft, config.PopoutTop,
+            config.PopoutWidth, config.PopoutHeight);
     }
 
     private void ReadLiveChatSettings(AppConfig config)

@@ -17,4 +17,9 @@ public sealed class LiveChatConfig
     public bool EnableAnimatedEmotes { get; set; } = true;
     public int EmoteSize { get; set; } = 28;
     public bool CacheEmotes { get; set; } = true;
+    public int PopoutWidth { get; set; } = 520;
+    public int PopoutHeight { get; set; } = 760;
+    public int PopoutLeft { get; set; } = -1;
+    public int PopoutTop { get; set; } = -1;
+    public bool PopoutTopMost { get; set; }
 }

@@ -51,6 +51,9 @@ public sealed class MainFormStartupTests
                 var primary = Assert.Single(form.Controls.Find("LiveChatPrimaryToolbar", true));
                 var filters = Assert.Single(form.Controls.Find("LiveChatFilterToolbar", true));
                 Assert.Single(form.Controls.Find("LiveChatComposer", true));
+                Assert.Single(form.Controls.Find("LiveChatPage", true));
+                Assert.Single(form.Controls.Find("OfficialLiveChatToolbar", true));
+                Assert.Single(form.Controls.Find("OfficialTwitchChatWebView", true));
                 Assert.True(((FlowLayoutPanel)primary).AutoScroll);
                 Assert.True(((FlowLayoutPanel)filters).AutoScroll);
                 var interactiveFlows = Descendants(form)

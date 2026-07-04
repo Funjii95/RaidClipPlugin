@@ -44,6 +44,10 @@ public sealed class LiveChatService
             Console.WriteLine($"Ungültige Livechat-EmoteSize {config.EmoteSize}; Standard 28 wird verwendet.");
             config.EmoteSize = 28;
         }
+        if (config.PopoutWidth is < 360 or > 4000) config.PopoutWidth = 520;
+        if (config.PopoutHeight is < 420 or > 4000) config.PopoutHeight = 760;
+        if (config.PopoutLeft < -1) config.PopoutLeft = -1;
+        if (config.PopoutTop < -1) config.PopoutTop = -1;
         return config;
     }
 

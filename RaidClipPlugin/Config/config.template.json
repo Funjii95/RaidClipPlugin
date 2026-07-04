@@ -408,6 +408,11 @@
     "EnableSevenTvEmotes": false,
     "EnableAnimatedEmotes": true,
     "EmoteSize": 28,
-    "CacheEmotes": true
+    "CacheEmotes": true,
+    "PopoutWidth": 520,
+    "PopoutHeight": 760,
+    "PopoutLeft": -1,
+    "PopoutTop": -1,
+    "PopoutTopMost": false
   }
 }

@@ -20,5 +20,11 @@ public sealed class ChatMessage
     public IReadOnlyList<ChatEmoteFragment> Emotes { get; init; } = Array.Empty<ChatEmoteFragment>();
     public bool IsBot { get; init; }
 
+    // Kompatible Ansichten für den späteren nativen IChatProvider.
+    public string DisplayName => UserName;
+    public string MessageText => Text;
+    public DateTimeOffset Timestamp => ReceivedAt;
+    public string Color => UserColor;
+
     public bool IsWhitelisted => IsModerator || IsVip || IsBroadcaster;
 }

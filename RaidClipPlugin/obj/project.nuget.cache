@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "YxrIfOI0R48=",
+  "dgSpecHash": "EF6Qk3O0DPc=",
   "success": true,
   "projectFilePath": "D:\\a\\RaidClipPlugin\\RaidClipPlugin\\RaidClipPlugin\\RaidClipPlugin.csproj",
   "expectedPackageFiles": [
@@ -16,6 +16,7 @@
     "C:\\Users\\runneradmin\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\9.0.4\\microsoft.extensions.logging.abstractions.9.0.4.nupkg.sha512",
     "C:\\Users\\runneradmin\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.9\\microsoft.extensions.primitives.10.0.9.nupkg.sha512",
     "C:\\Users\\runneradmin\\.nuget\\packages\\microsoft.io.recyclablememorystream\\3.0.0\\microsoft.io.recyclablememorystream.3.0.0.nupkg.sha512",
+    "C:\\Users\\runneradmin\\.nuget\\packages\\microsoft.web.webview2\\1.0.4022.49\\microsoft.web.webview2.1.0.4022.49.nupkg.sha512",
     "C:\\Users\\runneradmin\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
     "C:\\Users\\runneradmin\\.nuget\\packages\\obs-websocket-dotnet\\5.0.1\\obs-websocket-dotnet.5.0.1.nupkg.sha512",
     "C:\\Users\\runneradmin\\.nuget\\packages\\system.reactive\\6.0.0\\system.reactive.6.0.0.nupkg.sha512",

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.3
+
+- Neuer eigener Livechat-Bereich in der Sidebar mit bisherigem Plugin-Chat und offiziellem Twitch-Popout-Chat.
+- WebView2 lädt den Chat des konfigurierten Twitch-Kanals und zeigt verständliche Verbindungs- und Fehlerzustände.
+- Separates, einzelnes Popout-Fenster mit Direktfokus, TopMost sowie dauerhaft gespeicherter Größe und Position.
+- Ungültige oder nicht mehr sichtbare Popout-Positionen werden automatisch zentriert.
+- Vorbereitete IChatProvider-Architektur und Emote-Modelle für einen späteren nativen Twitch-/BTTV-/7TV-/FFZ-Chat.
+
+
 
 
 ## 1.6.2
