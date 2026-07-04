@@ -1,5 +1,6 @@
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
+using RaidClipPlugin.Config;
 
 namespace RaidClipPlugin.Services;
 
@@ -17,6 +18,9 @@ public sealed class TwitchChatWebViewService : IDisposable
         <!doctype html><html><body style="margin:0;background:#0c0c0e;color:#aaa;font-family:Segoe UI,sans-serif;display:grid;place-items:center;height:100vh">
         <div>Chat ist nicht verbunden.</div></body></html>
         """;
+    private static readonly object EnvironmentSync = new();
+    private static Task<CoreWebView2Environment>? _environmentTask;
+    private readonly ChatExtensionManager _extensions = new();
     private WebView2? _webView;
     private bool _disposed;
 
@@ -24,6 +28,7 @@ public sealed class TwitchChatWebViewService : IDisposable
         TwitchChatConnectionState.Disconnected;
     public bool IsConnected => State == TwitchChatConnectionState.Connected;
     public event Action<TwitchChatConnectionState, string?>? StateChanged;
+    public event Action<string>? ExtensionsChanged;
 
     public static Uri CreateChatUri(string channelName)
     {
@@ -36,7 +41,7 @@ public sealed class TwitchChatWebViewService : IDisposable
     }
 
     public async Task ConnectAsync(WebView2 webView, string channelName,
-        CancellationToken cancellationToken)
+        LiveChatConfig config, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         cancellationToken.ThrowIfCancellationRequested();
@@ -45,8 +50,12 @@ public sealed class TwitchChatWebViewService : IDisposable
         SetState(TwitchChatConnectionState.Connecting, null);
         try
         {
-            await webView.EnsureCoreWebView2Async();
+            var environment = await GetEnvironmentAsync();
+            await webView.EnsureCoreWebView2Async(environment);
             cancellationToken.ThrowIfCancellationRequested();
+            var extensionStatus = await _extensions.ApplyAsync(
+                webView.CoreWebView2.Profile, config, cancellationToken);
+            ExtensionsChanged?.Invoke(extensionStatus);
             webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
             webView.CoreWebView2.Settings.AreDevToolsEnabled = false;
             webView.Source = target;
@@ -96,6 +105,24 @@ public sealed class TwitchChatWebViewService : IDisposable
     {
         State = state;
         StateChanged?.Invoke(state, error);
+    }
+
+    private static Task<CoreWebView2Environment> GetEnvironmentAsync()
+    {
+        lock (EnvironmentSync)
+            return _environmentTask ??= CreateEnvironmentAsync();
+    }
+
+    private static Task<CoreWebView2Environment> CreateEnvironmentAsync()
+    {
+        var userDataFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RaidClipPlugin", "WebView2");
+        var options = new CoreWebView2EnvironmentOptions
+        {
+            AreBrowserExtensionsEnabled = true
+        };
+        return CoreWebView2Environment.CreateAsync(null, userDataFolder, options);
     }
 
     public void Dispose()

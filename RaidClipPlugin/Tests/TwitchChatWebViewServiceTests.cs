@@ -41,6 +41,20 @@ public sealed class TwitchChatWebViewServiceTests
     }
 
     [Fact]
+    public void OfficialExtensionDefaultsAndSourcesAreStable()
+    {
+        var config = new LiveChatConfig();
+        Assert.True(config.EnableOfficialSevenTvExtension);
+        Assert.True(config.EnableOfficialBttvExtension);
+        Assert.Equal("github.com", ChatExtensionManager.SevenTvPackageUri.Host);
+        Assert.Contains("SevenTV/Extension",
+            ChatExtensionManager.SevenTvPackageUri.AbsoluteUri);
+        Assert.Equal("github.com", ChatExtensionManager.BetterTtvPackageUri.Host);
+        Assert.Contains("night/betterttv",
+            ChatExtensionManager.BetterTtvPackageUri.AbsoluteUri);
+    }
+
+    [Fact]
     public async Task PlaceholderProviderHasStableConnectionLifecycle()
     {
         var provider = new PlaceholderChatProvider();

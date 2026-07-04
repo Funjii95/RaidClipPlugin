@@ -28,6 +28,10 @@ public sealed partial class MainForm
         NewHeistActionButton("Popout öffnen", 135);
     private readonly CheckBox _officialChatTopMostCheck =
         NewCheck("Immer im Vordergrund", false);
+    private readonly CheckBox _officialChatSevenTvCheck =
+        NewCheck("7TV im Popout", true);
+    private readonly CheckBox _officialChatBttvCheck =
+        NewCheck("BTTV im Popout", true);
     private readonly Label _officialChatStatusLabel = new()
     {
         AutoSize = true,
@@ -41,6 +45,13 @@ public sealed partial class MainForm
         ForeColor = ErrorColor,
         Padding = new Padding(8, 5, 8, 5),
         Visible = false
+    };
+    private readonly Label _officialChatExtensionStatusLabel = new()
+    {
+        AutoSize = true,
+        Text = "7TV/BTTV: wird beim Verbinden vorbereitet …",
+        ForeColor = MutedTextColor,
+        Padding = new Padding(8, 5, 8, 5)
     };
     private readonly Label _officialChatPopoutStatusLabel = new()
     {
@@ -74,10 +85,11 @@ public sealed partial class MainForm
         var layout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            RowCount = 4,
+            RowCount = 5,
             ColumnCount = 1,
             Padding = new Padding(4)
         };
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -98,12 +110,15 @@ public sealed partial class MainForm
             _officialChatConnectButton,
             _officialChatDisconnectButton,
             _officialChatPopoutButton,
-            _officialChatTopMostCheck
+            _officialChatTopMostCheck,
+            _officialChatSevenTvCheck,
+            _officialChatBttvCheck
         });
         layout.Controls.Add(toolbar, 0, 0);
         layout.Controls.Add(_officialChatErrorLabel, 0, 1);
-        layout.Controls.Add(_officialChatWebView, 0, 2);
-        layout.Controls.Add(_officialChatPopoutStatusLabel, 0, 3);
+        layout.Controls.Add(_officialChatExtensionStatusLabel, 0, 2);
+        layout.Controls.Add(_officialChatWebView, 0, 3);
+        layout.Controls.Add(_officialChatPopoutStatusLabel, 0, 4);
         page.Controls.Add(layout);
         return page;
     }
@@ -111,6 +126,7 @@ public sealed partial class MainForm
     private void InitializeOfficialLiveChatEvents()
     {
         _officialChatService.StateChanged += UpdateOfficialChatStatus;
+        _officialChatService.ExtensionsChanged += UpdateOfficialExtensionStatus;
         _officialChatConnectButton.Click += async (_, _) =>
             await ConnectOfficialLiveChatAsync();
         _officialChatDisconnectButton.Click += async (_, _) =>
@@ -121,6 +137,10 @@ public sealed partial class MainForm
             _chatPopout?.SetTopMost(_officialChatTopMostCheck.Checked);
             ScheduleOfficialChatSettingsSave();
         };
+        _officialChatSevenTvCheck.CheckedChanged += async (_, _) =>
+            await HandleOfficialExtensionSettingChangedAsync();
+        _officialChatBttvCheck.CheckedChanged += async (_, _) =>
+            await HandleOfficialExtensionSettingChangedAsync();
         _officialChatSaveTimer.Tick += (_, _) =>
         {
             _officialChatSaveTimer.Stop();
@@ -134,13 +154,31 @@ public sealed partial class MainForm
         try
         {
             await _officialChatService.ConnectAsync(_officialChatWebView,
-                _twitchChannelBox.Text, CancellationToken.None);
+                _twitchChannelBox.Text, ReadLiveChatConfig(), CancellationToken.None);
         }
         catch (Exception exception)
         {
             ShowOfficialChatError(exception.Message);
             AppendLog("Offizieller Twitch-Chat: " + exception.Message);
         }
+    }
+
+    private async Task HandleOfficialExtensionSettingChangedAsync()
+    {
+        ScheduleOfficialChatSettingsSave();
+        if (_officialChatService.IsConnected)
+            await ConnectOfficialLiveChatAsync();
+    }
+
+    private void UpdateOfficialExtensionStatus(string status)
+    {
+        if (IsDisposed) return;
+        _officialChatExtensionStatusLabel.Text = status;
+        _officialChatExtensionStatusLabel.ForeColor =
+            status.Contains("Fehler", StringComparison.OrdinalIgnoreCase)
+                ? ErrorColor : ActiveColor;
+        if (status.Contains("Fehler", StringComparison.OrdinalIgnoreCase))
+            AppendLog("Chat-Extensions: " + status);
     }
 
     private async Task DisconnectOfficialLiveChatAsync()

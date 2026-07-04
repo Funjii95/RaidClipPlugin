@@ -413,6 +413,8 @@
     "PopoutHeight": 760,
     "PopoutLeft": -1,
     "PopoutTop": -1,
-    "PopoutTopMost": false
+    "PopoutTopMost": false,
+    "EnableOfficialSevenTvExtension": true,
+    "EnableOfficialBttvExtension": true
   }
 }

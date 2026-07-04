@@ -22,4 +22,6 @@ public sealed class LiveChatConfig
     public int PopoutLeft { get; set; } = -1;
     public int PopoutTop { get; set; } = -1;
     public bool PopoutTopMost { get; set; }
+    public bool EnableOfficialSevenTvExtension { get; set; } = true;
+    public bool EnableOfficialBttvExtension { get; set; } = true;
 }

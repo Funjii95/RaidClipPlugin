@@ -264,7 +264,9 @@ public sealed partial class MainForm
         PopoutHeight = _chatPopoutBounds.Height,
         PopoutLeft = _chatPopoutBounds.Left,
         PopoutTop = _chatPopoutBounds.Top,
-        PopoutTopMost = _officialChatTopMostCheck.Checked
+        PopoutTopMost = _officialChatTopMostCheck.Checked,
+        EnableOfficialSevenTvExtension = _officialChatSevenTvCheck.Checked,
+        EnableOfficialBttvExtension = _officialChatBttvCheck.Checked
     });
 
     private void LoadLiveChatSettings(LiveChatConfig config)
@@ -286,6 +288,8 @@ public sealed partial class MainForm
         SetNumericValue(_liveChatMaxControl, config.MaxMessages);
         SetNumericValue(_liveChatEmoteSizeControl, config.EmoteSize);
         _officialChatTopMostCheck.Checked = config.PopoutTopMost;
+        _officialChatSevenTvCheck.Checked = config.EnableOfficialSevenTvExtension;
+        _officialChatBttvCheck.Checked = config.EnableOfficialBttvExtension;
         _chatPopoutBounds = new Rectangle(config.PopoutLeft, config.PopoutTop,
             config.PopoutWidth, config.PopoutHeight);
     }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.4
+
+- Offizielle 7TV- und BetterTTV-Browser-Erweiterungen lassen sich im WebView2-Twitch-Chat aktivieren.
+- Erweiterungen werden beim ersten Verbinden aus den offiziellen GitHub-Releases geladen, lokal zwischengespeichert und im gemeinsamen Chatprofil verwendet.
+- Animierte 7TV-/BTTV-Emotes bleiben als GIF/WebP animiert und werden nicht in statische Vorschaubilder umgewandelt.
+- Eigene GUI-Schalter für 7TV und BTTV; Fehler einer Erweiterung blockieren den Twitch-Chat nicht.
+- BetterTTV-Pakete werden vor der Installation mit SHA256 geprüft.
+
+
 ## 1.6.3
 
 - Neuer eigener Livechat-Bereich in der Sidebar mit bisherigem Plugin-Chat und offiziellem Twitch-Popout-Chat.

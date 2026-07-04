@@ -7,24 +7,29 @@ namespace RaidClipPlugin;
 public sealed class ChatPopoutForm : Form
 {
     private readonly string _channelName;
+    private readonly LiveChatConfig _config;
     private readonly Action<Rectangle, bool> _settingsChanged;
     private readonly TwitchChatWebViewService _chatService = new();
     private readonly WebView2 _webView = new() { Dock = DockStyle.Fill };
     private readonly Label _statusLabel = new()
     {
         Dock = DockStyle.Top,
-        Height = 34,
+        Height = 54,
         TextAlign = ContentAlignment.MiddleLeft,
         Padding = new Padding(10, 0, 10, 0)
     };
     private readonly System.Windows.Forms.Timer _saveTimer = new() { Interval = 500 };
     private bool _shown;
+    private TwitchChatConnectionState _connectionState;
+    private string? _connectionError;
+    private string _extensionStatus = "7TV/BTTV: wird vorbereitet …";
 
     public ChatPopoutForm(string channelName, LiveChatConfig config,
         Action<Rectangle, bool> settingsChanged, Color background,
         Color surface, Color foreground, Color accent)
     {
         _channelName = channelName;
+        _config = config;
         _settingsChanged = settingsChanged;
         Text = $"RaidClip Livechat – {channelName}";
         MinimumSize = new Size(360, 420);
@@ -51,6 +56,11 @@ public sealed class ChatPopoutForm : Form
         }
 
         _chatService.StateChanged += UpdateStatus;
+        _chatService.ExtensionsChanged += status =>
+        {
+            _extensionStatus = status;
+            RenderStatus();
+        };
         _saveTimer.Tick += (_, _) =>
         {
             _saveTimer.Stop();
@@ -70,7 +80,7 @@ public sealed class ChatPopoutForm : Form
         _shown = true;
         try
         {
-            await _chatService.ConnectAsync(_webView, _channelName,
+            await _chatService.ConnectAsync(_webView, _channelName, _config,
                 CancellationToken.None);
         }
         catch (Exception exception)
@@ -120,13 +130,21 @@ public sealed class ChatPopoutForm : Form
     private void UpdateStatus(TwitchChatConnectionState state, string? error)
     {
         if (IsDisposed) return;
-        _statusLabel.Text = state switch
+        _connectionState = state;
+        _connectionError = error;
+        RenderStatus();
+    }
+
+    private void RenderStatus()
+    {
+        var connection = _connectionState switch
         {
             TwitchChatConnectionState.Connecting => "● Wird verbunden …",
             TwitchChatConnectionState.Connected => "● Verbunden",
-            TwitchChatConnectionState.Error => "● Fehler: " + error,
+            TwitchChatConnectionState.Error => "● Fehler: " + _connectionError,
             _ => "● Nicht verbunden"
         };
+        _statusLabel.Text = connection + Environment.NewLine + _extensionStatus;
     }
 
     internal static bool IsVisible(Rectangle bounds) =>

@@ -54,6 +54,10 @@ public sealed class MainFormStartupTests
                 Assert.Single(form.Controls.Find("LiveChatPage", true));
                 Assert.Single(form.Controls.Find("OfficialLiveChatToolbar", true));
                 Assert.Single(form.Controls.Find("OfficialTwitchChatWebView", true));
+                Assert.Contains(Descendants(form).OfType<CheckBox>(),
+                    check => check.Text.Contains("7TV im Popout"));
+                Assert.Contains(Descendants(form).OfType<CheckBox>(),
+                    check => check.Text.Contains("BTTV im Popout"));
                 Assert.True(((FlowLayoutPanel)primary).AutoScroll);
                 Assert.True(((FlowLayoutPanel)filters).AutoScroll);
                 var interactiveFlows = Descendants(form)
