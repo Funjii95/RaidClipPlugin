@@ -28,6 +28,8 @@ public sealed class CommandRegistry
         {
             var normalized = Normalize(command);
             if (normalized.Length == 0) return;
+            if (config.Commands.CommandRoleOverrides.TryGetValue(id, out var roleOverride))
+                role = ParseRole(roleOverride, role);
             list.Add(new ChatCommandDefinition(id, normalized,
                 (aliases ?? Array.Empty<string>()).Select(Normalize)
                     .Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
@@ -117,6 +119,20 @@ public sealed class CommandRegistry
             config.DiscordClips.InviteCommand, config.DiscordClips.InviteCommandEnabled,
             userCooldown:config.DiscordClips.InviteCooldownSeconds, order:90);
 
+        foreach (var custom in config.Commands.CustomCommands)
+        {
+            var id = string.IsNullOrWhiteSpace(custom.Id)
+                ? Guid.NewGuid().ToString("N") : custom.Id.Trim();
+            Add("custom." + id, custom.Command, custom.Aliases, "custom", "Custom Commands",
+                custom.Command, "Eigene Chatantwort: " + LimitDescription(custom.Response),
+                custom.Command, custom.Command,
+                config.Commands.CustomCommandsEnabled && custom.Enabled,
+                ParseRole(custom.RequiredRole),
+                userCooldown: custom.UserCooldownSeconds,
+                globalCooldown: custom.GlobalCooldownSeconds,
+                order: 70);
+        }
+
         var music=config.MusicRequests;
         Add("music.request", music.ChatCommand, music.ChatCommandAliases, "music", "Musik", "Musikwunsch",
             "Wünscht einen Song.", music.ChatCommand+" <Song|Spotify-Link>", music.ChatCommand+" Songname",
@@ -156,8 +172,7 @@ public sealed class CommandRegistry
         foreach(var text in new[]{definition.CommandText}.Concat(definition.Aliases))
         {
             var normalized=Normalize(text);
-            if(owners.TryGetValue(normalized,out var owner) && owner.CommandId!=definition.CommandId &&
-               owner.ModuleId!=definition.ModuleId)
+            if(owners.TryGetValue(normalized,out var owner) && owner.CommandId!=definition.CommandId)
                 collisions.Add(new CommandCollision(normalized,owner,definition));
             else owners.TryAdd(normalized,definition);
         }
@@ -188,6 +203,16 @@ public sealed class CommandRegistry
             await File.WriteAllTextAsync(path,text,cancellationToken);
         }
         Console.WriteLine("Command-Export erstellt: "+path);
+    }
+
+    public static CommandRole ParseRole(string? value, CommandRole fallback = CommandRole.Viewer) =>
+        Enum.TryParse<CommandRole>((value ?? "").Trim(), true, out var role)
+            ? role : fallback;
+
+    private static string LimitDescription(string? value)
+    {
+        var text = (value ?? "").Trim();
+        return text.Length <= 90 ? text : text[..87] + "…";
     }
 
     public static string Normalize(string? command)

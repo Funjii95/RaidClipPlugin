@@ -29,6 +29,13 @@ public sealed partial class MainForm
     private readonly CheckBox _liveChatAnimatedCheck = NewCheck("Animierte Emotes", true);
     private readonly CheckBox _liveChatCacheCheck = NewCheck("Emote-Cache", true);
     private readonly TextBox _liveChatSearchBox = new() { Width = 230, PlaceholderText = "Benutzer oder Nachricht suchen" };
+    private readonly TextBox _liveChatComposerBox = new()
+    {
+        Dock = DockStyle.Fill,
+        PlaceholderText = "Nachricht als Bot in den Twitch-Chat senden",
+        MaxLength = 500
+    };
+    private readonly Button _liveChatSendButton = NewHeistActionButton("Senden", 110);
     private readonly NumericUpDown _liveChatMaxControl = NewNumber(1000, 100, 10000);
     private readonly NumericUpDown _liveChatEmoteSizeControl = NewNumber(28, 16, 64);
     private readonly Button _liveChatPauseButton = NewHeistActionButton("Pausieren", 120);
@@ -40,11 +47,12 @@ public sealed partial class MainForm
     private TabPage BuildLiveChatTab()
     {
         var page = new TabPage("Livechat") { BackColor = SurfaceColor, ForeColor = TextColor, Padding = new Padding(6) };
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, ColumnCount = 1,
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 5, ColumnCount = 1,
             AutoScroll = true };
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         var top = new FlowLayoutPanel { Name = "LiveChatPrimaryToolbar", Dock = DockStyle.Top,
             AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, AutoScroll = true,
@@ -60,8 +68,15 @@ public sealed partial class MainForm
             _liveChatSystemCheck, _liveChatTwitchEmotesCheck, _liveChatBttvCheck,
             _liveChatSevenTvCheck, _liveChatAnimatedCheck, _liveChatCacheCheck,
             CreateSettingEditor("Emote-Größe", _liveChatEmoteSizeControl) });
+        var composer = new TableLayoutPanel { Name = "LiveChatComposer", Dock = DockStyle.Fill,
+            ColumnCount = 2, Padding = new Padding(2, 4, 2, 2) };
+        composer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        composer.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        composer.Controls.Add(_liveChatComposerBox, 0, 0);
+        composer.Controls.Add(_liveChatSendButton, 1, 0);
         layout.Controls.Add(top, 0, 0); layout.Controls.Add(filters, 0, 1);
-        layout.Controls.Add(_liveChatList, 0, 2); layout.Controls.Add(_liveChatStatusLabel, 0, 3);
+        layout.Controls.Add(_liveChatList, 0, 2); layout.Controls.Add(composer, 0, 3);
+        layout.Controls.Add(_liveChatStatusLabel, 0, 4);
         page.Controls.Add(layout);
         return page;
     }
@@ -94,6 +109,42 @@ public sealed partial class MainForm
         _liveChatBttvCheck.CheckedChanged += async (_, _) => await ReloadExternalEmotesAsync();
         _liveChatSevenTvCheck.CheckedChanged += async (_, _) => await ReloadExternalEmotesAsync();
         _liveChatSaveButton.Click += (_, _) => SaveSettingsFromControls();
+        _liveChatSendButton.Click += async (_, _) => await SendLiveChatMessageAsync();
+        _liveChatComposerBox.KeyDown += async (_, args) =>
+        {
+            if (args.KeyCode != Keys.Enter || args.Shift) return;
+            args.SuppressKeyPress = true;
+            await SendLiveChatMessageAsync();
+        };
+    }
+
+    private async Task SendLiveChatMessageAsync()
+    {
+        var text = _liveChatComposerBox.Text.Trim();
+        if (text.Length == 0) return;
+        if (_twitch is null || _twitchSession is null || _broadcaster is null ||
+            _shutdown is null || _shutdown.IsCancellationRequested)
+        {
+            AppendLog("Chatnachricht konnte nicht gesendet werden: Plugin ist nicht verbunden.");
+            return;
+        }
+        _liveChatSendButton.Enabled = false;
+        try
+        {
+            await _twitch.SendChatMessageAsync(_broadcaster.Id,
+                _twitchSession.UserId, text, _shutdown.Token);
+            _liveChatComposerBox.Clear();
+        }
+        catch (OperationCanceledException) when (_shutdown.IsCancellationRequested) { }
+        catch (Exception exception)
+        {
+            AppendLog("Chatnachricht konnte nicht gesendet werden: " + exception.Message);
+        }
+        finally
+        {
+            _liveChatSendButton.Enabled = _shutdown is not null &&
+                !_shutdown.IsCancellationRequested;
+        }
     }
 
     private async Task ReloadExternalEmotesAsync()

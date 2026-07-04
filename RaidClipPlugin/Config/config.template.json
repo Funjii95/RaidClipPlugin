@@ -286,9 +286,6 @@
     "BlockedUsers": [],
     "ExcludeBots": true,
     "AllowPreviousWinners": false,
-    "SubscriberDoubleChance": false,
-    "VipIncreasedChance": false,
-    "VipTicketMultiplier": 2,
     "ExtraTicketsEnabled": false,
     "ExtraTicketCost": 100,
     "MaximumExtraTickets": 5,
@@ -345,7 +342,21 @@
     "ShowAliases": false,
     "GroupByModule": true,
     "IncludeDisabledCommandsInUi": true,
-    "ExportDirectory": "exports"
+    "ExportDirectory": "exports",
+    "CommandRoleOverrides": {},
+    "CustomCommandsEnabled": true,
+    "CustomCommands": [
+      {
+        "Id": "example-raid",
+        "Enabled": false,
+        "Command": "!raid",
+        "Aliases": [],
+        "Response": "funjiiRaid Funjii's Otter-Familie ist angekommen! Viel Liebe und gute Vibes für den Stream! funjiiRaid",
+        "RequiredRole": "Viewer",
+        "UserCooldownSeconds": 30,
+        "GlobalCooldownSeconds": 5
+      }
+    ]
   },
   "Duel": {
     "Enabled": false,

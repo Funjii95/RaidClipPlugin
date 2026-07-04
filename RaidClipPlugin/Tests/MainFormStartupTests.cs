@@ -50,6 +50,7 @@ public sealed class MainFormStartupTests
                 using var form = new MainForm();
                 var primary = Assert.Single(form.Controls.Find("LiveChatPrimaryToolbar", true));
                 var filters = Assert.Single(form.Controls.Find("LiveChatFilterToolbar", true));
+                Assert.Single(form.Controls.Find("LiveChatComposer", true));
                 Assert.True(((FlowLayoutPanel)primary).AutoScroll);
                 Assert.True(((FlowLayoutPanel)filters).AutoScroll);
                 var interactiveFlows = Descendants(form)

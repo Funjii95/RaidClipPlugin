@@ -2166,16 +2166,18 @@ public sealed partial class MainForm : Form
                 _chatModeration.StatusChanged +=
                     UpdateChatConnectionDiagnostics;
                 await StartLiveChatAsync(config, session.UserId, _broadcaster.Id, cancellationToken);
-                _chatModeration.MessageReceived += HandleLiveChatMessageAsync;
+                _chatModeration.MessageObserved += HandleLiveChatMessageAsync;
                 _chatModeration.Activated += () =>
                     AppendLog("Chatbot verbunden: WebSocket und channel.chat.message aktiv.");
+                StartCustomCommandServices(config, twitch, session,
+                    _broadcaster, cancellationToken);
 
                 if (config.Moderation.Enabled)
                 {
                     SetModerationStatus("Startet …", WaitingColor);
                     _chatModeration.Activated += () =>
                         SetModerationStatus("Aktiv", ActiveColor);
-                    _chatModeration.MessageReceived += message =>
+                    _chatModeration.MessageObserved += message =>
                         HandleChatMessageAsync(
                             message,
                             config,
@@ -3114,6 +3116,7 @@ public sealed partial class MainForm : Form
         StopMusicRequests();
         StopClipCommand();
         StopGiveawayModule();
+        StopCustomCommandServices();
         StopLiveChat();
         _minigameEvents?.Dispose();
         _minigame?.Dispose();
@@ -3935,6 +3938,8 @@ public sealed partial class MainForm : Form
         _activeConfig.Twitch.RaidDelaySeconds =
             updated.Twitch.RaidDelaySeconds;
         _commandRegistry.Update(updated);
+        _commandPermissions?.UpdateConfig(updated.Commands);
+        _customCommandService?.UpdateConfig(updated.Commands);
         _liveChat?.UpdateConfig(updated.LiveChat);
         _minigame?.UpdateConfiguration(updated);
         _musicRequests?.UpdateConfig(updated.MusicRequests);

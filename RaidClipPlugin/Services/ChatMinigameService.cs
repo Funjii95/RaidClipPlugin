@@ -858,7 +858,8 @@ public sealed class ChatMinigameService : IDisposable
         string action,
         CancellationToken cancellationToken)
     {
-        if (!message.IsBroadcaster && !message.IsModerator)
+        if (!CommandPermissionService.Resolve(message,
+                message.IsBroadcaster || message.IsModerator))
         {
             return;
         }
@@ -953,7 +954,8 @@ public sealed class ChatMinigameService : IDisposable
         if (parts.Length == 3 &&
             parts[1].Equals("all", StringComparison.OrdinalIgnoreCase))
         {
-            if (!message.IsBroadcaster && !message.IsModerator)
+            if (!CommandPermissionService.Resolve(message,
+                message.IsBroadcaster || message.IsModerator))
             {
                 return;
             }
@@ -1048,7 +1050,8 @@ public sealed class ChatMinigameService : IDisposable
         string[] parts,
         CancellationToken cancellationToken)
     {
-        if (!message.IsBroadcaster && !message.IsModerator)
+        if (!CommandPermissionService.Resolve(message,
+                message.IsBroadcaster || message.IsModerator))
         {
             return;
         }
@@ -1095,9 +1098,10 @@ public sealed class ChatMinigameService : IDisposable
     public static bool CanUseRemovePointsCommand(
         ChatMessage message,
         string broadcasterId) =>
-        message.IsBroadcaster ||
-        (!string.IsNullOrWhiteSpace(message.UserId) &&
-         message.UserId.Equals(broadcasterId, StringComparison.Ordinal));
+        CommandPermissionService.Resolve(message,
+            message.IsBroadcaster ||
+            (!string.IsNullOrWhiteSpace(message.UserId) &&
+             message.UserId.Equals(broadcasterId, StringComparison.Ordinal)));
 
     private async Task HandleRemovePointsCommandAsync(
         ChatMessage message,

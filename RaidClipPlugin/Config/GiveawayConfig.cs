@@ -30,9 +30,6 @@ public sealed class GiveawayConfig
     public bool ExcludeBots { get; set; } = true;
     public bool ExcludeBroadcasterFromDraw { get; set; } = true;
     public bool AllowPreviousWinners { get; set; } = false;
-    public bool SubscriberDoubleChance { get; set; } = false;
-    public bool VipIncreasedChance { get; set; } = false;
-    public int VipTicketMultiplier { get; set; } = 2;
     public bool ExtraTicketsEnabled { get; set; } = false;
     public int ExtraTicketCost { get; set; } = 100;
     public int MaximumExtraTickets { get; set; } = 5;

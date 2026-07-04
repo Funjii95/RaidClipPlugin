@@ -45,4 +45,34 @@ public sealed class CommandsConfig
     public bool GroupByModule { get; set; } = true;
     public bool IncludeDisabledCommandsInUi { get; set; } = true;
     public string ExportDirectory { get; set; } = "exports";
+    public Dictionary<string, string> CommandRoleOverrides { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
+    public bool CustomCommandsEnabled { get; set; } = true;
+    public List<CustomChatCommandConfig> CustomCommands { get; set; } =
+        CustomChatCommandConfig.CreateExamples();
+}
+
+public sealed class CustomChatCommandConfig
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public bool Enabled { get; set; }
+    public string Command { get; set; } = "!command";
+    public List<string> Aliases { get; set; } = new();
+    public string Response { get; set; } = "Hallo @{user}!";
+    public string RequiredRole { get; set; } = "Viewer";
+    public int UserCooldownSeconds { get; set; } = 15;
+    public int GlobalCooldownSeconds { get; set; } = 3;
+
+    public static List<CustomChatCommandConfig> CreateExamples() => new()
+    {
+        new()
+        {
+            Enabled = false,
+            Command = "!raid",
+            Response = "funjiiRaid Funjii's Otter-Familie ist angekommen! Viel Liebe und gute Vibes für den Stream! funjiiRaid",
+            RequiredRole = "Viewer",
+            UserCooldownSeconds = 30,
+            GlobalCooldownSeconds = 5
+        }
+    };
 }

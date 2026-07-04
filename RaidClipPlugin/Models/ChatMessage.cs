@@ -1,5 +1,7 @@
 namespace RaidClipPlugin.Models;
 
+public enum CommandAuthorization { Default, Allowed, Denied }
+
 public sealed class ChatMessage
 {
     public string Id { get; init; } = "";
@@ -12,6 +14,7 @@ public sealed class ChatMessage
     public bool IsVip { get; init; }
     public bool IsSubscriber { get; init; }
     public bool IsBroadcaster { get; init; }
+    public CommandAuthorization CommandAuthorization { get; set; }
     public string UserColor { get; init; } = "";
     public IReadOnlyList<string> Badges { get; init; } = Array.Empty<string>();
     public IReadOnlyList<ChatEmoteFragment> Emotes { get; init; } = Array.Empty<ChatEmoteFragment>();

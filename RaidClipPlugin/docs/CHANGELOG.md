@@ -1,6 +1,15 @@
 # Changelog
 
 
+
+## 1.6.2
+
+- Custom Commands mit frei wählbarem Befehl, Aliasen, Chatantwort, Rollen und Cooldowns.
+- Deaktiviertes !raid-Beispiel mit der Funjii-Otter-Chatantwort ist vorbereitet.
+- Berechtigungen bestehender Commands lassen sich pro Befehl zwischen Zuschauer und Broadcaster überschreiben.
+- Livechat erhält eine Eingabezeile zum direkten Schreiben in den Twitch-Chat.
+- Doppelte Subscriber- und erhöhte VIP-Gewinnchancen wurden aus Giveaways entfernt.
+
 ## 1.6.1
 
 - Livechat-Funktionsleisten passen sich an Fensterbreite und Windows-Skalierung an; alle Einstellungsleisten bleiben scrollbar erreichbar.

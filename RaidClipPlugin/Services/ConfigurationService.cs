@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using System.Net;
 using RaidClipPlugin.Config;
+using RaidClipPlugin.Models;
 using System.Text.Json;
 
 namespace RaidClipPlugin.Services;
@@ -449,6 +450,23 @@ public sealed class ConfigurationService
         config.Duel.DenyCommand = NormalizeCommand(config.Duel.DenyCommand);
         config.Commands.Command = NormalizeCommand(config.Commands.Command);
         config.Commands.ExportDirectory = (config.Commands.ExportDirectory ?? "exports").Trim();
+        config.Commands.CommandRoleOverrides = (config.Commands.CommandRoleOverrides ??
+            new Dictionary<string, string>())
+            .Where(item => !string.IsNullOrWhiteSpace(item.Key))
+            .ToDictionary(item => item.Key.Trim(), item =>
+                CommandRegistry.ParseRole(item.Value).ToString(), StringComparer.OrdinalIgnoreCase);
+        config.Commands.CustomCommands ??= new List<CustomChatCommandConfig>();
+        foreach (var custom in config.Commands.CustomCommands)
+        {
+            custom.Id = string.IsNullOrWhiteSpace(custom.Id)
+                ? Guid.NewGuid().ToString("N") : custom.Id.Trim();
+            custom.Command = NormalizeCommand(custom.Command);
+            custom.Aliases = (custom.Aliases ?? new List<string>())
+                .Select(NormalizeCommand).Where(alias => alias.Length > 1)
+                .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            custom.Response = (custom.Response ?? "").Trim();
+            custom.RequiredRole = CommandRegistry.ParseRole(custom.RequiredRole).ToString();
+        }
         NormalizeMusicRequests(config.MusicRequests);
         config.Minigame.GambleRanges =
             (config.Minigame.GambleRanges is { Count: > 0 }
@@ -665,6 +683,25 @@ public sealed class ConfigurationService
             throw new InvalidOperationException("Commands pro Seite muss größer als 0 sein.");
         if (commands.MaximumMessagesPerRequest is < 1 or > 5)
             throw new InvalidOperationException("Maximale Commands-Nachrichten müssen zwischen 1 und 5 liegen.");
+        if (commands.CustomCommands.GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
+            .Any(group => string.IsNullOrWhiteSpace(group.Key) || group.Count() > 1))
+            throw new InvalidOperationException("Custom Commands benötigen eindeutige IDs.");
+        foreach (var custom in commands.CustomCommands)
+        {
+            if (string.IsNullOrWhiteSpace(custom.Command) || custom.Command == "!")
+                throw new InvalidOperationException("Ein Custom Command darf nicht leer sein.");
+            if (custom.Enabled && string.IsNullOrWhiteSpace(custom.Response))
+                throw new InvalidOperationException($"Für {custom.Command} fehlt die Chatantwort.");
+            if (custom.Response.Length > 480)
+                throw new InvalidOperationException($"Die Chatantwort für {custom.Command} darf höchstens 480 Zeichen lang sein.");
+            if (custom.UserCooldownSeconds < 0 || custom.GlobalCooldownSeconds < 0)
+                throw new InvalidOperationException($"Die Cooldowns für {custom.Command} dürfen nicht negativ sein.");
+            if (!Enum.TryParse<CommandRole>(custom.RequiredRole, true, out _))
+                throw new InvalidOperationException($"Die Berechtigung für {custom.Command} ist ungültig.");
+        }
+        if (commands.CommandRoleOverrides.Any(item =>
+            !Enum.TryParse<CommandRole>(item.Value, true, out _)))
+            throw new InvalidOperationException("Mindestens eine Command-Berechtigung ist ungültig.");
 
         var registry = new CommandRegistry();
         registry.Update(config);
@@ -1040,8 +1077,7 @@ public sealed class ConfigurationService
         if (config.ParticipantCountIntervalMinutes is < 1 or > 1440)
             throw new InvalidOperationException(
                 "Das Teilnehmerintervall muss zwischen 1 und 1440 Minuten liegen.");
-        if (config.VipTicketMultiplier is < 1 or > 100 ||
-            config.ExtraTicketCost < 0 ||
+        if (config.ExtraTicketCost < 0 ||
             config.MaximumExtraTickets is < 0 or > 100)
             throw new InvalidOperationException(
                 "Die Giveaway-Loseinstellungen sind ungültig.");

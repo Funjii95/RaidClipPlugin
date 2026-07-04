@@ -424,6 +424,8 @@ public sealed class DuelService : IAsyncDisposable
 
     private async Task<bool> IsAllowedAsync(ChatMessage user, CancellationToken token)
     {
+        if (user.CommandAuthorization == CommandAuthorization.Allowed) return true;
+        if (user.CommandAuthorization == CommandAuthorization.Denied) return false;
         if (user.IsBroadcaster || user.UserId == _broadcasterId) return true;
         if (_config.AllowEveryone) return true;
         if (_config.AllowModerators && user.IsModerator || _config.AllowVips && user.IsVip ||

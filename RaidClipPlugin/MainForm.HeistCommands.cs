@@ -9,7 +9,7 @@ public sealed partial class MainForm
     private readonly CommandRegistry _commandRegistry = new();
     private readonly Panel _commandsPage = new() { Dock = DockStyle.Fill, Visible = false };
     private readonly Button _commandsNavButton = CreateNavigationTile("⌨  Commands", "Alle Chat-Befehle und Berechtigungen");
-    private readonly DataGridView _commandsGrid = new() { Dock = DockStyle.Fill, ReadOnly = true, AllowUserToAddRows = false,
+    private readonly DataGridView _commandsGrid = new() { Dock = DockStyle.Fill, ReadOnly = false, AllowUserToAddRows = false,
         AllowUserToDeleteRows = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false,
         AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells, BackgroundColor = SurfaceColor };
     private readonly TextBox _commandSearchBox = new() { Width = 240, PlaceholderText = "Command oder Beschreibung suchen" };
@@ -113,8 +113,10 @@ public sealed partial class MainForm
     {
         var header = new Label { Text = "Commands", Font = new Font("Segoe UI", 24F, FontStyle.Bold),
             ForeColor = TextColor, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft };
-        var subtitle = new Label { Text = "Alle Chat-Befehle und Berechtigungen", AutoSize = true, ForeColor = MutedTextColor };
-        var filters = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, Padding = new Padding(0, 4, 0, 4) };
+        var subtitle = new Label { Text = "Chat-Befehle, Custom Commands und frei wählbare Berechtigungen",
+            AutoSize = true, ForeColor = MutedTextColor };
+        var filters = new FlowLayoutPanel { AutoSize = true, AutoScroll = true,
+            WrapContents = true, Padding = new Padding(0, 4, 0, 4) };
         _commandActiveFilter.Items.AddRange(new object[] { "Alle", "Aktiv", "Inaktiv" }); _commandActiveFilter.SelectedIndex = 0;
         _commandRoleFilter.Items.AddRange(new object[] { "Alle Rollen", "Zuschauer", "Follower", "Subscriber", "VIP", "Moderator", "Broadcaster" }); _commandRoleFilter.SelectedIndex = 0;
         _commandModuleFilter.Items.Add("Alle Module"); _commandModuleFilter.SelectedIndex = 0;
@@ -122,18 +124,32 @@ public sealed partial class MainForm
             _commandRoleFilter, _copyCommandButton, _copyAllCommandsButton, _exportCommandsButton });
         _commandsGrid.Columns.Add(new DataGridViewCheckBoxColumn
         {
-            Name = "Aktiv",
-            HeaderText = "Aktiv",
-            ReadOnly = true,
+            Name = "Aktiv", HeaderText = "Aktiv", ReadOnly = true,
             SortMode = DataGridViewColumnSortMode.Automatic
         });
-        foreach (var column in new[] { "Command", "Aliase", "Modul", "Beschreibung", "Verwendung",
-                     "Berechtigung", "Benutzer-Cooldown", "Globaler Cooldown", "Punktekosten", "Beispiel" })
-            _commandsGrid.Columns.Add(column, column);
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, ColumnCount = 1, Padding = new Padding(20) };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 92)); layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.Controls.Add(header, 0, 0); layout.Controls.Add(subtitle, 0, 1); layout.Controls.Add(filters, 0, 2); layout.Controls.Add(_commandsGrid, 0, 3);
+        foreach (var column in new[] { "Command", "Aliase", "Modul", "Beschreibung", "Verwendung" })
+            _commandsGrid.Columns.Add(new DataGridViewTextBoxColumn
+                { Name = column, HeaderText = column, ReadOnly = true });
+        var roleColumn = new DataGridViewComboBoxColumn
+        {
+            Name = "Berechtigung", HeaderText = "Berechtigung", ReadOnly = false,
+            Width = 130, FlatStyle = FlatStyle.Flat
+        };
+        roleColumn.Items.AddRange(CommandRoleLabels.Cast<object>().ToArray());
+        _commandsGrid.Columns.Add(roleColumn);
+        foreach (var column in new[] { "Benutzer-Cooldown", "Globaler Cooldown", "Punktekosten", "Beispiel" })
+            _commandsGrid.Columns.Add(new DataGridViewTextBoxColumn
+                { Name = column, HeaderText = column, ReadOnly = true });
+        var tabs = new TabControl { Dock = DockStyle.Fill };
+        AddMinigameTab(tabs, "Übersicht & Rechte", BuildCommandOverviewPanel(filters));
+        AddMinigameTab(tabs, "Custom Commands", BuildCustomCommandsPanel());
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3,
+            ColumnCount = 1, Padding = new Padding(20) };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.Controls.Add(header, 0, 0); layout.Controls.Add(subtitle, 0, 1);
+        layout.Controls.Add(tabs, 0, 2);
         _commandsPage.Controls.Add(layout);
     }
 
@@ -152,12 +168,14 @@ public sealed partial class MainForm
         _copyAllCommandsButton.Click += (_, _) => CopyAllCommands();
         _exportCommandsButton.Click += async (_, _) => await ExportCommandsAsync();
         _commandRegistry.Changed += RefreshCommandGrid;
+        InitializeCustomCommandEvents();
         _heistCancelButton.Enabled = false;
     }
 
     private void LoadHeistCommandsSettings(AppConfig config)
     {
         LoadHeistSettings(config.Heist);
+        LoadCustomCommandSettings(config.Commands);
         _commandRegistry.Update(config);
         RefreshCommandGrid();
     }
@@ -193,6 +211,7 @@ public sealed partial class MainForm
         h.NoActiveHeistMessage=_heistMessageBoxes[3].Text; h.MaximumParticipantsMessage=_heistMessageBoxes[4].Text;
         h.NotEnoughParticipantsMessage=_heistMessageBoxes[5].Text; h.EvaluationMessage=_heistMessageBoxes[6].Text;
         h.SuccessMessage=_heistMessageBoxes[7].Text; h.FailureMessage=_heistMessageBoxes[8].Text;
+        ReadCustomCommandSettings(config.Commands);
     }
 
     private void OnHeistStatusChanged(HeistStatus status)
@@ -256,7 +275,7 @@ public sealed partial class MainForm
             {
                 var index = _commandsGrid.Rows.Add(command.Enabled, command.CommandText,
                     string.Join(", ", command.Aliases), command.ModuleDisplayName, command.Description, command.Usage,
-                    command.RequiredRole, command.UserCooldown.TotalSeconds + "s",
+                    RoleLabel(command.RequiredRole), command.UserCooldown.TotalSeconds + "s",
                     command.GlobalCooldown.TotalSeconds + "s", command.PointCost, command.Example);
                 var row = _commandsGrid.Rows[index];
                 row.Tag = command;

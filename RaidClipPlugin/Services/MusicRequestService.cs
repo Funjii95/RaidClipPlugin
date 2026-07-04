@@ -420,7 +420,8 @@ public sealed class MusicRequestService : IDisposable
     private async Task ProcessModeratorCommandCoreAsync(
         ChatMessage message, CancellationToken cancellationToken)
     {
-        if (!message.IsBroadcaster && !message.IsModerator) return;
+        if (!CommandPermissionService.Resolve(message,
+                message.IsBroadcaster || message.IsModerator)) return;
         var parts = message.Text.Trim().Split(' ',
             StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0) return;

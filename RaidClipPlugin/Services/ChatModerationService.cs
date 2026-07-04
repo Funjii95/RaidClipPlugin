@@ -34,6 +34,8 @@ public sealed class ChatModerationService : IDisposable
     public ChatConnectionDiagnostics Diagnostics => _diagnostics;
     public event Action<ChatConnectionDiagnostics>? StatusChanged;
 
+    public event Func<ChatMessage, Task>? MessageAuthorizing;
+    public event Func<ChatMessage, Task>? MessageObserved;
     public event Func<ChatMessage, Task>? MessageReceived;
     public event Action? Activated;
 
@@ -428,12 +430,22 @@ public sealed class ChatModerationService : IDisposable
             return;
         }
 
+        var authorizers = MessageAuthorizing?.GetInvocationList()
+            .Cast<Func<ChatMessage, Task>>()
+            .ToArray() ?? Array.Empty<Func<ChatMessage, Task>>();
+        var observers = MessageObserved?.GetInvocationList()
+            .Cast<Func<ChatMessage, Task>>()
+            .ToArray() ?? Array.Empty<Func<ChatMessage, Task>>();
         _ = Task.Run(async () =>
         {
-            var tasks = handlers
-                .Select(handler => InvokeMessageHandlerAsync(handler, message))
-                .ToArray();
-            await Task.WhenAll(tasks);
+            foreach (var authorizer in authorizers)
+                await InvokeMessageHandlerAsync(authorizer, message);
+            await Task.WhenAll(observers.Select(observer =>
+                InvokeMessageHandlerAsync(observer, message)));
+            if (message.CommandAuthorization == CommandAuthorization.Denied)
+                return;
+            await Task.WhenAll(handlers.Select(handler =>
+                InvokeMessageHandlerAsync(handler, message)));
         });
     }
 

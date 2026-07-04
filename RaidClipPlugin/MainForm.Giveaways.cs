@@ -56,9 +56,6 @@ public sealed partial class MainForm
     private readonly CheckBox _giveawayExcludeBroadcaster = NewCheck("Broadcaster bei Auslosung ausschließen", true);
 
     private readonly CheckBox _giveawayPreviousWinners = NewCheck("Frühere Gewinner erneut zulassen", false);
-    private readonly CheckBox _giveawaySubWeight = NewCheck("Abonnenten: doppelte Chance", false);
-    private readonly CheckBox _giveawayVipWeight = NewCheck("VIPs: erhöhte Chance", false);
-    private readonly NumericUpDown _giveawayVipMultiplier = CreateIntegerControl(2, 1, 100);
     private readonly CheckBox _giveawayExtraTickets = NewCheck("Zusatzlose über Punkte erlauben", false);
     private readonly NumericUpDown _giveawayTicketCost = CreateIntegerControl(100, 0, 1000000000);
     private readonly NumericUpDown _giveawayMaxTickets = CreateIntegerControl(5, 0, 100);
@@ -181,8 +178,7 @@ public sealed partial class MainForm
             Editor("Blacklist", _giveawayBlocklistBox), _giveawayExcludeBots, _giveawayExcludeBroadcaster }) eligibility.Controls.Add(control);
 
         var chance = GiveawayFlow();
-        foreach (var control in new Control[] { _giveawayPreviousWinners, _giveawaySubWeight,
-            _giveawayVipWeight, Editor("VIP-Multiplikator", _giveawayVipMultiplier), _giveawayExtraTickets,
+        foreach (var control in new Control[] { _giveawayPreviousWinners, _giveawayExtraTickets,
             Editor("Punkte je Zusatzlos", _giveawayTicketCost), Editor("Max. Zusatzlose", _giveawayMaxTickets),
             _giveawayModCommands, Editor("Admin-Commands (7 Zeilen)", _giveawayAdminCommandsBox) })
             chance.Controls.Add(control);
@@ -253,8 +249,7 @@ public sealed partial class MainForm
         _giveawayAllowlistBox.Text=string.Join(", ",g.AllowedUsers); _giveawayBlocklistBox.Text=string.Join(", ",g.BlockedUsers);
         _giveawayExcludeBots.Checked=g.ExcludeBots; _giveawayExcludeBroadcaster.Checked=g.ExcludeBroadcasterFromDraw;
         _giveawayPreviousWinners.Checked=g.AllowPreviousWinners;
-        _giveawaySubWeight.Checked=g.SubscriberDoubleChance; _giveawayVipWeight.Checked=g.VipIncreasedChance;
-        SetNumericValue(_giveawayVipMultiplier,g.VipTicketMultiplier); _giveawayExtraTickets.Checked=g.ExtraTicketsEnabled;
+        _giveawayExtraTickets.Checked=g.ExtraTicketsEnabled;
         SetNumericValue(_giveawayTicketCost,g.ExtraTicketCost); SetNumericValue(_giveawayMaxTickets,g.MaximumExtraTickets);
         _giveawayModCommands.Checked=g.ModeratorCommands.Enabled;
         _giveawayAdminCommandsBox.Lines=new[]{g.ModeratorCommands.Start,g.ModeratorCommands.Stop,g.ModeratorCommands.Pause,
@@ -278,8 +273,7 @@ public sealed partial class MainForm
             AllowedUsers=ParseNames(_giveawayAllowlistBox.Text,true), BlockedUsers=ParseNames(_giveawayBlocklistBox.Text,true),
             ExcludeBots=_giveawayExcludeBots.Checked, ExcludeBroadcasterFromDraw=_giveawayExcludeBroadcaster.Checked,
             AllowPreviousWinners=_giveawayPreviousWinners.Checked,
-            SubscriberDoubleChance=_giveawaySubWeight.Checked, VipIncreasedChance=_giveawayVipWeight.Checked,
-            VipTicketMultiplier=(int)_giveawayVipMultiplier.Value, ExtraTicketsEnabled=_giveawayExtraTickets.Checked,
+            ExtraTicketsEnabled=_giveawayExtraTickets.Checked,
             ExtraTicketCost=(int)_giveawayTicketCost.Value, MaximumExtraTickets=(int)_giveawayMaxTickets.Value };
         g.AllowedRoles=new GiveawayAllowedRoles { Everyone=_giveawayEveryone.Checked, Followers=_giveawayFollowers.Checked,
             Subscribers=_giveawaySubscribers.Checked, Vips=_giveawayVips.Checked, Moderators=_giveawayModerators.Checked,

@@ -123,7 +123,8 @@ public sealed class GiveawayService : IDisposable
             return false;
 
         if (_config.ModeratorCommands.Enabled &&
-            (message.IsBroadcaster || message.IsModerator) &&
+            CommandPermissionService.Resolve(message,
+                message.IsBroadcaster || message.IsModerator) &&
             await TryProcessModeratorCommandAsync(message, cancellationToken))
             return true;
 
@@ -590,7 +591,7 @@ public sealed class GiveawayService : IDisposable
         var weighted = candidates.Select(item => new
         {
             Participant = item,
-            Weight = TicketWeight(item)
+            Weight = CalculateTicketWeight(item)
         }).ToArray();
         var total = weighted.Sum(item => item.Weight);
         var roll = RandomNumberGenerator.GetInt32(total);
@@ -602,15 +603,8 @@ public sealed class GiveawayService : IDisposable
         return weighted[^1].Participant;
     }
 
-    private int TicketWeight(GiveawayParticipant participant)
-    {
-        var weight = 1;
-        if (_config.SubscriberDoubleChance && participant.IsSubscriber)
-            weight *= 2;
-        if (_config.VipIncreasedChance && participant.IsVip)
-            weight = checked(weight * Math.Clamp(_config.VipTicketMultiplier, 2, 100));
-        return checked(weight + Math.Max(0, participant.ExtraTickets));
-    }
+    public static int CalculateTicketWeight(GiveawayParticipant participant) =>
+        checked(1 + Math.Max(0, participant.ExtraTickets));
 
     private async Task<GiveawayEligibilityResult> CheckEligibilityLockedAsync(
         ChatMessage message,
@@ -629,12 +623,13 @@ public sealed class GiveawayService : IDisposable
                 _broadcasterId, message.UserId, cancellationToken);
 
         var roles = _config.AllowedRoles;
-        var allowed = roles.Everyone ||
+        var allowed = CommandPermissionService.Resolve(message,
+                      roles.Everyone ||
                       roles.Broadcaster && message.IsBroadcaster ||
                       roles.Moderators && message.IsModerator ||
                       roles.Vips && message.IsVip ||
                       roles.Subscribers && message.IsSubscriber ||
-                      roles.Followers && followedAt is not null;
+                      roles.Followers && followedAt is not null);
         if (!allowed) return new(false, "role");
 
         if (_config.MinimumFollowMinutes > 0 && !message.IsBroadcaster)

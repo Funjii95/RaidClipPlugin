@@ -92,8 +92,10 @@ public sealed class ClipCommandService : IDisposable
             return true;
         }
 
-        var permission = await _permissions.CheckAsync(
-            message, _broadcasterId, config, cancellationToken);
+        var permission = message.CommandAuthorization == CommandAuthorization.Allowed
+            ? new ClipPermissionDecision(true, "command-override")
+            : await _permissions.CheckAsync(
+                message, _broadcasterId, config, cancellationToken);
         if (!permission.Allowed)
         {
             Console.WriteLine(
