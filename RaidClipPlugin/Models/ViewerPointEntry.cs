@@ -4,7 +4,7 @@ public sealed class ViewerPointEntry
 {
     public string UserId { get; set; } = "";
     public string DisplayName { get; set; } = "";
-    public int Points { get; set; }
+    public long Points { get; set; }
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.Now;
     public int WatchMinutes { get; set; }
     public int GamesPlayed { get; set; }
@@ -18,13 +18,13 @@ public sealed class ViewerPointEntry
     public int DailyWin { get; set; }
 }
 
-public sealed record GambleBalanceResult(bool Success, int Balance);
+public sealed record GambleBalanceResult(bool Success, long Balance);
 
 public sealed record PointTransferResult(
     bool Success,
     string Error,
-    int SenderBalance,
-    int RecipientBalance);
+    long SenderBalance,
+    long RecipientBalance);
 
 public sealed class MinigameHistoryEntry
 {
@@ -33,8 +33,8 @@ public sealed class MinigameHistoryEntry
     public string DisplayName { get; set; } = "";
     public string Game { get; set; } = "";
     public string Action { get; set; } = "";
-    public int Change { get; set; }
-    public int Balance { get; set; }
+    public long Change { get; set; }
+    public long Balance { get; set; }
 }
 
 public sealed record ViewerProfileResult(
@@ -43,30 +43,30 @@ public sealed record ViewerProfileResult(
 
 public sealed record DailyClaimResult(
     bool Success,
-    int Balance,
+    long Balance,
     TimeSpan Remaining);
 
 public sealed record CasinoApplyResult(
     bool Success,
     string Error,
-    int Balance,
+    long Balance,
     int JackpotWon);
 public sealed record HeistParticipantPayout(
     string UserId,
     string DisplayName,
     int Payout,
-    int NewBalance);
+    long NewBalance);
 
 public sealed record HeistPayoutResult(
     int JackpotBefore,
     int JackpotAfter,
     IReadOnlyList<HeistParticipantPayout> Payouts);
 
-public sealed record DuelReserveResult(bool Success, string Error, int Balance);
+public sealed record DuelReserveResult(bool Success, string Error, long Balance);
 
 public sealed record DuelResolutionResult(
     bool Success,
     string Error,
-    int ChallengerBalance,
-    int TargetBalance,
+    long ChallengerBalance,
+    long TargetBalance,
     int Pot);

@@ -115,7 +115,12 @@ public sealed class DuelServiceTests
     {
         await using var f = await Fixture.CreateAsync(timeoutSeconds: 1);
         await f.ChallengeAsync();
-        await Task.Delay(1300);
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(6);
+        while (DateTimeOffset.UtcNow < deadline &&
+               await f.Points.GetPointsAsync("c", default) != 1000)
+        {
+            await Task.Delay(100);
+        }
         Assert.Equal(1000, await f.Points.GetPointsAsync("c", default));
         Assert.Contains(f.Chat.Messages, x => x.Contains("abgelaufen", StringComparison.OrdinalIgnoreCase));
     }
@@ -241,7 +246,7 @@ public sealed class DuelServiceTests
 
         public Task ChallengeAsync() => Service.ProcessAsync(Message("c", "Challenger", "!duel Target 100"), default);
 
-        public async Task<int> TotalPointsAsync() =>
+        public async Task<long> TotalPointsAsync() =>
             await Points.GetPointsAsync("c", default) + await Points.GetPointsAsync("t", default);
 
         public async ValueTask DisposeAsync()

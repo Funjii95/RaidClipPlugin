@@ -42,9 +42,9 @@ public sealed class ChatMinigameService : IDisposable
     private DateTimeOffset _lastGlobalCommand = DateTimeOffset.MinValue;
     private bool _disposed;
 
-    private int MaximumPoints => _config.MaximumAccountEnabled
+    private long MaximumPoints => _config.MaximumAccountEnabled
         ? _config.MaximumAccountPoints
-        : int.MaxValue;
+        : long.MaxValue;
 
     private string CurrencyName(long amount) => Math.Abs(amount) == 1
         ? _config.CurrencySingular
@@ -63,6 +63,11 @@ public sealed class ChatMinigameService : IDisposable
             entry.Equals(normalizedLogin, StringComparison.OrdinalIgnoreCase) ||
             entry.Equals(normalizedDisplayName, StringComparison.OrdinalIgnoreCase));
     }
+
+    public const int MaximumAllInStake = 10_000_000;
+
+    public static int CalculateAllInStake(long availablePoints) =>
+        (int)Math.Min(MaximumAllInStake, Math.Max(0L, availablePoints));
 
     public static bool ShouldRun(MinigameConfig config) =>
         config.Enabled || config.PointsEnabled;
@@ -84,7 +89,7 @@ public sealed class ChatMinigameService : IDisposable
     public static bool IsGameCommand(string command) =>
         (command ?? "").Trim().ToLowerInvariant() is
             "!coinflip" or "!slots" or "!roulette" or "!gamble" or
-            "!jackpot";
+            "!jackpot" or "!dumpjackpot" or "!addjackpot" or "!addjockpot";
 
     public static bool IsCommandModuleEnabled(
         MinigameConfig config,
@@ -530,6 +535,62 @@ public sealed class ChatMinigameService : IDisposable
                 return;
             }
 
+            if (command is "!addjackpot" or "!addjockpot")
+            {
+                if (!CommandPermissionService.Resolve(message,
+                        message.IsBroadcaster || message.IsModerator))
+                {
+                    return;
+                }
+                if (parts.Length != 2 ||
+                    !int.TryParse(parts[1], out var jackpotAmount) ||
+                    jackpotAmount <= 0)
+                {
+                    await TrySendChatAsync(
+                        $"@{message.UserName}, nutze !addjackpot <betrag>.",
+                        cancellationToken);
+                    return;
+                }
+                var updated = await _points.AddJackpotAsync(
+                    jackpotAmount, _config.JackpotStartValue,
+                    cancellationToken);
+                Console.WriteLine(
+                    $"Minigame-Admin: {message.UserName} erhöht den Jackpot " +
+                    $"von {updated.Previous} auf {updated.Current}.");
+                await TrySendChatAsync(
+                    $"🎰 Jackpot +{FormatCurrency(jackpotAmount)} · Neuer Stand: " +
+                    $"{FormatCurrency(updated.Current)}.", cancellationToken);
+                DataChanged?.Invoke();
+                return;
+            }
+
+            if (command == "!dumpjackpot")
+            {
+                if (!CanUseRemovePointsCommand(message, _broadcasterId))
+                {
+                    Console.WriteLine(
+                        $"Minigame-Admin: !dumpjackpot von {message.UserName} abgelehnt; " +
+                        "nur der Broadcaster darf diesen Befehl verwenden.");
+                    await TrySendChatAsync(
+                        $"@{message.UserName}, !dumpjackpot darf nur der Broadcaster verwenden.",
+                        cancellationToken);
+                    return;
+                }
+
+                var dumped = await _points.ResetJackpotAsync(
+                    _config.JackpotStartValue,
+                    cancellationToken);
+                Console.WriteLine(
+                    $"Minigame-Admin: Broadcaster {message.UserName} leert den Jackpot " +
+                    $"von {dumped.Previous} auf {dumped.Current}.");
+                await TrySendChatAsync(
+                    $"🎰 Jackpot geleert: {FormatCurrency(dumped.Previous)} wurden entfernt. " +
+                    $"Neuer Stand: {FormatCurrency(dumped.Current)}.",
+                    cancellationToken);
+                DataChanged?.Invoke();
+                return;
+            }
+
             if (command == "!jackpot")
             {
                 if (!await TryEnterCooldownAsync(
@@ -675,10 +736,14 @@ public sealed class ChatMinigameService : IDisposable
 
             var isAllIn = parts[1].Equals(
                 "all", StringComparison.OrdinalIgnoreCase);
+            var availableForGamble = isAllIn
+                ? Math.Max(0L,
+                    await _points.GetPointsAsync(
+                        message.UserId, cancellationToken) -
+                    Math.Max(0, _config.MinimumPoints))
+                : 0L;
             var gambleStake = isAllIn
-                ? await _points.GetPointsAsync(
-                    message.UserId, cancellationToken) -
-                  Math.Max(0, _config.MinimumPoints)
+                ? CalculateAllInStake(availableForGamble)
                 : int.TryParse(parts[1], out var parsedStake)
                     ? parsedStake
                     : -1;
@@ -895,7 +960,7 @@ public sealed class ChatMinigameService : IDisposable
 
         if (SkipBlacklisted(user.Login, user.DisplayName)) return;
 
-        int newBalance;
+        long newBalance;
         switch (action)
         {
             case "add":
@@ -1066,8 +1131,23 @@ public sealed class ChatMinigameService : IDisposable
             !int.TryParse(parts[2], out var amount) || amount <= 0)
         {
             await TrySendChatAsync(
-                $"@{message.UserName}, nutze !addpoints @name <betrag>.",
+                $"@{message.UserName}, nutze !addpoints <@name|all> <betrag>.",
                 cancellationToken);
+            return;
+        }
+
+        if (parts[1].Equals("all", StringComparison.OrdinalIgnoreCase))
+        {
+            var recipients = await _points.AddPointsToAllAsync(
+                amount, _config.MinimumPoints, MaximumPoints,
+                cancellationToken);
+            Console.WriteLine(
+                $"Minigame-Admin: {message.UserName} erzeugt " +
+                $"{FormatCurrency(amount)} für alle {recipients} gespeicherten Nutzer.");
+            await TrySendChatAsync(
+                $"@{message.UserName} hat {FormatCurrency(amount)} an " +
+                $"{recipients} Nutzer vergeben.", cancellationToken);
+            DataChanged?.Invoke();
             return;
         }
 

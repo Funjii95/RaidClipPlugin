@@ -70,6 +70,14 @@ public sealed class HeistService : IAsyncDisposable
     public void UpdateConfig(HeistConfig config,MinigameConfig minigame)
     { _config=config; _minigame=minigame; }
 
+    public static string FormatCooldown(TimeSpan remaining)
+    {
+        var totalSeconds=Math.Max(0,(int)Math.Ceiling(remaining.TotalSeconds));
+        var minutes=totalSeconds/60;
+        var seconds=totalSeconds%60;
+        return minutes>0 ? $"{minutes} Min. {seconds} Sek." : $"{seconds} Sek.";
+    }
+
     public bool Recognizes(string command) =>
         CommandRegistry.Normalize(command)==CommandRegistry.Normalize(_config.StartCommand) ||
         CommandRegistry.Normalize(command)==CommandRegistry.Normalize(_config.JoinCommand);
@@ -110,10 +118,23 @@ public sealed class HeistService : IAsyncDisposable
             var now=DateTimeOffset.UtcNow;
             if(State is HeistState.Joining or HeistState.Evaluating)
             { await SendAsync($"@{creator.UserName}, es läuft bereits ein Heist.",cancellationToken); return; }
-            if(now-_lastGlobalCompletion<TimeSpan.FromMinutes(_config.GlobalCooldownMinutes))
-            { await SendAsync($"@{creator.UserName}, der globale Heist-Cooldown ist noch aktiv.",cancellationToken); return; }
-            if(_creatorCooldowns.TryGetValue(creator.UserId,out var last) && now-last<TimeSpan.FromMinutes(_config.UserCooldownMinutes))
-            { await SendAsync($"@{creator.UserName}, dein Heist-Cooldown ist noch aktiv.",cancellationToken); return; }
+            var globalCooldown=TimeSpan.FromMinutes(_config.GlobalCooldownMinutes);
+            if(now-_lastGlobalCompletion<globalCooldown)
+            {
+                var remaining=globalCooldown-(now-_lastGlobalCompletion);
+                await SendAsync($"@{creator.UserName}, globaler Heist-Cooldown: noch {FormatCooldown(remaining)}.",cancellationToken);
+                return;
+            }
+            if(_creatorCooldowns.TryGetValue(creator.UserId,out var last))
+            {
+                var userCooldown=TimeSpan.FromMinutes(_config.UserCooldownMinutes);
+                if(now-last<userCooldown)
+                {
+                    var remaining=userCooldown-(now-last);
+                    await SendAsync($"@{creator.UserName}, dein Heist-Cooldown: noch {FormatCooldown(remaining)}.",cancellationToken);
+                    return;
+                }
+            }
             _sessionCts?.Dispose();
             _sessionCts=CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _participants=new Dictionary<string,HeistParticipant>(StringComparer.Ordinal);

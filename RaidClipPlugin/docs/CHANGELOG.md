@@ -1,3 +1,14 @@
+## 1.6.7
+
+- Behebt den Überlauf bei `!gamble all` und großen Punkteständen.
+- Punktestände verwenden jetzt 64-Bit-Werte (praktisch unbegrenzt bis 9.223.372.036.854.775.807).
+- `!gamble all` setzt pro Runde höchstens 10.000.000 Punkte.
+- Jackpot-, Tageslimit- und Statistikberechnungen sind gegen Überläufe abgesichert.
+- Neuer Broadcaster-Befehl `!dumpjackpot` leert den Jackpot auf den konfigurierten Startwert.
+- `!addpoints all <Betrag>` vergibt als Admin Punkte an alle gespeicherten Zuschauer.
+- `!addjackpot <Betrag>` (Alias `!addjockpot`) erhöht den Jackpot überlaufsicher.
+- Heist-Cooldown-Antworten zeigen die verbleibenden Minuten und Sekunden.
+
 # Changelog
 
 ## 1.6.6

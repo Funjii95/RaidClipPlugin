@@ -171,7 +171,7 @@ public sealed class DuelService : IAsyncDisposable
         var balance = await _points.GetPointsAsync(challenger.UserId, cancellationToken);
         int stake;
         if (parts[2].Equals("all", StringComparison.OrdinalIgnoreCase) && _config.AllowAllIn)
-            stake = Math.Min(_config.MaximumBet, Math.Max(0, balance - Math.Max(0, _minigame.MinimumPoints)));
+            stake = (int)Math.Min(_config.MaximumBet, Math.Max(0L, balance - Math.Max(0, _minigame.MinimumPoints)));
         else if (!int.TryParse(parts[2], out stake))
         {
             await SendTemplateAsync(_config.InvalidBetMessage, challenger.UserName, target, 0, "", "", cancellationToken);
