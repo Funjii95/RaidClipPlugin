@@ -8,6 +8,7 @@ public class AppConfig
     public PlayerConfig Player { get; set; } = new();
     public ChatConfig Chat { get; set; } = new();
     public ModerationConfig Moderation { get; set; } = new();
+    public LiveChatConfig LiveChat { get; set; } = new();
     public MinigameConfig Minigame { get; set; } = new();
     public HeistConfig Heist { get; set; } = new();
     public DuelConfig Duel { get; set; } = new();

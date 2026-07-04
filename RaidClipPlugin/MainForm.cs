@@ -697,6 +697,7 @@ public sealed partial class MainForm : Form
         InitializeGiveawayEvents();
         InitializeHeistCommandEvents();
         InitializeDuelEvents();
+        InitializeLiveChatEvents();
         InitializeChatDiagnosticsEvents();
         InitializeThemeEvents();
 
@@ -1456,6 +1457,7 @@ public sealed partial class MainForm : Form
         };
         raidTabs.TabPages.Add(logPage);
         raidTabs.TabPages.Add(historyPage);
+        raidTabs.TabPages.Add(BuildLiveChatTab());
 
         var raidLayout = new TableLayoutPanel
         {
@@ -2162,6 +2164,8 @@ public sealed partial class MainForm : Form
                     session.UserId);
                 _chatModeration.StatusChanged +=
                     UpdateChatConnectionDiagnostics;
+                await StartLiveChatAsync(config, session.UserId, _broadcaster.Id, cancellationToken);
+                _chatModeration.MessageReceived += HandleLiveChatMessageAsync;
                 _chatModeration.Activated += () =>
                     AppendLog("Chatbot verbunden: WebSocket und channel.chat.message aktiv.");
 
@@ -3109,6 +3113,7 @@ public sealed partial class MainForm : Form
         StopMusicRequests();
         StopClipCommand();
         StopGiveawayModule();
+        StopLiveChat();
         _minigameEvents?.Dispose();
         _minigame?.Dispose();
         _chatModeration?.Dispose();
@@ -3690,6 +3695,7 @@ public sealed partial class MainForm : Form
             LoadGiveawaySettings(config.Giveaways);
             LoadHeistCommandsSettings(config);
             LoadDuelSettings(config.Duel);
+            LoadLiveChatSettings(config.LiveChat);
         }
         catch (Exception exception)
         {
@@ -3846,6 +3852,7 @@ public sealed partial class MainForm : Form
         ReadMusicRequestSettings(config);
         ReadHeistCommandsSettings(config);
         ReadDuelSettings(config);
+        ReadLiveChatSettings(config);
         return config;
     }
 
@@ -3905,6 +3912,7 @@ public sealed partial class MainForm : Form
                 updated.ClipCommand.MaximumQueueSize;
         _activeConfig.Chat = updated.Chat;
         _activeConfig.Moderation = updated.Moderation;
+        _activeConfig.LiveChat = updated.LiveChat;
         _activeConfig.Minigame = updated.Minigame;
         _activeConfig.Heist = updated.Heist;
         _activeConfig.Duel = updated.Duel;
@@ -3926,6 +3934,7 @@ public sealed partial class MainForm : Form
         _activeConfig.Twitch.RaidDelaySeconds =
             updated.Twitch.RaidDelaySeconds;
         _commandRegistry.Update(updated);
+        _liveChat?.UpdateConfig(updated.LiveChat);
         _minigame?.UpdateConfiguration(updated);
         _musicRequests?.UpdateConfig(updated.MusicRequests);
         _spotify?.UpdateConfig(updated.MusicRequests);
@@ -4061,6 +4070,8 @@ public sealed partial class MainForm : Form
         _obs?.Dispose();
         _player?.Dispose();
         _spotify?.Dispose();
+        _liveChatTimer.Stop();
+        StopLiveChat();
         base.OnFormClosing(e);
     }
 }

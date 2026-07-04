@@ -86,6 +86,7 @@ public sealed class ConfigurationService
             AutoFilterEnabled = config.Moderation.AutoFilterEnabled,
             WhitelistModsAndVips = config.Moderation.WhitelistModsAndVips,
             ModerationTimeoutSeconds = config.Moderation.TimeoutSeconds,
+            LiveChat = config.LiveChat,
             BlockedWords = config.Moderation.BlockedWords,
             MinigameEnabled = config.Minigame.Enabled,
             PointsEnabled = config.Minigame.PointsEnabled,
@@ -342,6 +343,8 @@ public sealed class ConfigurationService
                 config.Minigame.GambleRanges = settings.GambleRanges
                     .Select(CloneRange)
                     .ToList();
+            if (settings.LiveChat is not null)
+                config.LiveChat = settings.LiveChat;
             if (settings.Minigame is not null)
                 config.Minigame = settings.Minigame;
             if (settings.Heist is not null)
@@ -391,6 +394,7 @@ public sealed class ConfigurationService
         config.ClipCommand ??= new ClipCommandConfig();
         config.DiscordClips ??= new DiscordClipsConfig();
         config.Giveaways ??= new GiveawayConfig();
+        config.LiveChat = LiveChatService.NormalizeConfig(config.LiveChat);
         config.Duel ??= new DuelConfig();
         NormalizeClipSettings(config.ClipCommand, config.DiscordClips);
         NormalizeGiveawaySettings(config.Giveaways);
@@ -1222,6 +1226,7 @@ public sealed class ConfigurationService
         public int? MinimumBet { get; set; }
         public int? MaximumBet { get; set; }
         public List<GambleRangeConfig>? GambleRanges { get; set; }
+        public LiveChatConfig? LiveChat { get; set; }
         public MinigameConfig? Minigame { get; set; }
         public HeistConfig? Heist { get; set; }
         public DuelConfig? Duel { get; set; }

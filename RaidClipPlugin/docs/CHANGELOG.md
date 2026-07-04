@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0
+
+- Neuer read-only Livechat-Reiter neben Log und Clip-Historie auf Basis der bestehenden EventSub-Chatverbindung.
+- Thread-sichere, strikt begrenzte Chat-Historie mit Suche, Pause, Auto-Scroll sowie Command-, Bot- und Systemfiltern.
+- Rollen, Badges, Twitch-Benutzerfarben und Twitch-Emote-Fragmente werden aus vorhandenen Chatdaten übernommen.
+- Vorbereitete und optional aktivierbare BTTV- und 7TV-Anbieter mit Cache, Fehler-Fallback und ohne API-Aufrufe im deaktivierten Zustand.
+- Gebündelte UI-Aktualisierung für stabilen Betrieb bei hohem Chat-Aufkommen.
+- Neue Tests für Filter, Limits, Pause, Konfigurationskorrektur, externe Emotes und hohe Nachrichtenmengen.
+
 ## 1.5.9
 
 - Neues Twitch-Minispiel Duel mit `!duel <user> <punkte|all>`, `!accept` und `!deny`.

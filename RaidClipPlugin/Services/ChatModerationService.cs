@@ -373,6 +373,19 @@ public sealed class ChatModerationService : IDisposable
                 .ToHashSet(StringComparer.OrdinalIgnoreCase)
             : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        var emotes = new List<ChatEmoteFragment>();
+        if (data.TryGetProperty("message", out var chatMessageData) &&
+            chatMessageData.TryGetProperty("fragments", out var fragments))
+        {
+            foreach (var fragment in fragments.EnumerateArray())
+            {
+                if (!fragment.TryGetProperty("emote", out var emote) || emote.ValueKind != JsonValueKind.Object) continue;
+                var id = emote.TryGetProperty("id", out var idValue) ? idValue.GetString() ?? "" : "";
+                var code = fragment.TryGetProperty("text", out var textValue) ? textValue.GetString() ?? "" : "";
+                if (id.Length > 0 && code.Length > 0) emotes.Add(new ChatEmoteFragment(id, code));
+            }
+        }
+
         var message = new ChatMessage
         {
             Id = data.GetProperty("message_id").GetString() ?? "",
@@ -385,7 +398,11 @@ public sealed class ChatModerationService : IDisposable
             IsVip = badgeIds.Contains("vip"),
             IsSubscriber = badgeIds.Contains("subscriber") ||
                            badgeIds.Contains("founder"),
-            IsBroadcaster = badgeIds.Contains("broadcaster")
+            IsBroadcaster = badgeIds.Contains("broadcaster"),
+            UserColor = data.TryGetProperty("color", out var color) ? color.GetString() ?? "" : "",
+            Badges = badgeIds.ToArray(),
+            Emotes = emotes,
+            IsBot = (data.GetProperty("chatter_user_id").GetString() ?? "").Equals(_moderatorId, StringComparison.Ordinal)
         };
 
         PublishDiagnostics(_diagnostics with
