@@ -610,15 +610,22 @@ public sealed partial class MainForm : Form
 
     private readonly DataGridView _chatGrid = new()
     {
+        Name = "ModerationChatGrid",
         Dock = DockStyle.Fill,
         ReadOnly = true,
         AllowUserToAddRows = false,
         AllowUserToDeleteRows = false,
         AllowUserToResizeRows = false,
+        AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
         AutoGenerateColumns = false,
         MultiSelect = false,
         SelectionMode = DataGridViewSelectionMode.FullRowSelect,
         RowHeadersVisible = false,
+        RowTemplate = new DataGridViewRow { Height = 26, MinimumHeight = 26 },
+        DefaultCellStyle = new DataGridViewCellStyle
+        {
+            WrapMode = DataGridViewTriState.False
+        },
         BackgroundColor = Color.White
     };
 
@@ -742,6 +749,8 @@ public sealed partial class MainForm : Form
         _skipUpdateButton.Click += (_, _) => SkipAvailableUpdate();
         _chatGrid.CellContentClick += async (_, args) =>
             await HandleChatGridActionAsync(args.RowIndex, args.ColumnIndex);
+        _chatGrid.VisibleChanged += (_, _) => TryScrollChatGridToLatest();
+        _chatGrid.SizeChanged += (_, _) => TryScrollChatGridToLatest();
         Shown += async (_, _) =>
         {
             try
@@ -2490,10 +2499,35 @@ public sealed partial class MainForm : Form
             _chatGrid.Rows.RemoveAt(0);
         }
 
-        if (_chatGrid.Rows.Count > 0)
+        TryScrollChatGridToLatest();
+    }
+
+    private void TryScrollChatGridToLatest()
+    {
+        if (IsDisposed || _chatGrid.IsDisposed || !_chatGrid.IsHandleCreated ||
+            !_chatGrid.Visible || _chatGrid.Rows.Count == 0)
+            return;
+
+        var headerHeight = _chatGrid.ColumnHeadersVisible
+            ? _chatGrid.ColumnHeadersHeight : 0;
+        var availableHeight = _chatGrid.ClientSize.Height - headerHeight;
+        if (availableHeight < Math.Max(1, _chatGrid.RowTemplate.Height))
+            return;
+
+        var target = _chatGrid.Rows.GetLastRow(DataGridViewElementStates.Visible);
+        if (target < 0) return;
+        try
         {
-            _chatGrid.FirstDisplayedScrollingRowIndex =
-                _chatGrid.Rows.Count - 1;
+            _chatGrid.FirstDisplayedScrollingRowIndex = target;
+        }
+        catch (InvalidOperationException)
+        {
+            // Beim Tabwechsel kann WinForms kurzzeitig keine Zeile darstellen.
+            // Auto-Scroll ist Komfortfunktion und darf den Chat nie beenden.
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            // Die Zeilenliste kann sich während eines Layoutdurchlaufs verändern.
         }
     }
 

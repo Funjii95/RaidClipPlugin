@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.6
+
+- Absturz beim automatischen Scrollen der Moderations-Chat-Tabelle behoben.
+- Auto-Scroll wird nur ausgeführt, wenn die Tabelle sichtbar ist und tatsächlich Platz für mindestens eine Zeile besitzt.
+- Kurzzeitige WinForms-Layoutzustände beim Tabwechsel oder Verkleinern werden defensiv abgefangen.
+- Moderations-Chat nutzt feste Zeilenhöhen und deaktivierten Textumbruch.
+- Regressionstest verarbeitet 300 Nachrichten bei unsichtbarer Tabelle und bestätigt das 250-Zeilen-Limit.
+
+
 ## 1.6.5
 
 - Texteingabe und Senden-Button sind im offiziellen Twitch-Chat und im separaten Popout wieder dauerhaft vorhanden.
