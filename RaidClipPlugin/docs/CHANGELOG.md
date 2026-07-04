@@ -1,5 +1,13 @@
 # Changelog
 
+
+## 1.6.1
+
+- Livechat-Funktionsleisten passen sich an Fensterbreite und Windows-Skalierung an; alle Einstellungsleisten bleiben scrollbar erreichbar.
+- 7TV nutzt Windows-kompatible GIF-Dateien inklusive statischem Fallback; BTTV erkennt animierte Emotes zuverlässig.
+- Discord-Clip-Embeds verwenden jetzt Titel, Link und Vorschaubild des tatsächlich veröffentlichten Twitch-Clips.
+- Leere Discord-Embed-Felder werden verhindert und durch einen sicheren Platzhalter ersetzt.
+
 ## 1.6.0
 
 - Neuer read-only Livechat-Reiter neben Log und Clip-Historie auf Basis der bestehenden EventSub-Chatverbindung.

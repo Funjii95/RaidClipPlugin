@@ -40,16 +40,21 @@ public sealed partial class MainForm
     private TabPage BuildLiveChatTab()
     {
         var page = new TabPage("Livechat") { BackColor = SurfaceColor, ForeColor = TextColor, Padding = new Padding(6) };
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, ColumnCount = 1 };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, ColumnCount = 1,
+            AutoScroll = true };
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        var top = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, Padding = new Padding(2) };
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var top = new FlowLayoutPanel { Name = "LiveChatPrimaryToolbar", Dock = DockStyle.Top,
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, AutoScroll = true,
+            WrapContents = true, Padding = new Padding(2), MinimumSize = new Size(0, 44) };
         top.Controls.AddRange(new Control[] { _liveChatEnabledCheck, _liveChatAutoScrollCheck,
             _liveChatPauseButton, _liveChatClearButton, _liveChatSearchBox,
             CreateSettingEditor("Max. Nachrichten", _liveChatMaxControl), _liveChatSaveButton });
-        var filters = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, Padding = new Padding(2) };
+        var filters = new FlowLayoutPanel { Name = "LiveChatFilterToolbar", Dock = DockStyle.Top,
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, AutoScroll = true,
+            WrapContents = true, Padding = new Padding(2), MinimumSize = new Size(0, 44) };
         filters.Controls.AddRange(new Control[] { _liveChatTimestampsCheck, _liveChatBadgesCheck,
             _liveChatUserColorsCheck, _liveChatHideCommandsCheck, _liveChatHideBotsCheck,
             _liveChatSystemCheck, _liveChatTwitchEmotesCheck, _liveChatBttvCheck,

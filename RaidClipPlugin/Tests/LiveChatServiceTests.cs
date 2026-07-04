@@ -126,6 +126,38 @@ public sealed class LiveChatServiceTests
         Assert.Equal(500, service.GetVisibleSnapshot("alpha").Count);
     }
 
+    [Fact]
+    public async Task SevenTvUsesGifAssetsThatWindowsFormsCanDisplay()
+    {
+        const string global = """
+        {"emotes":[{"name":"RainTime","data":{"animated":true,"host":{"url":"//cdn.7tv.app/emote/id","files":[{"name":"2x.webp","static_name":"2x_static.webp"},{"name":"2x.gif","static_name":"2x_static.gif"}]}}}]}
+        """;
+        using var http = new HttpClient(new JsonHandler(request =>
+            request.RequestUri!.AbsolutePath.Contains("emote-sets/global", StringComparison.Ordinal)
+                ? global : "{\"emote_set\":{\"emotes\":[]}}"));
+        var provider = new SevenTvEmoteProvider(http);
+        var result = await provider.LoadAsync("channel", CancellationToken.None);
+        var emote = Assert.Single(result).Value;
+        Assert.EndsWith("/2x.gif", emote.Url, StringComparison.Ordinal);
+        Assert.EndsWith("/2x_static.gif", emote.StaticUrl, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task BttvRecognizesCurrentAnimatedFlagAndKeepsDisplayFallback()
+    {
+        const string global = """
+        [{"id":"abc","code":"Dance","imageType":"gif","animated":true}]
+        """;
+        using var http = new HttpClient(new JsonHandler(request =>
+            request.RequestUri!.AbsolutePath.Contains("emotes/global", StringComparison.Ordinal)
+                ? global : "{\"channelEmotes\":[],\"sharedEmotes\":[]}"));
+        var provider = new BttvEmoteProvider(http);
+        var result = await provider.LoadAsync("channel", CancellationToken.None);
+        var emote = Assert.Single(result).Value;
+        Assert.True(emote.Animated);
+        Assert.Equal(emote.Url, emote.StaticUrl);
+    }
+
     private static LiveChatService Create(LiveChatConfig config) =>
         new(config, "bot", Array.Empty<string>(), Registry());
 
@@ -138,6 +170,16 @@ public sealed class LiveChatServiceTests
 
     private static ChatMessage Message(string id, string text, string login = "viewer") => new()
     { Id = id, UserId = login, UserLogin = login, UserName = login, Text = text, ReceivedAt = DateTimeOffset.Now };
+
+    private sealed class JsonHandler(Func<HttpRequestMessage, string> content) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(content(request), System.Text.Encoding.UTF8, "application/json")
+            });
+    }
 
     private sealed class FakeProvider(string name, bool fail = false) : IExternalEmoteProvider
     {

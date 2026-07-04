@@ -57,20 +57,7 @@ public sealed class DiscordClipService : IDisposable
         if (!_config.Enabled)
             return new DiscordClipPostResult(deliveries);
 
-        var enabledChannels = _config.Channels
-            .Where(item => item.Enabled)
-            .ToArray();
-        if (enabledChannels.Length == 0)
-        {
-            deliveries.Add(new DiscordClipDelivery(
-                "", false,
-                "Discord ist aktiviert, aber es ist kein Ziel-Channel aktiv."));
-            Console.WriteLine(
-                "Discord-Clip übersprungen: kein aktiver Ziel-Channel.");
-            return new DiscordClipPostResult(deliveries);
-        }
-
-        foreach (var channel in enabledChannels)
+        foreach (var channel in _config.Channels.Where(item => item.Enabled))
         {
             try
             {
@@ -85,8 +72,6 @@ public sealed class DiscordClipService : IDisposable
                         string.IsNullOrWhiteSpace(webhook))
                         throw new InvalidOperationException(
                             "Für diesen Channel ist keine Webhook-URL gespeichert.");
-                    Console.WriteLine(
-                        $"Sende Discord-Clip über Webhook für Channel {channel.ChannelId}.");
                     await _client.SendWebhookAsync(
                         webhook, payload, cancellationToken);
                 }
@@ -169,26 +154,32 @@ public sealed class DiscordClipService : IDisposable
 
         var fields = new object[]
         {
-            new { name = "Erstellt von", value =
-                ClipTemplateService.SanitizeDiscordUserContent(context.Username), inline = true },
-            new { name = "Spiel", value =
-                ClipTemplateService.SanitizeDiscordUserContent(context.Game), inline = true },
-            new { name = "Twitch-Kanal", value =
-                ClipTemplateService.SanitizeDiscordUserContent(context.Channel), inline = true },
+            new { name = "Erstellt von", value = EmbedValue(context.Username), inline = true },
+            new { name = "Spiel", value = EmbedValue(context.Game), inline = true },
+            new { name = "Twitch-Kanal", value = EmbedValue(context.Channel), inline = true },
             new { name = "Uhrzeit", value =
                 context.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss"), inline = true }
         };
+        var clipTitle = string.IsNullOrWhiteSpace(context.Clip.Title)
+            ? context.RequestedTitle : context.Clip.Title;
+        clipTitle = ClipTemplateService.SanitizeDiscordUserContent(clipTitle);
         var embed = new Dictionary<string, object>
         {
-            ["title"] = "🎬 Neuer Twitch-Clip",
-            ["description"] = message,
-            ["url"] = context.Clip.Url,
+            ["title"] = Limit("🎬 " + (string.IsNullOrWhiteSpace(clipTitle)
+                ? "Neuer Twitch-Clip" : clipTitle), 256),
             ["color"] = ParseColor(config.EmbedColor),
             ["fields"] = fields
         };
-        if (config.UseThumbnail &&
-            !string.IsNullOrWhiteSpace(context.ThumbnailUrl))
-            embed["thumbnail"] = new { url = context.ThumbnailUrl };
+        if (!string.IsNullOrWhiteSpace(message))
+            embed["description"] = message;
+        var clipUrl = NormalizeHttpUrl(context.Clip.Url);
+        if (clipUrl.Length > 0)
+            embed["url"] = clipUrl;
+        var thumbnailUrl = NormalizeHttpUrl(context.Clip.ThumbnailUrl);
+        if (thumbnailUrl.Length == 0)
+            thumbnailUrl = NormalizeHttpUrl(context.ThumbnailUrl);
+        if (config.UseThumbnail && thumbnailUrl.Length > 0)
+            embed["thumbnail"] = new { url = thumbnailUrl };
         if (!string.IsNullOrWhiteSpace(config.FooterText))
             embed["footer"] = new { text = Limit(config.FooterText, 2048) };
         return new
@@ -198,6 +189,17 @@ public sealed class DiscordClipService : IDisposable
             allowed_mentions = allowedMentions
         };
     }
+
+    private static string EmbedValue(string? value)
+    {
+        var safe = ClipTemplateService.SanitizeDiscordUserContent(value ?? "").Trim();
+        return string.IsNullOrWhiteSpace(safe) ? "–" : Limit(safe, 1024);
+    }
+
+    private static string NormalizeHttpUrl(string? value) =>
+        Uri.TryCreate((value ?? "").Trim(), UriKind.Absolute, out var uri) &&
+        (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
+            ? uri.AbsoluteUri : "";
 
     private static int ParseColor(string value)
     {

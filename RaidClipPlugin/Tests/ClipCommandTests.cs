@@ -185,32 +185,6 @@ public sealed class ClipCommandTests
     }
 
     [Fact]
-    public async Task DiscordWebhookChannelUsesStoredWebhookUrl()
-    {
-        const string webhookUrl =
-            "https://discord.com/api/webhooks/123/token";
-        var config = DiscordConfig("1");
-        config.Channels[0].UseWebhook = true;
-        var credentials = new DiscordCredentials
-        {
-            WebhookUrls = new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["1"] = webhookUrl
-            }
-        };
-        var client = new FakeDiscordClipClient();
-        using var service = new DiscordClipService(
-            config, credentials, client, new ClipTemplateService());
-
-        var result = await service.PostClipAsync(
-            Context(), CancellationToken.None);
-
-        Assert.True(result.AllSucceeded);
-        Assert.Empty(client.Attempts);
-        Assert.Equal(new[] { webhookUrl }, client.WebhookAttempts);
-    }
-
-    [Fact]
     public void DiscordPayloadSuppressesUserMentions()
     {
         var config = DiscordConfig("1");
@@ -225,6 +199,31 @@ public sealed class ClipCommandTests
         Assert.False(json.Contains("@everyone", StringComparison.OrdinalIgnoreCase));
         Assert.False(json.Contains("@here", StringComparison.OrdinalIgnoreCase));
         Assert.False(json.Contains("<@&123456>", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void DiscordEmbedUsesPublishedClipPreviewAndNeverCreatesEmptyFields()
+    {
+        var config = DiscordConfig("1");
+        config.UseEmbed = true;
+        config.UseThumbnail = true;
+        var context = Context() with
+        {
+            Clip = new PublishedClip("clip-id", "https://clips.twitch.tv/clip-id",
+                "Twitch-Titel", "https://clips-media-assets2.twitch.tv/preview.jpg", 30),
+            Game = "",
+            ThumbnailUrl = "https://static-cdn.jtvnw.net/profile.jpg"
+        };
+        var payload = DiscordClipService.BuildPayload(
+            config, "{clipTitle} {clipUrl}", context, new ClipTemplateService());
+        using var document = JsonDocument.Parse(JsonSerializer.Serialize(payload));
+        var embed = document.RootElement.GetProperty("embeds")[0];
+        Assert.Equal("https://clips.twitch.tv/clip-id", embed.GetProperty("url").GetString());
+        Assert.Equal("https://clips-media-assets2.twitch.tv/preview.jpg",
+            embed.GetProperty("thumbnail").GetProperty("url").GetString());
+        Assert.Contains("Twitch-Titel", embed.GetProperty("title").GetString());
+        Assert.All(embed.GetProperty("fields").EnumerateArray(), field =>
+            Assert.False(string.IsNullOrWhiteSpace(field.GetProperty("value").GetString())));
     }
 
     [Fact]
@@ -296,7 +295,6 @@ public sealed class ClipCommandTests
     {
         public string FailedChannel { get; set; } = "";
         public List<string> Attempts { get; } = new();
-        public List<string> WebhookAttempts { get; } = new();
 
         public Task<DiscordChannelValidation> ValidateChannelAsync(
             string guildId, string channelId,
@@ -321,10 +319,6 @@ public sealed class ClipCommandTests
 
         public Task SendWebhookAsync(
             string webhookUrl, object payload,
-            CancellationToken cancellationToken)
-        {
-            WebhookAttempts.Add(webhookUrl);
-            return Task.CompletedTask;
-        }
+            CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

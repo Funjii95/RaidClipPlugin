@@ -6,7 +6,7 @@ using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
-public sealed record ExternalEmote(string Code, string Url, bool Animated, string Provider);
+public sealed record ExternalEmote(string Code, string Url, bool Animated, string Provider, string StaticUrl = "");
 
 public interface IExternalEmoteProvider
 {
@@ -43,8 +43,10 @@ public sealed class BttvEmoteProvider : IExternalEmoteProvider
             var id = item.TryGetProperty("id", out var idValue) ? idValue.GetString() ?? "" : "";
             var code = item.TryGetProperty("code", out var codeValue) ? codeValue.GetString() ?? "" : "";
             if (id.Length == 0 || code.Length == 0) continue;
-            var animated = item.TryGetProperty("imageType", out var type) && type.GetString() == "gif";
-            result[code] = new ExternalEmote(code, $"https://cdn.betterttv.net/emote/{id}/2x", animated, "BTTV");
+            var animated = (item.TryGetProperty("imageType", out var type) && type.GetString() == "gif") ||
+                (item.TryGetProperty("animated", out var animatedValue) && animatedValue.GetBoolean());
+            var imageUrl = $"https://cdn.betterttv.net/emote/{id}/2x";
+            result[code] = new ExternalEmote(code, imageUrl, animated, "BTTV", imageUrl);
         }
     }
 }
@@ -89,8 +91,28 @@ public sealed class SevenTvEmoteProvider : IExternalEmoteProvider
             if (baseUrl.StartsWith("//")) baseUrl = "https:" + baseUrl;
             if (baseUrl.Length == 0) continue;
             var animated = data.TryGetProperty("animated", out var animatedValue) && animatedValue.GetBoolean();
-            result[code] = new ExternalEmote(code, baseUrl + "/2x.webp", animated, "7TV");
+            var animatedFile = FindGifFile(host, "name", "2x.gif");
+            var staticFile = FindGifFile(host, "static_name", "2x_static.gif");
+            if (animatedFile.Length == 0) animatedFile = animated ? staticFile : "";
+            if (staticFile.Length == 0) staticFile = animatedFile;
+            if (animatedFile.Length == 0) continue;
+            result[code] = new ExternalEmote(code, baseUrl + "/" + animatedFile,
+                animated, "7TV", baseUrl + "/" + staticFile);
         }
+    }
+
+    private static string FindGifFile(JsonElement host, string property, string preferred)
+    {
+        if (!host.TryGetProperty("files", out var files) || files.ValueKind != JsonValueKind.Array)
+            return "";
+        var candidates = files.EnumerateArray()
+            .Select(file => file.TryGetProperty(property, out var value) ? value.GetString() ?? "" : "")
+            .Where(name => name.EndsWith(".gif", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return candidates.FirstOrDefault(name => name.Equals(preferred, StringComparison.OrdinalIgnoreCase))
+            ?? candidates.FirstOrDefault(name => name.StartsWith("2x", StringComparison.OrdinalIgnoreCase))
+            ?? candidates.FirstOrDefault() ?? "";
     }
 }
 
@@ -197,9 +219,13 @@ public sealed class ChatMessageRenderer
             ExternalEmote? emote = null;
             if (config.EnableTwitchEmotes) native.TryGetValue(tokenText, out emote);
             if (emote is null) external.TryGetValue(tokenText, out emote);
-            if (emote is null || emote.Animated && !config.EnableAnimatedEmotes)
+            if (emote is null)
             { row.Controls.Add(TextLabel(tokenText + " ", Color.Gainsboro)); continue; }
-            var image = await _cache.GetAsync(emote.Url, config.CacheEmotes, token);
+            var imageUrl = emote.Animated && !config.EnableAnimatedEmotes
+                ? emote.StaticUrl : emote.Url;
+            if (string.IsNullOrWhiteSpace(imageUrl))
+            { row.Controls.Add(TextLabel(tokenText + " ", Color.Gainsboro)); continue; }
+            var image = await _cache.GetAsync(imageUrl, config.CacheEmotes, token);
             if (image is null) { row.Controls.Add(TextLabel(tokenText + " ", Color.Gainsboro)); continue; }
             row.Controls.Add(new PictureBox { Width = config.EmoteSize, Height = config.EmoteSize,
                 SizeMode = PictureBoxSizeMode.Zoom, Image = image, Margin = new Padding(1) });

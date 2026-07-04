@@ -691,6 +691,7 @@ public sealed partial class MainForm : Form
         DoubleBuffered = true;
 
         BuildLayout();
+        ApplyVisibilitySafeguards(this);
         InitializeMusicRequestEvents();
         InitializeStreamCheckEvents();
         InitializeClipDiscordEvents();
@@ -1765,7 +1766,7 @@ public sealed partial class MainForm : Form
         historyLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 76));
         historyLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         var historyOptions = CreateMinigameFlow();
-        historyOptions.AutoScroll = false;
+        historyOptions.AutoScroll = true;
         historyOptions.Controls.Add(_historyEnabledCheck);
         historyOptions.Controls.Add(CreateSettingEditor(
             "Max. Einträge", _historyLimitControl));
