@@ -113,7 +113,8 @@ public sealed class ConfigurationService
             StreamCheck = config.StreamCheck,
             ClipCommand = config.ClipCommand,
             DiscordClips = config.DiscordClips,
-            Giveaways = config.Giveaways
+            Giveaways = config.Giveaways,
+            ModuleHealth = config.ModuleHealth
         };
 
         File.WriteAllText(
@@ -364,6 +365,8 @@ public sealed class ConfigurationService
                 config.DiscordClips = settings.DiscordClips;
             if (settings.Giveaways is not null)
                 config.Giveaways = settings.Giveaways;
+            if (settings.ModuleHealth is not null)
+                config.ModuleHealth = settings.ModuleHealth;
         }
         catch (Exception exception)
         {
@@ -395,6 +398,15 @@ public sealed class ConfigurationService
         config.ClipCommand ??= new ClipCommandConfig();
         config.DiscordClips ??= new DiscordClipsConfig();
         config.Giveaways ??= new GiveawayConfig();
+        config.ModuleHealth ??= new ModuleHealthConfig();
+        config.ModuleHealth.IntervalSeconds = Math.Clamp(
+            config.ModuleHealth.IntervalSeconds, 5, 600);
+        config.ModuleHealth.MaxRestartAttempts = Math.Clamp(
+            config.ModuleHealth.MaxRestartAttempts, 1, 20);
+        config.ModuleHealth.RestartCooldownSeconds = Math.Clamp(
+            config.ModuleHealth.RestartCooldownSeconds, 5, 3600);
+        config.ModuleHealth.RestartWindowMinutes = Math.Clamp(
+            config.ModuleHealth.RestartWindowMinutes, 1, 60);
         config.LiveChat = LiveChatService.NormalizeConfig(config.LiveChat);
         config.Duel ??= new DuelConfig();
         NormalizeClipSettings(config.ClipCommand, config.DiscordClips);
@@ -1272,5 +1284,6 @@ public sealed class ConfigurationService
         public ClipCommandConfig? ClipCommand { get; set; }
         public DiscordClipsConfig? DiscordClips { get; set; }
         public GiveawayConfig? Giveaways { get; set; }
+        public ModuleHealthConfig? ModuleHealth { get; set; }
     }
 }

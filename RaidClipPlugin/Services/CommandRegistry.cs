@@ -63,14 +63,14 @@ public sealed class CommandRegistry
         Add("points.give", "!give", null, "points", "Punkte", "Punkte schenken",
             "Schenkt einem Zuschauer eigene Punkte.", "!give @name <Betrag>", "!give @name 100", m.PointsEnabled, order:23);
         Add("points.add", "!addpoints", null, "points", "Punkte", "Punkte erzeugen",
-            "Erzeugt Punkte für einen Nutzer.", "!addpoints @name <Betrag>", "!addpoints @name 100",
+            "Erzeugt Punkte für einen Nutzer oder alle gespeicherten Nutzer.", "!addpoints <@name|all> <Betrag>", "!addpoints all 100",
             m.PointsEnabled, CommandRole.Moderator, order:24);
         Add("points.remove", "!removepoints", null, "points", "Punkte", "Punkte zurücksetzen",
             "Setzt den Punktestand eines Nutzers auf null.", "!removepoints @name", "!removepoints @name",
             m.PointsEnabled, CommandRole.Broadcaster, order:25);
         Add("points.lurk", "!lurk", new[]{"!unlurk"}, "points", "Punkte", "Lurk",
             "Wechselt den Anwesenheitsstatus.", "!lurk", "!lurk", m.PointsEnabled, order:26);
-        Add("casino.gamble", "!gamble", null, "casino", "Casino", "Gamble",
+        Add("casino.gamble", "!gamble", new[]{"!gambel"}, "casino", "Casino", "Gamble",
             "Würfelt mit einem Punkteinsatz.", "!gamble <Betrag|all>", "!gamble 100",
             m.Enabled && m.GambleEnabled, userCooldown:m.GambleCooldownSeconds, cost:m.MinimumBet, order:40);
         Add("casino.jackpot", "!jackpot", null, "casino", "Casino", "Jackpot",

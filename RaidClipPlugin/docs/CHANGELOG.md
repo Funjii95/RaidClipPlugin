@@ -1,3 +1,14 @@
+## 1.6.8
+
+- Zentraler Healthcheck für Twitch Chat, Command-Dispatcher, Punktesystem, Minigame und Gamble.
+- Automatischer Minigame-Neustart ohne doppelte Chat-Eventhandler, begrenzt durch Restart-Cooldown und Neustartfenster.
+- Neue GUI-Statusanzeige sowie „Module prüfen“ und „Module neu starten“.
+- Healthcheck-Intervall, Auto-Restart, maximale Neustarts, Restart-Cooldown und Gamble-Prüfung sind konfigurierbar.
+- `!gambel` wird als Alias für `!gamble` akzeptiert.
+- Unbekannte Commands werden nicht mehr fälschlich als deaktiviertes Modul gemeldet.
+- Gamble-Fehler werden mit Stacktrace protokolliert und freundlich im Chat beantwortet, ohne das Modul abzuschalten.
+- Minigame-Heartbeat, Task-Ausfallerkennung und sichere manuelle Wiederherstellung ergänzt.
+
 ## 1.6.7
 
 - Behebt den Überlauf bei `!gamble all` und großen Punkteständen.

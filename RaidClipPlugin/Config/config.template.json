@@ -393,6 +393,15 @@
     "AlreadyPendingDuelMessage": "@{user}, du hast bereits eine offene Duel-Anfrage.",
     "InvalidBetMessage": "@{user}, bitte nutze: {duelCommand} <user> <punkte>"
   },
+  "ModuleHealth": {
+    "Enabled": true,
+    "IntervalSeconds": 30,
+    "AutoRestartEnabled": true,
+    "MaxRestartAttempts": 3,
+    "RestartCooldownSeconds": 30,
+    "RestartWindowMinutes": 5,
+    "GambleHealthcheckEnabled": true
+  },
   "LiveChat": {
     "Enabled": true,
     "ShowTimestamps": true,

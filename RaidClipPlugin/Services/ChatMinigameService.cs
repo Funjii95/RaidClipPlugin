@@ -41,6 +41,25 @@ public sealed class ChatMinigameService : IDisposable
         new(StringComparer.Ordinal);
     private DateTimeOffset _lastGlobalCommand = DateTimeOffset.MinValue;
     private bool _disposed;
+    private volatile bool _isRunning;
+    private DateTimeOffset _lastHeartbeatUtc = DateTimeOffset.MinValue;
+    private string? _lastRuntimeError;
+
+    public bool IsRunning => _isRunning;
+    public DateTimeOffset LastHeartbeatUtc => _lastHeartbeatUtc;
+    public string? LastRuntimeError => _lastRuntimeError;
+    public bool IsGambleReady => _isRunning && _config.Enabled &&
+        _config.GambleEnabled && !_disposed;
+
+    public static string NormalizeIncomingCommand(string command) =>
+        (command ?? "").Trim().ToLowerInvariant() switch
+        {
+            "!gambel" => "!gamble",
+            _ => (command ?? "").Trim().ToLowerInvariant()
+        };
+
+    private void TouchHeartbeat() =>
+        _lastHeartbeatUtc = DateTimeOffset.UtcNow;
 
     private long MaximumPoints => _config.MaximumAccountEnabled
         ? _config.MaximumAccountPoints
@@ -187,7 +206,42 @@ public sealed class ChatMinigameService : IDisposable
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        await RunPointAwardLoopAsync(cancellationToken);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _isRunning = true;
+        _lastRuntimeError = null;
+        TouchHeartbeat();
+        Console.WriteLine("Chat-Minigame Modul gestartet.");
+        try
+        {
+            await Task.WhenAll(
+                RunPointAwardLoopAsync(cancellationToken),
+                RunHeartbeatLoopAsync(cancellationToken));
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _lastRuntimeError = exception.ToString();
+            Console.WriteLine("Chat-Minigame Modul ausgefallen: " + exception);
+            throw;
+        }
+        finally
+        {
+            _isRunning = false;
+            Console.WriteLine("Chat-Minigame Modul gestoppt.");
+        }
+    }
+
+    private async Task RunHeartbeatLoopAsync(
+        CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            TouchHeartbeat();
+            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+        }
     }
 
     public async Task ProcessMessageAsync(
@@ -196,6 +250,7 @@ public sealed class ChatMinigameService : IDisposable
     {
         try
         {
+            TouchHeartbeat();
             if (!ShouldRun(_config) && _heist is null && _duel is null && !_commandsConfig.Enabled)
             {
                 return;
@@ -249,9 +304,10 @@ public sealed class ChatMinigameService : IDisposable
         }
         catch (Exception exception)
         {
+            _lastRuntimeError = exception.ToString();
             Console.WriteLine(
                 "Minigame-Chatnachricht konnte nicht verarbeitet werden: " +
-                exception.Message);
+                exception);
         }
     }
 
@@ -366,7 +422,8 @@ public sealed class ChatMinigameService : IDisposable
             var parts = message.Text.Trim().Split(' ',
                 StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0) return;
-            var command = parts[0].ToLowerInvariant();
+            var command = NormalizeIncomingCommand(parts[0]);
+            parts[0] = command;
 
             if (_commandsConfig.Enabled &&
                 command == CommandRegistry.Normalize(_commandsConfig.Command))
@@ -387,10 +444,18 @@ public sealed class ChatMinigameService : IDisposable
                 return;
             }
 
+            if (!IsPointSystemCommand(_config, command) &&
+                !IsGameCommand(command))
+            {
+                Console.WriteLine(
+                    $"Unbekannter Minigame-Command {command} ignoriert.");
+                return;
+            }
+
             if (!IsCommandModuleEnabled(_config, command))
             {
                 Console.WriteLine(
-                    $"Command {command} ignoriert: zuständiges Modul ist deaktiviert.");
+                    $"Command {command} ignoriert: Modul ist laut Konfiguration deaktiviert.");
                 return;
             }
 
@@ -724,6 +789,7 @@ public sealed class ChatMinigameService : IDisposable
             }
 
             if (command != "!gamble" || !_config.GambleEnabled) return;
+            Console.WriteLine($"!gamble Command empfangen von {message.UserName}.");
             if (!await TryEnterCooldownAsync(message.UserId, _gambleCooldowns,
                 _config.GambleCooldownSeconds, cancellationToken)) return;
             if (parts.Length != 2)
@@ -768,6 +834,7 @@ public sealed class ChatMinigameService : IDisposable
             var gambleResult = await ApplyCasinoAsync(message, "Gamble", gambleStake,
                 gamblePayout, cancellationToken, forceJackpot: roll == 100);
             if (!gambleResult.Success) return;
+            Console.WriteLine($"!gamble erfolgreich verarbeitet für {message.UserName}; Stand {gambleResult.Balance}.");
             if (roll == 100 && gambleResult.JackpotWon > 0)
             {
                 Console.WriteLine(
@@ -793,7 +860,19 @@ public sealed class ChatMinigameService : IDisposable
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         catch (Exception exception)
-        { Console.WriteLine("Minigame-Command fehlgeschlagen: " + exception.Message); }
+        {
+            _lastRuntimeError = exception.ToString();
+            TouchHeartbeat();
+            Console.WriteLine("Minigame-Command fehlgeschlagen: " + exception);
+            var failedCommand = message.Text.Trim().Split(' ',
+                StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
+            if (NormalizeIncomingCommand(failedCommand) == "!gamble")
+            {
+                await TrySendChatAsync(
+                    $"@{message.UserName}, Gamble ist gerade kurz nicht verfügbar. Bitte versuche es erneut.",
+                    cancellationToken);
+            }
+        }
     }
 
     public async Task ProcessPassiveEventAsync(
@@ -1374,6 +1453,7 @@ public sealed class ChatMinigameService : IDisposable
             _heist.DisposeAsync().AsTask().GetAwaiter().GetResult();
         if (_duel is not null)
             _duel.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        _isRunning = false;
         _cooldownLock.Dispose();
         _disposed = true;
     }

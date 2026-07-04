@@ -5,6 +5,7 @@ namespace RaidClipPlugin;
 
 public sealed partial class MainForm
 {
+    private ChatConnectionDiagnostics? _lastChatConnectionStatus;
     private readonly GroupBox _chatDiagnosticsGroup = new()
     {
         Text = "Chatbot-Diagnose",
@@ -174,6 +175,7 @@ public sealed partial class MainForm
 
     private void UpdateChatConnectionDiagnostics(ChatConnectionDiagnostics status)
     {
+        _lastChatConnectionStatus = status;
         RunOnUiThread(() =>
         {
             _chatWebSocketDiagnostic.Text = status.WebSocketConnected
@@ -208,6 +210,7 @@ public sealed partial class MainForm
 
     private void ResetChatDiagnosticConnection()
     {
+        _lastChatConnectionStatus = null;
         RunOnUiThread(() =>
         {
             _chatWebSocketDiagnostic.Text = "EventSub WebSocket: getrennt";

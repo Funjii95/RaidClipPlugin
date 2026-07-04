@@ -564,6 +564,36 @@ public sealed partial class MainForm : Form
         Padding = new Padding(4)
     };
 
+    private readonly Label _moduleHealthSummaryLabel = new()
+    {
+        Text = "Healthcheck: Nicht gestartet",
+        AutoSize = true,
+        MaximumSize = new Size(720, 0),
+        ForeColor = InactiveColor,
+        Margin = new Padding(8, 12, 8, 4)
+    };
+    private readonly Label _moduleHealthLastCheckLabel = new()
+    {
+        Text = "Letzte Prüfung: –",
+        AutoSize = true,
+        ForeColor = InactiveColor,
+        Margin = new Padding(8, 12, 8, 4)
+    };
+    private readonly Button _checkModulesButton = NewActionButton("Module prüfen");
+    private readonly Button _restartModulesButton = NewActionButton("Module neu starten");
+    private readonly CheckBox _healthcheckEnabledCheck = NewCheck(
+        "Healthcheck aktivieren", true);
+    private readonly CheckBox _healthAutoRestartCheck = NewCheck(
+        "Auto-Restart aktivieren", true);
+    private readonly CheckBox _gambleHealthcheckCheck = NewCheck(
+        "Gamble überwachen", true);
+    private readonly NumericUpDown _healthIntervalControl =
+        CreateIntegerControl(30, 5, 600);
+    private readonly NumericUpDown _healthMaxRestartsControl =
+        CreateIntegerControl(3, 1, 20);
+    private readonly NumericUpDown _healthRestartCooldownControl =
+        CreateIntegerControl(30, 5, 3600);
+
     private readonly Button _minigameNavButton = CreateNavigationTile(
         "🎲  Minigame",
         "Punkte, Commands und Gamble");
@@ -652,6 +682,9 @@ public sealed partial class MainForm : Form
     private Task? _minigameEventTask;
     private Task? _playerTask;
     private Task? _eventSubTask;
+    private ModuleHealthService? _moduleHealth;
+    private Task? _moduleHealthTask;
+    private CancellationTokenSource? _minigameRunCts;
     private UpdateInfo? _availableUpdate;
     private bool _updateBusy;
     private AppConfig? _activeConfig;
@@ -727,6 +760,8 @@ public sealed partial class MainForm : Form
         _saveSettingsButton.Click += (_, _) => SaveSettingsFromControls();
         _saveModerationSettingsButton.Click += (_, _) => SaveSettingsFromControls();
         _saveMinigameSettingsButton.Click += (_, _) => SaveSettingsFromControls();
+        _checkModulesButton.Click += async (_, _) => await CheckModulesNowAsync();
+        _restartModulesButton.Click += async (_, _) => await RestartModulesNowAsync();
         _addPointsBlacklistButton.Click += (_, _) => AddPointsBlacklistEntry();
         _removePointsBlacklistButton.Click += (_, _) =>
             RemoveSelectedPointsBlacklistEntry();
@@ -1604,6 +1639,19 @@ public sealed partial class MainForm : Form
         overviewFlow.Controls.Add(_minigameEnabledCheck);
         overviewFlow.Controls.Add(_pointsEnabledCheck);
         overviewFlow.Controls.Add(_jackpotValueLabel);
+        overviewFlow.Controls.Add(_healthcheckEnabledCheck);
+        overviewFlow.Controls.Add(_healthAutoRestartCheck);
+        overviewFlow.Controls.Add(_gambleHealthcheckCheck);
+        overviewFlow.Controls.Add(CreateSettingEditor(
+            "Healthcheck-Intervall (Sek.)", _healthIntervalControl));
+        overviewFlow.Controls.Add(CreateSettingEditor(
+            "Max. Neustarts", _healthMaxRestartsControl));
+        overviewFlow.Controls.Add(CreateSettingEditor(
+            "Restart-Cooldown (Sek.)", _healthRestartCooldownControl));
+        overviewFlow.Controls.Add(_moduleHealthSummaryLabel);
+        overviewFlow.Controls.Add(_moduleHealthLastCheckLabel);
+        overviewFlow.Controls.Add(_checkModulesButton);
+        overviewFlow.Controls.Add(_restartModulesButton);
         overviewFlow.Controls.Add(_saveMinigameSettingsButton);
 
         var pointsFlow = CreateMinigameFlow();
@@ -2265,7 +2313,10 @@ public sealed partial class MainForm : Form
                         _minigame.ProcessMessageAsync(
                             message,
                             cancellationToken);
-                    _minigameTask = _minigame.RunAsync(cancellationToken);
+                    _minigameRunCts = CancellationTokenSource
+                        .CreateLinkedTokenSource(cancellationToken);
+                    _minigameTask = _minigame.RunAsync(
+                        _minigameRunCts.Token);
                     ObserveMinigameTask(_minigameTask);
 
                 }
@@ -2277,6 +2328,15 @@ public sealed partial class MainForm : Form
                 _chatModerationTask =
                     _chatModeration.RunAsync(cancellationToken);
                 ObserveChatModerationTask(_chatModerationTask);
+
+                if (config.ModuleHealth.Enabled)
+                {
+                    StartModuleHealthService(config, cancellationToken);
+                }
+                else
+                {
+                    UpdateModuleHealthDisplay(Array.Empty<ModuleHealthStatus>());
+                }
 
                 if ((config.Minigame.PointsEnabled &&
                      (config.Minigame.FollowPointsEnabled ||
@@ -2697,20 +2757,220 @@ public sealed partial class MainForm : Form
         _moderationStatusLabel.ForeColor = color;
     }
 
+    private void StartModuleHealthService(
+        AppConfig config,
+        CancellationToken cancellationToken)
+    {
+        _moduleHealth?.Dispose();
+        _moduleHealth = new ModuleHealthService(config.ModuleHealth);
+        _moduleHealth.StatusChanged += UpdateModuleHealthDisplay;
+
+        _moduleHealth.Register("Twitch Chat", _ =>
+        {
+            var diagnostics = _lastChatConnectionStatus;
+            var running = _chatModerationTask is { IsCompleted: false } &&
+                diagnostics is { WebSocketConnected: true, SubscriptionEnabled: true };
+            return Task.FromResult(new ModuleProbeResult(
+                true, running, running ? null :
+                diagnostics?.LastError ?? "Chat-WebSocket oder Subscription ist nicht aktiv"));
+        });
+        _moduleHealth.Register("Commands", _ =>
+        {
+            var running = _chatModerationTask is { IsCompleted: false } &&
+                _minigame is not null;
+            return Task.FromResult(new ModuleProbeResult(
+                true, running, running ? null : "Command-Dispatcher ist nicht erreichbar"));
+        });
+        _moduleHealth.Register("Punkte", async token =>
+        {
+            if (!config.Minigame.PointsEnabled)
+                return ModuleProbeResult.Disabled();
+            await _viewerPoints.CountAsync(token);
+            return ModuleProbeResult.Healthy();
+        });
+        _moduleHealth.Register("Minigame", _ =>
+        {
+            var enabled = ChatMinigameService.ShouldRun(config.Minigame) ||
+                config.Heist.Enabled || config.Duel.Enabled;
+            if (!enabled) return Task.FromResult(ModuleProbeResult.Disabled());
+            var heartbeatLimit = TimeSpan.FromSeconds(Math.Max(
+                15, config.ModuleHealth.IntervalSeconds * 2));
+            var running = _minigame is { IsRunning: true } &&
+                _minigameTask is { IsCompleted: false } &&
+                DateTimeOffset.UtcNow - _minigame.LastHeartbeatUtc <= heartbeatLimit;
+            return Task.FromResult(new ModuleProbeResult(
+                true, running, running ? null :
+                _minigame?.LastRuntimeError ?? "Minigame-Task oder Heartbeat ist ausgefallen"));
+        }, RestartMinigameRuntimeAsync);
+        _moduleHealth.Register("Gamble", _ =>
+        {
+            var enabled = config.ModuleHealth.GambleHealthcheckEnabled &&
+                config.Minigame.Enabled && config.Minigame.GambleEnabled;
+            if (!enabled) return Task.FromResult(ModuleProbeResult.Disabled());
+            var running = _minigame?.IsGambleReady == true &&
+                _minigameTask is { IsCompleted: false };
+            return Task.FromResult(new ModuleProbeResult(
+                true, running, running ? null :
+                _minigame?.LastRuntimeError ?? "Gamble ist nicht bereit"));
+        });
+
+        _moduleHealthTask = _moduleHealth.RunAsync(cancellationToken);
+        ObserveModuleHealthTask(_moduleHealthTask);
+        AppendLog("Modul-Healthcheck gestartet.");
+    }
+
+    private async Task RestartMinigameRuntimeAsync(
+        CancellationToken cancellationToken)
+    {
+        if (_shutdown is null || _shutdown.IsCancellationRequested ||
+            _minigame is null)
+            throw new InvalidOperationException("Minigame kann derzeit nicht neu gestartet werden.");
+
+        var previousCts = _minigameRunCts;
+        previousCts?.Cancel();
+        if (_minigameTask is not null)
+        {
+            try
+            {
+                await _minigameTask.WaitAsync(TimeSpan.FromSeconds(5),
+                    cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+            }
+        }
+        previousCts?.Dispose();
+        _minigameRunCts = CancellationTokenSource.CreateLinkedTokenSource(
+            _shutdown.Token);
+        _minigameTask = _minigame.RunAsync(_minigameRunCts.Token);
+        ObserveMinigameTask(_minigameTask);
+        SetMinigameStatus("Neu gestartet · überwacht", ActiveColor);
+        AppendLog("Minigame-Modul wurde ohne neue Chat-Eventhandler neu gestartet.");
+    }
+
+    private async Task CheckModulesNowAsync()
+    {
+        if (_moduleHealth is null || _shutdown is null)
+        {
+            _moduleHealthSummaryLabel.Text = "Healthcheck: Plugin ist nicht gestartet";
+            return;
+        }
+        _checkModulesButton.Enabled = false;
+        try
+        {
+            AppendLog("Manueller Modul-Healthcheck gestartet.");
+            await _moduleHealth.CheckNowAsync(_shutdown.Token);
+        }
+        catch (Exception exception)
+        {
+            AppendLog("Manueller Modul-Healthcheck fehlgeschlagen: " + exception.Message);
+        }
+        finally { _checkModulesButton.Enabled = true; }
+    }
+
+    private async Task RestartModulesNowAsync()
+    {
+        if (_moduleHealth is null || _shutdown is null)
+        {
+            _moduleHealthSummaryLabel.Text = "Healthcheck: Plugin ist nicht gestartet";
+            return;
+        }
+        _restartModulesButton.Enabled = false;
+        try
+        {
+            var restarted = await _moduleHealth.RestartModuleAsync(
+                "Minigame", _shutdown.Token);
+            AppendLog(restarted
+                ? "Manueller Neustart des Minigame-Moduls erfolgreich."
+                : "Minigame-Modul konnte nicht neu gestartet werden.");
+            await _moduleHealth.CheckNowAsync(_shutdown.Token);
+        }
+        catch (Exception exception)
+        {
+            AppendLog("Manueller Modul-Neustart fehlgeschlagen: " + exception.Message);
+        }
+        finally { _restartModulesButton.Enabled = true; }
+    }
+
+    private async void ObserveModuleHealthTask(Task task)
+    {
+        try { await task; }
+        catch (OperationCanceledException)
+            when (_shutdown?.IsCancellationRequested == true) { }
+        catch (Exception exception)
+        {
+            AppendLog("Modul-Healthcheck ausgefallen: " + exception);
+            _moduleHealthSummaryLabel.Text = "Healthcheck: Fehler";
+            _moduleHealthSummaryLabel.ForeColor = ErrorColor;
+        }
+    }
+
+    private void UpdateModuleHealthDisplay(
+        IReadOnlyList<ModuleHealthStatus> statuses)
+    {
+        if (IsDisposed) return;
+        if (InvokeRequired)
+        {
+            try
+            {
+                BeginInvoke(new Action(() => UpdateModuleHealthDisplay(statuses)));
+            }
+            catch (InvalidOperationException) { }
+            return;
+        }
+
+        if (statuses.Count == 0)
+        {
+            _moduleHealthSummaryLabel.Text = "Healthcheck: Deaktiviert";
+            _moduleHealthSummaryLabel.ForeColor = InactiveColor;
+            _moduleHealthLastCheckLabel.Text = "Letzte Prüfung: –";
+            return;
+        }
+        static string Icon(ModuleHealthState state) => state switch
+        {
+            ModuleHealthState.Healthy => "🟢",
+            ModuleHealthState.Warning => "🟡",
+            ModuleHealthState.Failed => "🔴",
+            _ => "⚪"
+        };
+        _moduleHealthSummaryLabel.Text = string.Join("   ", statuses.Select(status =>
+            $"{Icon(status.State)} {status.ModuleName}: {status.State}"));
+        _moduleHealthSummaryLabel.ForeColor = statuses.Any(status =>
+            status.State == ModuleHealthState.Failed) ? ErrorColor : ActiveColor;
+        _moduleHealthLastCheckLabel.Text =
+            "Letzte Prüfung: " + DateTime.Now.ToString("HH:mm:ss");
+        var lastError = statuses.FirstOrDefault(status =>
+            !string.IsNullOrWhiteSpace(status.LastError))?.LastError;
+        if (!string.IsNullOrWhiteSpace(lastError))
+            _moduleHealthLastCheckLabel.Text += " · Letzter Fehler: " + lastError;
+    }
+
     private async void ObserveMinigameTask(Task task)
     {
         try
         {
             await task;
+            if (_shutdown is { IsCancellationRequested: false } &&
+                ReferenceEquals(task, _minigameTask))
+            {
+                AppendLog("Chat-Minigame wurde unerwartet beendet; Watchdog übernimmt.");
+                SetMinigameStatus("Ausgefallen · Neustart wird geprüft", ErrorColor);
+            }
         }
         catch (OperationCanceledException)
-            when (_shutdown?.IsCancellationRequested == true)
+            when (_shutdown?.IsCancellationRequested == true ||
+                  _minigameRunCts?.IsCancellationRequested == true ||
+                  !ReferenceEquals(task, _minigameTask))
         {
         }
         catch (Exception exception)
         {
-            AppendLog("Chat-Minigame wurde beendet: " + exception.Message);
-            SetMinigameStatus("Fehler", ErrorColor);
+            AppendLog("Chat-Minigame wurde beendet: " + exception);
+            SetMinigameStatus("Fehler · Neustart wird geprüft", ErrorColor);
         }
     }
 
@@ -3129,7 +3389,8 @@ public sealed partial class MainForm : Form
             _musicRequestTask,
             _musicEventSubTask,
             _clipCommandTask,
-            _giveawayTask
+            _giveawayTask,
+            _moduleHealthTask
         }
             .Where(task => task is not null)
             .Cast<Task>()
@@ -3161,6 +3422,8 @@ public sealed partial class MainForm : Form
         StopCustomCommandServices();
         StopLiveChat();
         _minigameEvents?.Dispose();
+        _minigameRunCts?.Dispose();
+        _moduleHealth?.Dispose();
         _minigame?.Dispose();
         _chatModeration?.Dispose();
         _obs?.Dispose();
@@ -3182,6 +3445,9 @@ public sealed partial class MainForm : Form
         _chatModerationTask = null;
         _minigameTask = null;
         _minigameEventTask = null;
+        _moduleHealthTask = null;
+        _moduleHealth = null;
+        _minigameRunCts = null;
         _playerTask = null;
         _eventSubTask = null;
         _clipCommandTask = null;
@@ -3191,6 +3457,7 @@ public sealed partial class MainForm : Form
         ResetChatDiagnosticConnection();
         SetModerationStatus("Deaktiviert", InactiveColor);
         SetMinigameStatus("Deaktiviert", InactiveColor);
+        UpdateModuleHealthDisplay(Array.Empty<ModuleHealthStatus>());
         _testChannelBox.Enabled = true;
         _startButton.Enabled = true;
         SetConnectionSettingsEditingEnabled(true);
@@ -3637,6 +3904,12 @@ public sealed partial class MainForm : Form
             _blockedWordsBox.Text = string.Join(
                 ", ",
                 config.Moderation.BlockedWords);
+            _healthcheckEnabledCheck.Checked = config.ModuleHealth.Enabled;
+            _healthAutoRestartCheck.Checked = config.ModuleHealth.AutoRestartEnabled;
+            _gambleHealthcheckCheck.Checked = config.ModuleHealth.GambleHealthcheckEnabled;
+            SetNumericValue(_healthIntervalControl, config.ModuleHealth.IntervalSeconds);
+            SetNumericValue(_healthMaxRestartsControl, config.ModuleHealth.MaxRestartAttempts);
+            SetNumericValue(_healthRestartCooldownControl, config.ModuleHealth.RestartCooldownSeconds);
             _minigameEnabledCheck.Checked = config.Minigame.Enabled;
             _pointsEnabledCheck.Checked = config.Minigame.PointsEnabled;
             _gambleEnabledCheck.Checked = config.Minigame.GambleEnabled;
@@ -3799,6 +4072,12 @@ public sealed partial class MainForm : Form
             .Where(word => word.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+        config.ModuleHealth.Enabled = _healthcheckEnabledCheck.Checked;
+        config.ModuleHealth.AutoRestartEnabled = _healthAutoRestartCheck.Checked;
+        config.ModuleHealth.GambleHealthcheckEnabled = _gambleHealthcheckCheck.Checked;
+        config.ModuleHealth.IntervalSeconds = decimal.ToInt32(_healthIntervalControl.Value);
+        config.ModuleHealth.MaxRestartAttempts = decimal.ToInt32(_healthMaxRestartsControl.Value);
+        config.ModuleHealth.RestartCooldownSeconds = decimal.ToInt32(_healthRestartCooldownControl.Value);
         config.Minigame.Enabled = _minigameEnabledCheck.Checked;
         config.Minigame.PointsEnabled = _pointsEnabledCheck.Checked;
         config.Minigame.GambleEnabled = _gambleEnabledCheck.Checked;

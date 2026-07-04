@@ -19,6 +19,18 @@ public class AppConfig
     public DiscordClipsConfig DiscordClips { get; set; } = new();
     public GiveawayConfig Giveaways { get; set; } = new();
     public UpdateConfig Update { get; set; } = new();
+    public ModuleHealthConfig ModuleHealth { get; set; } = new();
+}
+
+public class ModuleHealthConfig
+{
+    public bool Enabled { get; set; } = true;
+    public int IntervalSeconds { get; set; } = 30;
+    public bool AutoRestartEnabled { get; set; } = true;
+    public int MaxRestartAttempts { get; set; } = 3;
+    public int RestartCooldownSeconds { get; set; } = 30;
+    public int RestartWindowMinutes { get; set; } = 5;
+    public bool GambleHealthcheckEnabled { get; set; } = true;
 }
 
 public class TwitchConfig
