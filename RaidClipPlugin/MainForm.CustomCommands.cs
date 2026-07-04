@@ -33,7 +33,7 @@ public sealed partial class MainForm
     private CommandPermissionService? _commandPermissions;
     private CustomCommandService? _customCommandService;
 
-    private Control BuildCustomCommandsPanel()
+    private Control BuildCustomCommandsEditorPanel()
     {
         ConfigureCustomCommandsGrid();
         var hint = new Label
@@ -112,6 +112,7 @@ public sealed partial class MainForm
 
     private void InitializeCustomCommandEvents()
     {
+        InitializeCustomCommandImportEvents();
         _addCustomCommandButton.Click += (_, _) => AddCustomCommandRow();
         _removeCustomCommandButton.Click += (_, _) =>
         {

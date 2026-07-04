@@ -9,8 +9,18 @@ public sealed class ChatPopoutForm : Form
     private readonly string _channelName;
     private readonly LiveChatConfig _config;
     private readonly Action<Rectangle, bool> _settingsChanged;
+    private readonly Func<string, Task<bool>> _sendMessage;
     private readonly TwitchChatWebViewService _chatService = new();
     private readonly WebView2 _webView = new() { Dock = DockStyle.Fill };
+    private readonly TextBox _messageBox = new()
+    {
+        Name = "ChatPopoutComposer", Dock = DockStyle.Fill, MaxLength = 500,
+        PlaceholderText = "Nachricht als Bot senden"
+    };
+    private readonly Button _sendButton = new()
+    {
+        Text = "Senden", Dock = DockStyle.Right, Width = 92, FlatStyle = FlatStyle.Flat
+    };
     private readonly Label _statusLabel = new()
     {
         Dock = DockStyle.Top,
@@ -25,12 +35,14 @@ public sealed class ChatPopoutForm : Form
     private string _extensionStatus = "7TV/BTTV: wird vorbereitet …";
 
     public ChatPopoutForm(string channelName, LiveChatConfig config,
-        Action<Rectangle, bool> settingsChanged, Color background,
+        Action<Rectangle, bool> settingsChanged, Func<string, Task<bool>> sendMessage,
+        Color background,
         Color surface, Color foreground, Color accent)
     {
         _channelName = channelName;
         _config = config;
         _settingsChanged = settingsChanged;
+        _sendMessage = sendMessage;
         Text = $"RaidClip Livechat – {channelName}";
         MinimumSize = new Size(360, 420);
         Size = new Size(config.PopoutWidth, config.PopoutHeight);
@@ -40,7 +52,18 @@ public sealed class ChatPopoutForm : Form
         _statusLabel.BackColor = surface;
         _statusLabel.ForeColor = accent;
         _statusLabel.Text = "● Nicht verbunden";
+        var composer = new Panel
+        {
+            Name = "ChatPopoutComposerRow", Dock = DockStyle.Bottom, Height = 44,
+            Padding = new Padding(6), BackColor = surface
+        };
+        _sendButton.ForeColor = foreground;
+        _sendButton.BackColor = surface;
+        _sendButton.FlatAppearance.BorderColor = accent;
+        composer.Controls.Add(_messageBox);
+        composer.Controls.Add(_sendButton);
         Controls.Add(_webView);
+        Controls.Add(composer);
         Controls.Add(_statusLabel);
 
         var requested = new Rectangle(config.PopoutLeft, config.PopoutTop,
@@ -55,6 +78,13 @@ public sealed class ChatPopoutForm : Form
             StartPosition = FormStartPosition.CenterScreen;
         }
 
+        _sendButton.Click += async (_, _) => await SendMessageAsync();
+        _messageBox.KeyDown += async (_, args) =>
+        {
+            if (args.KeyCode != Keys.Enter || args.Shift) return;
+            args.SuppressKeyPress = true;
+            await SendMessageAsync();
+        };
         _chatService.StateChanged += UpdateStatus;
         _chatService.ExtensionsChanged += status =>
         {
@@ -72,6 +102,21 @@ public sealed class ChatPopoutForm : Form
     {
         TopMost = value;
         QueuePersist();
+    }
+
+    private async Task SendMessageAsync()
+    {
+        var text = _messageBox.Text.Trim();
+        if (text.Length == 0) return;
+        _sendButton.Enabled = false;
+        try
+        {
+            if (await _sendMessage(text)) _messageBox.Clear();
+        }
+        finally
+        {
+            _sendButton.Enabled = true;
+        }
     }
 
     protected override async void OnShown(EventArgs e)

@@ -26,6 +26,15 @@ public sealed partial class MainForm
         NewHeistActionButton("Chat trennen", 130);
     private readonly Button _officialChatPopoutButton =
         NewHeistActionButton("Popout öffnen", 135);
+    private readonly TextBox _officialChatComposerBox = new()
+    {
+        Name = "OfficialLiveChatComposer",
+        Dock = DockStyle.Fill,
+        PlaceholderText = "Nachricht als Bot in den Twitch-Chat senden",
+        MaxLength = 500
+    };
+    private readonly Button _officialChatSendButton =
+        NewHeistActionButton("Senden", 110);
     private readonly CheckBox _officialChatTopMostCheck =
         NewCheck("Immer im Vordergrund", false);
     private readonly CheckBox _officialChatSevenTvCheck =
@@ -85,7 +94,7 @@ public sealed partial class MainForm
         var layout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            RowCount = 5,
+            RowCount = 6,
             ColumnCount = 1,
             Padding = new Padding(4)
         };
@@ -93,6 +102,7 @@ public sealed partial class MainForm
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         var toolbar = new FlowLayoutPanel
         {
@@ -115,10 +125,20 @@ public sealed partial class MainForm
             _officialChatBttvCheck
         });
         layout.Controls.Add(toolbar, 0, 0);
+        var composer = new TableLayoutPanel
+        {
+            Name = "OfficialLiveChatComposerRow",
+            Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(2, 4, 2, 2)
+        };
+        composer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        composer.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        composer.Controls.Add(_officialChatComposerBox, 0, 0);
+        composer.Controls.Add(_officialChatSendButton, 1, 0);
         layout.Controls.Add(_officialChatErrorLabel, 0, 1);
         layout.Controls.Add(_officialChatExtensionStatusLabel, 0, 2);
         layout.Controls.Add(_officialChatWebView, 0, 3);
-        layout.Controls.Add(_officialChatPopoutStatusLabel, 0, 4);
+        layout.Controls.Add(composer, 0, 4);
+        layout.Controls.Add(_officialChatPopoutStatusLabel, 0, 5);
         page.Controls.Add(layout);
         return page;
     }
@@ -132,6 +152,14 @@ public sealed partial class MainForm
         _officialChatDisconnectButton.Click += async (_, _) =>
             await DisconnectOfficialLiveChatAsync();
         _officialChatPopoutButton.Click += (_, _) => OpenOfficialChatPopout();
+        _officialChatSendButton.Click += async (_, _) =>
+            await SendOfficialChatComposerAsync();
+        _officialChatComposerBox.KeyDown += async (_, args) =>
+        {
+            if (args.KeyCode != Keys.Enter || args.Shift) return;
+            args.SuppressKeyPress = true;
+            await SendOfficialChatComposerAsync();
+        };
         _officialChatTopMostCheck.CheckedChanged += (_, _) =>
         {
             _chatPopout?.SetTopMost(_officialChatTopMostCheck.Checked);
@@ -181,6 +209,44 @@ public sealed partial class MainForm
             AppendLog("Chat-Extensions: " + status);
     }
 
+    private async Task SendOfficialChatComposerAsync()
+    {
+        if (await SendOfficialChatTextAsync(_officialChatComposerBox.Text))
+            _officialChatComposerBox.Clear();
+    }
+
+    private async Task<bool> SendOfficialChatTextAsync(string? input)
+    {
+        var text = (input ?? "").Trim();
+        if (text.Length == 0) return false;
+        if (_twitch is null || _twitchSession is null || _broadcaster is null ||
+            _shutdown is null || _shutdown.IsCancellationRequested)
+        {
+            ShowOfficialChatError("Chatnachricht konnte nicht gesendet werden: Plugin ist nicht verbunden.");
+            return false;
+        }
+        _officialChatSendButton.Enabled = false;
+        try
+        {
+            await _twitch.SendChatMessageAsync(_broadcaster.Id,
+                _twitchSession.UserId, text, _shutdown.Token);
+            _officialChatErrorLabel.Visible = false;
+            return true;
+        }
+        catch (Exception exception)
+        {
+            ShowOfficialChatError("Chatnachricht konnte nicht gesendet werden: " + exception.Message);
+            AppendLog("Offizieller Twitch-Chat: Nachricht konnte nicht gesendet werden: " +
+                exception.Message);
+            return false;
+        }
+        finally
+        {
+            _officialChatSendButton.Enabled = _shutdown is not null &&
+                !_shutdown.IsCancellationRequested;
+        }
+    }
+
     private async Task DisconnectOfficialLiveChatAsync()
     {
         try
@@ -214,7 +280,8 @@ public sealed partial class MainForm
 
         var config = ReadLiveChatConfig();
         _chatPopout = new ChatPopoutForm(channel, config,
-            CaptureOfficialChatPopoutSettings, BackgroundColor, SurfaceColor,
+            CaptureOfficialChatPopoutSettings, SendOfficialChatTextAsync,
+            BackgroundColor, SurfaceColor,
             TextColor, AccentColor);
         _chatPopout.FormClosed += (_, _) =>
         {

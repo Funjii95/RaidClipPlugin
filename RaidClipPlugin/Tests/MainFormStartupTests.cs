@@ -54,6 +54,16 @@ public sealed class MainFormStartupTests
                 Assert.Single(form.Controls.Find("LiveChatPage", true));
                 Assert.Single(form.Controls.Find("OfficialLiveChatToolbar", true));
                 Assert.Single(form.Controls.Find("OfficialTwitchChatWebView", true));
+                Assert.Single(form.Controls.Find("OfficialLiveChatComposer", true));
+                Assert.Single(form.Controls.Find("CustomCommandPasteInput", true));
+                var importPreview = Assert.IsType<DataGridView>(Assert.Single(
+                    form.Controls.Find("CustomCommandImportPreview", true)));
+                Assert.Equal(DataGridViewAutoSizeRowsMode.None, importPreview.AutoSizeRowsMode);
+                Assert.Equal(DataGridViewTriState.False, importPreview.DefaultCellStyle.WrapMode);
+                Assert.False(importPreview.AllowUserToResizeRows);
+                Assert.Equal(28, importPreview.RowTemplate.Height);
+                Assert.True(importPreview.MinimumSize.Height >= 180);
+                Assert.Single(form.Controls.Find("CustomCommandImportDetails", true));
                 Assert.Contains(Descendants(form).OfType<CheckBox>(),
                     check => check.Text.Contains("7TV im Popout"));
                 Assert.Contains(Descendants(form).OfType<CheckBox>(),

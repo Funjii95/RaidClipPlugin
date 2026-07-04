@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.5
+
+- Texteingabe und Senden-Button sind im offiziellen Twitch-Chat und im separaten Popout wieder dauerhaft vorhanden.
+- Neuer Custom-Command-Import für JSON, CSV und eingefügten Text mit flexiblen StreamElements-ähnlichen Feldnamen.
+- Vorschautabelle mit Quelle, Status, Konfliktmeldung und den Aktionen Überspringen, Überschreiben oder Umbenennen.
+- Case-insensitive Kollisionsprüfung gegen System-, Punkte-, Minigame-, Musik-, Clip-, Giveaway- und bestehende Custom Commands einschließlich Aliase.
+- Eingebaute Commands können nicht überschrieben werden; sichere Ein-Klick-Option importiert nur konfliktfreie Einträge.
+- Importzusammenfassung und Fehler werden im bestehenden Log protokolliert.
+- Vorschauzeilen besitzen feste Höhen; lange oder mehrzeilige Antworten und Konflikttexte werden sicher gekürzt, während der vollständige Originaltext erhalten bleibt.
+
+
 ## 1.6.4
 
 - Offizielle 7TV- und BetterTTV-Browser-Erweiterungen lassen sich im WebView2-Twitch-Chat aktivieren.
