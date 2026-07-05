@@ -3,13 +3,18 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using RaidClipPlugin.Models;
 
+
 namespace RaidClipPlugin.Services;
 
-public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawayTwitchClient, IHeistTwitchClient, IDuelTwitchClient
+
+public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawayTwitchClient, IHeistTwitchClient, IDuelTwitchClient, IDuelModerationClient
 {
     private readonly HttpClient _http = new();
+    private int _sharedChatSendNoticeLogged;
+
 
     public event Action<DateTimeOffset>? ChatMessageSent;
+
 
     public TwitchService(string clientId, string accessToken)
     {
@@ -17,6 +22,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
         _http.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", accessToken);
     }
+
 
     public async Task<TwitchUser?> GetUserAsync(
         string login,
@@ -26,20 +32,26 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             ? "https://api.twitch.tv/helix/users"
             : $"https://api.twitch.tv/helix/users?login={Uri.EscapeDataString(login)}";
 
+
         using var response = await _http.GetAsync(url, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
+
 
         using var document = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync(cancellationToken));
 
+
         var data = document.RootElement.GetProperty("data");
+
 
         if (data.GetArrayLength() == 0)
         {
             return null;
         }
 
+
         var user = data[0];
+
 
         return new TwitchUser(
             user.GetProperty("id").GetString() ?? "",
@@ -48,6 +60,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             user.TryGetProperty("profile_image_url", out var profileImage)
                 ? profileImage.GetString() ?? "" : "");
     }
+
 
     public async Task<TwitchChannelInfo?> GetChannelInfoAsync(
         string broadcasterId,
@@ -68,6 +81,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             channel.TryGetProperty("game_name", out var gameName) ? gameName.GetString() ?? "" : "");
     }
 
+
     public async Task<List<Clip>> GetClipsAsync(
         string broadcasterId,
         int lookbackDays,
@@ -82,6 +96,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             DateTimeOffset.UtcNow
                 .ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
 
+
         var periodUrl =
             "https://api.twitch.tv/helix/clips" +
             $"?broadcaster_id={escapedBroadcasterId}" +
@@ -89,24 +104,30 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             $"&ended_at={endedAt}" +
             "&first=100";
 
+
         var clips = await FetchClipsAsync(periodUrl, cancellationToken);
+
 
         if (clips.Count > 0)
         {
             return clips;
         }
 
+
         Console.WriteLine(
             $"ℹ️ Keine Clips der letzten {lookbackDays} Tage gefunden. " +
             "Suche jetzt die Top-Clips des Kanals ohne Zeitbegrenzung …");
+
 
         var allTimeUrl =
             "https://api.twitch.tv/helix/clips" +
             $"?broadcaster_id={escapedBroadcasterId}" +
             "&first=100";
 
+
         return await FetchClipsAsync(allTimeUrl, cancellationToken);
     }
+
 
     private async Task<List<Clip>> FetchClipsAsync(
         string url,
@@ -115,11 +136,14 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
         using var response = await _http.GetAsync(url, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
 
+
         using var document = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync(cancellationToken));
 
+
         var clips = new List<Clip>();
         var data = document.RootElement.GetProperty("data");
+
 
         foreach (var item in data.EnumerateArray())
         {
@@ -138,8 +162,10 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             });
         }
 
+
         return clips;
     }
+
 
     public async Task<Clip?> GetRandomClipAsync(
         string broadcasterId,
@@ -151,13 +177,16 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             lookbackDays,
             cancellationToken);
 
+
         if (clips.Count == 0)
         {
             return null;
         }
 
+
         return clips[Random.Shared.Next(clips.Count)];
     }
+
 
     public async Task<List<TwitchUser>> GetChattersAsync(
         string broadcasterId,
@@ -167,6 +196,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
         var chatters = new Dictionary<string, TwitchUser>(
             StringComparer.Ordinal);
         var cursor = "";
+
 
         do
         {
@@ -179,11 +209,13 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
                     ? ""
                     : $"&after={Uri.EscapeDataString(cursor)}");
 
+
             using var response = await _http.GetAsync(
                 url, cancellationToken);
             await EnsureSuccessAsync(response, cancellationToken);
             using var document = JsonDocument.Parse(
                 await response.Content.ReadAsStringAsync(cancellationToken));
+
 
             foreach (var item in document.RootElement
                          .GetProperty("data").EnumerateArray())
@@ -194,11 +226,13 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
                     continue;
                 }
 
+
                 chatters[id] = new TwitchUser(
                     id,
                     item.GetProperty("user_login").GetString() ?? "",
                     item.GetProperty("user_name").GetString() ?? "");
             }
+
 
             cursor = document.RootElement.TryGetProperty(
                          "pagination", out var pagination) &&
@@ -208,8 +242,10 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
         }
         while (!string.IsNullOrWhiteSpace(cursor));
 
+
         return chatters.Values.ToList();
     }
+
 
     public async Task<IReadOnlyList<TwitchCustomReward>> GetCustomRewardsAsync(
         string broadcasterId,
@@ -233,6 +269,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             .ToArray();
     }
 
+
     public async Task UpdateRedemptionStatusAsync(
         string broadcasterId,
         string rewardId,
@@ -255,6 +292,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+
     public async Task SendChatMessageAsync(
         string broadcasterId,
         string senderId,
@@ -266,9 +304,19 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             return;
         }
 
+        if (Interlocked.Exchange(ref _sharedChatSendNoticeLogged, 1) == 0)
+        {
+            Console.WriteLine(
+                "Shared-Chat Hinweis: RaidClip nutzt einen User Access Token. " +
+                "Twitch kann Bot-Antworten in verbundene Shared Chats spiegeln; " +
+                "for_source_only ist bei diesem Token-Typ nicht zulässig.");
+        }
+
+
         var text = message.Length > 500
             ? message[..500]
             : message;
+
 
         using var response = await _http.PostAsJsonAsync(
             "https://api.twitch.tv/helix/chat/messages",
@@ -280,11 +328,14 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             },
             cancellationToken);
 
+
         await EnsureSuccessAsync(response, cancellationToken);
+
 
         using var document = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync(cancellationToken));
         var result = document.RootElement.GetProperty("data")[0];
+
 
         if (!result.GetProperty("is_sent").GetBoolean())
         {
@@ -296,11 +347,47 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             throw new InvalidOperationException(reason);
         }
 
+
         var sentAt = DateTimeOffset.Now;
         ChatMessageSent?.Invoke(sentAt);
         Console.WriteLine("Twitch-Antwort: is_sent=true um " +
             sentAt.ToString("HH:mm:ss") + ".");
     }
+
+
+    public async Task TimeoutUserAsync(
+        string broadcasterId,
+        string moderatorId,
+        string userId,
+        int durationSeconds,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        var normalizedReason = string.IsNullOrWhiteSpace(reason)
+            ? "Duel verloren"
+            : reason.Trim();
+        if (normalizedReason.Length > 500)
+            normalizedReason = normalizedReason[..500];
+
+        var url =
+            "https://api.twitch.tv/helix/moderation/bans" +
+            $"?broadcaster_id={Uri.EscapeDataString(broadcasterId)}" +
+            $"&moderator_id={Uri.EscapeDataString(moderatorId)}";
+        using var response = await _http.PostAsJsonAsync(
+            url,
+            new
+            {
+                data = new
+                {
+                    user_id = userId,
+                    duration = Math.Clamp(durationSeconds, 1, 1_209_600),
+                    reason = normalizedReason
+                }
+            },
+            cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+    }
+
 
     public async Task SendShoutoutAsync(
         string fromBroadcasterId,
@@ -314,12 +401,14 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             $"&to_broadcaster_id={Uri.EscapeDataString(toBroadcasterId)}" +
             $"&moderator_id={Uri.EscapeDataString(moderatorId)}";
 
+
         using var response = await _http.PostAsync(
             url,
             null,
             cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
     }
+
 
     public async Task<TwitchCreatedClip> CreateClipAsync(
         TwitchClipRequest request,
@@ -344,6 +433,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
                 ? editUrl.GetString() ?? "" : "");
     }
 
+
     public async Task<PublishedClip?> GetClipByIdAsync(
         string clipId,
         CancellationToken cancellationToken)
@@ -367,6 +457,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             item.TryGetProperty("duration", out var duration)
                 ? duration.GetDouble() : 0);
     }
+
 
     public async Task<TwitchLiveStream?> GetLiveStreamAsync(
         string broadcasterId,
@@ -395,6 +486,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             true);
     }
 
+
     public async Task<DateTimeOffset?> GetFollowedAtAsync(
         string broadcasterId,
         string userId,
@@ -414,6 +506,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             ? parsed : null;
     }
 
+
     public async Task<bool> IsFollowerAsync(
         string broadcasterId,
         string userId,
@@ -429,6 +522,7 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
         return document.RootElement.GetProperty("data").GetArrayLength() > 0;
     }
 
+
     private static async Task EnsureSuccessAsync(
         HttpResponseMessage response,
         CancellationToken cancellationToken)
@@ -438,7 +532,9 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
             return;
         }
 
+
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
 
         throw new HttpRequestException(
             $"Twitch API meldet {(int)response.StatusCode} " +
@@ -448,10 +544,12 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
     }
 }
 
+
 public sealed record TwitchUser(
     string Id,
     string Login,
     string DisplayName,
     string ProfileImageUrl = "");
+
 
 public sealed record TwitchChannelInfo(string Title, string GameId, string GameName);

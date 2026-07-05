@@ -5,7 +5,9 @@ using System.Text;
 using System.Text.Json;
 using RaidClipPlugin.Models;
 
+
 namespace RaidClipPlugin.Services;
+
 
 public sealed record ChatConnectionDiagnostics(
     bool WebSocketConnected = false,
@@ -14,6 +16,7 @@ public sealed record ChatConnectionDiagnostics(
     DateTimeOffset? LastReceivedAt = null,
     string LastError = "");
 
+
 public sealed class ChatModerationService : IDisposable
 {
     private const string EventSubUrl = "wss://eventsub.wss.twitch.tv/ws";
@@ -21,39 +24,49 @@ public sealed class ChatModerationService : IDisposable
     private const string BansUrl = "https://api.twitch.tv/helix/moderation/bans";
     private const string DeleteMessageUrl = "https://api.twitch.tv/helix/moderation/chat";
 
+
     private readonly string _clientId;
     private readonly string _accessToken;
     private readonly string _broadcasterId;
     private readonly string _moderatorId;
+    private readonly SharedChatCommandGuard _sharedChatCommandGuard;
     private readonly HttpClient _http = new();
     private bool _disposed;
     private int _runState;
 
+
     private ChatConnectionDiagnostics _diagnostics = new();
+
 
     public ChatConnectionDiagnostics Diagnostics => _diagnostics;
     public event Action<ChatConnectionDiagnostics>? StatusChanged;
+
 
     public event Func<ChatMessage, Task>? MessageAuthorizing;
     public event Func<ChatMessage, Task>? MessageObserved;
     public event Func<ChatMessage, Task>? MessageReceived;
     public event Action? Activated;
 
+
     public ChatModerationService(
         string clientId,
         string accessToken,
         string broadcasterId,
-        string moderatorId)
+        string moderatorId,
+        bool ignoreSharedChatOrigins = true)
     {
         _clientId = clientId;
         _accessToken = accessToken;
         _broadcasterId = broadcasterId;
         _moderatorId = moderatorId;
+        _sharedChatCommandGuard = new SharedChatCommandGuard(
+            broadcasterId, ignoreSharedChatOrigins);
         _http.DefaultRequestHeaders.Add("Client-Id", clientId);
         _http.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", accessToken);
         _http.Timeout = TimeSpan.FromSeconds(30);
     }
+
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -62,6 +75,7 @@ public sealed class ChatModerationService : IDisposable
             Console.WriteLine("Chat-Service läuft bereits; doppelter WebSocket-Start wurde verhindert.");
             return;
         }
+
 
         try
         {
@@ -128,6 +142,7 @@ public sealed class ChatModerationService : IDisposable
         }
     }
 
+
     public Task TimeoutUserAsync(
         string userId,
         int durationSeconds,
@@ -138,11 +153,13 @@ public sealed class ChatModerationService : IDisposable
         return ModerateUserAsync(userId, duration, reason, cancellationToken);
     }
 
+
     public Task BanUserAsync(
         string userId,
         string reason,
         CancellationToken cancellationToken) =>
         ModerateUserAsync(userId, null, reason, cancellationToken);
+
 
     public async Task DeleteMessageAsync(
         string messageId,
@@ -153,14 +170,17 @@ public sealed class ChatModerationService : IDisposable
             throw new ArgumentException("Die Nachrichten-ID fehlt.", nameof(messageId));
         }
 
+
         var url =
             $"{DeleteMessageUrl}?broadcaster_id={Uri.EscapeDataString(_broadcasterId)}" +
             $"&moderator_id={Uri.EscapeDataString(_moderatorId)}" +
             $"&message_id={Uri.EscapeDataString(messageId)}";
 
+
         using var response = await _http.DeleteAsync(url, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
     }
+
 
     private async Task ModerateUserAsync(
         string userId,
@@ -173,9 +193,11 @@ public sealed class ChatModerationService : IDisposable
             throw new ArgumentException("Die Nutzer-ID fehlt.", nameof(userId));
         }
 
+
         var url =
             $"{BansUrl}?broadcaster_id={Uri.EscapeDataString(_broadcasterId)}" +
             $"&moderator_id={Uri.EscapeDataString(_moderatorId)}";
+
 
         object data = durationSeconds is null
             ? new
@@ -190,12 +212,14 @@ public sealed class ChatModerationService : IDisposable
                 reason = LimitReason(reason)
             };
 
+
         using var response = await _http.PostAsJsonAsync(
             url,
             new { data },
             cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
     }
+
 
     private async Task<string?> ConnectAndListenAsync(
         string url,
@@ -211,6 +235,7 @@ public sealed class ChatModerationService : IDisposable
         });
         Console.WriteLine("EventSub WebSocket verbunden.");
 
+
         while (socket.State == WebSocketState.Open)
         {
             var json = await ReceiveTextAsync(socket, cancellationToken);
@@ -219,12 +244,14 @@ public sealed class ChatModerationService : IDisposable
                 return null;
             }
 
+
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
             var type = root
                 .GetProperty("metadata")
                 .GetProperty("message_type")
                 .GetString();
+
 
             switch (type)
             {
@@ -235,11 +262,13 @@ public sealed class ChatModerationService : IDisposable
                         .GetProperty("id")
                         .GetString();
 
+
                     if (string.IsNullOrWhiteSpace(sessionId))
                     {
                         throw new InvalidOperationException(
                             "Twitch hat keine EventSub-Session-ID geliefert.");
                     }
+
 
                     PublishDiagnostics(_diagnostics with
                     {
@@ -249,6 +278,7 @@ public sealed class ChatModerationService : IDisposable
                     });
                     Console.WriteLine(
                         "Session-Welcome erhalten: " + MaskSessionId(sessionId));
+
 
                     if (subscribe)
                     {
@@ -264,13 +294,16 @@ public sealed class ChatModerationService : IDisposable
                         });
                     }
 
+
                     Console.WriteLine("Chatbot ist aktiv.");
                     Activated?.Invoke();
                     break;
 
+
                 case "notification":
                     HandleNotification(root);
                     break;
+
 
                 case "session_reconnect":
                     return root
@@ -278,6 +311,7 @@ public sealed class ChatModerationService : IDisposable
                         .GetProperty("session")
                         .GetProperty("reconnect_url")
                         .GetString();
+
 
                 case "revocation":
                     var revocationStatus = root.GetProperty("payload")
@@ -295,8 +329,10 @@ public sealed class ChatModerationService : IDisposable
             }
         }
 
+
         return null;
     }
+
 
     private async Task CreateSubscriptionAsync(
         string sessionId,
@@ -324,6 +360,7 @@ public sealed class ChatModerationService : IDisposable
             }
         });
 
+
         using var response = await _http.SendAsync(request, cancellationToken);
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)
@@ -332,6 +369,7 @@ public sealed class ChatModerationService : IDisposable
                 $"Chat-Subscription meldet {(int)response.StatusCode} " +
                 $"{response.StatusCode}: {body}");
         }
+
 
         using var document = JsonDocument.Parse(body);
         var data = document.RootElement.GetProperty("data");
@@ -346,6 +384,7 @@ public sealed class ChatModerationService : IDisposable
                 (string.IsNullOrWhiteSpace(status) ? "unbekannt" : status));
         }
 
+
         PublishDiagnostics(_diagnostics with
         {
             SubscriptionEnabled = true,
@@ -355,6 +394,7 @@ public sealed class ChatModerationService : IDisposable
             "channel.chat.message Subscription erstellt: enabled.");
     }
 
+
     private void HandleNotification(JsonElement root)
     {
         var payload = root.GetProperty("payload");
@@ -363,10 +403,12 @@ public sealed class ChatModerationService : IDisposable
             .GetProperty("type")
             .GetString();
 
+
         if (subscriptionType != "channel.chat.message")
         {
             return;
         }
+
 
         var data = payload.GetProperty("event");
         var badgeIds = data.TryGetProperty("badges", out var badges)
@@ -374,6 +416,7 @@ public sealed class ChatModerationService : IDisposable
                 .Select(badge => badge.GetProperty("set_id").GetString() ?? "")
                 .ToHashSet(StringComparer.OrdinalIgnoreCase)
             : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
 
         var emotes = new List<ChatEmoteFragment>();
         if (data.TryGetProperty("message", out var chatMessageData) &&
@@ -387,6 +430,7 @@ public sealed class ChatModerationService : IDisposable
                 if (id.Length > 0 && code.Length > 0) emotes.Add(new ChatEmoteFragment(id, code));
             }
         }
+
 
         var message = new ChatMessage
         {
@@ -404,8 +448,13 @@ public sealed class ChatModerationService : IDisposable
             UserColor = data.TryGetProperty("color", out var color) ? color.GetString() ?? "" : "",
             Badges = badgeIds.ToArray(),
             Emotes = emotes,
-            IsBot = (data.GetProperty("chatter_user_id").GetString() ?? "").Equals(_moderatorId, StringComparison.Ordinal)
+            IsBot = (data.GetProperty("chatter_user_id").GetString() ?? "").Equals(_moderatorId, StringComparison.Ordinal),
+            BroadcasterUserId = GetOptionalString(data, "broadcaster_user_id"),
+            SourceBroadcasterUserId = GetOptionalString(data, "source_broadcaster_user_id"),
+            RoomId = GetOptionalString(data, "room_id"),
+            SourceRoomId = GetOptionalString(data, "source_room_id")
         };
+
 
         PublishDiagnostics(_diagnostics with
         {
@@ -421,15 +470,10 @@ public sealed class ChatModerationService : IDisposable
             $"({message.UserId}) -> {message.Text}");
         LogCommandDetection(message.Text);
 
+
         var handlers = MessageReceived?.GetInvocationList()
             .Cast<Func<ChatMessage, Task>>()
             .ToArray() ?? Array.Empty<Func<ChatMessage, Task>>();
-        if (handlers.Length == 0)
-        {
-            Console.WriteLine("Chatnachricht ignoriert: kein aktiver Command-Handler.");
-            return;
-        }
-
         var authorizers = MessageAuthorizing?.GetInvocationList()
             .Cast<Func<ChatMessage, Task>>()
             .ToArray() ?? Array.Empty<Func<ChatMessage, Task>>();
@@ -438,16 +482,43 @@ public sealed class ChatModerationService : IDisposable
             .ToArray() ?? Array.Empty<Func<ChatMessage, Task>>();
         _ = Task.Run(async () =>
         {
-            foreach (var authorizer in authorizers)
-                await InvokeMessageHandlerAsync(authorizer, message);
             await Task.WhenAll(observers.Select(observer =>
                 InvokeMessageHandlerAsync(observer, message)));
+
+            var decision = _sharedChatCommandGuard.Evaluate(message);
+            if (decision.IsCommand && !decision.Allowed)
+            {
+                Console.WriteLine(
+                    $"Shared Chat Command ignoriert: Command={decision.Command}, " +
+                    $"User={message.UserName}, SourceRoomId={decision.SourceRoomId}, " +
+                    $"CurrentRoomId={decision.CurrentRoomId}, " +
+                    $"ConfiguredBroadcasterId={decision.ConfiguredBroadcasterId}");
+                return;
+            }
+
+            foreach (var authorizer in authorizers)
+                await InvokeMessageHandlerAsync(authorizer, message);
             if (message.CommandAuthorization == CommandAuthorization.Denied)
                 return;
+            if (handlers.Length == 0)
+            {
+                Console.WriteLine("Chatnachricht ignoriert: kein aktiver Command-Handler.");
+                return;
+            }
             await Task.WhenAll(handlers.Select(handler =>
                 InvokeMessageHandlerAsync(handler, message)));
         });
     }
+
+
+    private static string GetOptionalString(
+        JsonElement data,
+        string propertyName) =>
+        data.TryGetProperty(propertyName, out var value) &&
+        value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? ""
+            : "";
+
 
     private static async Task InvokeMessageHandlerAsync(
         Func<ChatMessage, Task> handler,
@@ -464,16 +535,19 @@ public sealed class ChatModerationService : IDisposable
         }
     }
 
+
     private void PublishDiagnostics(ChatConnectionDiagnostics diagnostics)
     {
         _diagnostics = diagnostics;
         StatusChanged?.Invoke(diagnostics);
     }
 
+
     private static string MaskSessionId(string sessionId) =>
         sessionId.Length <= 8
             ? "***"
             : sessionId[..4] + "…" + sessionId[^4..];
+
 
     private static void LogCommandDetection(string text)
     {
@@ -484,10 +558,12 @@ public sealed class ChatModerationService : IDisposable
             return;
         }
 
+
         Console.WriteLine(
             $"Command erkannt: Prefix {parsed.Prefix}; " +
             $"Command {parsed.Command}; Argumente: {parsed.Arguments}");
     }
+
 
     private static string LimitReason(string reason)
     {
@@ -496,6 +572,7 @@ public sealed class ChatModerationService : IDisposable
             : reason.Trim();
         return text.Length <= 500 ? text : text[..500];
     }
+
 
     private static async Task EnsureSuccessAsync(
         HttpResponseMessage response,
@@ -506,11 +583,13 @@ public sealed class ChatModerationService : IDisposable
             return;
         }
 
+
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         throw new HttpRequestException(
             $"Twitch Moderation meldet {(int)response.StatusCode} " +
             $"{response.StatusCode}: {body}");
     }
+
 
     private static async Task<string?> ReceiveTextAsync(
         ClientWebSocket socket,
@@ -520,23 +599,28 @@ public sealed class ChatModerationService : IDisposable
         using var stream = new MemoryStream();
         WebSocketReceiveResult result;
 
+
         do
         {
             result = await socket.ReceiveAsync(
                 new ArraySegment<byte>(buffer),
                 cancellationToken);
 
+
             if (result.MessageType == WebSocketMessageType.Close)
             {
                 return null;
             }
 
+
             stream.Write(buffer, 0, result.Count);
         }
         while (!result.EndOfMessage);
 
+
         return Encoding.UTF8.GetString(stream.ToArray());
     }
+
 
     public void Dispose()
     {
@@ -544,6 +628,7 @@ public sealed class ChatModerationService : IDisposable
         {
             return;
         }
+
 
         _http.Dispose();
         _disposed = true;

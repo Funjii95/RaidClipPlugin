@@ -343,6 +343,7 @@
     "GroupByModule": true,
     "IncludeDisabledCommandsInUi": true,
     "ExportDirectory": "exports",
+    "IgnoreSharedChatOrigins": true,
     "CommandRoleOverrides": {},
     "CustomCommandsEnabled": true,
     "CustomCommands": [
@@ -380,6 +381,9 @@
     "SendResultMessage": true,
     "SendDenyMessage": true,
     "SendTimeoutMessage": true,
+    "TimeoutLoserEnabled": false,
+    "LoserTimeoutSeconds": 60,
+    "LoserTimeoutReason": "Duel verloren",
     "DuelRequestMessage": "@{challenger} fordert @{target} zu einem Duel um {amount} {currencyName} heraus! @{target}, antworte mit {acceptCommand} oder {denyCommand}. Zeit: {seconds} Sekunden.",
     "DuelAcceptedMessage": "@{target} nimmt das Duel gegen @{challenger} an! Der Pot beträgt {pot} {currencyName}.",
     "DuelWinMessage": "Das Duel ist entschieden! @{winner} gewinnt gegen @{loser} und erhält {pot} {currencyName}!",

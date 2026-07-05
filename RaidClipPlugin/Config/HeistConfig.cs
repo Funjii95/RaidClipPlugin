@@ -1,5 +1,6 @@
 namespace RaidClipPlugin.Config;
 
+
 public sealed class HeistConfig
 {
     public bool Enabled { get; set; }
@@ -32,9 +33,11 @@ public sealed class HeistConfig
     public string FailureMessage { get; set; } = "Der Heist ist gescheitert! Der Jackpot von {jackpot} {currencyName} bleibt erhalten.";
 }
 
+
 public sealed class CommandsConfig
 {
     public bool Enabled { get; set; } = true;
+    public bool IgnoreSharedChatOrigins { get; set; } = true;
     public string Command { get; set; } = "!commands";
     public int UserCooldownSeconds { get; set; } = 15;
     public int GlobalCooldownSeconds { get; set; } = 3;
@@ -52,6 +55,7 @@ public sealed class CommandsConfig
         CustomChatCommandConfig.CreateExamples();
 }
 
+
 public sealed class CustomChatCommandConfig
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
@@ -62,6 +66,7 @@ public sealed class CustomChatCommandConfig
     public string RequiredRole { get; set; } = "Viewer";
     public int UserCooldownSeconds { get; set; } = 15;
     public int GlobalCooldownSeconds { get; set; } = 3;
+
 
     public static List<CustomChatCommandConfig> CreateExamples() => new()
     {

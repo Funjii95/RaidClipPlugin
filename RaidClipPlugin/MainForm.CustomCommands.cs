@@ -2,12 +2,23 @@ using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 
+
 namespace RaidClipPlugin;
+
 
 public sealed partial class MainForm
 {
     private readonly CheckBox _customCommandsEnabledCheck =
         NewCheck("Custom Commands aktivieren", true);
+    private readonly CheckBox _ignoreSharedChatCommandsCheck =
+        NewCheck("Commands nur im aktuellen Kanal ausführen", true);
+    private readonly Label _sharedChatCommandsHint = new()
+    {
+        AutoSize = true,
+        MaximumSize = new Size(520, 0),
+        ForeColor = MutedTextColor,
+        Text = "Verhindert Commands aus fremden Stream-Together-/Shared-Chat-Kanälen."
+    };
     private readonly DataGridView _customCommandsGrid = new()
     {
         Dock = DockStyle.Fill,
@@ -33,6 +44,7 @@ public sealed partial class MainForm
     private CommandPermissionService? _commandPermissions;
     private CustomCommandService? _customCommandService;
 
+
     private Control BuildCustomCommandsEditorPanel()
     {
         ConfigureCustomCommandsGrid();
@@ -51,7 +63,8 @@ public sealed partial class MainForm
         };
         actions.Controls.AddRange(new Control[]
         {
-            _customCommandsEnabledCheck, _addCustomCommandButton,
+            _customCommandsEnabledCheck, _ignoreSharedChatCommandsCheck,
+            _sharedChatCommandsHint, _addCustomCommandButton,
             _removeCustomCommandButton, _saveCustomCommandsButton
         });
         var layout = new TableLayoutPanel
@@ -67,6 +80,7 @@ public sealed partial class MainForm
         layout.Controls.Add(_customCommandsGrid, 0, 2);
         return layout;
     }
+
 
     private void ConfigureCustomCommandsGrid()
     {
@@ -94,6 +108,7 @@ public sealed partial class MainForm
             { Name = "GlobalCooldown", HeaderText = "Global-CD", Width = 90 });
     }
 
+
     private Control BuildCommandOverviewPanel(Control filters)
     {
         var permissions = new FlowLayoutPanel
@@ -109,6 +124,7 @@ public sealed partial class MainForm
         layout.Controls.Add(_commandsGrid, 0, 1);
         return layout;
     }
+
 
     private void InitializeCustomCommandEvents()
     {
@@ -138,6 +154,7 @@ public sealed partial class MainForm
         };
     }
 
+
     private void AddCustomCommandRow(CustomChatCommandConfig? item = null)
     {
         item ??= new CustomChatCommandConfig
@@ -153,9 +170,11 @@ public sealed partial class MainForm
         _customCommandsGrid.Rows[index].Selected = true;
     }
 
+
     private void LoadCustomCommandSettings(CommandsConfig commands)
     {
         _customCommandsEnabledCheck.Checked = commands.CustomCommandsEnabled;
+        _ignoreSharedChatCommandsCheck.Checked = commands.IgnoreSharedChatOrigins;
         _customCommandsGrid.Rows.Clear();
         foreach (var item in commands.CustomCommands) AddCustomCommandRow(item);
         _pendingCommandRoleOverrides.Clear();
@@ -163,9 +182,11 @@ public sealed partial class MainForm
             _pendingCommandRoleOverrides[item.Key] = item.Value;
     }
 
+
     private void ReadCustomCommandSettings(CommandsConfig commands)
     {
         commands.CustomCommandsEnabled = _customCommandsEnabledCheck.Checked;
+        commands.IgnoreSharedChatOrigins = _ignoreSharedChatCommandsCheck.Checked;
         commands.CustomCommands = _customCommandsGrid.Rows.Cast<DataGridViewRow>()
             .Where(row => !row.IsNewRow)
             .Select(row => new CustomChatCommandConfig
@@ -183,6 +204,7 @@ public sealed partial class MainForm
             _pendingCommandRoleOverrides, StringComparer.OrdinalIgnoreCase);
     }
 
+
     private void ResetSelectedCommandRole()
     {
         if (_commandsGrid.SelectedRows.Count != 1 ||
@@ -192,8 +214,10 @@ public sealed partial class MainForm
         SaveSettingsFromControls();
     }
 
+
     private static readonly string[] CommandRoleLabels =
         { "Zuschauer", "Follower", "Subscriber", "VIP", "Moderator", "Broadcaster" };
+
 
     private static string RoleLabel(CommandRole role) => role switch
     {
@@ -201,6 +225,7 @@ public sealed partial class MainForm
         CommandRole.Vip => "VIP",
         _ => role.ToString()
     };
+
 
     private static CommandRole ParseRoleLabel(string? value) =>
         (value ?? "").Trim() switch
@@ -210,15 +235,19 @@ public sealed partial class MainForm
             var text => CommandRegistry.ParseRole(text)
         };
 
+
     private static int ParseCooldown(DataGridViewRow row, string column) =>
         int.TryParse(CellText(row, column), out var value) ? value : -1;
+
 
     private static string CellText(DataGridViewRow row, string column) =>
         row.Cells[column].Value?.ToString()?.Trim() ?? "";
 
+
     private static List<string> SplitCommandValues(string text) =>
         text.Split(new[] { ',', ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
             .Select(value => value.Trim()).Where(value => value.Length > 0).ToList();
+
 
     private void StartCustomCommandServices(AppConfig config,
         TwitchService twitch, TwitchSession session, TwitchUser broadcaster,
@@ -233,6 +262,7 @@ public sealed partial class MainForm
         _chatModeration.MessageReceived += message =>
             _customCommandService.HandleMessageAsync(message, cancellationToken);
     }
+
 
     private void StopCustomCommandServices()
     {

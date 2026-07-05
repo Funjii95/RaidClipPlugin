@@ -1,5 +1,6 @@
 namespace RaidClipPlugin.Config;
 
+
 public sealed class DuelConfig
 {
     public bool Enabled { get; set; }
@@ -23,6 +24,9 @@ public sealed class DuelConfig
     public bool SendResultMessage { get; set; } = true;
     public bool SendDenyMessage { get; set; } = true;
     public bool SendTimeoutMessage { get; set; } = true;
+    public bool TimeoutLoserEnabled { get; set; }
+    public int LoserTimeoutSeconds { get; set; } = 60;
+    public string LoserTimeoutReason { get; set; } = "Duel verloren";
     public string DuelRequestMessage { get; set; } = "@{challenger} fordert @{target} zu einem Duel um {amount} {currencyName} heraus! @{target}, antworte mit {acceptCommand} oder {denyCommand}. Zeit: {seconds} Sekunden.";
     public string DuelAcceptedMessage { get; set; } = "@{target} nimmt das Duel gegen @{challenger} an! Der Pot beträgt {pot} {currencyName}.";
     public string DuelWinMessage { get; set; } = "Das Duel ist entschieden! @{winner} gewinnt gegen @{loser} und erhält {pot} {currencyName}!";

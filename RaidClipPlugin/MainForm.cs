@@ -2227,7 +2227,8 @@ public sealed partial class MainForm : Form
                     config.Twitch.ClientId,
                     session.AccessToken,
                     _broadcaster.Id,
-                    session.UserId);
+                    session.UserId,
+                    config.Commands.IgnoreSharedChatOrigins);
                 _chatModeration.StatusChanged +=
                     UpdateChatConnectionDiagnostics;
                 await StartLiveChatAsync(config, session.UserId, _broadcaster.Id, cancellationToken);

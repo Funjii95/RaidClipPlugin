@@ -3,7 +3,9 @@ using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 using Xunit;
 
+
 namespace RaidClipPlugin.Tests;
+
 
 public sealed class DuelServiceTests
 {
@@ -16,6 +18,7 @@ public sealed class DuelServiceTests
         Assert.Contains(f.Chat.Messages, x => x.Contains("@Target", StringComparison.OrdinalIgnoreCase));
     }
 
+
     [Fact]
     public async Task SelfDuelIsRejectedWithoutPointChange()
     {
@@ -25,6 +28,7 @@ public sealed class DuelServiceTests
         Assert.Equal(1000, await f.Points.GetPointsAsync("c", default));
         Assert.Contains(f.Chat.Messages, x => x.Contains("selbst", StringComparison.OrdinalIgnoreCase));
     }
+
 
     [Fact]
     public async Task BotAndBlacklistedTargetsAreRejected()
@@ -37,6 +41,7 @@ public sealed class DuelServiceTests
         Assert.Equal(1000, await blocked.Points.GetPointsAsync("c", default));
     }
 
+
     [Fact]
     public async Task InsufficientChallengerPointsAreRejected()
     {
@@ -45,6 +50,7 @@ public sealed class DuelServiceTests
         Assert.Equal(50, await f.Points.GetPointsAsync("c", default));
         Assert.Contains(f.Chat.Messages, x => x.Contains("nicht genug", StringComparison.OrdinalIgnoreCase));
     }
+
 
     [Theory]
     [InlineData("!accept")]
@@ -56,6 +62,7 @@ public sealed class DuelServiceTests
         Assert.Contains(f.Chat.Messages, x => x.Contains("keine offene", StringComparison.OrdinalIgnoreCase));
     }
 
+
     [Fact]
     public async Task ChallengerCannotAcceptOwnRequest()
     {
@@ -65,6 +72,7 @@ public sealed class DuelServiceTests
         Assert.Contains(f.Chat.Messages, x => x.Contains("nicht für dich", StringComparison.OrdinalIgnoreCase));
         Assert.Equal(900, await f.Points.GetPointsAsync("c", default));
     }
+
 
     [Fact]
     public async Task TargetWithoutPointsCannotAcceptAndRequestRemainsOpen()
@@ -76,6 +84,7 @@ public sealed class DuelServiceTests
         Assert.Equal(50, await f.Points.GetPointsAsync("t", default));
         Assert.Contains(f.Chat.Messages, x => x.Contains("nicht genug", StringComparison.OrdinalIgnoreCase));
     }
+
 
     [Fact]
     public async Task AcceptPaysCompletePotExactlyOnce()
@@ -89,6 +98,7 @@ public sealed class DuelServiceTests
         Assert.Equal(2000, await f.TotalPointsAsync());
     }
 
+
     [Fact]
     public async Task TargetCanWinCompletePot()
     {
@@ -98,6 +108,7 @@ public sealed class DuelServiceTests
         Assert.Equal(900, await f.Points.GetPointsAsync("c", default));
         Assert.Equal(1100, await f.Points.GetPointsAsync("t", default));
     }
+
 
     [Fact]
     public async Task DenyRefundsStakeOnlyOnce()
@@ -109,6 +120,7 @@ public sealed class DuelServiceTests
         Assert.Equal(1000, await f.Points.GetPointsAsync("c", default));
         Assert.Equal(1000, await f.Points.GetPointsAsync("t", default));
     }
+
 
     [Fact]
     public async Task TimeoutRefundsReservedStake()
@@ -125,6 +137,7 @@ public sealed class DuelServiceTests
         Assert.Contains(f.Chat.Messages, x => x.Contains("abgelaufen", StringComparison.OrdinalIgnoreCase));
     }
 
+
     [Fact]
     public async Task CancelDuringPendingRequestRefundsStake()
     {
@@ -133,6 +146,7 @@ public sealed class DuelServiceTests
         await f.Service.CancelAllAsync(false);
         Assert.Equal(1000, await f.Points.GetPointsAsync("c", default));
     }
+
 
     [Fact]
     public async Task ParallelAcceptAndDenyPreserveTotalWithoutDoubleSettlement()
@@ -145,6 +159,7 @@ public sealed class DuelServiceTests
         Assert.Equal(2000, await f.TotalPointsAsync());
     }
 
+
     [Fact]
     public async Task UserCannotHaveSeveralOpenRequests()
     {
@@ -156,6 +171,7 @@ public sealed class DuelServiceTests
         Assert.Equal(900, await f.Points.GetPointsAsync("c", default));
         Assert.Contains(f.Chat.Messages, x => x.Contains("bereits eine offene", StringComparison.OrdinalIgnoreCase));
     }
+
 
     [Fact]
     public async Task SeparateUsersCanCreateIndependentRequests()
@@ -171,6 +187,7 @@ public sealed class DuelServiceTests
         Assert.Equal(900, await f.Points.GetPointsAsync("o", default));
     }
 
+
     [Fact]
     public async Task AllInUsesAvailableBalanceWithinMaximum()
     {
@@ -179,6 +196,7 @@ public sealed class DuelServiceTests
         Assert.Equal(0, await f.Points.GetPointsAsync("c", default));
     }
 
+
     [Theory]
     [InlineData(true, 10, 50, true)]
     [InlineData(true, 90, 51, false)]
@@ -186,6 +204,41 @@ public sealed class DuelServiceTests
     [InlineData(false, 45, 46, false)]
     public void WinRulesRespectFairAndConfiguredChance(bool fair, int chance, int roll, bool expected) =>
         Assert.Equal(expected, DuelRules.ChallengerWins(fair, chance, roll));
+
+
+    [Fact]
+    public async Task EnabledLoserTimeoutTargetsLoserAfterSuccessfulPayout()
+    {
+        await using var f = await Fixture.CreateAsync(
+            randomRoll: 1, timeoutLoser: true);
+        await f.ChallengeAsync();
+        await f.Service.ProcessAsync(
+            f.Message("t", "Target", "!accept"), default);
+
+        var call = Assert.Single(f.Chat.TimeoutCalls);
+        Assert.Equal("t", call.UserId);
+        Assert.Equal(60, call.DurationSeconds);
+        Assert.Equal("Duel verloren", call.Reason);
+        Assert.Equal(1100, await f.Points.GetPointsAsync("c", default));
+        Assert.Equal(900, await f.Points.GetPointsAsync("t", default));
+    }
+
+
+    [Fact]
+    public async Task TimeoutApiFailureDoesNotRollbackDuelPayout()
+    {
+        await using var f = await Fixture.CreateAsync(
+            randomRoll: 100, timeoutLoser: true, timeoutFails: true);
+        await f.ChallengeAsync();
+        await f.Service.ProcessAsync(
+            f.Message("t", "Target", "!accept"), default);
+
+        Assert.Single(f.Chat.TimeoutCalls);
+        Assert.Equal("c", f.Chat.TimeoutCalls[0].UserId);
+        Assert.Equal(900, await f.Points.GetPointsAsync("c", default));
+        Assert.Equal(1100, await f.Points.GetPointsAsync("t", default));
+    }
+
 
     [Fact]
     public void CommandCollisionsIncludeDuelModule()
@@ -200,6 +253,7 @@ public sealed class DuelServiceTests
         Assert.Contains(registry.FindCollisions(), x => x.Command == "!clip" && x.Message.Contains("Duel"));
     }
 
+
     [Fact]
     public void DuelCommandsAppearInRegistryAndCommandsOutputSource()
     {
@@ -212,6 +266,7 @@ public sealed class DuelServiceTests
         Assert.Contains(registry.Commands, x => x.CommandId == "duel.deny" && x.Enabled);
     }
 
+
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly string _directory;
@@ -219,21 +274,26 @@ public sealed class DuelServiceTests
         public FakeDuelTwitch Chat { get; } = new();
         public DuelService Service { get; }
 
+
         private Fixture(string directory, ViewerPointStore points, DuelService service, FakeDuelTwitch chat)
         { _directory = directory; Points = points; Service = service; Chat = chat; }
 
+
         public static async Task<Fixture> CreateAsync(int challengerPoints = 1000,
             int targetPoints = 1000, int randomRoll = 1, int timeoutSeconds = 30,
-            string chatUserId = "bot", List<string>? blacklist = null)
+            string chatUserId = "bot", List<string>? blacklist = null,
+            bool timeoutLoser = false, bool timeoutFails = false)
         {
             var directory = Path.Combine(Path.GetTempPath(), "raidclip-duel-" + Guid.NewGuid().ToString("N"));
             var points = new ViewerPointStore(directory);
             await points.SetPointsAsync("c", "Challenger", challengerPoints, 0, default);
             await points.SetPointsAsync("t", "Target", targetPoints, 0, default);
-            var chat = new FakeDuelTwitch();
+            var chat = new FakeDuelTwitch { TimeoutFails = timeoutFails };
             chat.Users["target"] = new TwitchUser("t", "target", "Target");
             var config = new DuelConfig { Enabled = true, RequestTimeoutSeconds = timeoutSeconds,
-                UserCooldownSeconds = 0, GlobalCooldownSeconds = 0 };
+                UserCooldownSeconds = 0, GlobalCooldownSeconds = 0,
+                TimeoutLoserEnabled = timeoutLoser, LoserTimeoutSeconds = 60,
+                LoserTimeoutReason = "Duel verloren" };
             var minigame = new MinigameConfig { MinimumPoints = 0, HistoryLimit = 500,
                 PointsBlacklist = blacklist ?? new() { "nightbot" } };
             var service = new DuelService("b", chatUserId, config, minigame, chat, points,
@@ -241,13 +301,17 @@ public sealed class DuelServiceTests
             return new Fixture(directory, points, service, chat);
         }
 
+
         public ChatMessage Message(string id, string name, string text) => new()
         { Id = Guid.NewGuid().ToString("N"), UserId = id, UserLogin = name.ToLowerInvariant(), UserName = name, Text = text };
 
+
         public Task ChallengeAsync() => Service.ProcessAsync(Message("c", "Challenger", "!duel Target 100"), default);
+
 
         public async Task<long> TotalPointsAsync() =>
             await Points.GetPointsAsync("c", default) + await Points.GetPointsAsync("t", default);
+
 
         public async ValueTask DisposeAsync()
         {
@@ -256,17 +320,33 @@ public sealed class DuelServiceTests
         }
     }
 
-    private sealed class FakeDuelTwitch : IDuelTwitchClient
+
+    private sealed record TimeoutCall(string UserId, int DurationSeconds, string Reason);
+
+
+    private sealed class FakeDuelTwitch : IDuelTwitchClient, IDuelModerationClient
     {
         public Dictionary<string, TwitchUser> Users { get; } = new(StringComparer.OrdinalIgnoreCase);
         public List<string> Messages { get; } = new();
+        public List<TimeoutCall> TimeoutCalls { get; } = new();
+        public bool TimeoutFails { get; init; }
         public Task<TwitchUser?> GetUserAsync(string login, CancellationToken cancellationToken) =>
             Task.FromResult(Users.TryGetValue(login, out var user) ? user : null);
         public Task SendChatMessageAsync(string broadcasterId, string senderId, string message,
             CancellationToken cancellationToken) { lock (Messages) Messages.Add(message); return Task.CompletedTask; }
         public Task<bool> IsFollowerAsync(string broadcasterId, string userId,
             CancellationToken cancellationToken) => Task.FromResult(false);
+        public Task TimeoutUserAsync(string broadcasterId, string moderatorId,
+            string userId, int durationSeconds, string reason,
+            CancellationToken cancellationToken)
+        {
+            TimeoutCalls.Add(new TimeoutCall(userId, durationSeconds, reason));
+            return TimeoutFails
+                ? Task.FromException(new HttpRequestException("Testfehler"))
+                : Task.CompletedTask;
+        }
     }
+
 
     private sealed class FixedDuelRandom(int roll) : IDuelRandom
     {

@@ -4,7 +4,9 @@ using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using System.Text.Json;
 
+
 namespace RaidClipPlugin.Services;
+
 
 public sealed class ConfigurationService
 {
@@ -13,6 +15,7 @@ public sealed class ConfigurationService
         WriteIndented = true,
         PropertyNameCaseInsensitive = true
     };
+
 
     private static string UserSettingsPath
     {
@@ -27,6 +30,7 @@ public sealed class ConfigurationService
         }
     }
 
+
     public AppConfig Load()
     {
         IConfiguration configuration = new ConfigurationBuilder()
@@ -34,22 +38,27 @@ public sealed class ConfigurationService
             .AddJsonFile("Config/config.template.json", optional: false)
             .Build();
 
+
         var appConfig = new AppConfig();
         configuration.Bind(appConfig);
+
 
         var credentials = new TwitchCredentialStore().Load();
         appConfig.Twitch.ClientId = credentials.ClientId;
         appConfig.Twitch.ClientSecret = credentials.ClientSecret;
+
 
         if (string.IsNullOrWhiteSpace(appConfig.Twitch.BroadcasterLogin))
         {
             appConfig.Twitch.BroadcasterLogin = "Funjii";
         }
 
+
         if (string.IsNullOrWhiteSpace(appConfig.OBS.Host))
         {
             appConfig.OBS.Host = "127.0.0.1";
         }
+
 
         ApplySavedGuiSettings(appConfig);
         Normalize(appConfig);
@@ -57,11 +66,13 @@ public sealed class ConfigurationService
         return appConfig;
     }
 
+
     public void SaveGuiSettings(AppConfig config)
     {
         Normalize(config);
         ValidateTechnicalSettings(config);
         ValidateGuiSettings(config);
+
 
         var settings = new GuiSettings
         {
@@ -117,14 +128,17 @@ public sealed class ConfigurationService
             ModuleHealth = config.ModuleHealth
         };
 
+
         File.WriteAllText(
             UserSettingsPath,
             JsonSerializer.Serialize(settings, JsonOptions));
     }
 
+
     public void SaveSpotifyConnectionSettings(MusicRequestConfig musicRequests)
     {
         ArgumentNullException.ThrowIfNull(musicRequests);
+
 
         NormalizeMusicRequests(musicRequests);
         if (string.IsNullOrWhiteSpace(musicRequests.SpotifyClientId))
@@ -132,6 +146,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Bitte eine Spotify Client-ID eingeben.");
         }
+
 
         if (!Uri.TryCreate(
                 musicRequests.RedirectUri,
@@ -150,6 +165,7 @@ public sealed class ConfigurationService
                 "Der Spotify-Redirect muss eine lokale HTTP-Adresse sein.");
         }
 
+
         GuiSettings settings;
         try
         {
@@ -165,15 +181,18 @@ public sealed class ConfigurationService
             settings = new GuiSettings();
         }
 
+
         settings.MusicRequests ??= new MusicRequestConfig();
         settings.MusicRequests.SpotifyClientId =
             musicRequests.SpotifyClientId;
         settings.MusicRequests.RedirectUri = musicRequests.RedirectUri;
 
+
         File.WriteAllText(
             UserSettingsPath,
             JsonSerializer.Serialize(settings, JsonOptions));
     }
+
 
     private static void ApplySavedGuiSettings(AppConfig config)
     {
@@ -182,51 +201,61 @@ public sealed class ConfigurationService
             return;
         }
 
+
         try
         {
             var settings = JsonSerializer.Deserialize<GuiSettings>(
                 File.ReadAllText(UserSettingsPath),
                 JsonOptions);
 
+
             if (settings is null)
             {
                 return;
             }
+
 
             if (!string.IsNullOrWhiteSpace(settings.UiTheme))
             {
                 config.UiTheme = settings.UiTheme;
             }
 
+
             if (!string.IsNullOrWhiteSpace(settings.TwitchChannel))
             {
                 config.Twitch.BroadcasterLogin = settings.TwitchChannel;
             }
+
 
             if (!string.IsNullOrWhiteSpace(settings.ObsHost))
             {
                 config.OBS.Host = settings.ObsHost;
             }
 
+
             if (settings.ObsPort is not null)
             {
                 config.OBS.Port = settings.ObsPort.Value;
             }
+
 
             if (settings.ObsPassword is not null)
             {
                 config.OBS.Password = settings.ObsPassword;
             }
 
+
             if (settings.ClipLookbackDays is not null)
             {
                 config.Twitch.ClipLookbackDays = settings.ClipLookbackDays.Value;
             }
 
+
             if (settings.RetryAttempts is not null)
             {
                 config.Twitch.ClipRetryAttempts = settings.RetryAttempts.Value;
             }
+
 
             if (settings.MaxClipDurationSeconds is not null)
             {
@@ -234,10 +263,12 @@ public sealed class ConfigurationService
                     settings.MaxClipDurationSeconds.Value;
             }
 
+
             if (settings.VolumePercent is not null)
             {
                 config.Player.VolumePercent = settings.VolumePercent.Value;
             }
+
 
             if (settings.RaidCooldownMinutes is not null)
             {
@@ -245,36 +276,43 @@ public sealed class ConfigurationService
                     settings.RaidCooldownMinutes.Value;
             }
 
+
             if (settings.RaidDelaySeconds is not null)
             {
                 config.Twitch.RaidDelaySeconds =
                     settings.RaidDelaySeconds.Value;
             }
 
+
             if (settings.BlacklistedClipIds is not null)
             {
                 config.Player.BlacklistedClipIds = settings.BlacklistedClipIds;
             }
+
 
             if (settings.SendRaidMessage is not null)
             {
                 config.Chat.SendRaidMessage = settings.SendRaidMessage.Value;
             }
 
+
             if (settings.SendShoutout is not null)
             {
                 config.Chat.SendShoutout = settings.SendShoutout.Value;
             }
+
 
             if (!string.IsNullOrWhiteSpace(settings.RaidMessageTemplate))
             {
                 config.Chat.RaidMessageTemplate = settings.RaidMessageTemplate;
             }
 
+
             if (settings.AutoUpdateEnabled is not null)
             {
                 config.Update.Enabled = settings.AutoUpdateEnabled.Value;
             }
+
 
             if (settings.SkippedUpdateVersion is not null)
             {
@@ -282,10 +320,12 @@ public sealed class ConfigurationService
                     settings.SkippedUpdateVersion;
             }
 
+
             if (settings.ModerationEnabled is not null)
             {
                 config.Moderation.Enabled = settings.ModerationEnabled.Value;
             }
+
 
             if (settings.ShowChatMessagesInLog is not null)
             {
@@ -293,11 +333,13 @@ public sealed class ConfigurationService
                     settings.ShowChatMessagesInLog.Value;
             }
 
+
             if (settings.AutoFilterEnabled is not null)
             {
                 config.Moderation.AutoFilterEnabled =
                     settings.AutoFilterEnabled.Value;
             }
+
 
             if (settings.WhitelistModsAndVips is not null)
             {
@@ -305,16 +347,19 @@ public sealed class ConfigurationService
                     settings.WhitelistModsAndVips.Value;
             }
 
+
             if (settings.ModerationTimeoutSeconds is not null)
             {
                 config.Moderation.TimeoutSeconds =
                     settings.ModerationTimeoutSeconds.Value;
             }
 
+
             if (settings.BlockedWords is not null)
             {
                 config.Moderation.BlockedWords = settings.BlockedWords;
             }
+
 
             if (settings.MinigameEnabled is not null)
                 config.Minigame.Enabled = settings.MinigameEnabled.Value;
@@ -375,6 +420,7 @@ public sealed class ConfigurationService
                 exception.Message);
         }
     }
+
 
     private static void Normalize(AppConfig config)
     {
@@ -460,6 +506,14 @@ public sealed class ConfigurationService
         config.Duel.DuelCommand = NormalizeCommand(config.Duel.DuelCommand);
         config.Duel.AcceptCommand = NormalizeCommand(config.Duel.AcceptCommand);
         config.Duel.DenyCommand = NormalizeCommand(config.Duel.DenyCommand);
+        config.Duel.LoserTimeoutSeconds = Math.Clamp(
+            config.Duel.LoserTimeoutSeconds, 1, 1_209_600);
+        config.Duel.LoserTimeoutReason = string.IsNullOrWhiteSpace(
+            config.Duel.LoserTimeoutReason)
+            ? "Duel verloren"
+            : config.Duel.LoserTimeoutReason.Trim();
+        if (config.Duel.LoserTimeoutReason.Length > 500)
+            config.Duel.LoserTimeoutReason = config.Duel.LoserTimeoutReason[..500];
         config.Commands.Command = NormalizeCommand(config.Commands.Command);
         config.Commands.ExportDirectory = (config.Commands.ExportDirectory ?? "exports").Trim();
         config.Commands.CommandRoleOverrides = (config.Commands.CommandRoleOverrides ??
@@ -493,6 +547,7 @@ public sealed class ConfigurationService
             .ToList();
     }
 
+
     private static void ValidateTechnicalSettings(AppConfig config)
     {
         if (string.IsNullOrWhiteSpace(config.Twitch.ClientId))
@@ -501,11 +556,13 @@ public sealed class ConfigurationService
                 "Twitch.ClientId fehlt in der technischen Basiskonfiguration.");
         }
 
+
         if (string.IsNullOrWhiteSpace(config.Twitch.ClientSecret))
         {
             throw new InvalidOperationException(
                 "Twitch.ClientSecret fehlt im verschlüsselten Benutzerspeicher.");
         }
+
 
         if (string.IsNullOrWhiteSpace(config.Player.BrowserSource))
         {
@@ -513,12 +570,14 @@ public sealed class ConfigurationService
                 "Player.BrowserSource fehlt in der technischen Basiskonfiguration.");
         }
 
+
         if (config.Player.Port is < 1024 or > 65535)
         {
             throw new InvalidOperationException(
                 "Player.Port muss zwischen 1024 und 65535 liegen.");
         }
     }
+
 
     private static void ValidateGuiSettings(AppConfig config)
     {
@@ -528,11 +587,13 @@ public sealed class ConfigurationService
                 "Bitte einen Twitch-Kanal eingeben.");
         }
 
+
         if (string.IsNullOrWhiteSpace(config.OBS.Host))
         {
             throw new InvalidOperationException(
                 "Bitte einen OBS-Host eingeben.");
         }
+
 
         if (config.OBS.Port is < 1 or > 65535)
         {
@@ -540,11 +601,13 @@ public sealed class ConfigurationService
                 "Der OBS-Port muss zwischen 1 und 65535 liegen.");
         }
 
+
         if (config.Twitch.ClipLookbackDays is < 1 or > 3650)
         {
             throw new InvalidOperationException(
                 "Der Clip-Lookback muss zwischen 1 und 3650 Tagen liegen.");
         }
+
 
         if (config.Twitch.ClipRetryAttempts is < 1 or > 10)
         {
@@ -552,11 +615,13 @@ public sealed class ConfigurationService
                 "Die Retry-Anzahl muss zwischen 1 und 10 liegen.");
         }
 
+
         if (config.Player.DurationSeconds is < 1 or > 600)
         {
             throw new InvalidOperationException(
                 "Die maximale Clipdauer muss zwischen 1 und 600 Sekunden liegen.");
         }
+
 
         if (config.Player.VolumePercent is < 0 or > 100)
         {
@@ -564,11 +629,13 @@ public sealed class ConfigurationService
                 "Die Lautstärke muss zwischen 0 und 100 Prozent liegen.");
         }
 
+
         if (config.Twitch.RaidCooldownMinutes is < 0 or > 1440)
         {
             throw new InvalidOperationException(
                 "Der Raid-Cooldown muss zwischen 0 und 1440 Minuten liegen.");
         }
+
 
         if (config.Twitch.RaidDelaySeconds is < 0 or >
             RaidDelayService.MaximumDelaySeconds)
@@ -578,11 +645,13 @@ public sealed class ConfigurationService
                 $"{RaidDelayService.MaximumDelaySeconds} Sekunden liegen.");
         }
 
+
         if (config.Moderation.TimeoutSeconds is < 1 or > 1_209_600)
         {
             throw new InvalidOperationException(
                 "Der Moderations-Timeout muss zwischen 1 und 1209600 Sekunden liegen.");
         }
+
 
         ValidateMinigameSettings(config.Minigame);
         ValidateMusicRequestSettings(config.MusicRequests);
@@ -628,6 +697,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Ein Giveaway-Command kollidiert mit einem bestehenden Chat-Command.");
 
+
         if (config.Chat.SendRaidMessage &&
             string.IsNullOrWhiteSpace(config.Chat.RaidMessageTemplate))
         {
@@ -635,6 +705,7 @@ public sealed class ConfigurationService
                 "Bitte eine Raid-Chatnachricht eingeben.");
         }
     }
+
 
     public static void ValidateDuelSettings(DuelConfig duel)
     {
@@ -662,6 +733,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException("Alle Duel-Chatnachrichten müssen ausgefüllt sein.");
     }
 
+
     public static void ValidateHeistAndCommands(AppConfig config)
     {
         var heist = config.Heist;
@@ -685,6 +757,7 @@ public sealed class ConfigurationService
             heist.EvaluationMessage, heist.SuccessMessage, heist.FailureMessage };
         if (messages.Any(string.IsNullOrWhiteSpace))
             throw new InvalidOperationException("Alle Heist-Chatnachrichten müssen ausgefüllt sein.");
+
 
         var commands = config.Commands;
         if (string.IsNullOrWhiteSpace(commands.Command))
@@ -715,6 +788,7 @@ public sealed class ConfigurationService
             !Enum.TryParse<CommandRole>(item.Value, true, out _)))
             throw new InvalidOperationException("Mindestens eine Command-Berechtigung ist ungültig.");
 
+
         var registry = new CommandRegistry();
         registry.Update(config);
         var collision = registry.FindCollisions(includeDisabled: false).FirstOrDefault();
@@ -725,12 +799,14 @@ public sealed class ConfigurationService
         }
     }
 
+
     public static void ValidateMinigameSettings(MinigameConfig config)
     {
         if (!config.Enabled && !config.PointsEnabled)
         {
             return;
         }
+
 
         if (string.IsNullOrWhiteSpace(config.CurrencySingular) ||
             string.IsNullOrWhiteSpace(config.CurrencyPlural) ||
@@ -749,6 +825,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Das Historienlimit muss zwischen 1 und 10000 liegen.");
 
+
         if (config.PointsEnabled)
         {
             if (!config.PointsCommandPunkteEnabled &&
@@ -765,6 +842,7 @@ public sealed class ConfigurationService
                         System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                     throw new InvalidOperationException(
                         "Der eigene Punkte-Command darf nur Buchstaben, Zahlen, Bindestrich und Unterstrich enthalten.");
+
 
                 var reservedCommands = new HashSet<string>(
                     StringComparer.OrdinalIgnoreCase)
@@ -803,10 +881,12 @@ public sealed class ConfigurationService
                     "Die Anzahl der Top-Einträge muss zwischen 1 und 100 liegen.");
         }
 
+
         if (!config.Enabled)
         {
             return;
         }
+
 
         if (config.GambleCooldownSeconds is < 0 or > 3600 ||
             config.CoinflipCooldownSeconds is < 0 or > 3600 ||
@@ -851,6 +931,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Es müssen genau vier Gamble-Ergebnisbereiche vorhanden sein.");
 
+
         var ranges = config.GambleRanges.OrderBy(range => range.From).ToArray();
         var expectedFrom = 1;
         foreach (var range in ranges)
@@ -868,10 +949,12 @@ public sealed class ConfigurationService
             expectedFrom = range.To + 1;
         }
 
+
         if (expectedFrom != 101)
             throw new InvalidOperationException(
                 "Gamble-Bereiche müssen bei 100 enden.");
     }
+
 
     private static void NormalizeMusicRequests(MusicRequestConfig config)
     {
@@ -895,6 +978,7 @@ public sealed class ConfigurationService
         config.ModeratorCommands.Resume = NormalizeCommand(config.ModeratorCommands.Resume);
     }
 
+
     private static List<string> NormalizeList(
         List<string>? values, bool twitchNames = false) =>
         (values ?? new List<string>())
@@ -905,6 +989,7 @@ public sealed class ConfigurationService
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToList();
 
+
     private static string NormalizeCommand(string? command)
     {
         var normalized = (command ?? "").Trim().ToLowerInvariant();
@@ -912,6 +997,7 @@ public sealed class ConfigurationService
             ? "!" + normalized
             : normalized;
     }
+
 
     public static void ValidateMusicRequestSettings(MusicRequestConfig config)
     {
@@ -939,6 +1025,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Der Spotify-Redirect muss eine lokale HTTP-Adresse sein.");
 
+
         var messages = new[]
         {
             config.ChatMessages.Queued, config.ChatMessages.Playing,
@@ -964,6 +1051,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Aktivierte Musik-Commands dürfen nicht leer sein.");
 
+
         var commands = enabledCommands.Where(item => item.Item1)
             .Select(item => item.Item2).ToArray();
         if (commands.Any(command =>
@@ -975,6 +1063,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Musik-Commands sind ungültig oder doppelt vergeben.");
 
+
         var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "!punkte", "!points", "!perlen", "!daily", "!top", "!rang",
@@ -985,6 +1074,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Ein Musik-Command kollidiert mit einem bestehenden Command.");
     }
+
 
     public static void ValidateClipSettings(
         ClipCommandConfig clip,
@@ -1070,6 +1160,8 @@ public sealed class ConfigurationService
     }
 
 
+
+
     public static void ValidateGiveawaySettings(GiveawayConfig config)
     {
         if (string.IsNullOrWhiteSpace(config.Title) ||
@@ -1099,6 +1191,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Mindestens eine Giveaway-Rolle muss zugelassen sein.");
 
+
         var commands = GetGiveawayCommands(config).ToArray();
         if (commands.Any(command =>
                 !System.Text.RegularExpressions.Regex.IsMatch(
@@ -1109,6 +1202,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Giveaway-Commands sind ungültig oder doppelt vergeben.");
     }
+
 
     private static IEnumerable<string> GetGiveawayCommands(GiveawayConfig config)
     {
@@ -1124,6 +1218,7 @@ public sealed class ConfigurationService
             });
         return commands.Where(command => !string.IsNullOrWhiteSpace(command));
     }
+
 
     private static void NormalizeGiveawaySettings(GiveawayConfig config)
     {
@@ -1151,6 +1246,7 @@ public sealed class ConfigurationService
         config.ModeratorCommands.Status = NormalizeCommandText(config.ModeratorCommands.Status);
     }
 
+
     private static string NormalizeCommandText(string? value)
     {
         var command = System.Text.RegularExpressions.Regex.Replace(
@@ -1158,6 +1254,7 @@ public sealed class ConfigurationService
         if (command.Length == 0) return command;
         return command.StartsWith('!') ? command : "!" + command;
     }
+
 
     private static void NormalizeClipSettings(
         ClipCommandConfig clip,
@@ -1214,6 +1311,7 @@ public sealed class ConfigurationService
             }).ToList();
     }
 
+
     private static List<string> NormalizeUsers(List<string>? users) =>
         (users ?? new List<string>())
             .Where(value => !string.IsNullOrWhiteSpace(value))
@@ -1221,12 +1319,14 @@ public sealed class ConfigurationService
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+
     private static string NormalizeCommand(string? value, string fallback)
     {
         var command = (value ?? "").Trim().ToLowerInvariant();
         if (command.Length == 0) return fallback;
         return command.StartsWith('!') ? command : "!" + command;
     }
+
 
     private static GambleRangeConfig CloneRange(GambleRangeConfig range) =>
         new()
@@ -1236,6 +1336,7 @@ public sealed class ConfigurationService
             Multiplier = range.Multiplier,
             ChatText = range.ChatText
         };
+
 
     private sealed class GuiSettings
     {

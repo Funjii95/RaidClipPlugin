@@ -1,7 +1,9 @@
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Services;
 
+
 namespace RaidClipPlugin;
+
 
 public sealed partial class MainForm
 {
@@ -26,6 +28,11 @@ public sealed partial class MainForm
     private readonly CheckBox _duelResultMessagesCheck = NewCheck("Ergebnis-Nachrichten", true);
     private readonly CheckBox _duelDenyMessagesCheck = NewCheck("Ablehnungs-Nachrichten", true);
     private readonly CheckBox _duelTimeoutMessagesCheck = NewCheck("Timeout-Nachrichten", true);
+    private readonly CheckBox _duelLoserTimeoutCheck = NewCheck(
+        "Verlierer automatisch timeouten", false);
+    private readonly NumericUpDown _duelLoserTimeoutSecondsControl =
+        NewNumber(60, 1, 1_209_600);
+    private readonly TextBox _duelLoserTimeoutReasonBox = new() { Width = 360 };
     private readonly TextBox[] _duelMessageBoxes = Enumerable.Range(0, 12).Select(_ => new TextBox
         { Width = 760, Height = 52, Multiline = true, ScrollBars = ScrollBars.Vertical }).ToArray();
     private readonly Label _duelStateLabel = new() { Text = "● Inaktiv", AutoSize = true,
@@ -37,6 +44,7 @@ public sealed partial class MainForm
     private readonly Button _duelCancelButton = NewHeistActionButton("Offene Duels abbrechen", 200);
     private readonly Button _duelTestButton = NewHeistActionButton("Test-Duel ausführen", 180);
 
+
     private Control BuildDuelSettingsPanel()
     {
         var outer = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1 };
@@ -46,6 +54,7 @@ public sealed partial class MainForm
             Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, ForeColor = MutedTextColor,
             Padding = new Padding(10, 0, 0, 0) }, 0, 0);
         var tabs = new TabControl { Dock = DockStyle.Fill };
+
 
         var general = CreateMinigameFlow();
         general.Controls.AddRange(new Control[] { _duelEnabledCheck,
@@ -60,12 +69,17 @@ public sealed partial class MainForm
             CreateSettingEditor("Globaler Cooldown (Sek.)", _duelGlobalCooldownControl),
             _duelSaveButton, _duelDefaultsButton });
 
+
         var rules = CreateMinigameFlow();
         rules.Controls.AddRange(new Control[] { _duelEveryoneCheck, _duelFollowersCheck,
             _duelSubscribersCheck, _duelVipsCheck, _duelModeratorsCheck, _duelFairModeCheck,
-            CreateSettingEditor("Gewinnchance Herausforderer (%)", _duelChallengerChanceControl) });
+            CreateSettingEditor("Gewinnchance Herausforderer (%)", _duelChallengerChanceControl),
+            _duelLoserTimeoutCheck,
+            CreateSettingEditor("Timeout für Verlierer (Sek.)", _duelLoserTimeoutSecondsControl),
+            CreateSettingEditor("Timeout-Grund", _duelLoserTimeoutReasonBox) });
         rules.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(900, 0), ForeColor = MutedTextColor,
             Text = "Im fairen Modus haben beide Teilnehmer eine Chance von 50 Prozent." });
+
 
         var messages = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true,
             FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(8) };
@@ -78,6 +92,7 @@ public sealed partial class MainForm
         messages.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(900, 0), ForeColor = MutedTextColor,
             Text = "Platzhalter: {user}, {challenger}, {target}, {winner}, {loser}, {amount}, {pot}, {currencyName}, {seconds}, {duelCommand}, {acceptCommand}, {denyCommand}, {winChance}" });
 
+
         var live = CreateMinigameFlow();
         live.Controls.AddRange(new Control[] { _duelStateLabel, _duelOpenLabel, _duelDetailsLabel,
             _duelCancelButton, _duelTestButton });
@@ -88,6 +103,7 @@ public sealed partial class MainForm
         outer.Controls.Add(tabs, 0, 1);
         return outer;
     }
+
 
     private void InitializeDuelEvents()
     {
@@ -105,7 +121,13 @@ public sealed partial class MainForm
         };
         _duelFairModeCheck.CheckedChanged += (_, _) =>
             _duelChallengerChanceControl.Enabled = !_duelFairModeCheck.Checked;
+        _duelLoserTimeoutCheck.CheckedChanged += (_, _) =>
+        {
+            _duelLoserTimeoutSecondsControl.Enabled = _duelLoserTimeoutCheck.Checked;
+            _duelLoserTimeoutReasonBox.Enabled = _duelLoserTimeoutCheck.Checked;
+        };
     }
+
 
     private void LoadDuelSettings(DuelConfig duel)
     {
@@ -131,12 +153,18 @@ public sealed partial class MainForm
         _duelResultMessagesCheck.Checked = duel.SendResultMessage;
         _duelDenyMessagesCheck.Checked = duel.SendDenyMessage;
         _duelTimeoutMessagesCheck.Checked = duel.SendTimeoutMessage;
+        _duelLoserTimeoutCheck.Checked = duel.TimeoutLoserEnabled;
+        SetNumericValue(_duelLoserTimeoutSecondsControl, duel.LoserTimeoutSeconds);
+        _duelLoserTimeoutReasonBox.Text = duel.LoserTimeoutReason;
+        _duelLoserTimeoutSecondsControl.Enabled = duel.TimeoutLoserEnabled;
+        _duelLoserTimeoutReasonBox.Enabled = duel.TimeoutLoserEnabled;
         var values = new[] { duel.DuelRequestMessage, duel.DuelAcceptedMessage, duel.DuelWinMessage,
             duel.DuelDeniedMessage, duel.DuelTimeoutMessage, duel.NotEnoughPointsChallengerMessage,
             duel.NotEnoughPointsTargetMessage, duel.SelfDuelMessage, duel.NoPendingDuelMessage,
             duel.WrongTargetMessage, duel.AlreadyPendingDuelMessage, duel.InvalidBetMessage };
         for (var i = 0; i < values.Length; i++) _duelMessageBoxes[i].Text = values[i];
     }
+
 
     private void ReadDuelSettings(AppConfig config)
     {
@@ -162,6 +190,9 @@ public sealed partial class MainForm
         duel.SendResultMessage = _duelResultMessagesCheck.Checked;
         duel.SendDenyMessage = _duelDenyMessagesCheck.Checked;
         duel.SendTimeoutMessage = _duelTimeoutMessagesCheck.Checked;
+        duel.TimeoutLoserEnabled = _duelLoserTimeoutCheck.Checked;
+        duel.LoserTimeoutSeconds = (int)_duelLoserTimeoutSecondsControl.Value;
+        duel.LoserTimeoutReason = _duelLoserTimeoutReasonBox.Text;
         duel.DuelRequestMessage = _duelMessageBoxes[0].Text;
         duel.DuelAcceptedMessage = _duelMessageBoxes[1].Text;
         duel.DuelWinMessage = _duelMessageBoxes[2].Text;
@@ -175,6 +206,7 @@ public sealed partial class MainForm
         duel.AlreadyPendingDuelMessage = _duelMessageBoxes[10].Text;
         duel.InvalidBetMessage = _duelMessageBoxes[11].Text;
     }
+
 
     private void OnDuelStatusChanged(DuelStatus status)
     {
