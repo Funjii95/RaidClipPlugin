@@ -207,6 +207,21 @@ public sealed class DuelServiceTests
 
 
     [Fact]
+    public async Task DisabledLoserTimeoutDoesNotCallModerationApi()
+    {
+        await using var f = await Fixture.CreateAsync(
+            randomRoll: 1, timeoutLoser: false);
+        await f.ChallengeAsync();
+        await f.Service.ProcessAsync(
+            f.Message("t", "Target", "!accept"), default);
+
+        Assert.Empty(f.Chat.TimeoutCalls);
+        Assert.Equal(1100, await f.Points.GetPointsAsync("c", default));
+        Assert.Equal(900, await f.Points.GetPointsAsync("t", default));
+    }
+
+
+    [Fact]
     public async Task EnabledLoserTimeoutTargetsLoserAfterSuccessfulPayout()
     {
         await using var f = await Fixture.CreateAsync(
