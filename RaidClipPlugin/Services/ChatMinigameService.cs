@@ -142,7 +142,7 @@ public sealed class ChatMinigameService : IDisposable
     {
         if (!IsPointsBlacklisted(login, displayName)) return false;
         Console.WriteLine(
-            $"Punktevergabe Ã¼bersprungen: {displayName ?? login} befindet sich auf der Punkte-Blacklist.");
+            $"Punktevergabe übersprungen: {displayName ?? login} befindet sich auf der Punkte-Blacklist.");
         return true;
     }
 
@@ -480,8 +480,8 @@ public sealed class ChatMinigameService : IDisposable
 
                 await TrySendChatAsync(
                     command == "!lurk"
-                        ? $"@{message.UserName} ist jetzt im Lurk und erhÃ¤lt weiterhin Anwesenheitspunkte."
-                        : $"@{message.UserName} ist zurÃ¼ck und erhÃ¤lt wieder normale Anwesenheitspunkte.",
+                        ? $"@{message.UserName} ist jetzt im Lurk und erhält weiterhin Anwesenheitspunkte."
+                        : $"@{message.UserName} ist zurück und erhält wieder normale Anwesenheitspunkte.",
                     cancellationToken);
                 return;
             }
@@ -495,8 +495,8 @@ public sealed class ChatMinigameService : IDisposable
                     message.UserName, _config.DailyBonusPoints,
                     _config.MinimumPoints, cancellationToken, MaximumPoints);
                 var text = daily.Success
-                    ? $"@{message.UserName} hat den tÃ¤glichen Bonus abgeholt: +{FormatCurrency(_config.DailyBonusPoints)}."
-                    : $"@{message.UserName}, dein Daily ist wieder verfÃ¼gbar in {(int)daily.Remaining.TotalHours:00}:{daily.Remaining.Minutes:00}.";
+                    ? $"@{message.UserName} hat den täglichen Bonus abgeholt: +{FormatCurrency(_config.DailyBonusPoints)}."
+                    : $"@{message.UserName}, dein Daily ist wieder verfügbar in {(int)daily.Remaining.TotalHours:00}:{daily.Remaining.Minutes:00}.";
                 await TrySendChatAsync(text, cancellationToken);
                 if (daily.Success) DataChanged?.Invoke();
                 return;
@@ -557,7 +557,7 @@ public sealed class ChatMinigameService : IDisposable
                     $"@{message.UserName} | {_config.CurrencyPlural}: {e.Points:N0} | " +
                     $"Rang: #{p.Rank} | Watchtime: {e.WatchMinutes / 60}h | " +
                     $"Spiele: {e.GamesPlayed} | Gamble: {e.Wins}W/{e.Losses}L | " +
-                    $"GrÃ¶ÃŸter Gewinn: {FormatCurrency(e.BiggestWin)}",
+                    $"Größter Gewinn: {FormatCurrency(e.BiggestWin)}",
                     cancellationToken);
                 return;
             }
@@ -625,10 +625,10 @@ public sealed class ChatMinigameService : IDisposable
                     jackpotAmount, _config.JackpotStartValue,
                     cancellationToken);
                 Console.WriteLine(
-                    $"Minigame-Admin: {message.UserName} erhÃ¶ht den Jackpot " +
+                    $"Minigame-Admin: {message.UserName} erhöht den Jackpot " +
                     $"von {updated.Previous} auf {updated.Current}.");
                 await TrySendChatAsync(
-                    $"ðŸŽ° Jackpot +{FormatCurrency(jackpotAmount)} Â· Neuer Stand: " +
+                    $"🎰 Jackpot +{FormatCurrency(jackpotAmount)} · Neuer Stand: " +
                     $"{FormatCurrency(updated.Current)}.", cancellationToken);
                 DataChanged?.Invoke();
                 return;
@@ -654,7 +654,7 @@ public sealed class ChatMinigameService : IDisposable
                     $"Minigame-Admin: Broadcaster {message.UserName} leert den Jackpot " +
                     $"von {dumped.Previous} auf {dumped.Current}.");
                 await TrySendChatAsync(
-                    $"ðŸŽ° Jackpot geleert: {FormatCurrency(dumped.Previous)} wurden entfernt. " +
+                    $"🎰 Jackpot geleert: {FormatCurrency(dumped.Previous)} wurden entfernt. " +
                     $"Neuer Stand: {FormatCurrency(dumped.Current)}.",
                     cancellationToken);
                 DataChanged?.Invoke();
@@ -678,7 +678,7 @@ public sealed class ChatMinigameService : IDisposable
                     _config.JackpotStartValue,
                     cancellationToken);
                 await TrySendChatAsync(
-                    $"ðŸŽ° Aktueller Jackpot: {FormatCurrency(jackpot)}.",
+                    $"🎰 Aktueller Jackpot: {FormatCurrency(jackpot)}.",
                     cancellationToken);
                 Console.WriteLine(
                     $"Jackpot-Abfrage von {message.UserName}: {jackpot}.");
@@ -706,7 +706,7 @@ public sealed class ChatMinigameService : IDisposable
                 {
                     var outcome = payout > 0 ? $"Gewinn {payout}" : "Verloren";
                     await TrySendChatAsync(
-                        $"@{message.UserName}: {resultSide}! {outcome} Â· " +
+                        $"@{message.UserName}: {resultSide}! {outcome} · " +
                         $"Stand {result.Balance}{JackpotText(result)}",
                         cancellationToken);
                 }
@@ -724,7 +724,7 @@ public sealed class ChatMinigameService : IDisposable
                 var symbols = _config.SlotSymbols.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 if (symbols.Length < 2) throw new InvalidOperationException("Mindestens zwei Slot-Symbole erforderlich.");
                 var draw = new[] { symbols[Random.Shared.Next(symbols.Length)], symbols[Random.Shared.Next(symbols.Length)], symbols[Random.Shared.Next(symbols.Length)] };
-                var multiplier = draw.All(x => x == "7ï¸âƒ£") ? _config.SlotsSevenMultiplier
+                var multiplier = draw.All(x => x == "7️⃣") ? _config.SlotsSevenMultiplier
                     : draw.Distinct().Count() == 1 ? _config.SlotsThreeMultiplier
                     : draw.Distinct().Count() == 2 ? _config.SlotsTwoMultiplier : 0m;
                 var payout = ToNonNegativeLong(stake * multiplier);
@@ -785,13 +785,13 @@ public sealed class ChatMinigameService : IDisposable
                 }
 
                 var rouletteOutcome = rouletteWon
-                    ? $"Tipp {rouletteBet.DisplayName} gewinnt Â· Auszahlung " +
+                    ? $"Tipp {rouletteBet.DisplayName} gewinnt · Auszahlung " +
                       FormatCurrency(roulettePayout)
                     : $"Tipp {rouletteBet.DisplayName} verliert";
                 await TrySendChatAsync(
-                    $"@{message.UserName}: Die Kugel fÃ¤llt auf {rouletteNumber} " +
+                    $"@{message.UserName}: Die Kugel fällt auf {rouletteNumber} " +
                     $"{RouletteRules.ColorName(rouletteNumber)}. " +
-                    $"{rouletteOutcome} Â· Stand " +
+                    $"{rouletteOutcome} · Stand " +
                     $"{FormatCurrency(rouletteResult.Balance)}" +
                     JackpotText(rouletteResult),
                     cancellationToken);
@@ -830,7 +830,7 @@ public sealed class ChatMinigameService : IDisposable
             {
                 await TrySendChatAsync(
                     isAllIn
-                        ? $"@{message.UserName}, du hast nicht genug verfÃ¼gbare {_config.CurrencyPlural} fÃ¼r All-in."
+                        ? $"@{message.UserName}, du hast nicht genug verfügbare {_config.CurrencyPlural} für All-in."
                         : $"@{message.UserName}, nutze !gamble <einsatz|all>.",
                     cancellationToken);
                 return;
@@ -843,7 +843,7 @@ public sealed class ChatMinigameService : IDisposable
             var gambleResult = await ApplyCasinoAsync(message, "Gamble", gambleStake,
                 gamblePayout, cancellationToken, forceJackpot: roll == 100);
             if (!gambleResult.Success) return;
-            Console.WriteLine($"!gamble erfolgreich verarbeitet fÃ¼r {message.UserName}; Stand {gambleResult.Balance}.");
+            Console.WriteLine($"!gamble erfolgreich verarbeitet für {message.UserName}; Stand {gambleResult.Balance}.");
             if (roll == 100 && gambleResult.JackpotWon > 0)
             {
                 Console.WriteLine(
@@ -851,10 +851,10 @@ public sealed class ChatMinigameService : IDisposable
                     $"{FormatCurrency(gambleResult.JackpotWon)}; neuer Jackpot " +
                     $"{_config.JackpotStartValue:N0}.");
                 await TrySendChatAsync(
-                    $"ðŸŽ‰ JACKPOT! {message.UserName} hat eine 100 gewÃ¼rfelt " +
+                    $"🎉 JACKPOT! {message.UserName} hat eine 100 gewürfelt " +
                     $"und gewinnt den gesamten Jackpot von " +
                     $"{FormatCurrency(gambleResult.JackpotWon)}! Der Jackpot wurde " +
-                    $"auf {FormatCurrency(_config.JackpotStartValue)} zurÃ¼ckgesetzt. " +
+                    $"auf {FormatCurrency(_config.JackpotStartValue)} zurückgesetzt. " +
                     $"Neuer Stand: {gambleResult.Balance:N0}.",
                     cancellationToken);
                 return;
@@ -878,7 +878,7 @@ public sealed class ChatMinigameService : IDisposable
             if (NormalizeIncomingCommand(failedCommand) == "!gamble")
             {
                 await TrySendChatAsync(
-                    $"@{message.UserName}, Gamble ist gerade kurz nicht verfÃ¼gbar. Bitte versuche es erneut.",
+                    $"@{message.UserName}, Gamble ist gerade kurz nicht verfügbar. Bitte versuche es erneut.",
                     cancellationToken);
             }
         }
@@ -918,8 +918,8 @@ public sealed class ChatMinigameService : IDisposable
                 passiveEvent.UserId, passiveEvent.DisplayName, points,
                 _config.MinimumPoints, cancellationToken, MaximumPoints);
             Console.WriteLine(
-                $"Minigame: {passiveEvent.DisplayName} erhÃ¤lt {FormatCurrency(points)} " +
-                $"fÃ¼r {passiveEvent.Kind}. Neuer Stand: {balance}.");
+                $"Minigame: {passiveEvent.DisplayName} erhält {FormatCurrency(points)} " +
+                $"für {passiveEvent.Kind}. Neuer Stand: {balance}.");
             DataChanged?.Invoke();
         }
         catch (OperationCanceledException)
@@ -980,7 +980,7 @@ public sealed class ChatMinigameService : IDisposable
 
     private string JackpotText(CasinoApplyResult result) =>
         result.JackpotWon > 0
-            ? $" Â· JACKPOT! +{FormatCurrency(result.JackpotWon)}!"
+            ? $" · JACKPOT! +{FormatCurrency(result.JackpotWon)}!"
             : "";
 
     private async Task<bool> TryPassiveCooldownAsync(
@@ -1083,8 +1083,8 @@ public sealed class ChatMinigameService : IDisposable
         }
 
         Console.WriteLine(
-            $"Minigame-Admin: {message.UserName} fÃ¼hrt {action} " +
-            $"fÃ¼r {user.DisplayName} mit {amount} aus. Neuer Stand: {newBalance}.");
+            $"Minigame-Admin: {message.UserName} führt {action} " +
+            $"für {user.DisplayName} mit {amount} aus. Neuer Stand: {newBalance}.");
         await TrySendChatAsync(
             $"@{user.DisplayName} hat jetzt {FormatCurrency(newBalance)}.",
             cancellationToken);
@@ -1190,7 +1190,7 @@ public sealed class ChatMinigameService : IDisposable
         Console.WriteLine(
             $"Minigame-Geschenk: {message.UserName} schenkt " +
             $"{recipient.DisplayName} {FormatCurrency(amount)}. " +
-            $"Neue StÃ¤nde: {result.SenderBalance}/{result.RecipientBalance}.");
+            $"Neue Stände: {result.SenderBalance}/{result.RecipientBalance}.");
         await TrySendChatAsync(
             $"@{message.UserName} schenkt @{recipient.DisplayName} " +
             $"{FormatCurrency(amount)}! Neuer Stand: {FormatCurrency(result.SenderBalance)}.",
@@ -1231,7 +1231,7 @@ public sealed class ChatMinigameService : IDisposable
                 cancellationToken);
             Console.WriteLine(
                 $"Minigame-Admin: {message.UserName} erzeugt " +
-                $"{FormatCurrency(amount)} fÃ¼r alle {recipients} gespeicherten Nutzer.");
+                $"{FormatCurrency(amount)} für alle {recipients} gespeicherten Nutzer.");
             await TrySendChatAsync(
                 $"@{message.UserName} hat {FormatCurrency(amount)} an " +
                 $"{recipients} Nutzer vergeben.", cancellationToken);
@@ -1256,9 +1256,9 @@ public sealed class ChatMinigameService : IDisposable
             cancellationToken, MaximumPoints);
         Console.WriteLine(
             $"Minigame-Admin: {message.UserName} erzeugt {FormatCurrency(amount)} " +
-            $"fÃ¼r {user.DisplayName}. Neuer Stand: {newBalance}.");
+            $"für {user.DisplayName}. Neuer Stand: {newBalance}.");
         await TrySendChatAsync(
-            $"@{user.DisplayName} erhÃ¤lt {FormatCurrency(amount)} und hat jetzt " +
+            $"@{user.DisplayName} erhält {FormatCurrency(amount)} und hat jetzt " +
             $"{FormatCurrency(newBalance)}.", cancellationToken);
         DataChanged?.Invoke();
     }
@@ -1369,11 +1369,11 @@ public sealed class ChatMinigameService : IDisposable
         var pages = Math.Max(1, (int)Math.Ceiling(available.Count / (double)pageSize));
         page = Math.Clamp(page, 1, pages);
         var selected = available.Skip((page - 1) * pageSize).Take(pageSize).ToArray();
-        var messages = new List<string> { $"@{message.UserName}, verfÃ¼gbare Commands â€“ Seite {page}/{pages}:" };
+        var messages = new List<string> { $"@{message.UserName}, verfügbare Commands – Seite {page}/{pages}:" };
         foreach (var group in selected.GroupBy(command => command.ModuleDisplayName))
         {
             var entries = group.Select(command => _commandsConfig.ShowDescriptions
-                ? $"{command.Usage} â€“ {command.Description}"
+                ? $"{command.Usage} – {command.Description}"
                 : command.Usage + (_commandsConfig.ShowAliases && command.Aliases.Count > 0
                     ? $" ({string.Join(", ", command.Aliases)})" : ""));
             messages.Add($"{group.Key}: {string.Join(" | ", entries)}");
@@ -1384,7 +1384,7 @@ public sealed class ChatMinigameService : IDisposable
         foreach (var raw in messages)
         {
             if (sent >= Math.Clamp(_commandsConfig.MaximumMessagesPerRequest, 1, 5)) break;
-            var text = raw.Length <= 480 ? raw : raw[..477] + "â€¦";
+            var text = raw.Length <= 480 ? raw : raw[..477] + "…";
             await TrySendChatAsync(text, cancellationToken);
             sent++;
             if (sent < messages.Count) await Task.Delay(250, cancellationToken);
