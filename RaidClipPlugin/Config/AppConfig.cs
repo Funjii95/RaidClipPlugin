@@ -17,6 +17,7 @@ public class AppConfig
     public StreamCheckConfig StreamCheck { get; set; } = new();
     public ClipCommandConfig ClipCommand { get; set; } = new();
     public DiscordClipsConfig DiscordClips { get; set; } = new();
+    public AutoDiscordClipPosterConfig AutoDiscordClipPoster { get; set; } = new();
     public GiveawayConfig Giveaways { get; set; } = new();
     public UpdateConfig Update { get; set; } = new();
     public ModuleHealthConfig ModuleHealth { get; set; } = new();
@@ -225,4 +226,40 @@ public class UpdateConfig
     public string ManifestUrl { get; set; } = "";
     public bool Enabled { get; set; } = true;
     public string SkippedVersion { get; set; } = "";
+}
+
+public enum ClipPosterTimeRange
+{
+    Last1Hour,
+    Last6Hours,
+    Last12Hours,
+    Last24Hours,
+    Last3Days,
+    Last7Days,
+    Last14Days,
+    Last30Days,
+    Custom
+}
+
+public class AutoDiscordClipPosterConfig
+{
+    public bool Enabled { get; set; } = false;
+    public string BroadcasterLogin { get; set; } = "";
+    public string WebhookUrl { get; set; } = "";
+    public string DiscordChannelId { get; set; } = "";
+    public int IntervalMinutes { get; set; } = 5;
+    public ClipPosterTimeRange TimeRange { get; set; } =
+        ClipPosterTimeRange.Last24Hours;
+    public DateTimeOffset CustomStart { get; set; } =
+        DateTimeOffset.UtcNow.AddDays(-1);
+    public DateTimeOffset CustomEnd { get; set; } = DateTimeOffset.UtcNow;
+    public int MaxClipsPerCheck { get; set; } = 25;
+    public double MinimumDurationSeconds { get; set; } = 0;
+    public int MinimumViewCount { get; set; } = 0;
+    public bool IgnoreBotCreatedClips { get; set; } = false;
+    public string BotName { get; set; } = "raidclipplugin";
+    public string IgnoredCreators { get; set; } = "";
+    public bool CheckOnPluginStart { get; set; } = true;
+    public bool UseEmbed { get; set; } = true;
+    public bool UseThumbnail { get; set; } = true;
 }

@@ -8,6 +8,9 @@ public class Clip
     public string Title { get; set; } = "";
     public double DurationSeconds { get; set; }
     public string ThumbnailUrl { get; set; } = "";
+    public string CreatorName { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.MinValue;
+    public int ViewCount { get; set; }
 
     public string VideoUrl => GetVideoUrlFromThumbnail(ThumbnailUrl);
 

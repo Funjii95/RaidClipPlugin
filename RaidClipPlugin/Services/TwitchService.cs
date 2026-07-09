@@ -128,6 +128,52 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
         return await FetchClipsAsync(allTimeUrl, cancellationToken);
     }
 
+    public async Task<List<Clip>> GetClipsForBroadcasterAsync(
+        string broadcasterId,
+        DateTime startedAt,
+        DateTime endedAt,
+        CancellationToken cancellationToken)
+    {
+        var clips = new List<Clip>();
+        var cursor = "";
+
+        do
+        {
+            var url =
+                "https://api.twitch.tv/helix/clips" +
+                $"?broadcaster_id={Uri.EscapeDataString(broadcasterId)}" +
+                $"&started_at={Uri.EscapeDataString(startedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"))}" +
+                $"&ended_at={Uri.EscapeDataString(endedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"))}" +
+                "&first=100" +
+                (string.IsNullOrWhiteSpace(cursor)
+                    ? ""
+                    : $"&after={Uri.EscapeDataString(cursor)}");
+
+            using var response = await _http.GetAsync(url, cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
+
+            using var document = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+
+            foreach (var item in document.RootElement
+                         .GetProperty("data").EnumerateArray())
+            {
+                clips.Add(ParseClip(item));
+            }
+
+            cursor = document.RootElement.TryGetProperty(
+                         "pagination", out var pagination) &&
+                     pagination.TryGetProperty("cursor", out var cursorValue)
+                ? cursorValue.GetString() ?? ""
+                : "";
+        }
+        while (!string.IsNullOrWhiteSpace(cursor));
+
+        return clips
+            .OrderByDescending(clip => clip.CreatedAt)
+            .ToList();
+    }
+
 
     private async Task<List<Clip>> FetchClipsAsync(
         string url,
@@ -147,23 +193,43 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
 
         foreach (var item in data.EnumerateArray())
         {
-            clips.Add(new Clip
-            {
-                Id = item.GetProperty("id").GetString() ?? "",
-                Url = item.GetProperty("url").GetString() ?? "",
-                EmbedUrl = item.TryGetProperty("embed_url", out var embedUrl)
-                    ? embedUrl.GetString() ?? ""
-                    : "",
-                Title = item.GetProperty("title").GetString() ?? "",
-                DurationSeconds = item.TryGetProperty("duration", out var duration)
-                    ? duration.GetDouble()
-                    : 0,
-                ThumbnailUrl = item.GetProperty("thumbnail_url").GetString() ?? ""
-            });
+            clips.Add(ParseClip(item));
         }
 
 
         return clips;
+    }
+
+    private static Clip ParseClip(JsonElement item)
+    {
+        var createdAt = item.TryGetProperty("created_at", out var created) &&
+                        DateTimeOffset.TryParse(
+                            created.GetString(), out var parsedCreated)
+            ? parsedCreated
+            : DateTimeOffset.MinValue;
+
+        return new Clip
+        {
+            Id = item.GetProperty("id").GetString() ?? "",
+            Url = item.GetProperty("url").GetString() ?? "",
+            EmbedUrl = item.TryGetProperty("embed_url", out var embedUrl)
+                ? embedUrl.GetString() ?? ""
+                : "",
+            Title = item.GetProperty("title").GetString() ?? "",
+            DurationSeconds = item.TryGetProperty("duration", out var duration)
+                ? duration.GetDouble()
+                : 0,
+            ThumbnailUrl = item.TryGetProperty("thumbnail_url", out var thumbnail)
+                ? thumbnail.GetString() ?? ""
+                : "",
+            CreatorName = item.TryGetProperty("creator_name", out var creator)
+                ? creator.GetString() ?? ""
+                : "",
+            CreatedAt = createdAt,
+            ViewCount = item.TryGetProperty("view_count", out var views)
+                ? views.GetInt32()
+                : 0
+        };
     }
 
 

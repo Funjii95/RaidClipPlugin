@@ -735,6 +735,7 @@ public sealed partial class MainForm : Form
         InitializeMusicRequestEvents();
         InitializeStreamCheckEvents();
         InitializeClipDiscordEvents();
+        InitializeAutoDiscordClipPosterEvents();
         InitializeGiveawayEvents();
         InitializeHeistCommandEvents();
         InitializeDuelEvents();
@@ -1209,6 +1210,7 @@ public sealed partial class MainForm : Form
         var showMusic = section == "music";
         var showStreamCheck = section == "stream-check";
         var showClipDiscord = section == "clip-discord";
+        var showAutoDiscordPoster = section == "auto-discord-poster";
         var showGiveaways = section == "giveaways";
         var showCommands = section == "commands";
         var showLiveChat = section == "livechat";
@@ -1219,6 +1221,7 @@ public sealed partial class MainForm : Form
         _musicPage.Visible = showMusic;
         _streamCheckPage.Visible = showStreamCheck;
         _clipDiscordPage.Visible = showClipDiscord;
+        _autoDiscordClipPosterPage.Visible = showAutoDiscordPoster;
         _giveawayPage.Visible = showGiveaways;
         _commandsPage.Visible = showCommands;
         _liveChatPage.Visible = showLiveChat;
@@ -1233,6 +1236,8 @@ public sealed partial class MainForm : Form
             _streamCheckPage.BringToFront();
         else if (showClipDiscord)
             _clipDiscordPage.BringToFront();
+        else if (showAutoDiscordPoster)
+            _autoDiscordClipPosterPage.BringToFront();
         else if (showGiveaways)
             _giveawayPage.BringToFront();
         else if (showCommands)
@@ -1248,6 +1253,7 @@ public sealed partial class MainForm : Form
         SetNavigationTileState(_musicNavButton, showMusic);
         SetNavigationTileState(_streamCheckNavButton, showStreamCheck);
         SetNavigationTileState(_clipDiscordNavButton, showClipDiscord);
+        SetNavigationTileState(_autoDiscordClipPosterNavButton, showAutoDiscordPoster);
         SetNavigationTileState(_giveawayNavButton, showGiveaways);
         SetNavigationTileState(_commandsNavButton, showCommands);
         SetNavigationTileState(_liveChatNavButton, showLiveChat);
@@ -1893,6 +1899,7 @@ public sealed partial class MainForm : Form
         BuildMusicRequestPage();
         BuildStreamCheckPage();
         BuildClipDiscordPage();
+        BuildAutoDiscordClipPosterPage();
         BuildGiveawayPage();
         BuildCommandsPage();
         _liveChatPage.Controls.Add(BuildLiveChatSection());
@@ -1925,6 +1932,7 @@ public sealed partial class MainForm : Form
         navigation.Controls.Add(_commandsNavButton);
         navigation.Controls.Add(_musicNavButton);
         navigation.Controls.Add(_clipDiscordNavButton);
+        navigation.Controls.Add(_autoDiscordClipPosterNavButton);
         navigation.Controls.Add(_giveawayNavButton);
         navigation.Controls.Add(_streamCheckNavButton);
 
@@ -1938,6 +1946,7 @@ public sealed partial class MainForm : Form
         contentHost.Controls.Add(_giveawayPage);
         contentHost.Controls.Add(_streamCheckPage);
         contentHost.Controls.Add(_clipDiscordPage);
+        contentHost.Controls.Add(_autoDiscordClipPosterPage);
         contentHost.Controls.Add(_musicPage);
         contentHost.Controls.Add(_minigamePage);
         contentHost.Controls.Add(_moderationPage);
@@ -2217,6 +2226,8 @@ public sealed partial class MainForm : Form
                 config, session, twitch, _broadcaster, cancellationToken);
             await StartClipCommandAsync(
                 config, session, twitch, _broadcaster, cancellationToken);
+            await StartAutoDiscordClipPosterAsync(
+                config, twitch, _broadcaster, cancellationToken);
             await StartGiveawayModuleAsync(
                 config, session, twitch, _broadcaster, cancellationToken);
 
@@ -3390,6 +3401,7 @@ public sealed partial class MainForm : Form
             _musicRequestTask,
             _musicEventSubTask,
             _clipCommandTask,
+            _autoDiscordClipPosterTask,
             _giveawayTask,
             _moduleHealthTask
         }
@@ -3419,6 +3431,7 @@ public sealed partial class MainForm : Form
 
         StopMusicRequests();
         StopClipCommand();
+        StopAutoDiscordClipPoster();
         StopGiveawayModule();
         StopCustomCommandServices();
         StopLiveChat();
@@ -4012,6 +4025,7 @@ public sealed partial class MainForm : Form
             _chatTemplateBox.Text = config.Chat.RaidMessageTemplate;
             LoadMusicRequestSettings(config.MusicRequests);
             LoadClipDiscordSettings(config);
+            LoadAutoDiscordClipPosterSettings(config);
             LoadGiveawaySettings(config.Giveaways);
             LoadHeistCommandsSettings(config);
             LoadDuelSettings(config.Duel);
@@ -4176,6 +4190,7 @@ public sealed partial class MainForm : Form
         config.Minigame.DailyWinLimit = decimal.ToInt32(_dailyWinControl.Value);
         config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
         ReadMusicRequestSettings(config);
+        ReadAutoDiscordClipPosterSettings(config);
         ReadHeistCommandsSettings(config);
         ReadDuelSettings(config);
         ReadLiveChatSettings(config);
@@ -4246,6 +4261,7 @@ public sealed partial class MainForm : Form
         _activeConfig.MusicRequests = updated.MusicRequests;
         _activeConfig.ClipCommand = updated.ClipCommand;
         _activeConfig.DiscordClips = updated.DiscordClips;
+        _activeConfig.AutoDiscordClipPoster = updated.AutoDiscordClipPoster;
         _activeConfig.Giveaways = updated.Giveaways;
         _activeConfig.Player.DurationSeconds = updated.Player.DurationSeconds;
         _activeConfig.Player.VolumePercent = updated.Player.VolumePercent;
@@ -4282,6 +4298,8 @@ public sealed partial class MainForm : Form
         }
         _discordClipService?.UpdateConfig(updated.DiscordClips);
         _discordInviteService?.UpdateConfig(updated.DiscordClips);
+        _autoDiscordClipPoster?.UpdateConfig(
+            updated.AutoDiscordClipPoster, _broadcaster);
         ApplyUiTheme(updated.UiTheme);
         _giveawayService?.UpdateConfig(updated.Giveaways, updated.Minigame);
         UpdateCurrencyPreview();
