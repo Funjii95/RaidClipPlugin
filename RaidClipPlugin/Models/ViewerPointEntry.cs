@@ -10,12 +10,12 @@ public sealed class ViewerPointEntry
     public int GamesPlayed { get; set; }
     public int Wins { get; set; }
     public int Losses { get; set; }
-    public int BiggestWin { get; set; }
+    public long BiggestWin { get; set; }
     public DateTimeOffset? LastDailyUtc { get; set; }
     public DateOnly DailyLimitDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
     public int DailyGambles { get; set; }
-    public int DailyLoss { get; set; }
-    public int DailyWin { get; set; }
+    public long DailyLoss { get; set; }
+    public long DailyWin { get; set; }
 }
 
 public sealed record GambleBalanceResult(bool Success, long Balance);
@@ -50,16 +50,16 @@ public sealed record CasinoApplyResult(
     bool Success,
     string Error,
     long Balance,
-    int JackpotWon);
+    long JackpotWon);
 public sealed record HeistParticipantPayout(
     string UserId,
     string DisplayName,
-    int Payout,
+    long Payout,
     long NewBalance);
 
 public sealed record HeistPayoutResult(
-    int JackpotBefore,
-    int JackpotAfter,
+    long JackpotBefore,
+    long JackpotAfter,
     IReadOnlyList<HeistParticipantPayout> Payouts);
 
 public sealed record DuelReserveResult(bool Success, string Error, long Balance);
@@ -69,4 +69,4 @@ public sealed record DuelResolutionResult(
     string Error,
     long ChallengerBalance,
     long TargetBalance,
-    int Pot);
+    long Pot);
