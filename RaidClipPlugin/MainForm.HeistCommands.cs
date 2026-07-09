@@ -1,4 +1,4 @@
-using RaidClipPlugin.Config;
+﻿using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 
@@ -8,7 +8,7 @@ public sealed partial class MainForm
 {
     private readonly CommandRegistry _commandRegistry = new();
     private readonly Panel _commandsPage = new() { Dock = DockStyle.Fill, Visible = false };
-    private readonly Button _commandsNavButton = CreateNavigationTile("⌨  Commands", "Alle Chat-Befehle und Berechtigungen");
+    private readonly Button _commandsNavButton = CreateNavigationTile("âŒ¨  Commands", "Alle Chat-Befehle und Berechtigungen");
     private readonly DataGridView _commandsGrid = new() { Dock = DockStyle.Fill, ReadOnly = false, AllowUserToAddRows = false,
         AllowUserToDeleteRows = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false,
         AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells, BackgroundColor = SurfaceColor };
@@ -39,10 +39,10 @@ public sealed partial class MainForm
     private readonly CheckBox _heistJoinMessagesCheck = NewCheck("Beitrittsnachrichten", true);
     private readonly CheckBox _heistCountdownMessagesCheck = NewCheck("Countdown-Nachrichten", false);
     private readonly CheckBox _heistResultMessagesCheck = NewCheck("Ergebnisnachrichten", true);
-    private readonly CheckBox _heistResetJackpotCheck = NewCheck("Jackpot nach erfolgreichem Heist zurücksetzen", true);
+    private readonly CheckBox _heistResetJackpotCheck = NewCheck("Jackpot nach erfolgreichem Heist zurÃ¼cksetzen", true);
     private readonly TextBox[] _heistMessageBoxes = Enumerable.Range(0, 9).Select(_ => new TextBox
         { Width = 760, Height = 52, Multiline = true, ScrollBars = ScrollBars.Vertical }).ToArray();
-    private readonly Label _heistStateLabel = new() { Text = "● Inaktiv", AutoSize = true, ForeColor = InactiveColor,
+    private readonly Label _heistStateLabel = new() { Text = "â— Inaktiv", AutoSize = true, ForeColor = InactiveColor,
         Font = new Font("Segoe UI", 11F, FontStyle.Bold) };
     private readonly Label _heistDetailsLabel = new() { Text = "Kein Heist aktiv.", AutoSize = true, MaximumSize = new Size(900, 0) };
     private readonly ListBox _heistParticipantList = new() { Width = 420, Height = 220 };
@@ -50,7 +50,7 @@ public sealed partial class MainForm
     private readonly Button _heistDefaultsButton = NewHeistActionButton("Standardwerte wiederherstellen", 240);
     private readonly Button _heistTestButton = NewHeistActionButton("Test-Heist starten", 170);
     private readonly Button _heistCancelButton = NewHeistActionButton("Laufenden Heist abbrechen", 210);
-    private readonly Label _heistJackpotLabel = new() { Text = "Aktueller Jackpot: –", AutoSize = true };
+    private readonly Label _heistJackpotLabel = new() { Text = "Aktueller Jackpot: â€“", AutoSize = true };
 
     private static Button NewHeistActionButton(string text, int width)
     {
@@ -59,7 +59,7 @@ public sealed partial class MainForm
         return button;
     }
 
-    private static NumericUpDown NewNumber(int value, int minimum, int maximum) => new()
+    private static NumericUpDown NewNumber(long value, long minimum, long maximum) => new()
     {
         Minimum = minimum, Maximum = maximum, Value = value, Width = 120,
         ThousandsSeparator = true, Margin = new Padding(5, 2, 5, 2)
@@ -86,7 +86,7 @@ public sealed partial class MainForm
         permissions.Controls.AddRange(new Control[] { _heistEveryoneCheck, _heistFollowersCheck, _heistSubscribersCheck,
             _heistVipsCheck, _heistModeratorsCheck, _heistResetJackpotCheck });
         permissions.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(900, 0),
-            Text = "Bei einem erfolgreichen Heist wird der vollständige Jackpot unter allen Teilnehmern aufgeteilt." });
+            Text = "Bei einem erfolgreichen Heist wird der vollstÃ¤ndige Jackpot unter allen Teilnehmern aufgeteilt." });
         permissions.Controls.Add(_heistJackpotLabel);
 
         var messages = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, FlowDirection = FlowDirection.TopDown,
@@ -113,7 +113,7 @@ public sealed partial class MainForm
     {
         var header = new Label { Text = "Commands", Font = new Font("Segoe UI", 24F, FontStyle.Bold),
             ForeColor = TextColor, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft };
-        var subtitle = new Label { Text = "Chat-Befehle, Custom Commands und frei wählbare Berechtigungen",
+        var subtitle = new Label { Text = "Chat-Befehle, Custom Commands und frei wÃ¤hlbare Berechtigungen",
             AutoSize = true, ForeColor = MutedTextColor };
         var filters = new FlowLayoutPanel { AutoSize = true, AutoScroll = true,
             WrapContents = true, Padding = new Padding(0, 4, 0, 4) };
@@ -141,7 +141,7 @@ public sealed partial class MainForm
             _commandsGrid.Columns.Add(new DataGridViewTextBoxColumn
                 { Name = column, HeaderText = column, ReadOnly = true });
         var tabs = new TabControl { Dock = DockStyle.Fill };
-        AddMinigameTab(tabs, "Übersicht & Rechte", BuildCommandOverviewPanel(filters));
+        AddMinigameTab(tabs, "Ãœbersicht & Rechte", BuildCommandOverviewPanel(filters));
         AddMinigameTab(tabs, "Custom Commands", BuildCustomCommandsPanel());
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3,
             ColumnCount = 1, Padding = new Padding(20) };
@@ -158,7 +158,7 @@ public sealed partial class MainForm
         _commandsNavButton.Click += (_, _) => ShowSection("commands");
         _heistSaveButton.Click += (_, _) => SaveSettingsFromControls();
         _heistDefaultsButton.Click += (_, _) => LoadHeistSettings(new HeistConfig());
-        _heistTestButton.Click += async (_, _) => { if (_minigame is null) AppendLog("Test-Heist benötigt eine aktive Plugin-Verbindung."); else await _minigame.RunTestHeistAsync(_shutdown?.Token ?? CancellationToken.None); };
+        _heistTestButton.Click += async (_, _) => { if (_minigame is null) AppendLog("Test-Heist benÃ¶tigt eine aktive Plugin-Verbindung."); else await _minigame.RunTestHeistAsync(_shutdown?.Token ?? CancellationToken.None); };
         _heistCancelButton.Click += async (_, _) => { if (_minigame is not null) await _minigame.CancelHeistAsync(_shutdown?.Token ?? CancellationToken.None); };
         _commandSearchBox.TextChanged += (_, _) => RefreshCommandGrid();
         _commandModuleFilter.SelectedIndexChanged += (_, _) => RefreshCommandGrid();
@@ -217,10 +217,10 @@ public sealed partial class MainForm
     private void OnHeistStatusChanged(HeistStatus status)
     {
         if(InvokeRequired){BeginInvoke(new Action(()=>OnHeistStatusChanged(status)));return;}
-        _heistStateLabel.Text=status.State switch { HeistState.Joining=>"● Beitrittsphase",HeistState.Evaluating=>"● Auswertung",
-            HeistState.Successful=>"● Erfolgreich",HeistState.Failed=>"● Fehlgeschlagen",HeistState.Cancelled=>"● Abgebrochen",_=>"● Inaktiv" };
+        _heistStateLabel.Text=status.State switch { HeistState.Joining=>"â— Beitrittsphase",HeistState.Evaluating=>"â— Auswertung",
+            HeistState.Successful=>"â— Erfolgreich",HeistState.Failed=>"â— Fehlgeschlagen",HeistState.Cancelled=>"â— Abgebrochen",_=>"â— Inaktiv" };
         _heistStateLabel.ForeColor=status.State==HeistState.Successful?ActiveColor:status.State is HeistState.Failed or HeistState.Cancelled?ErrorColor:WaitingColor;
-        _heistDetailsLabel.Text=$"Ersteller: {status.Creator} · Teilnehmer: {status.ParticipantCount} · Restzeit: {status.SecondsRemaining}s · Erfolgschance: {status.SuccessChancePercent}%";
+        _heistDetailsLabel.Text=$"Ersteller: {status.Creator} Â· Teilnehmer: {status.ParticipantCount} Â· Restzeit: {status.SecondsRemaining}s Â· Erfolgschance: {status.SuccessChancePercent}%";
         _heistJackpotLabel.Text=$"Aktueller Jackpot: {status.Jackpot:N0}"; _heistParticipantList.Items.Clear();
         _heistParticipantList.Items.AddRange(status.Participants.Cast<object>().ToArray());
         _heistCancelButton.Enabled=status.State is HeistState.Joining or HeistState.Evaluating;
