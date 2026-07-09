@@ -141,21 +141,21 @@ public sealed class ViewerPointStore
             if (amount <= 0)
             {
                 return new PointTransferResult(false,
-                    "Der Betrag muss grÃ¶ÃŸer als 0 sein",
+                    "Der Betrag muss größer als 0 sein",
                     sender.Points, recipientPoints);
             }
 
             if (sender.Points - amount < floor)
             {
                 return new PointTransferResult(false,
-                    "Du hast nicht genug verfÃ¼gbare Punkte",
+                    "Du hast nicht genug verfügbare Punkte",
                     sender.Points, recipientPoints);
             }
 
             if (amount > ceiling - recipientPoints)
             {
                 return new PointTransferResult(false,
-                    "Das Punktekonto des EmpfÃ¤ngers wÃ¼rde das Maximum Ã¼berschreiten",
+                    "Das Punktekonto des Empfängers würde das Maximum überschreiten",
                     sender.Points, recipientPoints);
             }
 
@@ -193,7 +193,7 @@ public sealed class ViewerPointStore
             var floor = Math.Max(0, minimumPoints);
             var entry = GetOrCreateEntry(userId, displayName, floor);
             if (amount <= 0 || entry.Points - amount < floor)
-                return new DuelReserveResult(false, "Nicht genug verfÃ¼gbare Punkte", entry.Points);
+                return new DuelReserveResult(false, "Nicht genug verfügbare Punkte", entry.Points);
 
             var previous = entry.Points;
             var historyBefore = _history.ToList();
@@ -227,7 +227,7 @@ public sealed class ViewerPointStore
                 : entry.Points + Math.Max(0, amount);
             entry.DisplayName = displayName;
             entry.UpdatedAt = DateTimeOffset.Now;
-            AddDuelHistory(userId, displayName, "Einsatz zurÃ¼ckgegeben", amount, entry.Points, historyLimit);
+            AddDuelHistory(userId, displayName, "Einsatz zurückgegeben", amount, entry.Points, historyLimit);
             try { await SaveAllAsync(cancellationToken); }
             catch { entry.Points = previous; _history = historyBefore; throw; }
             return entry.Points;
@@ -288,7 +288,7 @@ public sealed class ViewerPointStore
                 throw new ArgumentException("Der Duel-Gewinner ist kein Teilnehmer.", nameof(winnerId));
 
             if (challengerAfter > ceiling || targetAfter > ceiling)
-                return new DuelResolutionResult(false, "Die Auszahlung wÃ¼rde das technische Punktelimit Ã¼berschreiten", challengerBefore, targetBefore, pot);
+                return new DuelResolutionResult(false, "Die Auszahlung würde das technische Punktelimit überschreiten", challengerBefore, targetBefore, pot);
 
             challenger.Points = challengerAfter;
             target.Points = targetAfter;
@@ -616,12 +616,12 @@ public sealed class ViewerPointStore
             if ((long)entry.Points - safeStake < safeMinimum)
                 return new CasinoApplyResult(false, "Nicht genug Punkte", entry.Points, 0);
             if (dailyGames > 0 && entry.DailyGambles >= dailyGames)
-                return new CasinoApplyResult(false, "TÃ¤gliches Spielelimit erreicht", entry.Points, 0);
+                return new CasinoApplyResult(false, "Tägliches Spielelimit erreicht", entry.Points, 0);
 
             var loss = Math.Max(0L, (long)safeStake - safePayout);
             var win = Math.Max(0L, (long)safePayout - safeStake);
             if (dailyLoss > 0 && (long)Math.Max(0, entry.DailyLoss) + loss > dailyLoss)
-                return new CasinoApplyResult(false, "TÃ¤gliches Verlustlimit erreicht", entry.Points, 0);
+                return new CasinoApplyResult(false, "Tägliches Verlustlimit erreicht", entry.Points, 0);
 
             var jackpotCandidate = jackpotHit
                 ? Math.Max(_jackpot, Math.Max(0, jackpotStart))
@@ -629,13 +629,13 @@ public sealed class ViewerPointStore
             if (dailyWin > 0 &&
                 (long)Math.Max(0, entry.DailyWin) + win + jackpotCandidate > dailyWin)
                 return new CasinoApplyResult(false,
-                    "TÃ¤gliches Gewinnlimit erreicht", entry.Points, 0);
+                    "Tägliches Gewinnlimit erreicht", entry.Points, 0);
 
             var totalPayout = (long)safePayout + jackpotCandidate;
             var balanceChange = totalPayout - safeStake;
             if (balanceChange > 0 && entry.Points > long.MaxValue - balanceChange)
                 return new CasinoApplyResult(false,
-                    "Die Auszahlung Ã¼berschreitet das technische Punktelimit",
+                    "Die Auszahlung überschreitet das technische Punktelimit",
                     entry.Points, 0);
             var projectedBalance = entry.Points + balanceChange;
 
@@ -701,7 +701,7 @@ public sealed class ViewerPointStore
         CancellationToken cancellationToken)
     {
         if (participants.Count == 0)
-            throw new ArgumentException("Mindestens ein Teilnehmer wird benÃ¶tigt.", nameof(participants));
+            throw new ArgumentException("Mindestens ein Teilnehmer wird benötigt.", nameof(participants));
 
         await _lock.WaitAsync(cancellationToken);
         try
@@ -712,7 +712,7 @@ public sealed class ViewerPointStore
             var remainder = jackpot % participants.Count;
             var extras = remainderRecipients.Distinct().Take((int)remainder).ToHashSet();
             if (extras.Count != remainder || extras.Any(index => index < 0 || index >= participants.Count))
-                throw new InvalidOperationException("Die Restpunktverteilung ist ungÃ¼ltig.");
+                throw new InvalidOperationException("Die Restpunktverteilung ist ungültig.");
 
             var payouts = new List<HeistParticipantPayout>(participants.Count);
             for (var index = 0; index < participants.Count; index++)
@@ -721,7 +721,7 @@ public sealed class ViewerPointStore
                 var payout = checked(baseShare + (extras.Contains(index) ? 1 : 0));
                 var entry = GetOrCreateEntry(participant.UserId, participant.DisplayName, 0);
                 if (entry.Points > long.MaxValue - payout)
-                    throw new InvalidOperationException("Eine Heist-Auszahlung Ã¼berschreitet das technische Punktelimit.");
+                    throw new InvalidOperationException("Eine Heist-Auszahlung überschreitet das technische Punktelimit.");
                 payouts.Add(new HeistParticipantPayout(participant.UserId, participant.DisplayName, payout, entry.Points + payout));
             }
 
@@ -824,14 +824,14 @@ public sealed class ViewerPointStore
     {
         var json = await File.ReadAllTextAsync(path, cancellationToken);
         var package = JsonSerializer.Deserialize<MinigameExportPackage>(json, JsonOptions)
-            ?? throw new InvalidOperationException("Die Importdatei ist ungÃ¼ltig.");
+            ?? throw new InvalidOperationException("Die Importdatei ist ungültig.");
         if (package.Users is null || package.Settings is null)
-            throw new InvalidOperationException("Die Importdatei ist unvollstÃ¤ndig.");
+            throw new InvalidOperationException("Die Importdatei ist unvollständig.");
         ConfigurationService.ValidateMinigameSettings(package.Settings);
         if (package.Users.Any(pair => string.IsNullOrWhiteSpace(pair.Key) ||
             pair.Value is null || pair.Value.Points < 0))
             throw new InvalidOperationException(
-                "Die Importdatei enthÃ¤lt ungÃ¼ltige Punktedaten.");
+                "Die Importdatei enthält ungültige Punktedaten.");
         await _lock.WaitAsync(cancellationToken);
         try
         {
