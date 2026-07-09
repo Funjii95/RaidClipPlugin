@@ -1,4 +1,4 @@
-using RaidClipPlugin.Config;
+﻿using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 
@@ -181,7 +181,7 @@ public sealed partial class MainForm : Form
     private readonly TextBox _chatTemplateBox = new()
     {
         Width = 420,
-        PlaceholderText = "{name}, {login} und {viewers} sind verfügbar"
+        PlaceholderText = "{name}, {login} und {viewers} sind verfÃ¼gbar"
     };
 
 
@@ -225,7 +225,7 @@ public sealed partial class MainForm : Form
     private readonly TextBox _blockedWordsBox = new()
     {
         Width = 320,
-        PlaceholderText = "Gesperrte Wörter, durch Komma getrennt"
+        PlaceholderText = "Gesperrte WÃ¶rter, durch Komma getrennt"
     };
 
     private readonly Button _saveSettingsButton = new()
@@ -238,7 +238,7 @@ public sealed partial class MainForm : Form
 
     private readonly Label _versionLabel = new()
     {
-        Text = "Version 1.4.2\n🟢 Aktuell",
+        Text = "Version 1.4.2\nðŸŸ¢ Aktuell",
         AutoSize = true,
         ForeColor = Color.ForestGreen,
         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -273,7 +273,7 @@ public sealed partial class MainForm : Form
 
     private readonly Button _skipUpdateButton = new()
     {
-        Text = "Überspringen",
+        Text = "Ãœberspringen",
         AutoSize = true,
         Visible = false,
         Padding = new Padding(8, 4, 8, 4),
@@ -304,11 +304,11 @@ public sealed partial class MainForm : Form
     };
 
     private readonly Button _raidClipNavButton = CreateNavigationTile(
-        "🎬  Raid Clip",
+        "ðŸŽ¬  Raid Clip",
         "Raids, Clips und OBS");
 
     private readonly Button _moderationNavButton = CreateNavigationTile(
-        "🛡  Chat-Moderation",
+        "ðŸ›¡  Chat-Moderation",
         "Chat, Filter und Aktionen");
 
     private readonly Panel _raidPage = new()
@@ -331,7 +331,7 @@ public sealed partial class MainForm : Form
 
     private readonly CheckBox _minigameEnabledCheck = new()
     {
-        Text = "Spiele aktivieren (!gamble, Roulette, Slots …)",
+        Text = "Spiele aktivieren (!gamble, Roulette, Slots â€¦)",
         AutoSize = true,
         Margin = new Padding(8, 24, 4, 4)
     };
@@ -353,13 +353,13 @@ public sealed partial class MainForm : Form
     };
 
     private readonly NumericUpDown _pointsPerIntervalControl =
-        CreateIntegerControl(10, 0, 1_000_000);
+        CreateIntegerControl(10, 0, 9_000_000_000);
     private readonly NumericUpDown _lurkerPointsPerIntervalControl =
-        CreateIntegerControl(5, 0, 1_000_000);
+        CreateIntegerControl(5, 0, 9_000_000_000);
     private readonly NumericUpDown _pointsIntervalControl =
         CreateIntegerControl(5, 1, 1440);
     private readonly NumericUpDown _minimumPointsControl =
-        CreateIntegerControl(0, 0, 1_000_000_000);
+        CreateIntegerControl(0, 0, 9_000_000_000);
     private readonly NumericUpDown _pointsCommandCooldownControl =
         CreateIntegerControl(30, 0, 3600);
     private readonly NumericUpDown _gambleCooldownControl =
@@ -367,9 +367,9 @@ public sealed partial class MainForm : Form
     private readonly NumericUpDown _globalCommandCooldownControl =
         CreateIntegerControl(2, 0, 3600);
     private readonly NumericUpDown _minimumBetControl =
-        CreateIntegerControl(10, 0, 1_000_000_000);
+        CreateIntegerControl(10, 0, 9_000_000_000);
     private readonly NumericUpDown _maximumBetControl =
-        CreateIntegerControl(1000, 0, 1_000_000_000);
+        CreateIntegerControl(1000, 0, 9_000_000_000);
     private readonly TextBox _currencySingularBox = new()
         { Text = "Punkt", Width = 150, MaxLength = 30 };
     private readonly TextBox _currencyPluralBox = new()
@@ -389,35 +389,35 @@ public sealed partial class MainForm : Form
     private readonly ListBox _pointsBlacklistList = new()
         { Width = 220, Height = 115, IntegralHeight = false };
     private readonly Button _addPointsBlacklistButton =
-        NewActionButton("Hinzufügen");
+        NewActionButton("HinzufÃ¼gen");
     private readonly Button _removePointsBlacklistButton =
         NewActionButton("Auswahl entfernen");
 
     private readonly CheckBox _chatPointsCheck = NewCheck(
         "Chatnachrichten-Punkte", true);
     private readonly NumericUpDown _chatPointsControl =
-        CreateIntegerControl(1, 0, 1_000_000);
+        CreateIntegerControl(1, 0, 9_000_000_000);
     private readonly NumericUpDown _chatPointsCooldownControl =
         CreateIntegerControl(60, 0, 3600);
     private readonly CheckBox _followPointsCheck = NewCheck(
         "Follow-Punkte", true);
     private readonly NumericUpDown _followPointsControl =
-        CreateIntegerControl(50, 0, 1_000_000);
+        CreateIntegerControl(50, 0, 9_000_000_000);
     private readonly CheckBox _subPointsCheck = NewCheck(
         "Sub-Punkte", true);
     private readonly NumericUpDown _subPointsControl =
-        CreateIntegerControl(250, 0, 1_000_000);
+        CreateIntegerControl(250, 0, 9_000_000_000);
     private readonly CheckBox _raidPointsCheck = NewCheck(
         "Raid-Punkte", true);
     private readonly NumericUpDown _raidPointsControl =
-        CreateIntegerControl(100, 0, 1_000_000);
+        CreateIntegerControl(100, 0, 9_000_000_000);
     private readonly CheckBox _rewardPointsCheck = NewCheck(
         "Channel-Reward-Punkte", true);
     private readonly NumericUpDown _rewardPointsControl =
-        CreateIntegerControl(25, 0, 1_000_000);
+        CreateIntegerControl(25, 0, 9_000_000_000);
     private readonly CheckBox _dailyCheck = NewCheck("!daily", true);
     private readonly NumericUpDown _dailyPointsControl =
-        CreateIntegerControl(100, 0, 1_000_000);
+        CreateIntegerControl(100, 0, 9_000_000_000);
     private readonly CheckBox _leaderboardCheck = NewCheck(
         "!top / !rang", true);
     private readonly NumericUpDown _maximumTopControl =
@@ -436,15 +436,15 @@ public sealed partial class MainForm : Form
     private readonly NumericUpDown _coinflipMultiplierControl =
         CreateMultiplierControl(2m);
     private readonly NumericUpDown _coinflipMinControl =
-        CreateIntegerControl(10, 0, 1_000_000_000);
+        CreateIntegerControl(10, 0, 9_000_000_000);
     private readonly NumericUpDown _coinflipMaxControl =
-        CreateIntegerControl(1000, 0, 1_000_000_000);
+        CreateIntegerControl(1000, 0, 9_000_000_000);
     private readonly NumericUpDown _coinflipCooldownControl =
         CreateIntegerControl(20, 0, 3600);
     private readonly CheckBox _slotsEnabledCheck = NewCheck(
         "Slots aktivieren", false);
     private readonly TextBox _slotSymbolsBox = new()
-        { Text = "🍒,🍋,🔔,⭐,💎,7️⃣", Width = 230 };
+        { Text = "ðŸ’,ðŸ‹,ðŸ””,â­,ðŸ’Ž,7ï¸âƒ£", Width = 230 };
     private readonly NumericUpDown _slotsThreeControl =
         CreateMultiplierControl(5m);
     private readonly NumericUpDown _slotsTwoControl =
@@ -452,9 +452,9 @@ public sealed partial class MainForm : Form
     private readonly NumericUpDown _slotsSevenControl =
         CreateMultiplierControl(10m);
     private readonly NumericUpDown _slotsMinControl =
-        CreateIntegerControl(10, 0, 1_000_000_000);
+        CreateIntegerControl(10, 0, 9_000_000_000);
     private readonly NumericUpDown _slotsMaxControl =
-        CreateIntegerControl(1000, 0, 1_000_000_000);
+        CreateIntegerControl(1000, 0, 9_000_000_000);
     private readonly NumericUpDown _slotsCooldownControl =
         CreateIntegerControl(20, 0, 3600);
     private readonly CheckBox _rouletteEnabledCheck = NewCheck(
@@ -464,15 +464,15 @@ public sealed partial class MainForm : Form
     private readonly NumericUpDown _rouletteNumberControl =
         CreateMultiplierControl(36m);
     private readonly NumericUpDown _rouletteMinControl =
-        CreateIntegerControl(10, 0, 1_000_000_000);
+        CreateIntegerControl(10, 0, 9_000_000_000);
     private readonly NumericUpDown _rouletteMaxControl =
-        CreateIntegerControl(1000, 0, 1_000_000_000);
+        CreateIntegerControl(1000, 0, 9_000_000_000);
     private readonly NumericUpDown _rouletteCooldownControl =
         CreateIntegerControl(20, 0, 3600);
     private readonly CheckBox _jackpotEnabledCheck = NewCheck(
         "Jackpot aktivieren", false);
     private readonly NumericUpDown _jackpotStartControl =
-        CreateIntegerControl(1000, 0, 1_000_000_000);
+        CreateIntegerControl(1000, 0, 9_000_000_000);
     private readonly NumericUpDown _jackpotContributionControl =
         CreateMultiplierControl(10m);
     private readonly Label _jackpotValueLabel = new()
@@ -482,19 +482,19 @@ public sealed partial class MainForm : Form
     private readonly CheckBox _maximumAccountCheck = NewCheck(
         "Maximales Punktekonto", false);
     private readonly NumericUpDown _maximumAccountControl =
-        CreateIntegerControl(1_000_000, 0, 1_000_000_000);
+        CreateIntegerControl(1_000_000, 0, 9_000_000_000);
     private readonly CheckBox _dailyGamesCheck = NewCheck(
-        "Tägliches Spielelimit", false);
+        "TÃ¤gliches Spielelimit", false);
     private readonly NumericUpDown _dailyGamesControl =
-        CreateIntegerControl(100, 0, 1_000_000);
+        CreateIntegerControl(100, 0, 9_000_000_000);
     private readonly CheckBox _dailyLossCheck = NewCheck(
-        "Tägliches Verlustlimit", false);
+        "TÃ¤gliches Verlustlimit", false);
     private readonly NumericUpDown _dailyLossControl =
-        CreateIntegerControl(10000, 0, 1_000_000_000);
+        CreateIntegerControl(10000, 0, 9_000_000_000);
     private readonly CheckBox _dailyWinCheck = NewCheck(
-        "Tägliches Gewinnlimit", false);
+        "TÃ¤gliches Gewinnlimit", false);
     private readonly NumericUpDown _dailyWinControl =
-        CreateIntegerControl(10000, 0, 1_000_000_000);
+        CreateIntegerControl(10000, 0, 9_000_000_000);
     private readonly ListView _minigameTopList = NewDetailsList();
     private readonly ListView _minigameHistoryList = NewDetailsList();
     private readonly Button _exportMinigameButton = NewActionButton(
@@ -548,7 +548,7 @@ public sealed partial class MainForm : Form
 
     private readonly Button _resetPointsButton = new()
     {
-        Text = "Punktedaten zurücksetzen",
+        Text = "Punktedaten zurÃ¼cksetzen",
         AutoSize = true,
         Padding = new Padding(10, 5, 10, 5),
         Margin = new Padding(10, 22, 4, 4),
@@ -557,7 +557,7 @@ public sealed partial class MainForm : Form
 
     private readonly Label _minigameStatusLabel = new()
     {
-        Text = "● Minigame: Deaktiviert",
+        Text = "â— Minigame: Deaktiviert",
         AutoSize = true,
         ForeColor = InactiveColor,
         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -574,19 +574,19 @@ public sealed partial class MainForm : Form
     };
     private readonly Label _moduleHealthLastCheckLabel = new()
     {
-        Text = "Letzte Prüfung: –",
+        Text = "Letzte PrÃ¼fung: â€“",
         AutoSize = true,
         ForeColor = InactiveColor,
         Margin = new Padding(8, 12, 8, 4)
     };
-    private readonly Button _checkModulesButton = NewActionButton("Module prüfen");
+    private readonly Button _checkModulesButton = NewActionButton("Module prÃ¼fen");
     private readonly Button _restartModulesButton = NewActionButton("Module neu starten");
     private readonly CheckBox _healthcheckEnabledCheck = NewCheck(
         "Healthcheck aktivieren", true);
     private readonly CheckBox _healthAutoRestartCheck = NewCheck(
         "Auto-Restart aktivieren", true);
     private readonly CheckBox _gambleHealthcheckCheck = NewCheck(
-        "Gamble überwachen", true);
+        "Gamble Ã¼berwachen", true);
     private readonly NumericUpDown _healthIntervalControl =
         CreateIntegerControl(30, 5, 600);
     private readonly NumericUpDown _healthMaxRestartsControl =
@@ -595,7 +595,7 @@ public sealed partial class MainForm : Form
         CreateIntegerControl(30, 5, 3600);
 
     private readonly Button _minigameNavButton = CreateNavigationTile(
-        "🎲  Minigame",
+        "ðŸŽ²  Minigame",
         "Punkte, Commands und Gamble");
 
     private readonly Panel _minigamePage = new()
@@ -661,7 +661,7 @@ public sealed partial class MainForm : Form
 
     private readonly Label _moderationStatusLabel = new()
     {
-        Text = "● Chat-Moderation: Deaktiviert",
+        Text = "â— Chat-Moderation: Deaktiviert",
         AutoSize = true,
         ForeColor = InactiveColor,
         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -711,7 +711,7 @@ public sealed partial class MainForm : Form
         }
         catch
         {
-            // Ältere Windows-Versionen verwenden weiterhin ihre Standard-Titelleiste.
+            // Ã„ltere Windows-Versionen verwenden weiterhin ihre Standard-Titelleiste.
         }
     }
 
@@ -800,7 +800,7 @@ public sealed partial class MainForm : Form
             }
             catch (Exception exception)
             {
-                AppendLog("Automatische Update-Prüfung fehlgeschlagen: " + exception.Message);
+                AppendLog("Automatische Update-PrÃ¼fung fehlgeschlagen: " + exception.Message);
             }
         };
 
@@ -816,14 +816,14 @@ public sealed partial class MainForm : Form
         }
 
         LoadSettingsIntoControls();
-        AppendLog("Anwendung bereit. Klicke auf ‚Plugin starten‘.");
+        AppendLog("Anwendung bereit. Klicke auf â€šPlugin startenâ€˜.");
     }
 
     private static Label CreateIndicator(string service)
     {
         return new Label
         {
-            Text = $"● {service}{Environment.NewLine}Nicht verbunden",
+            Text = $"â— {service}{Environment.NewLine}Nicht verbunden",
             AutoSize = false,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
@@ -873,9 +873,9 @@ public sealed partial class MainForm : Form
     };
 
     private static NumericUpDown CreateIntegerControl(
-        int value,
-        int minimum,
-        int maximum,
+        long value,
+        long minimum,
+        long maximum,
         int width = 90)
     {
         return new NumericUpDown
@@ -1317,7 +1317,7 @@ public sealed partial class MainForm : Form
         header.Controls.Add(subtitle);
 
         _versionLabel.Text =
-            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}🟢 Aktuell";
+            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}ðŸŸ¢ Aktuell";
 
         var updateActions = new FlowLayoutPanel
         {
@@ -1413,11 +1413,11 @@ public sealed partial class MainForm : Form
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Max. Clipdauer (Sek.)", _durationControl));
         raidSettingsFlow.Controls.Add(
-            CreateSettingEditor("Lautstärke (%)", _volumeControl));
+            CreateSettingEditor("LautstÃ¤rke (%)", _volumeControl));
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Raid-Cooldown (Min.)", _cooldownControl));
         raidSettingsFlow.Controls.Add(
-            CreateSettingEditor("Raid-Verzögerung (Sek.)", _raidDelayControl));
+            CreateSettingEditor("Raid-VerzÃ¶gerung (Sek.)", _raidDelayControl));
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Clip-Blacklist", _blacklistBox));
         raidSettingsFlow.Controls.Add(_sendRaidMessageCheck);
@@ -1445,7 +1445,7 @@ public sealed partial class MainForm : Form
                 "Timeout-Dauer (Sek.)",
                 _moderationTimeoutControl));
         moderationSettingsFlow.Controls.Add(
-            CreateSettingEditor("Gesperrte Wörter", _blockedWordsBox));
+            CreateSettingEditor("Gesperrte WÃ¶rter", _blockedWordsBox));
         moderationSettingsFlow.Controls.Add(_saveModerationSettingsButton);
         _moderationSettingsGroup.Controls.Add(moderationSettingsFlow);
 
@@ -1499,7 +1499,7 @@ public sealed partial class MainForm : Form
         {
             Name = "Delete",
             HeaderText = "",
-            Text = "Löschen",
+            Text = "LÃ¶schen",
             UseColumnTextForButtonValue = true,
             Width = 75
         });
@@ -1545,7 +1545,7 @@ public sealed partial class MainForm : Form
         };
         var moderationSubtitle = new Label
         {
-            Text = "Chat überwachen, Nachrichten löschen und Nutzer moderieren",
+            Text = "Chat Ã¼berwachen, Nachrichten lÃ¶schen und Nutzer moderieren",
             AutoSize = true,
             ForeColor = Color.DimGray,
             Margin = new Padding(2, 3, 0, 0)
@@ -1575,8 +1575,8 @@ public sealed partial class MainForm : Form
 
         var moderationHint = new Label
         {
-            Text = "Moderation läuft unabhängig von Raid-Clips. " +
-                   "Der Wortfilter löscht Treffer, führt aber keine automatischen Bans aus.",
+            Text = "Moderation lÃ¤uft unabhÃ¤ngig von Raid-Clips. " +
+                   "Der Wortfilter lÃ¶scht Treffer, fÃ¼hrt aber keine automatischen Bans aus.",
             Dock = DockStyle.Fill,
             AutoSize = false,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -1662,9 +1662,9 @@ public sealed partial class MainForm : Form
 
         var pointsFlow = CreateMinigameFlow();
         pointsFlow.Controls.Add(CreateSettingEditor(
-            "Währung – Einzahl", _currencySingularBox));
+            "WÃ¤hrung â€“ Einzahl", _currencySingularBox));
         pointsFlow.Controls.Add(CreateSettingEditor(
-            "Währung – Mehrzahl", _currencyPluralBox));
+            "WÃ¤hrung â€“ Mehrzahl", _currencyPluralBox));
         pointsFlow.Controls.Add(_currencyPreviewLabel);
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Aktive Zuschauer pro Intervall", _pointsPerIntervalControl));
@@ -1704,7 +1704,7 @@ public sealed partial class MainForm : Form
         var commandsFlow = CreateMinigameFlow();
         commandsFlow.Controls.Add(new Label
         {
-            Text = "Commands für Punkteabfrage", AutoSize = true,
+            Text = "Commands fÃ¼r Punkteabfrage", AutoSize = true,
             Font = new Font("Segoe UI", 10F, FontStyle.Bold),
             Margin = new Padding(8, 24, 8, 4)
         });
@@ -1783,7 +1783,7 @@ public sealed partial class MainForm : Form
         casinoFlow.Controls.Add(CreateSettingEditor(
             "2 gleiche", _slotsTwoControl));
         casinoFlow.Controls.Add(CreateSettingEditor(
-            "3 × 7", _slotsSevenControl));
+            "3 Ã— 7", _slotsSevenControl));
         casinoFlow.Controls.Add(CreateSettingEditor(
             "Slots Min.", _slotsMinControl));
         casinoFlow.Controls.Add(CreateSettingEditor(
@@ -1824,7 +1824,7 @@ public sealed partial class MainForm : Form
         _minigameHistoryList.Columns.Add("Nutzer", 170);
         _minigameHistoryList.Columns.Add("Spiel", 110);
         _minigameHistoryList.Columns.Add("Aktion", 280);
-        _minigameHistoryList.Columns.Add("Änderung", 100);
+        _minigameHistoryList.Columns.Add("Ã„nderung", 100);
         _minigameHistoryList.Columns.Add("Stand", 100);
 
         var historyLayout = new TableLayoutPanel
@@ -1837,7 +1837,7 @@ public sealed partial class MainForm : Form
         historyOptions.AutoScroll = true;
         historyOptions.Controls.Add(_historyEnabledCheck);
         historyOptions.Controls.Add(CreateSettingEditor(
-            "Max. Einträge", _historyLimitControl));
+            "Max. EintrÃ¤ge", _historyLimitControl));
         historyOptions.Controls.Add(_exportMinigameButton);
         historyOptions.Controls.Add(_importMinigameButton);
         historyOptions.Controls.Add(_resetPointsButton);
@@ -1859,8 +1859,8 @@ public sealed partial class MainForm : Form
             "Gewinn pro Tag", _dailyWinControl));
 
         var tabs = new TabControl { Dock = DockStyle.Fill };
-        AddMinigameTab(tabs, "Übersicht", overviewFlow);
-        AddMinigameTab(tabs, "Punkte & Währung", pointsFlow);
+        AddMinigameTab(tabs, "Ãœbersicht", overviewFlow);
+        AddMinigameTab(tabs, "Punkte & WÃ¤hrung", pointsFlow);
         AddMinigameTab(tabs, "Chat-Commands", commandsFlow);
         AddMinigameTab(tabs, "Casino-Spiele", casinoLayout);
         AddMinigameTab(tabs, "Heist", BuildHeistSettingsPanel());
@@ -1874,7 +1874,7 @@ public sealed partial class MainForm : Form
         {
             Text = "Aktive Zuschauer erhalten den normalen Satz. Stille Chatnutzer " +
                    "und Nutzer mit !lurk erhalten den Lurker-Satz; mit !unlurk " +
-                   "wechseln sie zurück.",
+                   "wechseln sie zurÃ¼ck.",
             Dock = DockStyle.Fill,
             AutoSize = false,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -1993,8 +1993,8 @@ public sealed partial class MainForm : Form
         }
 
         _createObsSourceButton.Enabled = false;
-        SetOverallStatus("Erstelle OBS-Quelle …", WaitingColor);
-        AppendLog("Browserquelle wird in der aktiven OBS-Szene eingerichtet …");
+        SetOverallStatus("Erstelle OBS-Quelle â€¦", WaitingColor);
+        AppendLog("Browserquelle wird in der aktiven OBS-Szene eingerichtet â€¦");
 
         ObsService? temporaryObs = null;
 
@@ -2018,7 +2018,7 @@ public sealed partial class MainForm : Form
             var action = result.CreatedInput
                 ? "neu erstellt"
                 : result.AddedToScene
-                    ? "zur Szene hinzugefügt"
+                    ? "zur Szene hinzugefÃ¼gt"
                     : "bereits vorhanden und aktualisiert";
 
             AppendLog(
@@ -2039,7 +2039,7 @@ public sealed partial class MainForm : Form
             SetOverallStatus("OBS-Quellenfehler", ErrorColor);
             MessageBox.Show(
                 "Die OBS-Quelle konnte nicht erstellt werden. " +
-                "Prüfe OBS-WebSocket, Host, Port und Passwort.",
+                "PrÃ¼fe OBS-WebSocket, Host, Port und Passwort.",
                 "OBS-Quelle nicht erstellt",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
@@ -2059,8 +2059,8 @@ public sealed partial class MainForm : Form
         }
 
         _startButton.Enabled = false;
-        SetOverallStatus("Wird gestartet …", WaitingColor);
-        AppendLog("Plugin wird gestartet …");
+        SetOverallStatus("Wird gestartet â€¦", WaitingColor);
+        AppendLog("Plugin wird gestartet â€¦");
 
         _shutdown = new CancellationTokenSource();
         var cancellationToken = _shutdown.Token;
@@ -2075,12 +2075,12 @@ public sealed partial class MainForm : Form
             _importMinigameButton.Enabled = false;
             _testConnectionsButton.Enabled = false;
 
-            SetServiceStatus(_playerIndicator, "Player", "Startet …", WaitingColor);
+            SetServiceStatus(_playerIndicator, "Player", "Startet â€¦", WaitingColor);
             _player = new LocalPlayerServer(config.Player.Port);
             _playerTask = _player.RunAsync(cancellationToken);
-            SetServiceStatus(_playerIndicator, "Player", "Läuft", ActiveColor);
+            SetServiceStatus(_playerIndicator, "Player", "LÃ¤uft", ActiveColor);
 
-            SetServiceStatus(_obsIndicator, "OBS", "Verbindet …", WaitingColor);
+            SetServiceStatus(_obsIndicator, "OBS", "Verbindet â€¦", WaitingColor);
             _obs = new ObsService(config);
             await Task.Run(_obs.Connect, cancellationToken);
             var sourceSetup = await Task.Run(
@@ -2095,8 +2095,8 @@ public sealed partial class MainForm : Form
             }
             SetServiceStatus(_obsIndicator, "OBS", "Verbunden", ActiveColor);
 
-            SetServiceStatus(_twitchIndicator, "Twitch", "Anmeldung …", WaitingColor);
-            AppendLog("Prüfe Twitch-Anmeldung …");
+            SetServiceStatus(_twitchIndicator, "Twitch", "Anmeldung â€¦", WaitingColor);
+            AppendLog("PrÃ¼fe Twitch-Anmeldung â€¦");
             var session = await new AuthenticationService(config)
                 .GetSessionAsync(cancellationToken);
 
@@ -2131,7 +2131,7 @@ public sealed partial class MainForm : Form
                 config,
                 _history);
 
-            SetServiceStatus(_eventSubIndicator, "EventSub", "Startet …", WaitingColor);
+            SetServiceStatus(_eventSubIndicator, "EventSub", "Startet â€¦", WaitingColor);
             _eventSub = new EventSubService(
                 config.Twitch.ClientId,
                 session.AccessToken,
@@ -2179,7 +2179,7 @@ public sealed partial class MainForm : Form
                 if (raidDelay > TimeSpan.Zero)
                 {
                     AppendLog(
-                        $"Raid-Aktionen starten in {raidDelay.TotalSeconds:0} Sekunden …");
+                        $"Raid-Aktionen starten in {raidDelay.TotalSeconds:0} Sekunden â€¦");
                     await Task.Delay(raidDelay, cancellationToken);
                 }
 
@@ -2251,7 +2251,7 @@ public sealed partial class MainForm : Form
 
                 if (config.Moderation.Enabled)
                 {
-                    SetModerationStatus("Startet …", WaitingColor);
+                    SetModerationStatus("Startet â€¦", WaitingColor);
                     _chatModeration.Activated += () =>
                         SetModerationStatus("Aktiv", ActiveColor);
                     _chatModeration.MessageObserved += message =>
@@ -2294,7 +2294,7 @@ public sealed partial class MainForm : Form
 
                 if (ChatMinigameService.ShouldRun(config.Minigame) || config.Heist.Enabled || config.Duel.Enabled || config.Commands.Enabled)
                 {
-                    SetMinigameStatus("Startet …", WaitingColor);
+                    SetMinigameStatus("Startet â€¦", WaitingColor);
                     _minigame = new ChatMinigameService(
                         _broadcaster.Id,
                         session.UserId,
@@ -2315,7 +2315,7 @@ public sealed partial class MainForm : Form
                             ActiveColor);
                     _minigame.PointsAwarded += (users, _) =>
                         SetMinigameStatus(
-                            $"Anwesenheit · {users} Nutzer belohnt",
+                            $"Anwesenheit Â· {users} Nutzer belohnt",
                             ActiveColor);
                     _minigame.DataChanged += () =>
                         _ = RefreshMinigameDashboardAsync();
@@ -2374,8 +2374,8 @@ public sealed partial class MainForm : Form
                                 redemption, cancellationToken);
                         _minigameEvents.Activated += () =>
                             SetSpotifyStatus(_spotify?.IsConnected == true
-                                ? "Verbunden · EventSub aktiv"
-                                : "EventSub aktiv · Spotify fehlt",
+                                ? "Verbunden Â· EventSub aktiv"
+                                : "EventSub aktiv Â· Spotify fehlt",
                                 _spotify?.IsConnected == true
                                     ? ActiveColor : WaitingColor);
                     }
@@ -2394,7 +2394,7 @@ public sealed partial class MainForm : Form
             _stopButton.Enabled = true;
             SetOverallStatus("Aktiv", ActiveColor);
             AppendLog(
-                $"Plugin aktiv für {_broadcaster.DisplayName}. " +
+                $"Plugin aktiv fÃ¼r {_broadcaster.DisplayName}. " +
                 "Warte auf eingehende Raids.");
         }
         catch (OperationCanceledException)
@@ -2408,12 +2408,12 @@ public sealed partial class MainForm : Form
             SetOverallStatus("Fehler", ErrorColor);
             if (IsMinigameConfigurationError(exception.Message))
             {
-                SetMinigameStatus("Einstellungen ungültig", ErrorColor);
+                SetMinigameStatus("Einstellungen ungÃ¼ltig", ErrorColor);
                 ShowSection("minigame");
             }
             else if (IsMusicConfigurationError(exception.Message))
             {
-                SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
+                SetSpotifyStatus("Einstellungen ungÃ¼ltig", ErrorColor);
                 ShowSection("music");
             }
             else if (IsClipConfigurationError(exception.Message))
@@ -2468,7 +2468,7 @@ public sealed partial class MainForm : Form
                     session.UserId,
                     cancellationToken);
                 AppendLog(
-                    $"Offizieller /shoutout für @{raid.FromBroadcasterLogin} gesendet.");
+                    $"Offizieller /shoutout fÃ¼r @{raid.FromBroadcasterLogin} gesendet.");
             }
             catch (Exception exception)
             {
@@ -2518,7 +2518,7 @@ public sealed partial class MainForm : Form
                 cancellationToken);
             AppendLog(
                 $"Wortfilter: Nachricht von {message.UserName} wegen " +
-                $"‚{blockedWord}‘ gelöscht.");
+                $"â€š{blockedWord}â€˜ gelÃ¶scht.");
         }
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
@@ -2527,7 +2527,7 @@ public sealed partial class MainForm : Form
         catch (Exception exception)
         {
             AppendLog(
-                "Wortfilter konnte Nachricht nicht löschen: " +
+                "Wortfilter konnte Nachricht nicht lÃ¶schen: " +
                 exception.Message);
         }
     }
@@ -2599,7 +2599,7 @@ public sealed partial class MainForm : Form
         }
         catch (ArgumentOutOfRangeException)
         {
-            // Die Zeilenliste kann sich während eines Layoutdurchlaufs verändern.
+            // Die Zeilenliste kann sich wÃ¤hrend eines Layoutdurchlaufs verÃ¤ndern.
         }
     }
 
@@ -2634,7 +2634,7 @@ public sealed partial class MainForm : Form
         {
             var confirmation = MessageBox.Show(
                 $"{message.UserName} wirklich dauerhaft bannen?",
-                "Ban bestätigen",
+                "Ban bestÃ¤tigen",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
             if (confirmation != DialogResult.Yes)
@@ -2653,7 +2653,7 @@ public sealed partial class MainForm : Form
                     await _chatModeration.TimeoutUserAsync(
                         message.UserId,
                         decimal.ToInt32(_moderationTimeoutControl.Value),
-                        "Manueller Timeout über RaidClipPlugin",
+                        "Manueller Timeout Ã¼ber RaidClipPlugin",
                         cancellationToken);
                     AppendLog($"{message.UserName} wurde in Timeout gesetzt.");
                     break;
@@ -2661,7 +2661,7 @@ public sealed partial class MainForm : Form
                 case "Ban":
                     await _chatModeration.BanUserAsync(
                         message.UserId,
-                        "Manueller Ban über RaidClipPlugin",
+                        "Manueller Ban Ã¼ber RaidClipPlugin",
                         cancellationToken);
                     AppendLog($"{message.UserName} wurde gebannt.");
                     break;
@@ -2671,7 +2671,7 @@ public sealed partial class MainForm : Form
                         message.Id,
                         cancellationToken);
                     AppendLog(
-                        $"Nachricht von {message.UserName} wurde gelöscht.");
+                        $"Nachricht von {message.UserName} wurde gelÃ¶scht.");
                     break;
             }
 
@@ -2685,7 +2685,7 @@ public sealed partial class MainForm : Form
         catch (Exception exception)
         {
             AppendLog(
-                $"Moderationsaktion für {message.UserName} fehlgeschlagen: " +
+                $"Moderationsaktion fÃ¼r {message.UserName} fehlgeschlagen: " +
                 exception.Message);
             _chatGrid.Rows[rowIndex].DefaultCellStyle.BackColor =
                 Color.MistyRose;
@@ -2765,7 +2765,7 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        _moderationStatusLabel.Text = $"● Chat-Moderation: {status}";
+        _moderationStatusLabel.Text = $"â— Chat-Moderation: {status}";
         _moderationStatusLabel.ForeColor = color;
     }
 
@@ -2860,7 +2860,7 @@ public sealed partial class MainForm : Form
             _shutdown.Token);
         _minigameTask = _minigame.RunAsync(_minigameRunCts.Token);
         ObserveMinigameTask(_minigameTask);
-        SetMinigameStatus("Neu gestartet · überwacht", ActiveColor);
+        SetMinigameStatus("Neu gestartet Â· Ã¼berwacht", ActiveColor);
         AppendLog("Minigame-Modul wurde ohne neue Chat-Eventhandler neu gestartet.");
     }
 
@@ -2939,26 +2939,26 @@ public sealed partial class MainForm : Form
         {
             _moduleHealthSummaryLabel.Text = "Healthcheck: Deaktiviert";
             _moduleHealthSummaryLabel.ForeColor = InactiveColor;
-            _moduleHealthLastCheckLabel.Text = "Letzte Prüfung: –";
+            _moduleHealthLastCheckLabel.Text = "Letzte PrÃ¼fung: â€“";
             return;
         }
         static string Icon(ModuleHealthState state) => state switch
         {
-            ModuleHealthState.Healthy => "🟢",
-            ModuleHealthState.Warning => "🟡",
-            ModuleHealthState.Failed => "🔴",
-            _ => "⚪"
+            ModuleHealthState.Healthy => "ðŸŸ¢",
+            ModuleHealthState.Warning => "ðŸŸ¡",
+            ModuleHealthState.Failed => "ðŸ”´",
+            _ => "âšª"
         };
         _moduleHealthSummaryLabel.Text = string.Join("   ", statuses.Select(status =>
             $"{Icon(status.State)} {status.ModuleName}: {status.State}"));
         _moduleHealthSummaryLabel.ForeColor = statuses.Any(status =>
             status.State == ModuleHealthState.Failed) ? ErrorColor : ActiveColor;
         _moduleHealthLastCheckLabel.Text =
-            "Letzte Prüfung: " + DateTime.Now.ToString("HH:mm:ss");
+            "Letzte PrÃ¼fung: " + DateTime.Now.ToString("HH:mm:ss");
         var lastError = statuses.FirstOrDefault(status =>
             !string.IsNullOrWhiteSpace(status.LastError))?.LastError;
         if (!string.IsNullOrWhiteSpace(lastError))
-            _moduleHealthLastCheckLabel.Text += " · Letzter Fehler: " + lastError;
+            _moduleHealthLastCheckLabel.Text += " Â· Letzter Fehler: " + lastError;
     }
 
     private async void ObserveMinigameTask(Task task)
@@ -2969,8 +2969,8 @@ public sealed partial class MainForm : Form
             if (_shutdown is { IsCancellationRequested: false } &&
                 ReferenceEquals(task, _minigameTask))
             {
-                AppendLog("Chat-Minigame wurde unerwartet beendet; Watchdog übernimmt.");
-                SetMinigameStatus("Ausgefallen · Neustart wird geprüft", ErrorColor);
+                AppendLog("Chat-Minigame wurde unerwartet beendet; Watchdog Ã¼bernimmt.");
+                SetMinigameStatus("Ausgefallen Â· Neustart wird geprÃ¼ft", ErrorColor);
             }
         }
         catch (OperationCanceledException)
@@ -2982,7 +2982,7 @@ public sealed partial class MainForm : Form
         catch (Exception exception)
         {
             AppendLog("Chat-Minigame wurde beendet: " + exception);
-            SetMinigameStatus("Fehler · Neustart wird geprüft", ErrorColor);
+            SetMinigameStatus("Fehler Â· Neustart wird geprÃ¼ft", ErrorColor);
         }
     }
 
@@ -3005,7 +3005,7 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        _minigameStatusLabel.Text = $"● Minigame: {status}";
+        _minigameStatusLabel.Text = $"â— Minigame: {status}";
         _minigameStatusLabel.ForeColor = color;
     }
 
@@ -3017,7 +3017,7 @@ public sealed partial class MainForm : Form
             var top = await _viewerPoints.GetTopAsync(10, token);
             var history = await _viewerPoints.GetHistoryAsync(100, token);
             var jackpot = await _viewerPoints.GetJackpotAsync(
-                decimal.ToInt32(_jackpotStartControl.Value), token);
+                decimal.ToInt64(_jackpotStartControl.Value), token);
 
             if (IsDisposed) return;
             if (InvokeRequired)
@@ -3033,7 +3033,7 @@ public sealed partial class MainForm : Form
         }
         catch (Exception exception)
         {
-            AppendLog("Minigame-Übersicht konnte nicht geladen werden: " +
+            AppendLog("Minigame-Ãœbersicht konnte nicht geladen werden: " +
                 exception.Message);
         }
     }
@@ -3133,8 +3133,8 @@ public sealed partial class MainForm : Form
     private async Task ResetPointDataAsync()
     {
         var confirmation = MessageBox.Show(
-            "Wirklich alle lokal gespeicherten Zuschauerpunkte löschen?",
-            "Punktedaten zurücksetzen",
+            "Wirklich alle lokal gespeicherten Zuschauerpunkte lÃ¶schen?",
+            "Punktedaten zurÃ¼cksetzen",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning);
         if (confirmation != DialogResult.Yes)
@@ -3146,14 +3146,14 @@ public sealed partial class MainForm : Form
         {
             await _viewerPoints.ResetAsync(
                 _shutdown?.Token ?? CancellationToken.None);
-            AppendLog("Alle Minigame-Punktedaten wurden zurückgesetzt.");
-            SetMinigameStatus("Punktedaten zurückgesetzt", ActiveColor);
+            AppendLog("Alle Minigame-Punktedaten wurden zurÃ¼ckgesetzt.");
+            SetMinigameStatus("Punktedaten zurÃ¼ckgesetzt", ActiveColor);
             await RefreshMinigameDashboardAsync();
         }
         catch (Exception exception)
         {
             AppendLog(
-                "Minigame-Punktedaten konnten nicht zurückgesetzt werden: " +
+                "Minigame-Punktedaten konnten nicht zurÃ¼ckgesetzt werden: " +
                 exception.Message);
             SetMinigameStatus("Reset fehlgeschlagen", ErrorColor);
         }
@@ -3171,7 +3171,7 @@ public sealed partial class MainForm : Form
         _settingsGroup.Enabled = false;
         _moderationSettingsGroup.Enabled = false;
         SetMinigameSettingsEditingEnabled(false);
-        SetOverallStatus("Teste Verbindungen …", WaitingColor);
+        SetOverallStatus("Teste Verbindungen â€¦", WaitingColor);
 
         try
         {
@@ -3293,8 +3293,8 @@ public sealed partial class MainForm : Form
         string name,
         Func<Task> test)
     {
-        SetServiceStatus(indicator, name, "Test läuft …", WaitingColor);
-        AppendLog($"Teste {name} …");
+        SetServiceStatus(indicator, name, "Test lÃ¤uft â€¦", WaitingColor);
+        AppendLog($"Teste {name} â€¦");
 
         try
         {
@@ -3332,7 +3332,7 @@ public sealed partial class MainForm : Form
             if (string.IsNullOrWhiteSpace(requestedLogin))
             {
                 AppendLog(
-                    $"Testclip von {_broadcaster.DisplayName} wird gesucht …");
+                    $"Testclip von {_broadcaster.DisplayName} wird gesucht â€¦");
                 success = await _playback.PlayRandomClipAsync(
                     _broadcaster,
                     _shutdown.Token);
@@ -3340,7 +3340,7 @@ public sealed partial class MainForm : Form
             else
             {
                 AppendLog(
-                    $"Testclip vom Kanal {requestedLogin} wird gesucht …");
+                    $"Testclip vom Kanal {requestedLogin} wird gesucht â€¦");
                 success = await _playback.PlayRandomClipAsync(
                     requestedLogin,
                     _shutdown.Token);
@@ -3386,7 +3386,7 @@ public sealed partial class MainForm : Form
 
         if (!keepErrorStatus)
         {
-            SetOverallStatus("Wird gestoppt …", WaitingColor);
+            SetOverallStatus("Wird gestoppt â€¦", WaitingColor);
         }
 
         shutdown.Cancel();
@@ -3421,7 +3421,7 @@ public sealed partial class MainForm : Form
             }
             catch (TimeoutException)
             {
-                AppendLog("Ein Hintergrunddienst wurde verzögert beendet.");
+                AppendLog("Ein Hintergrunddienst wurde verzÃ¶gert beendet.");
             }
             catch (Exception exception)
             {
@@ -3543,7 +3543,7 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        indicator.Text = $"● {service}{Environment.NewLine}{state}";
+        indicator.Text = $"â— {service}{Environment.NewLine}{state}";
         indicator.ForeColor = color;
     }
 
@@ -3628,7 +3628,7 @@ public sealed partial class MainForm : Form
         _updateBusy = true;
         SetUpdateControlsEnabled(false);
         _versionLabel.Text =
-            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}🔄 Suche …";
+            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}ðŸ”„ Suche â€¦";
         _versionLabel.ForeColor = WaitingColor;
 
         try
@@ -3667,28 +3667,28 @@ public sealed partial class MainForm : Form
             {
                 ShowSkippedVersion(_availableUpdate.DisplayVersion);
                 AppendLog(
-                    $"Version {_availableUpdate.DisplayVersion} wurde übersprungen.");
+                    $"Version {_availableUpdate.DisplayVersion} wurde Ã¼bersprungen.");
                 return;
             }
 
             _versionLabel.Text =
                 $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}" +
-                $"🟡 Update verfügbar: {_availableUpdate.DisplayVersion}";
+                $"ðŸŸ¡ Update verfÃ¼gbar: {_availableUpdate.DisplayVersion}";
             _versionLabel.ForeColor = WaitingColor;
             ShowAvailableUpdateButtons();
             AppendLog(
-                $"Update {_availableUpdate.DisplayVersion} ist verfügbar.");
+                $"Update {_availableUpdate.DisplayVersion} ist verfÃ¼gbar.");
         }
         catch (Exception exception)
         {
             _availableUpdate = null;
             _versionLabel.Text =
                 $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}" +
-                "🔴 Update-Prüfung fehlgeschlagen";
+                "ðŸ”´ Update-PrÃ¼fung fehlgeschlagen";
             _versionLabel.ForeColor = ErrorColor;
             HideAvailableUpdateButtons();
-            _updateButton.Text = "Erneut prüfen";
-            AppendLog("Update-Prüfung fehlgeschlagen: " + exception.Message);
+            _updateButton.Text = "Erneut prÃ¼fen";
+            AppendLog("Update-PrÃ¼fung fehlgeschlagen: " + exception.Message);
         }
         finally
         {
@@ -3700,7 +3700,7 @@ public sealed partial class MainForm : Form
     private void ShowCurrentVersion()
     {
         _versionLabel.Text =
-            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}🟢 Aktuell";
+            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}ðŸŸ¢ Aktuell";
         _versionLabel.ForeColor = ActiveColor;
         HideAvailableUpdateButtons();
         _updateButton.Text = "Nach Updates suchen";
@@ -3710,10 +3710,10 @@ public sealed partial class MainForm : Form
     {
         _versionLabel.Text =
             $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}" +
-            $"⚪ Version {version} übersprungen";
+            $"âšª Version {version} Ã¼bersprungen";
         _versionLabel.ForeColor = InactiveColor;
         HideAvailableUpdateButtons();
-        _updateButton.Text = "Trotzdem prüfen";
+        _updateButton.Text = "Trotzdem prÃ¼fen";
     }
 
     private void ShowAvailableUpdateButtons()
@@ -3750,9 +3750,9 @@ public sealed partial class MainForm : Form
 
         MessageBox.Show(
             string.IsNullOrWhiteSpace(update.Changelog)
-                ? "Für dieses Update wurde kein Changelog angegeben."
+                ? "FÃ¼r dieses Update wurde kein Changelog angegeben."
                 : update.Changelog,
-            $"Changelog – Version {update.DisplayVersion}",
+            $"Changelog â€“ Version {update.DisplayVersion}",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
     }
@@ -3772,12 +3772,12 @@ public sealed partial class MainForm : Form
             _configurationService.SaveGuiSettings(config);
             ShowSkippedVersion(update.DisplayVersion);
             AppendLog(
-                $"Update {update.DisplayVersion} wurde übersprungen.");
+                $"Update {update.DisplayVersion} wurde Ã¼bersprungen.");
         }
         catch (Exception exception)
         {
             AppendLog(
-                "Update konnte nicht übersprungen werden: " +
+                "Update konnte nicht Ã¼bersprungen werden: " +
                 exception.Message);
         }
     }
@@ -3799,18 +3799,18 @@ public sealed partial class MainForm : Form
             {
                 _versionLabel.Text =
                     $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}" +
-                    $"🔄 Download {percent}%";
+                    $"ðŸ”„ Download {percent}%";
                 _versionLabel.ForeColor = WaitingColor;
             });
 
             AppendLog(
-                $"Update {update.DisplayVersion} wird heruntergeladen …");
+                $"Update {update.DisplayVersion} wird heruntergeladen â€¦");
             var stagedUpdate = await _updateService.DownloadAndStageAsync(
                 update,
                 progress,
                 CancellationToken.None);
             AppendLog(
-                "Download und SHA256-Prüfung erfolgreich. " +
+                "Download und SHA256-PrÃ¼fung erfolgreich. " +
                 "Der separate Updater wird gestartet.");
 
             if (_shutdown is not null)
@@ -3827,7 +3827,7 @@ public sealed partial class MainForm : Form
         {
             _versionLabel.Text =
                 $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}" +
-                "🔴 Update fehlgeschlagen";
+                "ðŸ”´ Update fehlgeschlagen";
             _versionLabel.ForeColor = ErrorColor;
             AppendLog("Update fehlgeschlagen: " + exception.Message);
             MessageBox.Show(
@@ -4112,13 +4112,13 @@ public sealed partial class MainForm : Form
             .Where(item => item.Length > 0)
             .ToList();
         config.Minigame.PointsPerInterval =
-            decimal.ToInt32(_pointsPerIntervalControl.Value);
+            decimal.ToInt64(_pointsPerIntervalControl.Value);
         config.Minigame.LurkerPointsPerInterval =
-            decimal.ToInt32(_lurkerPointsPerIntervalControl.Value);
+            decimal.ToInt64(_lurkerPointsPerIntervalControl.Value);
         config.Minigame.IntervalMinutes =
             decimal.ToInt32(_pointsIntervalControl.Value);
         config.Minigame.MinimumPoints =
-            decimal.ToInt32(_minimumPointsControl.Value);
+            decimal.ToInt64(_minimumPointsControl.Value);
         config.Minigame.PointsCommandCooldownSeconds =
             decimal.ToInt32(_pointsCommandCooldownControl.Value);
         config.Minigame.GambleCooldownSeconds =
@@ -4126,9 +4126,9 @@ public sealed partial class MainForm : Form
         config.Minigame.GlobalCommandCooldownSeconds =
             decimal.ToInt32(_globalCommandCooldownControl.Value);
         config.Minigame.MinimumBet =
-            decimal.ToInt32(_minimumBetControl.Value);
+            decimal.ToInt64(_minimumBetControl.Value);
         config.Minigame.MaximumBet =
-            decimal.ToInt32(_maximumBetControl.Value);
+            decimal.ToInt64(_maximumBetControl.Value);
         config.Minigame.GambleRanges = Enumerable.Range(0, 4)
             .Select(index => new GambleRangeConfig
             {
@@ -4139,18 +4139,18 @@ public sealed partial class MainForm : Form
             })
             .ToList();
         config.Minigame.ChatPointsEnabled = _chatPointsCheck.Checked;
-        config.Minigame.ChatMessagePoints = decimal.ToInt32(_chatPointsControl.Value);
+        config.Minigame.ChatMessagePoints = decimal.ToInt64(_chatPointsControl.Value);
         config.Minigame.ChatMessagePointsCooldownSeconds = decimal.ToInt32(_chatPointsCooldownControl.Value);
         config.Minigame.FollowPointsEnabled = _followPointsCheck.Checked;
-        config.Minigame.FollowPoints = decimal.ToInt32(_followPointsControl.Value);
+        config.Minigame.FollowPoints = decimal.ToInt64(_followPointsControl.Value);
         config.Minigame.SubPointsEnabled = _subPointsCheck.Checked;
-        config.Minigame.SubPoints = decimal.ToInt32(_subPointsControl.Value);
+        config.Minigame.SubPoints = decimal.ToInt64(_subPointsControl.Value);
         config.Minigame.RaidPointsEnabled = _raidPointsCheck.Checked;
-        config.Minigame.RaidPoints = decimal.ToInt32(_raidPointsControl.Value);
+        config.Minigame.RaidPoints = decimal.ToInt64(_raidPointsControl.Value);
         config.Minigame.ChannelRewardPointsEnabled = _rewardPointsCheck.Checked;
-        config.Minigame.ChannelRewardPoints = decimal.ToInt32(_rewardPointsControl.Value);
+        config.Minigame.ChannelRewardPoints = decimal.ToInt64(_rewardPointsControl.Value);
         config.Minigame.DailyEnabled = _dailyCheck.Checked;
-        config.Minigame.DailyBonusPoints = decimal.ToInt32(_dailyPointsControl.Value);
+        config.Minigame.DailyBonusPoints = decimal.ToInt64(_dailyPointsControl.Value);
         config.Minigame.LeaderboardEnabled = _leaderboardCheck.Checked;
         config.Minigame.MaximumTopEntries = decimal.ToInt32(_maximumTopControl.Value);
         config.Minigame.LeaderboardCooldownSeconds = decimal.ToInt32(_leaderboardCooldownControl.Value);
@@ -4160,34 +4160,34 @@ public sealed partial class MainForm : Form
         config.Minigame.HistoryLimit = decimal.ToInt32(_historyLimitControl.Value);
         config.Minigame.CoinflipEnabled = _coinflipEnabledCheck.Checked;
         config.Minigame.CoinflipMultiplier = _coinflipMultiplierControl.Value;
-        config.Minigame.CoinflipMinimumBet = decimal.ToInt32(_coinflipMinControl.Value);
-        config.Minigame.CoinflipMaximumBet = decimal.ToInt32(_coinflipMaxControl.Value);
+        config.Minigame.CoinflipMinimumBet = decimal.ToInt64(_coinflipMinControl.Value);
+        config.Minigame.CoinflipMaximumBet = decimal.ToInt64(_coinflipMaxControl.Value);
         config.Minigame.CoinflipCooldownSeconds = decimal.ToInt32(_coinflipCooldownControl.Value);
         config.Minigame.SlotsEnabled = _slotsEnabledCheck.Checked;
         config.Minigame.SlotSymbols = _slotSymbolsBox.Text.Trim();
         config.Minigame.SlotsThreeMultiplier = _slotsThreeControl.Value;
         config.Minigame.SlotsTwoMultiplier = _slotsTwoControl.Value;
         config.Minigame.SlotsSevenMultiplier = _slotsSevenControl.Value;
-        config.Minigame.SlotsMinimumBet = decimal.ToInt32(_slotsMinControl.Value);
-        config.Minigame.SlotsMaximumBet = decimal.ToInt32(_slotsMaxControl.Value);
+        config.Minigame.SlotsMinimumBet = decimal.ToInt64(_slotsMinControl.Value);
+        config.Minigame.SlotsMaximumBet = decimal.ToInt64(_slotsMaxControl.Value);
         config.Minigame.SlotsCooldownSeconds = decimal.ToInt32(_slotsCooldownControl.Value);
         config.Minigame.RouletteEnabled = _rouletteEnabledCheck.Checked;
         config.Minigame.RouletteEvenMoneyMultiplier = _rouletteEvenMoneyControl.Value;
         config.Minigame.RouletteNumberMultiplier = _rouletteNumberControl.Value;
-        config.Minigame.RouletteMinimumBet = decimal.ToInt32(_rouletteMinControl.Value);
-        config.Minigame.RouletteMaximumBet = decimal.ToInt32(_rouletteMaxControl.Value);
+        config.Minigame.RouletteMinimumBet = decimal.ToInt64(_rouletteMinControl.Value);
+        config.Minigame.RouletteMaximumBet = decimal.ToInt64(_rouletteMaxControl.Value);
         config.Minigame.RouletteCooldownSeconds = decimal.ToInt32(_rouletteCooldownControl.Value);
         config.Minigame.JackpotEnabled = _jackpotEnabledCheck.Checked;
-        config.Minigame.JackpotStartValue = decimal.ToInt32(_jackpotStartControl.Value);
+        config.Minigame.JackpotStartValue = decimal.ToInt64(_jackpotStartControl.Value);
         config.Minigame.JackpotContributionPercent = _jackpotContributionControl.Value;
         config.Minigame.MaximumAccountEnabled = _maximumAccountCheck.Checked;
-        config.Minigame.MaximumAccountPoints = decimal.ToInt32(_maximumAccountControl.Value);
+        config.Minigame.MaximumAccountPoints = decimal.ToInt64(_maximumAccountControl.Value);
         config.Minigame.DailyGambleLimitEnabled = _dailyGamesCheck.Checked;
         config.Minigame.DailyGambleLimit = decimal.ToInt32(_dailyGamesControl.Value);
         config.Minigame.DailyLossLimitEnabled = _dailyLossCheck.Checked;
-        config.Minigame.DailyLossLimit = decimal.ToInt32(_dailyLossControl.Value);
+        config.Minigame.DailyLossLimit = decimal.ToInt64(_dailyLossControl.Value);
         config.Minigame.DailyWinLimitEnabled = _dailyWinCheck.Checked;
-        config.Minigame.DailyWinLimit = decimal.ToInt32(_dailyWinControl.Value);
+        config.Minigame.DailyWinLimit = decimal.ToInt64(_dailyWinControl.Value);
         config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
         ReadMusicRequestSettings(config);
         ReadAutoDiscordClipPosterSettings(config);
@@ -4215,12 +4215,12 @@ public sealed partial class MainForm : Form
             SetOverallStatus("Einstellungsfehler", ErrorColor);
             if (IsMinigameConfigurationError(exception.Message))
             {
-                SetMinigameStatus("Einstellungen ungültig", ErrorColor);
+                SetMinigameStatus("Einstellungen ungÃ¼ltig", ErrorColor);
                 ShowSection("minigame");
             }
             else if (IsMusicConfigurationError(exception.Message))
             {
-                SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
+                SetSpotifyStatus("Einstellungen ungÃ¼ltig", ErrorColor);
                 ShowSection("music");
             }
             else if (IsClipConfigurationError(exception.Message))
@@ -4294,7 +4294,7 @@ public sealed partial class MainForm : Form
                 new ClipTemplateService());
             _clipCommandService.AttachDiscordService(_discordClipService);
             AppendLog(
-                "Discord-Webhook-Versand wurde für den laufenden Clip-Command aktiviert.");
+                "Discord-Webhook-Versand wurde fÃ¼r den laufenden Clip-Command aktiviert.");
         }
         _discordClipService?.UpdateConfig(updated.DiscordClips);
         _discordInviteService?.UpdateConfig(updated.DiscordClips);
@@ -4306,12 +4306,12 @@ public sealed partial class MainForm : Form
         if (_minigameTopList.Columns.Count >= 3)
             _minigameTopList.Columns[2].Text = updated.Minigame.CurrencyPlural;
 
-        AppendLog("Laufende Chat- und Minigame-Einstellungen wurden übernommen.");
+        AppendLog("Laufende Chat- und Minigame-Einstellungen wurden Ã¼bernommen.");
         if (moduleRestartRequired)
         {
             AppendLog(
                 "Das Ein- oder Ausschalten eines ganzen Moduls wird nach " +
-                "dem nächsten Neustart der Plugin-Verbindung wirksam.");
+                "dem nÃ¤chsten Neustart der Plugin-Verbindung wirksam.");
         }
     }
 
@@ -4335,19 +4335,19 @@ public sealed partial class MainForm : Form
         message.Contains("Punkte", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Einsatz", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Command-Cooldown", StringComparison.OrdinalIgnoreCase) ||
-        message.Contains("Währung", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("WÃ¤hrung", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Punkteabfrage", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Heist", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Command", StringComparison.OrdinalIgnoreCase);
 
     private static void SetNumericValue(
         NumericUpDown control,
-        int value)
+        long value)
     {
         control.Value = Math.Clamp(
             value,
-            decimal.ToInt32(control.Minimum),
-            decimal.ToInt32(control.Maximum));
+            control.Minimum,
+            control.Maximum);
     }
 
     private void AddHistoryEntry(ClipHistoryEntry entry)
@@ -4422,3 +4422,4 @@ public sealed partial class MainForm : Form
         base.OnFormClosing(e);
     }
 }
+
