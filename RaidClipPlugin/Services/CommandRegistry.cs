@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
@@ -23,7 +23,7 @@ public sealed class CommandRegistry
         void Add(string id, string command, IEnumerable<string>? aliases, string module,
             string moduleName, string name, string description, string usage,
             string example, bool enabled, CommandRole role = CommandRole.Viewer,
-            int userCooldown = 0, int globalCooldown = 0, int cost = 0, int order = 0,
+            int userCooldown = 0, int globalCooldown = 0, long cost = 0, int order = 0,
             bool visible = true)
         {
             var normalized = Normalize(command);
@@ -53,7 +53,7 @@ public sealed class CommandRegistry
                 "Zeigt deinen aktuellen Punktestand.", m.CustomPointsCommand, m.CustomPointsCommand,
                 m.PointsEnabled, userCooldown:m.PointsCommandCooldownSeconds, order:13);
         Add("points.daily", "!daily", null, "points", "Punkte", "Daily",
-            "Holt den täglichen Punktebonus ab.", "!daily", "!daily", m.PointsEnabled && m.DailyEnabled, order:20);
+            "Holt den tÃ¤glichen Punktebonus ab.", "!daily", "!daily", m.PointsEnabled && m.DailyEnabled, order:20);
         Add("points.top", "!top", new[]{"!rang"}, "points", "Punkte", "Rangliste",
             "Zeigt die Punkte-Rangliste.", "!top [Anzahl]", "!top 5", m.PointsEnabled && m.LeaderboardEnabled,
             userCooldown:m.LeaderboardCooldownSeconds, order:21);
@@ -63,20 +63,20 @@ public sealed class CommandRegistry
         Add("points.give", "!give", null, "points", "Punkte", "Punkte schenken",
             "Schenkt einem Zuschauer eigene Punkte.", "!give @name <Betrag>", "!give @name 100", m.PointsEnabled, order:23);
         Add("points.add", "!addpoints", null, "points", "Punkte", "Punkte erzeugen",
-            "Erzeugt Punkte für einen Nutzer oder alle gespeicherten Nutzer.", "!addpoints <@name|all> <Betrag>", "!addpoints all 100",
+            "Erzeugt Punkte fÃ¼r einen Nutzer oder alle gespeicherten Nutzer.", "!addpoints <@name|all> <Betrag>", "!addpoints all 100",
             m.PointsEnabled, CommandRole.Moderator, order:24);
-        Add("points.remove", "!removepoints", null, "points", "Punkte", "Punkte zurücksetzen",
+        Add("points.remove", "!removepoints", null, "points", "Punkte", "Punkte zurÃ¼cksetzen",
             "Setzt den Punktestand eines Nutzers auf null.", "!removepoints @name", "!removepoints @name",
             m.PointsEnabled, CommandRole.Broadcaster, order:25);
         Add("points.lurk", "!lurk", new[]{"!unlurk"}, "points", "Punkte", "Lurk",
             "Wechselt den Anwesenheitsstatus.", "!lurk", "!lurk", m.PointsEnabled, order:26);
         Add("casino.gamble", "!gamble", new[]{"!gambel"}, "casino", "Casino", "Gamble",
-            "Würfelt mit einem Punkteinsatz.", "!gamble <Betrag|all>", "!gamble 100",
+            "WÃ¼rfelt mit einem Punkteinsatz.", "!gamble <Betrag|all>", "!gamble 100",
             m.Enabled && m.GambleEnabled, userCooldown:m.GambleCooldownSeconds, cost:m.MinimumBet, order:40);
         Add("casino.jackpot", "!jackpot", null, "casino", "Casino", "Jackpot",
             "Zeigt den aktuellen Jackpot.", "!jackpot", "!jackpot", m.Enabled && m.JackpotEnabled, order:41);
         Add("casino.coinflip", "!coinflip", null, "casino", "Casino", "Coinflip",
-            "Wirft eine Münze.", "!coinflip <kopf|zahl> <Betrag>", "!coinflip kopf 100",
+            "Wirft eine MÃ¼nze.", "!coinflip <kopf|zahl> <Betrag>", "!coinflip kopf 100",
             m.Enabled && m.CoinflipEnabled, userCooldown:m.CoinflipCooldownSeconds, cost:m.CoinflipMinimumBet, order:42);
         Add("casino.slots", "!slots", null, "casino", "Casino", "Slots",
             "Spielt am Spielautomaten.", "!slots <Betrag>", "!slots 100",
@@ -104,7 +104,7 @@ public sealed class CommandRegistry
             "Lehnt eine offene Duel-Anfrage ab.", config.Duel.DenyCommand,
             config.Duel.DenyCommand, config.Duel.Enabled, order:67);
         Add("commands.list", config.Commands.Command, null, "commands", "Commands", "Command-Liste",
-            "Zeigt verfügbare Chat-Commands.", config.Commands.Command+" [Seite|Modul]",
+            "Zeigt verfÃ¼gbare Chat-Commands.", config.Commands.Command+" [Seite|Modul]",
             config.Commands.Command+" heist", config.Commands.Enabled,
             userCooldown:config.Commands.UserCooldownSeconds,
             globalCooldown:config.Commands.GlobalCooldownSeconds, order:1);
@@ -135,13 +135,13 @@ public sealed class CommandRegistry
 
         var music=config.MusicRequests;
         Add("music.request", music.ChatCommand, music.ChatCommandAliases, "music", "Musik", "Musikwunsch",
-            "Wünscht einen Song.", music.ChatCommand+" <Song|Spotify-Link>", music.ChatCommand+" Songname",
+            "WÃ¼nscht einen Song.", music.ChatCommand+" <Song|Spotify-Link>", music.ChatCommand+" Songname",
             music.Enabled && music.ChatCommandEnabled, userCooldown:music.UserCooldownMinutes*60, order:100);
         Add("music.song", music.ModeratorCommands.Song, null, "music", "Musik", "Aktueller Song",
             "Zeigt den aktuellen Song.", music.ModeratorCommands.Song, music.ModeratorCommands.Song,
             music.Enabled && music.ModeratorCommands.SongEnabled, order:101);
         foreach (var item in new[]{
-            ("skip",music.ModeratorCommands.Skip,music.ModeratorCommands.SkipEnabled,"Song überspringen"),
+            ("skip",music.ModeratorCommands.Skip,music.ModeratorCommands.SkipEnabled,"Song Ã¼berspringen"),
             ("queue",music.ModeratorCommands.Queue,music.ModeratorCommands.QueueEnabled,"Warteschlange"),
             ("remove",music.ModeratorCommands.Remove,music.ModeratorCommands.RemoveEnabled,"Song entfernen"),
             ("pause",music.ModeratorCommands.Pause,music.ModeratorCommands.PauseEnabled,"Wiedergabe pausieren"),
@@ -199,7 +199,7 @@ public sealed class CommandRegistry
         else
         {
             var text=string.Join(Environment.NewLine+Environment.NewLine,Commands.GroupBy(x=>x.ModuleDisplayName)
-                .Select(g=>g.Key+":"+Environment.NewLine+string.Join(Environment.NewLine,g.Select(x=>$"{x.Usage} – {x.Description}"))));
+                .Select(g=>g.Key+":"+Environment.NewLine+string.Join(Environment.NewLine,g.Select(x=>$"{x.Usage} â€“ {x.Description}"))));
             await File.WriteAllTextAsync(path,text,cancellationToken);
         }
         Console.WriteLine("Command-Export erstellt: "+path);
@@ -212,7 +212,7 @@ public sealed class CommandRegistry
     private static string LimitDescription(string? value)
     {
         var text = (value ?? "").Trim();
-        return text.Length <= 90 ? text : text[..87] + "…";
+        return text.Length <= 90 ? text : text[..87] + "â€¦";
     }
 
     public static string Normalize(string? command)
