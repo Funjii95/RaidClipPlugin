@@ -416,7 +416,7 @@ public sealed class ConfigurationService
         catch (Exception exception)
         {
             Console.WriteLine(
-                "âš ï¸ Gespeicherte GUI-Einstellungen konnten nicht geladen werden: " +
+                "⚠️ Gespeicherte GUI-Einstellungen konnten nicht geladen werden: " +
                 exception.Message);
         }
     }
@@ -560,7 +560,7 @@ public sealed class ConfigurationService
         if (string.IsNullOrWhiteSpace(config.Twitch.ClientSecret))
         {
             throw new InvalidOperationException(
-                "Twitch.ClientSecret fehlt im verschlÃ¼sselten Benutzerspeicher.");
+                "Twitch.ClientSecret fehlt im verschlüsselten Benutzerspeicher.");
         }
 
 
@@ -626,7 +626,7 @@ public sealed class ConfigurationService
         if (config.Player.VolumePercent is < 0 or > 100)
         {
             throw new InvalidOperationException(
-                "Die LautstÃ¤rke muss zwischen 0 und 100 Prozent liegen.");
+                "Die Lautstärke muss zwischen 0 und 100 Prozent liegen.");
         }
 
 
@@ -641,7 +641,7 @@ public sealed class ConfigurationService
             RaidDelayService.MaximumDelaySeconds)
         {
             throw new InvalidOperationException(
-                $"Die Raid-VerzÃ¶gerung muss zwischen 0 und " +
+                $"Die Raid-Verzögerung muss zwischen 0 und " +
                 $"{RaidDelayService.MaximumDelaySeconds} Sekunden liegen.");
         }
 
@@ -712,15 +712,15 @@ public sealed class ConfigurationService
         var commands = new[] { duel.DuelCommand, duel.AcceptCommand, duel.DenyCommand };
         if (commands.Any(string.IsNullOrWhiteSpace) ||
             commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() != commands.Length)
-            throw new InvalidOperationException("Duel-, Accept- und Deny-Command mÃ¼ssen gÃ¼ltig und unterschiedlich sein.");
+            throw new InvalidOperationException("Duel-, Accept- und Deny-Command müssen gültig und unterschiedlich sein.");
         if (duel.MinimumBet <= 0)
-            throw new InvalidOperationException("Der Duel-Mindesteinsatz muss grÃ¶ÃŸer als 0 sein.");
+            throw new InvalidOperationException("Der Duel-Mindesteinsatz muss größer als 0 sein.");
         if (duel.MaximumBet < duel.MinimumBet || duel.MaximumBet > 9_000_000_000L)
             throw new InvalidOperationException("Der Duel-Maximaleinsatz muss mindestens dem Mindesteinsatz entsprechen.");
         if (duel.RequestTimeoutSeconds is < 10 or > 300)
             throw new InvalidOperationException("Der Duel-Timeout muss zwischen 10 und 300 Sekunden liegen.");
         if (duel.UserCooldownSeconds < 0 || duel.GlobalCooldownSeconds < 0)
-            throw new InvalidOperationException("Duel-Cooldowns dÃ¼rfen nicht negativ sein.");
+            throw new InvalidOperationException("Duel-Cooldowns dürfen nicht negativ sein.");
         if (duel.ChallengerWinChancePercent is < 1 or > 99)
             throw new InvalidOperationException("Die Duel-Gewinnchance muss zwischen 1 und 99 Prozent liegen.");
         if (!(duel.AllowEveryone || duel.AllowFollowers || duel.AllowSubscribers || duel.AllowVips || duel.AllowModerators))
@@ -730,7 +730,7 @@ public sealed class ConfigurationService
             duel.NotEnoughPointsTargetMessage, duel.SelfDuelMessage, duel.NoPendingDuelMessage,
             duel.WrongTargetMessage, duel.AlreadyPendingDuelMessage, duel.InvalidBetMessage };
         if (messages.Any(string.IsNullOrWhiteSpace))
-            throw new InvalidOperationException("Alle Duel-Chatnachrichten mÃ¼ssen ausgefÃ¼llt sein.");
+            throw new InvalidOperationException("Alle Duel-Chatnachrichten müssen ausgefüllt sein.");
     }
 
 
@@ -738,7 +738,7 @@ public sealed class ConfigurationService
     {
         var heist = config.Heist;
         if (heist.MinimumParticipants < 3)
-            throw new InvalidOperationException("Der Heist benÃ¶tigt mindestens 3 Teilnehmer.");
+            throw new InvalidOperationException("Der Heist benötigt mindestens 3 Teilnehmer.");
         if (heist.MaximumParticipants < heist.MinimumParticipants || heist.MaximumParticipants > 500)
             throw new InvalidOperationException("Die maximale Heist-Teilnehmerzahl muss zwischen Mindestteilnehmern und 500 liegen.");
         if (heist.JoinDurationSeconds is < 10 or > 300)
@@ -746,47 +746,47 @@ public sealed class ConfigurationService
         if (heist.SuccessChancePercent is < 0 or > 100)
             throw new InvalidOperationException("Die Heist-Erfolgschance muss zwischen 0 und 100 Prozent liegen.");
         if (heist.UserCooldownMinutes < 0 || heist.GlobalCooldownMinutes < 0)
-            throw new InvalidOperationException("Heist-Cooldowns dÃ¼rfen nicht negativ sein.");
+            throw new InvalidOperationException("Heist-Cooldowns dürfen nicht negativ sein.");
         if (string.IsNullOrWhiteSpace(heist.StartCommand) || string.IsNullOrWhiteSpace(heist.JoinCommand) ||
             heist.StartCommand.Equals(heist.JoinCommand, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Heist-Start- und Beitritts-Command mÃ¼ssen unterschiedlich und gÃ¼ltig sein.");
+            throw new InvalidOperationException("Heist-Start- und Beitritts-Command müssen unterschiedlich und gültig sein.");
         if (!(heist.AllowEveryone || heist.AllowFollowers || heist.AllowSubscribers || heist.AllowVips || heist.AllowModerators))
             throw new InvalidOperationException("Bitte mindestens eine Heist-Berechtigung aktivieren.");
         var messages = new[] { heist.StartMessage, heist.JoinMessage, heist.AlreadyJoinedMessage,
             heist.NoActiveHeistMessage, heist.MaximumParticipantsMessage, heist.NotEnoughParticipantsMessage,
             heist.EvaluationMessage, heist.SuccessMessage, heist.FailureMessage };
         if (messages.Any(string.IsNullOrWhiteSpace))
-            throw new InvalidOperationException("Alle Heist-Chatnachrichten mÃ¼ssen ausgefÃ¼llt sein.");
+            throw new InvalidOperationException("Alle Heist-Chatnachrichten müssen ausgefüllt sein.");
 
 
         var commands = config.Commands;
         if (string.IsNullOrWhiteSpace(commands.Command))
             throw new InvalidOperationException("Der Commands-Command darf nicht leer sein.");
         if (commands.UserCooldownSeconds < 0 || commands.GlobalCooldownSeconds < 0)
-            throw new InvalidOperationException("Commands-Cooldowns dÃ¼rfen nicht negativ sein.");
+            throw new InvalidOperationException("Commands-Cooldowns dürfen nicht negativ sein.");
         if (commands.CommandsPerPage < 1)
-            throw new InvalidOperationException("Commands pro Seite muss grÃ¶ÃŸer als 0 sein.");
+            throw new InvalidOperationException("Commands pro Seite muss größer als 0 sein.");
         if (commands.MaximumMessagesPerRequest is < 1 or > 5)
-            throw new InvalidOperationException("Maximale Commands-Nachrichten mÃ¼ssen zwischen 1 und 5 liegen.");
+            throw new InvalidOperationException("Maximale Commands-Nachrichten müssen zwischen 1 und 5 liegen.");
         if (commands.CustomCommands.GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
             .Any(group => string.IsNullOrWhiteSpace(group.Key) || group.Count() > 1))
-            throw new InvalidOperationException("Custom Commands benÃ¶tigen eindeutige IDs.");
+            throw new InvalidOperationException("Custom Commands benötigen eindeutige IDs.");
         foreach (var custom in commands.CustomCommands)
         {
             if (string.IsNullOrWhiteSpace(custom.Command) || custom.Command == "!")
                 throw new InvalidOperationException("Ein Custom Command darf nicht leer sein.");
             if (custom.Enabled && string.IsNullOrWhiteSpace(custom.Response))
-                throw new InvalidOperationException($"FÃ¼r {custom.Command} fehlt die Chatantwort.");
+                throw new InvalidOperationException($"Für {custom.Command} fehlt die Chatantwort.");
             if (custom.Response.Length > 480)
-                throw new InvalidOperationException($"Die Chatantwort fÃ¼r {custom.Command} darf hÃ¶chstens 480 Zeichen lang sein.");
+                throw new InvalidOperationException($"Die Chatantwort für {custom.Command} darf höchstens 480 Zeichen lang sein.");
             if (custom.UserCooldownSeconds < 0 || custom.GlobalCooldownSeconds < 0)
-                throw new InvalidOperationException($"Die Cooldowns fÃ¼r {custom.Command} dÃ¼rfen nicht negativ sein.");
+                throw new InvalidOperationException($"Die Cooldowns für {custom.Command} dürfen nicht negativ sein.");
             if (!Enum.TryParse<CommandRole>(custom.RequiredRole, true, out _))
-                throw new InvalidOperationException($"Die Berechtigung fÃ¼r {custom.Command} ist ungÃ¼ltig.");
+                throw new InvalidOperationException($"Die Berechtigung für {custom.Command} ist ungültig.");
         }
         if (commands.CommandRoleOverrides.Any(item =>
             !Enum.TryParse<CommandRole>(item.Value, true, out _)))
-            throw new InvalidOperationException("Mindestens eine Command-Berechtigung ist ungÃ¼ltig.");
+            throw new InvalidOperationException("Mindestens eine Command-Berechtigung ist ungültig.");
 
 
         var registry = new CommandRegistry();
@@ -813,11 +813,11 @@ public sealed class ConfigurationService
             config.CurrencySingular.Length > 30 ||
             config.CurrencyPlural.Length > 30)
             throw new InvalidOperationException(
-                "Die WÃ¤hrungsnamen dÃ¼rfen nicht leer und hÃ¶chstens 30 Zeichen lang sein.");
+                "Die Währungsnamen dürfen nicht leer und höchstens 30 Zeichen lang sein.");
         if (config.MinimumPoints is < 0 or > 9_000_000_000L ||
             config.MaximumAccountPoints < config.MinimumPoints)
             throw new InvalidOperationException(
-                "Mindestpunkte oder maximales Kontolimit sind ungÃ¼ltig.");
+                "Mindestpunkte oder maximales Kontolimit sind ungültig.");
         if (config.GlobalCommandCooldownSeconds is < 0 or > 3600)
             throw new InvalidOperationException(
                 "Der globale Command-Cooldown muss zwischen 0 und 3600 Sekunden liegen.");
@@ -833,7 +833,7 @@ public sealed class ConfigurationService
                 !config.PointsCommandPerlenEnabled &&
                 string.IsNullOrWhiteSpace(config.CustomPointsCommand))
                 throw new InvalidOperationException(
-                    "Bitte mindestens einen Command fÃ¼r die Punkteabfrage aktivieren.");
+                    "Bitte mindestens einen Command für die Punkteabfrage aktivieren.");
             if (!string.IsNullOrWhiteSpace(config.CustomPointsCommand))
             {
                 if (!System.Text.RegularExpressions.Regex.IsMatch(
@@ -867,7 +867,7 @@ public sealed class ConfigurationService
                 config.LeaderboardCooldownSeconds is < 0 or > 3600 ||
                 config.ProfileCooldownSeconds is < 0 or > 3600)
                 throw new InvalidOperationException(
-                    "Punkte-Cooldowns mÃ¼ssen zwischen 0 und 3600 Sekunden liegen.");
+                    "Punkte-Cooldowns müssen zwischen 0 und 3600 Sekunden liegen.");
             if (config.ChatMessagePoints is < 0 or > 9_000_000_000L ||
                 config.FollowPoints is < 0 or > 9_000_000_000L ||
                 config.SubPoints is < 0 or > 9_000_000_000L ||
@@ -878,7 +878,7 @@ public sealed class ConfigurationService
                     "Passive Punkte und Daily müssen zwischen 0 und 9 Milliarden liegen.");
             if (config.MaximumTopEntries is < 1 or > 100)
                 throw new InvalidOperationException(
-                    "Die Anzahl der Top-EintrÃ¤ge muss zwischen 1 und 100 liegen.");
+                    "Die Anzahl der Top-Einträge muss zwischen 1 und 100 liegen.");
         }
 
 
@@ -893,11 +893,11 @@ public sealed class ConfigurationService
             config.SlotsCooldownSeconds is < 0 or > 3600 ||
             config.RouletteCooldownSeconds is < 0 or > 3600)
             throw new InvalidOperationException(
-                "Minigame-Cooldowns mÃ¼ssen zwischen 0 und 3600 Sekunden liegen.");
+                "Minigame-Cooldowns müssen zwischen 0 und 3600 Sekunden liegen.");
         if (config.MinimumBet < 0 || config.MaximumBet < config.MinimumBet ||
             config.MaximumBet > 9_000_000_000L)
             throw new InvalidOperationException(
-                "Minimale und maximale EinsÃ¤tze sind ungÃ¼ltig.");
+                "Minimale und maximale Einsätze sind ungültig.");
         if (config.CoinflipMultiplier is < 0 or > 100 ||
             config.SlotsThreeMultiplier is < 0 or > 100 ||
             config.SlotsTwoMultiplier is < 0 or > 100 ||
@@ -905,7 +905,7 @@ public sealed class ConfigurationService
             config.RouletteEvenMoneyMultiplier is < 0 or > 100 ||
             config.RouletteNumberMultiplier is < 0 or > 100)
             throw new InvalidOperationException(
-                "Casino-Multiplikatoren mÃ¼ssen zwischen 0 und 100 liegen.");
+                "Casino-Multiplikatoren müssen zwischen 0 und 100 liegen.");
         if (config.CoinflipMinimumBet < 0 ||
             config.CoinflipMaximumBet < config.CoinflipMinimumBet ||
             config.SlotsMinimumBet < 0 ||
@@ -913,7 +913,7 @@ public sealed class ConfigurationService
             config.RouletteMinimumBet < 0 ||
             config.RouletteMaximumBet < config.RouletteMinimumBet)
             throw new InvalidOperationException(
-                "Coinflip-, Slots- oder Roulette-EinsÃ¤tze sind ungÃ¼ltig.");
+                "Coinflip-, Slots- oder Roulette-Einsätze sind ungültig.");
         if (config.SlotSymbols.Split(',',
                 StringSplitOptions.RemoveEmptyEntries |
                 StringSplitOptions.TrimEntries).Length < 2)
@@ -922,14 +922,14 @@ public sealed class ConfigurationService
         if (config.JackpotStartValue < 0 ||
             config.JackpotContributionPercent is < 0 or > 100)
             throw new InvalidOperationException(
-                "Jackpot-Einstellungen sind ungÃ¼ltig.");
+                "Jackpot-Einstellungen sind ungültig.");
         if (config.DailyGambleLimit < 0 ||
             config.DailyLossLimit < 0 || config.DailyWinLimit < 0)
             throw new InvalidOperationException(
-                "Minigame-Limits dÃ¼rfen nicht negativ sein.");
+                "Minigame-Limits dürfen nicht negativ sein.");
         if (config.GambleRanges.Count != 4)
             throw new InvalidOperationException(
-                "Es mÃ¼ssen genau vier Gamble-Ergebnisbereiche vorhanden sein.");
+                "Es müssen genau vier Gamble-Ergebnisbereiche vorhanden sein.");
 
 
         var ranges = config.GambleRanges.OrderBy(range => range.From).ToArray();
@@ -939,20 +939,20 @@ public sealed class ConfigurationService
             if (range.From != expectedFrom || range.To < range.From ||
                 range.To > 100)
                 throw new InvalidOperationException(
-                    "Gamble-Bereiche mÃ¼ssen 1 bis 100 lÃ¼ckenlos und ohne Ãœberschneidungen abdecken.");
+                    "Gamble-Bereiche müssen 1 bis 100 lückenlos und ohne Überschneidungen abdecken.");
             if (range.Multiplier is < 0 or > 100)
                 throw new InvalidOperationException(
-                    "Gamble-Multiplikatoren mÃ¼ssen zwischen 0 und 100 liegen.");
+                    "Gamble-Multiplikatoren müssen zwischen 0 und 100 liegen.");
             if (string.IsNullOrWhiteSpace(range.ChatText))
                 throw new InvalidOperationException(
-                    "Jeder Gamble-Bereich benÃ¶tigt einen Chattext.");
+                    "Jeder Gamble-Bereich benötigt einen Chattext.");
             expectedFrom = range.To + 1;
         }
 
 
         if (expectedFrom != 101)
             throw new InvalidOperationException(
-                "Gamble-Bereiche mÃ¼ssen bei 100 enden.");
+                "Gamble-Bereiche müssen bei 100 enden.");
     }
 
 
@@ -1006,17 +1006,17 @@ public sealed class ConfigurationService
                 "Die maximale Songdauer muss zwischen 1 und 180 Minuten liegen.");
         if (config.MaximumQueueLength is < 1 or > 500)
             throw new InvalidOperationException(
-                "Die Musikwunsch-Warteschlange muss zwischen 1 und 500 EintrÃ¤ge erlauben.");
+                "Die Musikwunsch-Warteschlange muss zwischen 1 und 500 Einträge erlauben.");
         if (config.UserCooldownMinutes is < 0 or > 1440 ||
             config.MaximumRequestsPerUser is < 1 or > 100)
             throw new InvalidOperationException(
-                "Cooldown oder Nutzerlimit fÃ¼r MusikwÃ¼nsche ist ungÃ¼ltig.");
+                "Cooldown oder Nutzerlimit für Musikwünsche ist ungültig.");
         if (config.Enabled && string.IsNullOrWhiteSpace(config.SpotifyClientId))
             throw new InvalidOperationException(
                 "Bitte eine Spotify Client-ID eingeben.");
         if (config.Enabled && string.IsNullOrWhiteSpace(config.SelectedRewardId))
             throw new InvalidOperationException(
-                "Bitte eine Twitch-Musikwunsch-Belohnung auswÃ¤hlen oder ihre ID eintragen.");
+                "Bitte eine Twitch-Musikwunsch-Belohnung auswählen oder ihre ID eintragen.");
         if (!Uri.TryCreate(config.RedirectUri, UriKind.Absolute, out var redirect) ||
             redirect.Scheme != Uri.UriSchemeHttp ||
             !(redirect.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
@@ -1036,7 +1036,7 @@ public sealed class ConfigurationService
         };
         if (messages.Any(string.IsNullOrWhiteSpace))
             throw new InvalidOperationException(
-                "Musikwunsch-Chattexte dÃ¼rfen nicht leer sein.");
+                "Musikwunsch-Chattexte dürfen nicht leer sein.");
         var enabledCommands = new[]
         {
             (config.ModeratorCommands.SongEnabled, config.ModeratorCommands.Song),
@@ -1049,7 +1049,7 @@ public sealed class ConfigurationService
         if (enabledCommands.Any(item => item.Item1 &&
                 string.IsNullOrWhiteSpace(item.Item2)))
             throw new InvalidOperationException(
-                "Aktivierte Musik-Commands dÃ¼rfen nicht leer sein.");
+                "Aktivierte Musik-Commands dürfen nicht leer sein.");
 
 
         var commands = enabledCommands.Where(item => item.Item1)
@@ -1061,7 +1061,7 @@ public sealed class ConfigurationService
             commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
             commands.Length)
             throw new InvalidOperationException(
-                "Musik-Commands sind ungÃ¼ltig oder doppelt vergeben.");
+                "Musik-Commands sind ungültig oder doppelt vergeben.");
 
 
         var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -1094,24 +1094,24 @@ public sealed class ConfigurationService
             clipCommands.Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
             clipCommands.Length)
             throw new InvalidOperationException(
-                "Clip-Command und Aliase sind ungÃ¼ltig oder doppelt vergeben.");
+                "Clip-Command und Aliase sind ungültig oder doppelt vergeben.");
         if (clip.DurationSeconds is < 5 or > 60)
             throw new InvalidOperationException(
                 "Die Clip-Dauer muss zwischen 5 und 60 Sekunden liegen.");
         if (clip.MaximumTitleLength is < 1 or > 140)
             throw new InvalidOperationException(
-                "Die maximale Clip-TitellÃ¤nge muss zwischen 1 und 140 liegen.");
+                "Die maximale Clip-Titellänge muss zwischen 1 und 140 liegen.");
         if (clip.GlobalCooldownSeconds is < 0 or > 86400 ||
             clip.UserCooldownSeconds is < 0 or > 86400)
             throw new InvalidOperationException(
-                "Clip-Cooldowns mÃ¼ssen zwischen 0 und 86400 Sekunden liegen.");
+                "Clip-Cooldowns müssen zwischen 0 und 86400 Sekunden liegen.");
         if (clip.MaximumClipsPerStream is < 1 or > 1000 ||
             clip.MaximumClipsPerUserPerStream is < 1 or > 1000)
             throw new InvalidOperationException(
-                "Clip-Limits mÃ¼ssen zwischen 1 und 1000 liegen.");
+                "Clip-Limits müssen zwischen 1 und 1000 liegen.");
         if (clip.MaximumQueueSize is < 1 or > 100)
             throw new InvalidOperationException(
-                "Die Clip-Warteschlange muss zwischen 1 und 100 EintrÃ¤ge erlauben.");
+                "Die Clip-Warteschlange muss zwischen 1 und 100 Einträge erlauben.");
         if (discord.Enabled && !discord.Channels.Any(channel => channel.Enabled))
             throw new InvalidOperationException(
                 "Bitte mindestens einen Discord-Channel aktivieren.");
@@ -1123,15 +1123,15 @@ public sealed class ConfigurationService
                 discord.InviteCommand, "^![a-z0-9_-]{1,29}$",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             throw new InvalidOperationException(
-                "Der Discord-Einladungsbefehl ist ungÃ¼ltig.");
+                "Der Discord-Einladungsbefehl ist ungültig.");
         if (discord.InviteCommandEnabled &&
             !DiscordInviteCommandService.IsValidInviteUrl(discord.InviteUrl))
             throw new InvalidOperationException(
-                "Bitte einen gÃ¼ltigen permanenten Discord-Einladungslink eingeben.");
+                "Bitte einen gültigen permanenten Discord-Einladungslink eingeben.");
         if (discord.InviteCommandEnabled &&
             string.IsNullOrWhiteSpace(discord.InviteMessage))
             throw new InvalidOperationException(
-                "Bitte einen Chattext fÃ¼r den Discord-Einladungsbefehl eingeben.");
+                "Bitte einen Chattext für den Discord-Einladungsbefehl eingeben.");
         if (discord.InviteCooldownSeconds is < 0 or > 86400)
             throw new InvalidOperationException(
                 "Der Discord-Einladungs-Cooldown muss zwischen 0 und 86400 Sekunden liegen.");
@@ -1140,15 +1140,15 @@ public sealed class ConfigurationService
                 "Bitte eine Discord-Server-ID eingeben.");
         if (discord.Enabled && !ulong.TryParse(discord.GuildId, out _))
             throw new InvalidOperationException(
-                "Die Discord-Server-ID ist ungÃ¼ltig.");
+                "Die Discord-Server-ID ist ungültig.");
         if (!string.IsNullOrWhiteSpace(discord.MentionRoleId) &&
             !ulong.TryParse(discord.MentionRoleId, out _))
             throw new InvalidOperationException(
-                "Die Discord-Rollen-ID ist ungÃ¼ltig.");
+                "Die Discord-Rollen-ID ist ungültig.");
         if (discord.Channels.Any(channel =>
                 !ulong.TryParse(channel.ChannelId, out _)))
             throw new InvalidOperationException(
-                "Mindestens eine Discord-Channel-ID ist ungÃ¼ltig.");
+                "Mindestens eine Discord-Channel-ID ist ungültig.");
         var color = (discord.EmbedColor ?? "").Trim().TrimStart('#');
         if (discord.UseEmbed &&
             (!int.TryParse(color,
@@ -1167,7 +1167,7 @@ public sealed class ConfigurationService
         if (string.IsNullOrWhiteSpace(config.Title) ||
             string.IsNullOrWhiteSpace(config.Prize))
             throw new InvalidOperationException(
-                "Giveaway-Titel und Gewinn dÃ¼rfen nicht leer sein.");
+                "Giveaway-Titel und Gewinn dürfen nicht leer sein.");
         if (config.DurationMinutes is < 1 or > 10080)
             throw new InvalidOperationException(
                 "Die Giveaway-Dauer muss zwischen 1 Minute und 7 Tagen liegen.");
@@ -1177,14 +1177,14 @@ public sealed class ConfigurationService
         if (config.MinimumFollowMinutes < 0 || config.MinimumPoints < 0 ||
             config.EntryCost < 0)
             throw new InvalidOperationException(
-                "Giveaway-Punkte und Followdauer dÃ¼rfen nicht negativ sein.");
+                "Giveaway-Punkte und Followdauer dürfen nicht negativ sein.");
         if (config.ParticipantCountIntervalMinutes is < 1 or > 1440)
             throw new InvalidOperationException(
                 "Das Teilnehmerintervall muss zwischen 1 und 1440 Minuten liegen.");
         if (config.ExtraTicketCost < 0 ||
             config.MaximumExtraTickets is < 0 or > 100)
             throw new InvalidOperationException(
-                "Die Giveaway-Loseinstellungen sind ungÃ¼ltig.");
+                "Die Giveaway-Loseinstellungen sind ungültig.");
         if (!config.AllowedRoles.Everyone && !config.AllowedRoles.Followers &&
             !config.AllowedRoles.Subscribers && !config.AllowedRoles.Vips &&
             !config.AllowedRoles.Moderators && !config.AllowedRoles.Broadcaster)
@@ -1200,7 +1200,7 @@ public sealed class ConfigurationService
             commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
             commands.Length)
             throw new InvalidOperationException(
-                "Giveaway-Commands sind ungÃ¼ltig oder doppelt vergeben.");
+                "Giveaway-Commands sind ungültig oder doppelt vergeben.");
     }
 
 
