@@ -1,4 +1,4 @@
-namespace RaidClipPlugin.Config;
+﻿namespace RaidClipPlugin.Config;
 
 public class AppConfig
 {
@@ -68,7 +68,7 @@ public class ChatConfig
     public bool SendRaidMessage { get; set; } = true;
     public bool SendShoutout { get; set; } = true;
     public string RaidMessageTemplate { get; set; } =
-        "Danke für den Raid, @{name}! Schaut bei https://twitch.tv/{login} vorbei!";
+        "Danke fÃ¼r den Raid, @{name}! Schaut bei https://twitch.tv/{login} vorbei!";
 }
 
 public class ModerationConfig
@@ -85,8 +85,8 @@ public class MinigameConfig
 {
     public bool Enabled { get; set; } = false;
     public bool PointsEnabled { get; set; } = true;
-    public int PointsPerInterval { get; set; } = 10;
-    public int LurkerPointsPerInterval { get; set; } = 5;
+    public long PointsPerInterval { get; set; } = 10;
+    public long LurkerPointsPerInterval { get; set; } = 5;
     public string CurrencySingular { get; set; } = "Punkt";
     public string CurrencyPlural { get; set; } = "Punkte";
     public bool PointsCommandPunkteEnabled { get; set; } = true;
@@ -101,26 +101,26 @@ public class MinigameConfig
         "moobot"
     };
     public int IntervalMinutes { get; set; } = 5;
-    public int MinimumPoints { get; set; } = 0;
+    public long MinimumPoints { get; set; } = 0;
     public int PointsCommandCooldownSeconds { get; set; } = 30;
     public bool GambleEnabled { get; set; } = true;
     public int GambleCooldownSeconds { get; set; } = 20;
     public int GlobalCommandCooldownSeconds { get; set; } = 2;
-    public int MinimumBet { get; set; } = 10;
-    public int MaximumBet { get; set; } = 1000;
+    public long MinimumBet { get; set; } = 10;
+    public long MaximumBet { get; set; } = 1000;
     public bool ChatPointsEnabled { get; set; } = true;
-    public int ChatMessagePoints { get; set; } = 1;
+    public long ChatMessagePoints { get; set; } = 1;
     public int ChatMessagePointsCooldownSeconds { get; set; } = 60;
     public bool FollowPointsEnabled { get; set; } = true;
-    public int FollowPoints { get; set; } = 50;
+    public long FollowPoints { get; set; } = 50;
     public bool SubPointsEnabled { get; set; } = true;
-    public int SubPoints { get; set; } = 250;
+    public long SubPoints { get; set; } = 250;
     public bool RaidPointsEnabled { get; set; } = true;
-    public int RaidPoints { get; set; } = 100;
+    public long RaidPoints { get; set; } = 100;
     public bool ChannelRewardPointsEnabled { get; set; } = true;
-    public int ChannelRewardPoints { get; set; } = 25;
+    public long ChannelRewardPoints { get; set; } = 25;
     public bool DailyEnabled { get; set; } = true;
-    public int DailyBonusPoints { get; set; } = 100;
+    public long DailyBonusPoints { get; set; } = 100;
     public bool LeaderboardEnabled { get; set; } = true;
     public int MaximumTopEntries { get; set; } = 10;
     public int LeaderboardCooldownSeconds { get; set; } = 30;
@@ -130,34 +130,34 @@ public class MinigameConfig
     public int HistoryLimit { get; set; } = 500;
     public bool CoinflipEnabled { get; set; } = false;
     public decimal CoinflipMultiplier { get; set; } = 2.0m;
-    public int CoinflipMinimumBet { get; set; } = 10;
-    public int CoinflipMaximumBet { get; set; } = 1000;
+    public long CoinflipMinimumBet { get; set; } = 10;
+    public long CoinflipMaximumBet { get; set; } = 1000;
     public int CoinflipCooldownSeconds { get; set; } = 20;
     public bool SlotsEnabled { get; set; } = false;
-    public string SlotSymbols { get; set; } = "🍒,🍋,🔔,⭐,💎,7️⃣";
+    public string SlotSymbols { get; set; } = "ðŸ’,ðŸ‹,ðŸ””,â­,ðŸ’Ž,7ï¸âƒ£";
     public decimal SlotsThreeMultiplier { get; set; } = 5.0m;
     public decimal SlotsTwoMultiplier { get; set; } = 1.5m;
     public decimal SlotsSevenMultiplier { get; set; } = 10.0m;
-    public int SlotsMinimumBet { get; set; } = 10;
-    public int SlotsMaximumBet { get; set; } = 1000;
+    public long SlotsMinimumBet { get; set; } = 10;
+    public long SlotsMaximumBet { get; set; } = 1000;
     public int SlotsCooldownSeconds { get; set; } = 20;
     public bool RouletteEnabled { get; set; } = false;
     public decimal RouletteEvenMoneyMultiplier { get; set; } = 2.0m;
     public decimal RouletteNumberMultiplier { get; set; } = 36.0m;
-    public int RouletteMinimumBet { get; set; } = 10;
-    public int RouletteMaximumBet { get; set; } = 1000;
+    public long RouletteMinimumBet { get; set; } = 10;
+    public long RouletteMaximumBet { get; set; } = 1000;
     public int RouletteCooldownSeconds { get; set; } = 20;
     public bool JackpotEnabled { get; set; } = false;
-    public int JackpotStartValue { get; set; } = 1000;
+    public long JackpotStartValue { get; set; } = 1000;
     public decimal JackpotContributionPercent { get; set; } = 10m;
     public bool MaximumAccountEnabled { get; set; } = false;
-    public int MaximumAccountPoints { get; set; } = 1_000_000;
+    public long MaximumAccountPoints { get; set; } = 1_000_000;
     public bool DailyGambleLimitEnabled { get; set; } = false;
     public int DailyGambleLimit { get; set; } = 100;
     public bool DailyLossLimitEnabled { get; set; } = false;
-    public int DailyLossLimit { get; set; } = 10_000;
+    public long DailyLossLimit { get; set; } = 10_000;
     public bool DailyWinLimitEnabled { get; set; } = false;
-    public int DailyWinLimit { get; set; } = 10_000;
+    public long DailyWinLimit { get; set; } = 10_000;
     public List<GambleRangeConfig> GambleRanges { get; set; } =
         CreateDefaultRanges();
 
@@ -169,28 +169,28 @@ public class MinigameConfig
                 From = 1,
                 To = 31,
                 Multiplier = 0.0m,
-                ChatText = "@{name} würfelt eine {roll} und verliert {stake} Punkte! Neuer Stand: {balance}."
+                ChatText = "@{name} wÃ¼rfelt eine {roll} und verliert {stake} Punkte! Neuer Stand: {balance}."
             },
             new GambleRangeConfig
             {
                 From = 32,
                 To = 50,
                 Multiplier = 0.5m,
-                ChatText = "@{name} würfelt eine {roll} und erhält {payout} Punkte zurück! Neuer Stand: {balance}."
+                ChatText = "@{name} wÃ¼rfelt eine {roll} und erhÃ¤lt {payout} Punkte zurÃ¼ck! Neuer Stand: {balance}."
             },
             new GambleRangeConfig
             {
                 From = 51,
                 To = 70,
                 Multiplier = 1.0m,
-                ChatText = "@{name} würfelt eine {roll} und erhält den Einsatz zurück! Neuer Stand: {balance}."
+                ChatText = "@{name} wÃ¼rfelt eine {roll} und erhÃ¤lt den Einsatz zurÃ¼ck! Neuer Stand: {balance}."
             },
             new GambleRangeConfig
             {
                 From = 71,
                 To = 100,
                 Multiplier = 2.0m,
-                ChatText = "@{name} würfelt eine {roll} und gewinnt {payout} Punkte! Neuer Stand: {balance}."
+                ChatText = "@{name} wÃ¼rfelt eine {roll} und gewinnt {payout} Punkte! Neuer Stand: {balance}."
             }
         };
 }
@@ -263,3 +263,4 @@ public class AutoDiscordClipPosterConfig
     public bool UseEmbed { get; set; } = true;
     public bool UseThumbnail { get; set; } = true;
 }
+
