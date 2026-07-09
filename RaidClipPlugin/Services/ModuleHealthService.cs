@@ -4,139 +4,281 @@ namespace RaidClipPlugin.Services;
 
 public enum ModuleHealthState
 {
+    Disabled,
     Healthy,
     Warning,
-    Failed,
-    Disabled
+    Failed
 }
 
 public sealed record ModuleProbeResult(
-    bool Enabled,
-    bool Running,
-    string? Error = null)
+    bool IsRelevant,
+    bool IsHealthy,
+    string? Message = null,
+    ModuleHealthState? State = null)
 {
-    public static ModuleProbeResult Healthy() => new(true, true);
-    public static ModuleProbeResult Failed(string error) => new(true, false, error);
-    public static ModuleProbeResult Disabled() => new(false, false);
+    public static ModuleProbeResult Healthy(string? message = null) =>
+        new(true, true, message, ModuleHealthState.Healthy);
+
+    public static ModuleProbeResult Warning(string message) =>
+        new(true, false, message, ModuleHealthState.Warning);
+
+    public static ModuleProbeResult Failed(string message) =>
+        new(true, false, message, ModuleHealthState.Failed);
+
+    public static ModuleProbeResult Disabled(string? message = null) =>
+        new(false, true, message, ModuleHealthState.Disabled);
 }
 
 public sealed record ModuleHealthStatus(
     string ModuleName,
-    bool ConfiguredEnabled,
-    bool IsRunning,
-    DateTimeOffset LastHeartbeatUtc,
+    ModuleHealthState State,
     string? LastError,
-    int RestartCount,
-    DateTimeOffset? LastRestartUtc,
-    ModuleHealthState State);
+    DateTimeOffset CheckedAtUtc,
+    int RestartAttempts,
+    DateTimeOffset? LastRestartUtc);
 
 public sealed class ModuleHealthService : IDisposable
 {
-    private sealed record Registration(
-        string Name,
-        Func<CancellationToken, Task<ModuleProbeResult>> Probe,
-        Func<CancellationToken, Task>? Restart);
-
-    private readonly ModuleHealthConfig _config;
-    private readonly Dictionary<string, Registration> _registrations =
-        new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, ModuleHealthStatus> _statuses =
-        new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, Queue<DateTimeOffset>> _restartAttempts =
+    private ModuleHealthConfig _config;
+    private readonly Dictionary<string, ModuleRegistration> _modules =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _checkLock = new(1, 1);
+    private readonly object _statusLock = new();
+    private readonly Dictionary<string, ModuleHealthStatus> _statuses =
+        new(StringComparer.OrdinalIgnoreCase);
     private bool _disposed;
-
-    public event Action<IReadOnlyList<ModuleHealthStatus>>? StatusChanged;
-    public DateTimeOffset? LastCheckUtc { get; private set; }
 
     public ModuleHealthService(ModuleHealthConfig config)
     {
-        _config = config ?? new ModuleHealthConfig();
+        _config = config;
+    }
+
+    public event Action<IReadOnlyList<ModuleHealthStatus>>? StatusChanged;
+    public event Action<string>? LogMessage;
+
+    public void UpdateConfig(ModuleHealthConfig config)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _config = config;
     }
 
     public void Register(
-        string name,
+        string moduleName,
         Func<CancellationToken, Task<ModuleProbeResult>> probe,
         Func<CancellationToken, Task>? restart = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        _registrations[name] = new Registration(name, probe, restart);
-        _statuses[name] = new ModuleHealthStatus(
-            name, false, false, DateTimeOffset.MinValue,
-            null, 0, null, ModuleHealthState.Disabled);
+        ArgumentException.ThrowIfNullOrWhiteSpace(moduleName);
+        ArgumentNullException.ThrowIfNull(probe);
+
+        _modules[moduleName] = new ModuleRegistration(moduleName, probe, restart);
     }
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        Console.WriteLine("Modul-Healthcheck gestartet.");
-        try
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (!_config.Enabled)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            PublishStatuses(Array.Empty<ModuleHealthStatus>());
+            return;
+        }
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
             {
                 await CheckNowAsync(cancellationToken);
-                await Task.Delay(
-                    TimeSpan.FromSeconds(Math.Clamp(
-                        _config.IntervalSeconds, 5, 600)),
-                    cancellationToken);
             }
-        }
-        catch (OperationCanceledException)
-            when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        finally
-        {
-            Console.WriteLine("Modul-Healthcheck gestoppt.");
+            catch (OperationCanceledException)
+                when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception exception)
+            {
+                Log("Healthcheck-Durchlauf fehlgeschlagen: " + exception.Message);
+            }
+
+            var delay = TimeSpan.FromSeconds(Math.Clamp(
+                _config.IntervalSeconds, 5, 600));
+            await Task.Delay(delay, cancellationToken);
         }
     }
 
-    public async Task<IReadOnlyList<ModuleHealthStatus>> CheckNowAsync(
-        CancellationToken cancellationToken)
+    public async Task CheckNowAsync(CancellationToken cancellationToken)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         await _checkLock.WaitAsync(cancellationToken);
         try
         {
-            foreach (var registration in _registrations.Values)
+            var results = new List<ModuleHealthStatus>();
+            foreach (var module in _modules.Values.ToArray())
             {
-                await CheckRegistrationAsync(registration, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                var status = await ProbeModuleAsync(module, cancellationToken);
+                results.Add(status);
             }
-            LastCheckUtc = DateTimeOffset.UtcNow;
-            var snapshot = Snapshot();
-            StatusChanged?.Invoke(snapshot);
-            return snapshot;
+
+            PublishStatuses(results);
         }
-        finally { _checkLock.Release(); }
+        finally
+        {
+            _checkLock.Release();
+        }
     }
 
     public async Task<bool> RestartModuleAsync(
         string moduleName,
         CancellationToken cancellationToken)
     {
-        if (!_registrations.TryGetValue(moduleName, out var registration) ||
-            registration.Restart is null)
-            return false;
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _checkLock.WaitAsync(cancellationToken);
-        try
+        if (!_modules.TryGetValue(moduleName, out var module) ||
+            module.Restart is null)
         {
-            return await TryRestartAsync(
-                registration, DateTimeOffset.UtcNow, cancellationToken, true);
+            return false;
         }
-        finally { _checkLock.Release(); }
+
+        await module.Restart(cancellationToken);
+        module.LastRestartUtc = DateTimeOffset.UtcNow;
+        module.RestartAttempts++;
+        Log($"Modul '{module.Name}' wurde neu gestartet.");
+        return true;
     }
 
-    public IReadOnlyList<ModuleHealthStatus> Snapshot() =>
-        _statuses.Values.OrderBy(status => status.ModuleName).ToArray();
-
-    private async Task CheckRegistrationAsync(
-        Registration registration,
+    public async Task<int> RestartFailedModulesAsync(
         CancellationToken cancellationToken)
     {
-        ModuleProbeResult result;
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        ModuleHealthStatus[] failed;
+        lock (_statusLock)
+        {
+            failed = _statuses.Values
+                .Where(status => status.State == ModuleHealthState.Failed)
+                .ToArray();
+        }
+
+        var restarted = 0;
+        foreach (var status in failed)
+        {
+            if (await RestartModuleAsync(status.ModuleName, cancellationToken))
+            {
+                restarted++;
+            }
+        }
+
+        return restarted;
+    }
+
+    private async Task<ModuleHealthStatus> ProbeModuleAsync(
+        ModuleRegistration module,
+        CancellationToken cancellationToken)
+    {
+        var checkedAt = DateTimeOffset.UtcNow;
         try
         {
-            result = await registration.Probe(cancellationToken);
+            var probeTimeoutSeconds = Math.Clamp(
+                Math.Min(20, Math.Max(5, _config.IntervalSeconds / 2)),
+                5,
+                20);
+            using var timeout = CancellationTokenSource
+                .CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(probeTimeoutSeconds));
+
+            var result = await module.Probe(timeout.Token);
+            var state = result.State ?? (
+                !result.IsRelevant
+                    ? ModuleHealthState.Disabled
+                    : result.IsHealthy
+                        ? ModuleHealthState.Healthy
+                        : ModuleHealthState.Failed);
+
+            var status = new ModuleHealthStatus(
+                module.Name,
+                state,
+                state is ModuleHealthState.Healthy or ModuleHealthState.Disabled
+                    ? null
+                    : result.Message,
+                checkedAt,
+                module.RestartAttempts,
+                module.LastRestartUtc);
+
+            if (state == ModuleHealthState.Failed)
+            {
+                await TryAutoRestartAsync(module, result.Message, cancellationToken);
+            }
+
+            return status;
+        }
+        catch (OperationCanceledException)
+            when (!cancellationToken.IsCancellationRequested)
+        {
+            await TryAutoRestartAsync(
+                module,
+                "Healthcheck-Timeout",
+                cancellationToken);
+            return new ModuleHealthStatus(
+                module.Name,
+                ModuleHealthState.Failed,
+                "Healthcheck-Timeout",
+                checkedAt,
+                module.RestartAttempts,
+                module.LastRestartUtc);
+        }
+        catch (Exception exception)
+        {
+            await TryAutoRestartAsync(module, exception.Message, cancellationToken);
+            return new ModuleHealthStatus(
+                module.Name,
+                ModuleHealthState.Failed,
+                exception.Message,
+                checkedAt,
+                module.RestartAttempts,
+                module.LastRestartUtc);
+        }
+    }
+
+    private async Task TryAutoRestartAsync(
+        ModuleRegistration module,
+        string? reason,
+        CancellationToken cancellationToken)
+    {
+        if (!_config.AutoRestartEnabled || module.Restart is null)
+        {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        if (module.RestartWindowStartedUtc is null ||
+            now - module.RestartWindowStartedUtc >
+            TimeSpan.FromMinutes(_config.RestartWindowMinutes))
+        {
+            module.RestartWindowStartedUtc = now;
+            module.RestartAttempts = 0;
+        }
+
+        if (module.RestartAttempts >= _config.MaxRestartAttempts)
+        {
+            Log($"Auto-Recovery für '{module.Name}' übersprungen: Neustartlimit erreicht.");
+            return;
+        }
+
+        if (module.LastRestartUtc is not null &&
+            now - module.LastRestartUtc <
+            TimeSpan.FromSeconds(_config.RestartCooldownSeconds))
+        {
+            return;
+        }
+
+        try
+        {
+            Log($"Auto-Recovery startet '{module.Name}' neu. Grund: {reason}");
+            await module.Restart(cancellationToken);
+            module.RestartAttempts++;
+            module.LastRestartUtc = DateTimeOffset.UtcNow;
+            Log($"Auto-Recovery für '{module.Name}' abgeschlossen.");
         }
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
@@ -145,108 +287,54 @@ public sealed class ModuleHealthService : IDisposable
         }
         catch (Exception exception)
         {
-            result = ModuleProbeResult.Failed(exception.Message);
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        var previous = _statuses[registration.Name];
-        var state = !result.Enabled
-            ? ModuleHealthState.Disabled
-            : result.Running
-                ? ModuleHealthState.Healthy
-                : ModuleHealthState.Failed;
-        _statuses[registration.Name] = previous with
-        {
-            ConfiguredEnabled = result.Enabled,
-            IsRunning = result.Running,
-            LastHeartbeatUtc = result.Running ? now : previous.LastHeartbeatUtc,
-            LastError = result.Error,
-            State = state
-        };
-
-        if (result.Enabled && !result.Running &&
-            _config.AutoRestartEnabled && registration.Restart is not null)
-        {
-            Console.WriteLine(
-                $"Healthcheck erkennt Problem bei {registration.Name}: " +
-                (result.Error ?? "Modul läuft nicht"));
-            await TryRestartAsync(registration, now, cancellationToken, false);
+            Log($"Auto-Recovery für '{module.Name}' fehlgeschlagen: {exception.Message}");
         }
     }
 
-    private async Task<bool> TryRestartAsync(
-        Registration registration,
-        DateTimeOffset now,
-        CancellationToken cancellationToken,
-        bool manual)
+    private void PublishStatuses(IReadOnlyList<ModuleHealthStatus> statuses)
     {
-        var status = _statuses[registration.Name];
-        var cooldown = TimeSpan.FromSeconds(Math.Clamp(
-            _config.RestartCooldownSeconds, 5, 3600));
-        if (!manual && status.LastRestartUtc is { } last && now - last < cooldown)
-            return false;
-
-        if (!_restartAttempts.TryGetValue(registration.Name, out var attempts))
+        lock (_statusLock)
         {
-            attempts = new Queue<DateTimeOffset>();
-            _restartAttempts[registration.Name] = attempts;
-        }
-        var window = TimeSpan.FromMinutes(Math.Clamp(
-            _config.RestartWindowMinutes, 1, 60));
-        while (attempts.Count > 0 && now - attempts.Peek() > window)
-            attempts.Dequeue();
-        if (!manual && attempts.Count >= Math.Clamp(
-                _config.MaxRestartAttempts, 1, 20))
-        {
-            _statuses[registration.Name] = status with
+            _statuses.Clear();
+            foreach (var status in statuses)
             {
-                State = ModuleHealthState.Failed,
-                LastError = "Neustartlimit erreicht"
-            };
-            Console.WriteLine(
-                $"Auto-Restart für {registration.Name} gestoppt: Neustartlimit erreicht.");
-            return false;
+                _statuses[status.ModuleName] = status;
+            }
         }
 
-        attempts.Enqueue(now);
-        Console.WriteLine($"Auto-Restart gestartet: {registration.Name}.");
-        try
-        {
-            await registration.Restart!(cancellationToken);
-            var restartCount = status.RestartCount >= int.MaxValue
-                ? int.MaxValue : status.RestartCount + 1;
-            _statuses[registration.Name] = status with
-            {
-                RestartCount = restartCount,
-                LastRestartUtc = now,
-                LastError = null,
-                IsRunning = true,
-                State = ModuleHealthState.Healthy,
-                LastHeartbeatUtc = DateTimeOffset.UtcNow
-            };
-            Console.WriteLine($"Auto-Restart erfolgreich: {registration.Name}.");
-            StatusChanged?.Invoke(Snapshot());
-            return true;
-        }
-        catch (Exception exception)
-        {
-            _statuses[registration.Name] = status with
-            {
-                LastRestartUtc = now,
-                LastError = exception.Message,
-                State = ModuleHealthState.Failed
-            };
-            Console.WriteLine(
-                $"Auto-Restart fehlgeschlagen: {registration.Name}: {exception}");
-            StatusChanged?.Invoke(Snapshot());
-            return false;
-        }
+        StatusChanged?.Invoke(statuses);
     }
+
+    private void Log(string message) => LogMessage?.Invoke(message);
 
     public void Dispose()
     {
-        if (_disposed) return;
-        _checkLock.Dispose();
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
+        _checkLock.Dispose();
+    }
+
+    private sealed class ModuleRegistration
+    {
+        public ModuleRegistration(
+            string name,
+            Func<CancellationToken, Task<ModuleProbeResult>> probe,
+            Func<CancellationToken, Task>? restart)
+        {
+            Name = name;
+            Probe = probe;
+            Restart = restart;
+        }
+
+        public string Name { get; }
+        public Func<CancellationToken, Task<ModuleProbeResult>> Probe { get; }
+        public Func<CancellationToken, Task>? Restart { get; }
+        public int RestartAttempts { get; set; }
+        public DateTimeOffset? RestartWindowStartedUtc { get; set; }
+        public DateTimeOffset? LastRestartUtc { get; set; }
     }
 }
