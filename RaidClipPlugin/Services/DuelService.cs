@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 
@@ -57,7 +57,7 @@ public sealed record DuelStatus(
     int OpenRequests,
     string Challenger,
     string Target,
-    int Stake,
+    long Stake,
     int SecondsRemaining,
     DuelState State,
     bool TestMode = false);
@@ -70,7 +70,7 @@ public sealed class DuelService : IAsyncDisposable
         public required string Id { get; init; }
         public required ChatMessage Challenger { get; init; }
         public required TwitchUser Target { get; init; }
-        public required int Stake { get; init; }
+        public required long Stake { get; init; }
         public required DateTimeOffset ExpiresAt { get; init; }
         public required CancellationTokenSource TimeoutCts { get; init; }
         public DuelState State { get; set; } = DuelState.Waiting;
@@ -200,10 +200,10 @@ public sealed class DuelService : IAsyncDisposable
 
 
         var balance = await _points.GetPointsAsync(challenger.UserId, cancellationToken);
-        int stake;
+        long stake;
         if (parts[2].Equals("all", StringComparison.OrdinalIgnoreCase) && _config.AllowAllIn)
-            stake = (int)Math.Min(_config.MaximumBet, Math.Max(0L, balance - Math.Max(0, _minigame.MinimumPoints)));
-        else if (!int.TryParse(parts[2], out stake))
+            stake = Math.Min(_config.MaximumBet, Math.Max(0L, balance - Math.Max(0L, _minigame.MinimumPoints)));
+        else if (!long.TryParse(parts[2], out stake))
         {
             await SendTemplateAsync(_config.InvalidBetMessage, challenger.UserName, target, 0, "", "", cancellationToken);
             return;
@@ -224,15 +224,27 @@ public sealed class DuelService : IAsyncDisposable
                 return;
             }
             var now = DateTimeOffset.UtcNow;
-            if (now - _lastGlobalUse < TimeSpan.FromSeconds(_config.GlobalCooldownSeconds))
+            var globalCooldown = TimeSpan.FromSeconds(
+                _config.GlobalCooldownSeconds);
+            if (now - _lastGlobalUse < globalCooldown)
             {
-                await SendAsync($"@{challenger.UserName}, der globale Duel-Cooldown ist noch aktiv.", cancellationToken);
+                var remaining = globalCooldown - (now - _lastGlobalUse);
+                await SendAsync(
+                    $"@{challenger.UserName}, der globale Duel-Cooldown läuft noch " +
+                    $"{HeistService.FormatCooldown(remaining)}.",
+                    cancellationToken);
                 return;
             }
             if (_userCooldowns.TryGetValue(challenger.UserId, out var last) &&
                 now - last < TimeSpan.FromSeconds(_config.UserCooldownSeconds))
             {
-                await SendAsync($"@{challenger.UserName}, dein Duel-Cooldown ist noch aktiv.", cancellationToken);
+                var remaining =
+                    TimeSpan.FromSeconds(_config.UserCooldownSeconds) -
+                    (now - last);
+                await SendAsync(
+                    $"@{challenger.UserName}, dein Duel-Cooldown läuft noch " +
+                    $"{HeistService.FormatCooldown(remaining)}.",
+                    cancellationToken);
                 return;
             }
 
@@ -310,7 +322,7 @@ public sealed class DuelService : IAsyncDisposable
             var result = await _points.ResolveDuelAsync(duel.Challenger.UserId,
                 duel.Challenger.UserName, duel.Target.Id, duel.Target.DisplayName,
                 winnerId, duel.Stake, _minigame.MinimumPoints,
-                _minigame.MaximumAccountEnabled ? _minigame.MaximumAccountPoints : int.MaxValue,
+                _minigame.MaximumAccountEnabled ? _minigame.MaximumAccountPoints : long.MaxValue,
                 _minigame.HistoryLimit, cancellationToken);
             if (!result.Success)
             {
@@ -359,7 +371,7 @@ public sealed class DuelService : IAsyncDisposable
             duel.TimeoutCts.Cancel();
             await RefundAsync(duel, "abgelehnt", CancellationToken.None);
             Remove(duel);
-            Console.WriteLine($"Duel abgelehnt: {duel.Target.DisplayName}; Rückerstattung {duel.Stake} an {duel.Challenger.UserName}.");
+            Console.WriteLine($"Duel abgelehnt: {duel.Target.DisplayName}; RÃ¼ckerstattung {duel.Stake} an {duel.Challenger.UserName}.");
             PublishStatus(duel);
             if (_config.SendDenyMessage)
                 await SendTemplateAsync(_config.DuelDeniedMessage, duel.Challenger.UserName,
@@ -395,7 +407,7 @@ public sealed class DuelService : IAsyncDisposable
                 duel.State = DuelState.Expired;
                 await RefundAsync(duel, "Timeout", CancellationToken.None);
                 Remove(duel);
-                Console.WriteLine($"Duel-Timeout: {duel.Challenger.UserName} gegen {duel.Target.DisplayName}; Rückerstattung {duel.Stake}.");
+                Console.WriteLine($"Duel-Timeout: {duel.Challenger.UserName} gegen {duel.Target.DisplayName}; RÃ¼ckerstattung {duel.Stake}.");
                 PublishStatus(duel);
                 if (_config.SendTimeoutMessage)
                     await SendTemplateAsync(_config.DuelTimeoutMessage, duel.Challenger.UserName,
@@ -421,12 +433,12 @@ public sealed class DuelService : IAsyncDisposable
                 duel.TimeoutCts.Cancel();
                 await RefundAsync(duel, "Abbruch", CancellationToken.None);
                 duel.TimeoutCts.Dispose();
-                Console.WriteLine($"Duel abgebrochen: {duel.Id}; Rückerstattung {duel.Stake}.");
+                Console.WriteLine($"Duel abgebrochen: {duel.Id}; RÃ¼ckerstattung {duel.Stake}.");
             }
             _byUserId.Clear();
             StatusChanged?.Invoke(new DuelStatus(0, "", "", 0, 0, DuelState.Cancelled));
             if (announce && duels.Length > 0)
-                await SendAsync("Alle offenen Duel-Anfragen wurden abgebrochen und die Einsätze zurückgegeben.", cancellationToken);
+                await SendAsync("Alle offenen Duel-Anfragen wurden abgebrochen und die EinsÃ¤tze zurÃ¼ckgegeben.", cancellationToken);
         }
         finally { _gate.Release(); }
     }
@@ -439,11 +451,11 @@ public sealed class DuelService : IAsyncDisposable
         var winner = DuelRules.ChallengerWins(_config.FairMode, _config.ChallengerWinChancePercent, roll) ? "TestChallenger" : "TestTarget";
         var loser = winner == "TestChallenger" ? "TestTarget" : "TestChallenger";
         var target = new TwitchUser("test-target", "testtarget", "TestTarget");
-        var stake = Math.Max(_config.MinimumBet, 100);
-        Console.WriteLine($"TEST-DUEL: Zufallswert {roll}; Chance {chance}%; Gewinner {winner}; keine Punkte verändert.");
+        var stake = Math.Max(_config.MinimumBet, 100L);
+        Console.WriteLine($"TEST-DUEL: Zufallswert {roll}; Chance {chance}%; Gewinner {winner}; keine Punkte verÃ¤ndert.");
         await SendTemplateAsync("[TEST] " + _config.DuelRequestMessage, "TestChallenger", target, stake, "", "", cancellationToken);
         await SendTemplateAsync("[TEST] " + _config.DuelAcceptedMessage, "TestChallenger", target, stake, winner, loser, cancellationToken);
-        await SendTemplateAsync("[TEST] " + _config.DuelWinMessage + " Keine echten Punkte verändert.", "TestChallenger", target, stake, winner, loser, cancellationToken);
+        await SendTemplateAsync("[TEST] " + _config.DuelWinMessage + " Keine echten Punkte verÃ¤ndert.", "TestChallenger", target, stake, winner, loser, cancellationToken);
         StatusChanged?.Invoke(new DuelStatus(0, "TestChallenger", "TestTarget", stake, 0, DuelState.Paid, true));
     }
 
@@ -473,7 +485,7 @@ public sealed class DuelService : IAsyncDisposable
         catch (Exception exception)
         {
             Console.WriteLine(
-                $"Duel-Verlierer Timeout für {loserName} fehlgeschlagen: " +
+                $"Duel-Verlierer Timeout fÃ¼r {loserName} fehlgeschlagen: " +
                 exception.Message);
         }
     }
@@ -483,7 +495,7 @@ public sealed class DuelService : IAsyncDisposable
     {
         var balance = await _points.RefundDuelStakeAsync(duel.Challenger.UserId,
             duel.Challenger.UserName, duel.Stake, _minigame.HistoryLimit, token);
-        Console.WriteLine($"Duel-Rückerstattung: {duel.Challenger.UserName} +{duel.Stake}; Stand {balance}; Grund {reason}.");
+        Console.WriteLine($"Duel-RÃ¼ckerstattung: {duel.Challenger.UserName} +{duel.Stake}; Stand {balance}; Grund {reason}.");
     }
 
 
@@ -526,7 +538,7 @@ public sealed class DuelService : IAsyncDisposable
 
 
     private Task SendTemplateAsync(string template, string challenger,
-        TwitchUser? target, int amount, string winner, string loser,
+        TwitchUser? target, long amount, string winner, string loser,
         CancellationToken cancellationToken)
     {
         var chance = DuelRules.ChallengerChance(_config.FairMode, _config.ChallengerWinChancePercent);
@@ -537,7 +549,7 @@ public sealed class DuelService : IAsyncDisposable
             .Replace("{winner}", winner)
             .Replace("{loser}", loser)
             .Replace("{amount}", amount.ToString("N0"))
-            .Replace("{pot}", checked(amount * 2).ToString("N0"))
+            .Replace("{pot}", (amount > long.MaxValue / 2 ? long.MaxValue : amount * 2).ToString("N0"))
             .Replace("{currencyName}", _minigame.CurrencyPlural)
             .Replace("{seconds}", _config.RequestTimeoutSeconds.ToString())
             .Replace("{duelCommand}", _config.DuelCommand)
