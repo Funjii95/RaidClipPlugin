@@ -42,7 +42,7 @@ public sealed class HeistRulesTests
             var result=await store.PayoutHeistJackpotAsync(users,new[]{0},1000,true,500,cts.Token);
             Assert.Equal(1000,result.Payouts.Sum(x=>x.Payout));
             Assert.Equal(1000,result.JackpotAfter);
-            Assert.Equal(new[]{334,333,333},result.Payouts.Select(x=>x.Payout));
+            Assert.Equal(new long[]{334,333,333},result.Payouts.Select(x=>x.Payout));
         }
         finally { if(Directory.Exists(directory))Directory.Delete(directory,true); }
     }
