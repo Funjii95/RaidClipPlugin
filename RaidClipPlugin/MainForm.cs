@@ -181,7 +181,7 @@ public sealed partial class MainForm : Form
     private readonly TextBox _chatTemplateBox = new()
     {
         Width = 420,
-        PlaceholderText = "{name}, {login} und {viewers} sind verfÃ¼gbar"
+        PlaceholderText = "{name}, {login} und {viewers} sind verfügbar"
     };
 
 
@@ -225,7 +225,7 @@ public sealed partial class MainForm : Form
     private readonly TextBox _blockedWordsBox = new()
     {
         Width = 320,
-        PlaceholderText = "Gesperrte WÃ¶rter, durch Komma getrennt"
+        PlaceholderText = "Gesperrte Wörter, durch Komma getrennt"
     };
 
     private readonly Button _saveSettingsButton = new()
@@ -238,7 +238,7 @@ public sealed partial class MainForm : Form
 
     private readonly Label _versionLabel = new()
     {
-        Text = "Version 1.4.2\nðŸŸ¢ Aktuell",
+        Text = "Version 1.4.2\n🟢 Aktuell",
         AutoSize = true,
         ForeColor = Color.ForestGreen,
         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -273,7 +273,7 @@ public sealed partial class MainForm : Form
 
     private readonly Button _skipUpdateButton = new()
     {
-        Text = "Ãœberspringen",
+        Text = "Überspringen",
         AutoSize = true,
         Visible = false,
         Padding = new Padding(8, 4, 8, 4),
@@ -304,11 +304,11 @@ public sealed partial class MainForm : Form
     };
 
     private readonly Button _raidClipNavButton = CreateNavigationTile(
-        "ðŸŽ¬  Raid Clip",
+        "🎬  Raid Clip",
         "Raids, Clips und OBS");
 
     private readonly Button _moderationNavButton = CreateNavigationTile(
-        "ðŸ›¡  Chat-Moderation",
+        "🛡  Chat-Moderation",
         "Chat, Filter und Aktionen");
 
     private readonly Panel _raidPage = new()
@@ -331,7 +331,7 @@ public sealed partial class MainForm : Form
 
     private readonly CheckBox _minigameEnabledCheck = new()
     {
-        Text = "Spiele aktivieren (!gamble, Roulette, Slots â€¦)",
+        Text = "Spiele aktivieren (!gamble, Roulette, Slots …)",
         AutoSize = true,
         Margin = new Padding(8, 24, 4, 4)
     };
@@ -389,7 +389,7 @@ public sealed partial class MainForm : Form
     private readonly ListBox _pointsBlacklistList = new()
         { Width = 220, Height = 115, IntegralHeight = false };
     private readonly Button _addPointsBlacklistButton =
-        NewActionButton("HinzufÃ¼gen");
+        NewActionButton("Hinzufügen");
     private readonly Button _removePointsBlacklistButton =
         NewActionButton("Auswahl entfernen");
 
@@ -444,7 +444,7 @@ public sealed partial class MainForm : Form
     private readonly CheckBox _slotsEnabledCheck = NewCheck(
         "Slots aktivieren", false);
     private readonly TextBox _slotSymbolsBox = new()
-        { Text = "ðŸ’,ðŸ‹,ðŸ””,â­,ðŸ’Ž,7ï¸âƒ£", Width = 230 };
+        { Text = "🍒,🍋,🔔,⭐,💎,7️⃣", Width = 230 };
     private readonly NumericUpDown _slotsThreeControl =
         CreateMultiplierControl(5m);
     private readonly NumericUpDown _slotsTwoControl =
@@ -484,15 +484,15 @@ public sealed partial class MainForm : Form
     private readonly NumericUpDown _maximumAccountControl =
         CreateIntegerControl(1_000_000, 0, 9_000_000_000);
     private readonly CheckBox _dailyGamesCheck = NewCheck(
-        "TÃ¤gliches Spielelimit", false);
+        "Tägliches Spielelimit", false);
     private readonly NumericUpDown _dailyGamesControl =
         CreateIntegerControl(100, 0, 9_000_000_000);
     private readonly CheckBox _dailyLossCheck = NewCheck(
-        "TÃ¤gliches Verlustlimit", false);
+        "Tägliches Verlustlimit", false);
     private readonly NumericUpDown _dailyLossControl =
         CreateIntegerControl(10000, 0, 9_000_000_000);
     private readonly CheckBox _dailyWinCheck = NewCheck(
-        "TÃ¤gliches Gewinnlimit", false);
+        "Tägliches Gewinnlimit", false);
     private readonly NumericUpDown _dailyWinControl =
         CreateIntegerControl(10000, 0, 9_000_000_000);
     private readonly ListView _minigameTopList = NewDetailsList();
@@ -548,7 +548,7 @@ public sealed partial class MainForm : Form
 
     private readonly Button _resetPointsButton = new()
     {
-        Text = "Punktedaten zurÃ¼cksetzen",
+        Text = "Punktedaten zurücksetzen",
         AutoSize = true,
         Padding = new Padding(10, 5, 10, 5),
         Margin = new Padding(10, 22, 4, 4),
@@ -557,7 +557,7 @@ public sealed partial class MainForm : Form
 
     private readonly Label _minigameStatusLabel = new()
     {
-        Text = "â— Minigame: Deaktiviert",
+        Text = "● Minigame: Deaktiviert",
         AutoSize = true,
         ForeColor = InactiveColor,
         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -574,19 +574,19 @@ public sealed partial class MainForm : Form
     };
     private readonly Label _moduleHealthLastCheckLabel = new()
     {
-        Text = "Letzte PrÃ¼fung: â€“",
+        Text = "Letzte Prüfung: –",
         AutoSize = true,
         ForeColor = InactiveColor,
         Margin = new Padding(8, 12, 8, 4)
     };
-    private readonly Button _checkModulesButton = NewActionButton("Module prÃ¼fen");
+    private readonly Button _checkModulesButton = NewActionButton("Module prüfen");
     private readonly Button _restartModulesButton = NewActionButton("Module neu starten");
     private readonly CheckBox _healthcheckEnabledCheck = NewCheck(
         "Healthcheck aktivieren", true);
     private readonly CheckBox _healthAutoRestartCheck = NewCheck(
         "Auto-Restart aktivieren", true);
     private readonly CheckBox _gambleHealthcheckCheck = NewCheck(
-        "Gamble Ã¼berwachen", true);
+        "Gamble überwachen", true);
     private readonly NumericUpDown _healthIntervalControl =
         CreateIntegerControl(30, 5, 600);
     private readonly NumericUpDown _healthMaxRestartsControl =
@@ -595,10 +595,20 @@ public sealed partial class MainForm : Form
         CreateIntegerControl(30, 5, 3600);
 
     private readonly Button _minigameNavButton = CreateNavigationTile(
-        "ðŸŽ²  Minigame",
+        "🎲  Minigame",
         "Punkte, Commands und Gamble");
 
+    private readonly Button _systemStatusNavButton = CreateNavigationTile(
+        "🩺  Systemstatus",
+        "Watchdog und Auto-Recovery");
+
     private readonly Panel _minigamePage = new()
+    {
+        Dock = DockStyle.Fill,
+        Visible = false
+    };
+
+    private readonly Panel _systemStatusPage = new()
     {
         Dock = DockStyle.Fill,
         Visible = false
@@ -661,7 +671,7 @@ public sealed partial class MainForm : Form
 
     private readonly Label _moderationStatusLabel = new()
     {
-        Text = "â— Chat-Moderation: Deaktiviert",
+        Text = "● Chat-Moderation: Deaktiviert",
         AutoSize = true,
         ForeColor = InactiveColor,
         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -711,7 +721,7 @@ public sealed partial class MainForm : Form
         }
         catch
         {
-            // Ã„ltere Windows-Versionen verwenden weiterhin ihre Standard-Titelleiste.
+            // Ältere Windows-Versionen verwenden weiterhin ihre Standard-Titelleiste.
         }
     }
 
@@ -776,6 +786,7 @@ public sealed partial class MainForm : Form
         _raidClipNavButton.Click += (_, _) => ShowSection("raid");
         _moderationNavButton.Click += (_, _) => ShowSection("moderation");
         _minigameNavButton.Click += (_, _) => ShowSection("minigame");
+        _systemStatusNavButton.Click += (_, _) => ShowSection("system-status");
         _liveChatNavButton.Click += (_, _) => ShowSection("livechat");
         _updateButton.Click += async (_, _) =>
             await CheckForUpdatesAsync(silent: false);
@@ -800,7 +811,7 @@ public sealed partial class MainForm : Form
             }
             catch (Exception exception)
             {
-                AppendLog("Automatische Update-PrÃ¼fung fehlgeschlagen: " + exception.Message);
+                AppendLog("Automatische Update-Prüfung fehlgeschlagen: " + exception.Message);
             }
         };
 
@@ -816,14 +827,14 @@ public sealed partial class MainForm : Form
         }
 
         LoadSettingsIntoControls();
-        AppendLog("Anwendung bereit. Klicke auf â€šPlugin startenâ€˜.");
+        AppendLog("Anwendung bereit. Klicke auf ‚Plugin starten‘.");
     }
 
     private static Label CreateIndicator(string service)
     {
         return new Label
         {
-            Text = $"â— {service}{Environment.NewLine}Nicht verbunden",
+            Text = $"● {service}{Environment.NewLine}Nicht verbunden",
             AutoSize = false,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
@@ -1207,6 +1218,7 @@ public sealed partial class MainForm : Form
         var showRaid = section == "raid";
         var showModeration = section == "moderation";
         var showMinigame = section == "minigame";
+        var showSystemStatus = section == "system-status";
         var showMusic = section == "music";
         var showStreamCheck = section == "stream-check";
         var showClipDiscord = section == "clip-discord";
@@ -1218,6 +1230,7 @@ public sealed partial class MainForm : Form
         _raidPage.Visible = showRaid;
         _moderationPage.Visible = showModeration;
         _minigamePage.Visible = showMinigame;
+        _systemStatusPage.Visible = showSystemStatus;
         _musicPage.Visible = showMusic;
         _streamCheckPage.Visible = showStreamCheck;
         _clipDiscordPage.Visible = showClipDiscord;
@@ -1228,6 +1241,8 @@ public sealed partial class MainForm : Form
 
         if (showModeration)
             _moderationPage.BringToFront();
+        else if (showSystemStatus)
+            _systemStatusPage.BringToFront();
         else if (showMinigame)
             _minigamePage.BringToFront();
         else if (showMusic)
@@ -1250,6 +1265,7 @@ public sealed partial class MainForm : Form
         SetNavigationTileState(_raidClipNavButton, showRaid);
         SetNavigationTileState(_moderationNavButton, showModeration);
         SetNavigationTileState(_minigameNavButton, showMinigame);
+        SetNavigationTileState(_systemStatusNavButton, showSystemStatus);
         SetNavigationTileState(_musicNavButton, showMusic);
         SetNavigationTileState(_streamCheckNavButton, showStreamCheck);
         SetNavigationTileState(_clipDiscordNavButton, showClipDiscord);
@@ -1267,6 +1283,88 @@ public sealed partial class MainForm : Form
         button.ForeColor = active ? Color.White : TextColor;
         button.FlatAppearance.BorderSize = active ? 1 : 0;
         button.FlatAppearance.BorderColor = AccentColor;
+    }
+
+    private void BuildSystemStatusPage()
+    {
+        var title = new Label
+        {
+            Text = "Systemstatus",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 20F, FontStyle.Bold),
+            ForeColor = TextColor
+        };
+
+        var subtitle = new Label
+        {
+            Text = "Watchdog, Healthcheck und Auto-Recovery für die wichtigsten Module",
+            AutoSize = true,
+            ForeColor = MutedTextColor,
+            Margin = new Padding(2, 3, 0, 0)
+        };
+
+        var header = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            Padding = new Padding(4, 0, 0, 0)
+        };
+        header.Controls.Add(title);
+        header.Controls.Add(subtitle);
+
+        var settings = CreateMinigameFlow();
+        settings.Controls.Add(_healthcheckEnabledCheck);
+        settings.Controls.Add(_healthAutoRestartCheck);
+        settings.Controls.Add(_gambleHealthcheckCheck);
+        settings.Controls.Add(CreateSettingEditor(
+            "Prüfintervall (Sek.)", _healthIntervalControl));
+        settings.Controls.Add(CreateSettingEditor(
+            "Max. Neustarts", _healthMaxRestartsControl));
+        settings.Controls.Add(CreateSettingEditor(
+            "Restart-Cooldown (Sek.)", _healthRestartCooldownControl));
+        settings.Controls.Add(_checkModulesButton);
+        settings.Controls.Add(_restartModulesButton);
+
+        var statusBox = new GroupBox
+        {
+            Text = "Modul-Check",
+            Dock = DockStyle.Fill,
+            Padding = new Padding(12),
+            ForeColor = TextColor
+        };
+
+        var statusFlow = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            AutoScroll = true,
+            Padding = new Padding(8)
+        };
+        statusFlow.Controls.Add(_moduleHealthSummaryLabel);
+        statusFlow.Controls.Add(_moduleHealthLastCheckLabel);
+        statusBox.Controls.Add(statusFlow);
+
+        var tabs = new TabControl
+        {
+            Dock = DockStyle.Fill
+        };
+        AddMinigameTab(tabs, "Status", statusBox);
+        AddMinigameTab(tabs, "Einstellungen", settings);
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Padding = new Padding(20)
+        };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.Controls.Add(header, 0, 0);
+        layout.Controls.Add(tabs, 0, 1);
+        _systemStatusPage.Controls.Add(layout);
     }
 
     private void BuildLayout()
@@ -1317,7 +1415,7 @@ public sealed partial class MainForm : Form
         header.Controls.Add(subtitle);
 
         _versionLabel.Text =
-            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}ðŸŸ¢ Aktuell";
+            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}🟢 Aktuell";
 
         var updateActions = new FlowLayoutPanel
         {
@@ -1413,11 +1511,11 @@ public sealed partial class MainForm : Form
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Max. Clipdauer (Sek.)", _durationControl));
         raidSettingsFlow.Controls.Add(
-            CreateSettingEditor("LautstÃ¤rke (%)", _volumeControl));
+            CreateSettingEditor("Lautstärke (%)", _volumeControl));
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Raid-Cooldown (Min.)", _cooldownControl));
         raidSettingsFlow.Controls.Add(
-            CreateSettingEditor("Raid-VerzÃ¶gerung (Sek.)", _raidDelayControl));
+            CreateSettingEditor("Raid-Verzögerung (Sek.)", _raidDelayControl));
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Clip-Blacklist", _blacklistBox));
         raidSettingsFlow.Controls.Add(_sendRaidMessageCheck);
@@ -1445,7 +1543,7 @@ public sealed partial class MainForm : Form
                 "Timeout-Dauer (Sek.)",
                 _moderationTimeoutControl));
         moderationSettingsFlow.Controls.Add(
-            CreateSettingEditor("Gesperrte WÃ¶rter", _blockedWordsBox));
+            CreateSettingEditor("Gesperrte Wörter", _blockedWordsBox));
         moderationSettingsFlow.Controls.Add(_saveModerationSettingsButton);
         _moderationSettingsGroup.Controls.Add(moderationSettingsFlow);
 
@@ -1499,7 +1597,7 @@ public sealed partial class MainForm : Form
         {
             Name = "Delete",
             HeaderText = "",
-            Text = "LÃ¶schen",
+            Text = "Löschen",
             UseColumnTextForButtonValue = true,
             Width = 75
         });
@@ -1545,7 +1643,7 @@ public sealed partial class MainForm : Form
         };
         var moderationSubtitle = new Label
         {
-            Text = "Chat Ã¼berwachen, Nachrichten lÃ¶schen und Nutzer moderieren",
+            Text = "Chat überwachen, Nachrichten löschen und Nutzer moderieren",
             AutoSize = true,
             ForeColor = Color.DimGray,
             Margin = new Padding(2, 3, 0, 0)
@@ -1575,8 +1673,8 @@ public sealed partial class MainForm : Form
 
         var moderationHint = new Label
         {
-            Text = "Moderation lÃ¤uft unabhÃ¤ngig von Raid-Clips. " +
-                   "Der Wortfilter lÃ¶scht Treffer, fÃ¼hrt aber keine automatischen Bans aus.",
+            Text = "Moderation läuft unabhängig von Raid-Clips. " +
+                   "Der Wortfilter löscht Treffer, führt aber keine automatischen Bans aus.",
             Dock = DockStyle.Fill,
             AutoSize = false,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -1662,9 +1760,9 @@ public sealed partial class MainForm : Form
 
         var pointsFlow = CreateMinigameFlow();
         pointsFlow.Controls.Add(CreateSettingEditor(
-            "WÃ¤hrung â€“ Einzahl", _currencySingularBox));
+            "Währung – Einzahl", _currencySingularBox));
         pointsFlow.Controls.Add(CreateSettingEditor(
-            "WÃ¤hrung â€“ Mehrzahl", _currencyPluralBox));
+            "Währung – Mehrzahl", _currencyPluralBox));
         pointsFlow.Controls.Add(_currencyPreviewLabel);
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Aktive Zuschauer pro Intervall", _pointsPerIntervalControl));
@@ -1704,7 +1802,7 @@ public sealed partial class MainForm : Form
         var commandsFlow = CreateMinigameFlow();
         commandsFlow.Controls.Add(new Label
         {
-            Text = "Commands fÃ¼r Punkteabfrage", AutoSize = true,
+            Text = "Commands für Punkteabfrage", AutoSize = true,
             Font = new Font("Segoe UI", 10F, FontStyle.Bold),
             Margin = new Padding(8, 24, 8, 4)
         });
@@ -1783,7 +1881,7 @@ public sealed partial class MainForm : Form
         casinoFlow.Controls.Add(CreateSettingEditor(
             "2 gleiche", _slotsTwoControl));
         casinoFlow.Controls.Add(CreateSettingEditor(
-            "3 Ã— 7", _slotsSevenControl));
+            "3 × 7", _slotsSevenControl));
         casinoFlow.Controls.Add(CreateSettingEditor(
             "Slots Min.", _slotsMinControl));
         casinoFlow.Controls.Add(CreateSettingEditor(
@@ -1824,7 +1922,7 @@ public sealed partial class MainForm : Form
         _minigameHistoryList.Columns.Add("Nutzer", 170);
         _minigameHistoryList.Columns.Add("Spiel", 110);
         _minigameHistoryList.Columns.Add("Aktion", 280);
-        _minigameHistoryList.Columns.Add("Ã„nderung", 100);
+        _minigameHistoryList.Columns.Add("Änderung", 100);
         _minigameHistoryList.Columns.Add("Stand", 100);
 
         var historyLayout = new TableLayoutPanel
@@ -1837,7 +1935,7 @@ public sealed partial class MainForm : Form
         historyOptions.AutoScroll = true;
         historyOptions.Controls.Add(_historyEnabledCheck);
         historyOptions.Controls.Add(CreateSettingEditor(
-            "Max. EintrÃ¤ge", _historyLimitControl));
+            "Max. Einträge", _historyLimitControl));
         historyOptions.Controls.Add(_exportMinigameButton);
         historyOptions.Controls.Add(_importMinigameButton);
         historyOptions.Controls.Add(_resetPointsButton);
@@ -1859,8 +1957,8 @@ public sealed partial class MainForm : Form
             "Gewinn pro Tag", _dailyWinControl));
 
         var tabs = new TabControl { Dock = DockStyle.Fill };
-        AddMinigameTab(tabs, "Ãœbersicht", overviewFlow);
-        AddMinigameTab(tabs, "Punkte & WÃ¤hrung", pointsFlow);
+        AddMinigameTab(tabs, "Übersicht", overviewFlow);
+        AddMinigameTab(tabs, "Punkte & Währung", pointsFlow);
         AddMinigameTab(tabs, "Chat-Commands", commandsFlow);
         AddMinigameTab(tabs, "Casino-Spiele", casinoLayout);
         AddMinigameTab(tabs, "Heist", BuildHeistSettingsPanel());
@@ -1874,7 +1972,7 @@ public sealed partial class MainForm : Form
         {
             Text = "Aktive Zuschauer erhalten den normalen Satz. Stille Chatnutzer " +
                    "und Nutzer mit !lurk erhalten den Lurker-Satz; mit !unlurk " +
-                   "wechseln sie zurÃ¼ck.",
+                   "wechseln sie zurück.",
             Dock = DockStyle.Fill,
             AutoSize = false,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -1896,6 +1994,7 @@ public sealed partial class MainForm : Form
         minigameLayout.Controls.Add(minigameHint, 0, 1);
         minigameLayout.Controls.Add(_minigameSettingsGroup, 0, 2);
         _minigamePage.Controls.Add(minigameLayout);
+        BuildSystemStatusPage();
         BuildMusicRequestPage();
         BuildStreamCheckPage();
         BuildClipDiscordPage();
@@ -1929,6 +2028,7 @@ public sealed partial class MainForm : Form
         navigation.Controls.Add(_moderationNavButton);
         navigation.Controls.Add(_liveChatNavButton);
         navigation.Controls.Add(_minigameNavButton);
+        navigation.Controls.Add(_systemStatusNavButton);
         navigation.Controls.Add(_commandsNavButton);
         navigation.Controls.Add(_musicNavButton);
         navigation.Controls.Add(_clipDiscordNavButton);
@@ -1943,6 +2043,7 @@ public sealed partial class MainForm : Form
         };
         contentHost.Controls.Add(_commandsPage);
         contentHost.Controls.Add(_liveChatPage);
+        contentHost.Controls.Add(_systemStatusPage);
         contentHost.Controls.Add(_giveawayPage);
         contentHost.Controls.Add(_streamCheckPage);
         contentHost.Controls.Add(_clipDiscordPage);
@@ -1993,8 +2094,8 @@ public sealed partial class MainForm : Form
         }
 
         _createObsSourceButton.Enabled = false;
-        SetOverallStatus("Erstelle OBS-Quelle â€¦", WaitingColor);
-        AppendLog("Browserquelle wird in der aktiven OBS-Szene eingerichtet â€¦");
+        SetOverallStatus("Erstelle OBS-Quelle …", WaitingColor);
+        AppendLog("Browserquelle wird in der aktiven OBS-Szene eingerichtet …");
 
         ObsService? temporaryObs = null;
 
@@ -2018,7 +2119,7 @@ public sealed partial class MainForm : Form
             var action = result.CreatedInput
                 ? "neu erstellt"
                 : result.AddedToScene
-                    ? "zur Szene hinzugefÃ¼gt"
+                    ? "zur Szene hinzugefügt"
                     : "bereits vorhanden und aktualisiert";
 
             AppendLog(
@@ -2039,7 +2140,7 @@ public sealed partial class MainForm : Form
             SetOverallStatus("OBS-Quellenfehler", ErrorColor);
             MessageBox.Show(
                 "Die OBS-Quelle konnte nicht erstellt werden. " +
-                "PrÃ¼fe OBS-WebSocket, Host, Port und Passwort.",
+                "Prüfe OBS-WebSocket, Host, Port und Passwort.",
                 "OBS-Quelle nicht erstellt",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
@@ -2059,8 +2160,8 @@ public sealed partial class MainForm : Form
         }
 
         _startButton.Enabled = false;
-        SetOverallStatus("Wird gestartet â€¦", WaitingColor);
-        AppendLog("Plugin wird gestartet â€¦");
+        SetOverallStatus("Wird gestartet …", WaitingColor);
+        AppendLog("Plugin wird gestartet …");
 
         _shutdown = new CancellationTokenSource();
         var cancellationToken = _shutdown.Token;
@@ -2075,12 +2176,12 @@ public sealed partial class MainForm : Form
             _importMinigameButton.Enabled = false;
             _testConnectionsButton.Enabled = false;
 
-            SetServiceStatus(_playerIndicator, "Player", "Startet â€¦", WaitingColor);
+            SetServiceStatus(_playerIndicator, "Player", "Startet …", WaitingColor);
             _player = new LocalPlayerServer(config.Player.Port);
             _playerTask = _player.RunAsync(cancellationToken);
-            SetServiceStatus(_playerIndicator, "Player", "LÃ¤uft", ActiveColor);
+            SetServiceStatus(_playerIndicator, "Player", "Läuft", ActiveColor);
 
-            SetServiceStatus(_obsIndicator, "OBS", "Verbindet â€¦", WaitingColor);
+            SetServiceStatus(_obsIndicator, "OBS", "Verbindet …", WaitingColor);
             _obs = new ObsService(config);
             await Task.Run(_obs.Connect, cancellationToken);
             var sourceSetup = await Task.Run(
@@ -2095,8 +2196,8 @@ public sealed partial class MainForm : Form
             }
             SetServiceStatus(_obsIndicator, "OBS", "Verbunden", ActiveColor);
 
-            SetServiceStatus(_twitchIndicator, "Twitch", "Anmeldung â€¦", WaitingColor);
-            AppendLog("PrÃ¼fe Twitch-Anmeldung â€¦");
+            SetServiceStatus(_twitchIndicator, "Twitch", "Anmeldung …", WaitingColor);
+            AppendLog("Prüfe Twitch-Anmeldung …");
             var session = await new AuthenticationService(config)
                 .GetSessionAsync(cancellationToken);
 
@@ -2131,7 +2232,7 @@ public sealed partial class MainForm : Form
                 config,
                 _history);
 
-            SetServiceStatus(_eventSubIndicator, "EventSub", "Startet â€¦", WaitingColor);
+            SetServiceStatus(_eventSubIndicator, "EventSub", "Startet …", WaitingColor);
             _eventSub = new EventSubService(
                 config.Twitch.ClientId,
                 session.AccessToken,
@@ -2179,7 +2280,7 @@ public sealed partial class MainForm : Form
                 if (raidDelay > TimeSpan.Zero)
                 {
                     AppendLog(
-                        $"Raid-Aktionen starten in {raidDelay.TotalSeconds:0} Sekunden â€¦");
+                        $"Raid-Aktionen starten in {raidDelay.TotalSeconds:0} Sekunden …");
                     await Task.Delay(raidDelay, cancellationToken);
                 }
 
@@ -2251,7 +2352,7 @@ public sealed partial class MainForm : Form
 
                 if (config.Moderation.Enabled)
                 {
-                    SetModerationStatus("Startet â€¦", WaitingColor);
+                    SetModerationStatus("Startet …", WaitingColor);
                     _chatModeration.Activated += () =>
                         SetModerationStatus("Aktiv", ActiveColor);
                     _chatModeration.MessageObserved += message =>
@@ -2294,7 +2395,7 @@ public sealed partial class MainForm : Form
 
                 if (ChatMinigameService.ShouldRun(config.Minigame) || config.Heist.Enabled || config.Duel.Enabled || config.Commands.Enabled)
                 {
-                    SetMinigameStatus("Startet â€¦", WaitingColor);
+                    SetMinigameStatus("Startet …", WaitingColor);
                     _minigame = new ChatMinigameService(
                         _broadcaster.Id,
                         session.UserId,
@@ -2315,7 +2416,7 @@ public sealed partial class MainForm : Form
                             ActiveColor);
                     _minigame.PointsAwarded += (users, _) =>
                         SetMinigameStatus(
-                            $"Anwesenheit Â· {users} Nutzer belohnt",
+                            $"Anwesenheit · {users} Nutzer belohnt",
                             ActiveColor);
                     _minigame.DataChanged += () =>
                         _ = RefreshMinigameDashboardAsync();
@@ -2374,8 +2475,8 @@ public sealed partial class MainForm : Form
                                 redemption, cancellationToken);
                         _minigameEvents.Activated += () =>
                             SetSpotifyStatus(_spotify?.IsConnected == true
-                                ? "Verbunden Â· EventSub aktiv"
-                                : "EventSub aktiv Â· Spotify fehlt",
+                                ? "Verbunden · EventSub aktiv"
+                                : "EventSub aktiv · Spotify fehlt",
                                 _spotify?.IsConnected == true
                                     ? ActiveColor : WaitingColor);
                     }
@@ -2394,7 +2495,7 @@ public sealed partial class MainForm : Form
             _stopButton.Enabled = true;
             SetOverallStatus("Aktiv", ActiveColor);
             AppendLog(
-                $"Plugin aktiv fÃ¼r {_broadcaster.DisplayName}. " +
+                $"Plugin aktiv für {_broadcaster.DisplayName}. " +
                 "Warte auf eingehende Raids.");
         }
         catch (OperationCanceledException)
@@ -2408,12 +2509,12 @@ public sealed partial class MainForm : Form
             SetOverallStatus("Fehler", ErrorColor);
             if (IsMinigameConfigurationError(exception.Message))
             {
-                SetMinigameStatus("Einstellungen ungÃ¼ltig", ErrorColor);
+                SetMinigameStatus("Einstellungen ungültig", ErrorColor);
                 ShowSection("minigame");
             }
             else if (IsMusicConfigurationError(exception.Message))
             {
-                SetSpotifyStatus("Einstellungen ungÃ¼ltig", ErrorColor);
+                SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
                 ShowSection("music");
             }
             else if (IsClipConfigurationError(exception.Message))
@@ -2468,7 +2569,7 @@ public sealed partial class MainForm : Form
                     session.UserId,
                     cancellationToken);
                 AppendLog(
-                    $"Offizieller /shoutout fÃ¼r @{raid.FromBroadcasterLogin} gesendet.");
+                    $"Offizieller /shoutout für @{raid.FromBroadcasterLogin} gesendet.");
             }
             catch (Exception exception)
             {
@@ -2518,7 +2619,7 @@ public sealed partial class MainForm : Form
                 cancellationToken);
             AppendLog(
                 $"Wortfilter: Nachricht von {message.UserName} wegen " +
-                $"â€š{blockedWord}â€˜ gelÃ¶scht.");
+                $"‚{blockedWord}‘ gelöscht.");
         }
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
@@ -2527,7 +2628,7 @@ public sealed partial class MainForm : Form
         catch (Exception exception)
         {
             AppendLog(
-                "Wortfilter konnte Nachricht nicht lÃ¶schen: " +
+                "Wortfilter konnte Nachricht nicht löschen: " +
                 exception.Message);
         }
     }
@@ -2599,7 +2700,7 @@ public sealed partial class MainForm : Form
         }
         catch (ArgumentOutOfRangeException)
         {
-            // Die Zeilenliste kann sich wÃ¤hrend eines Layoutdurchlaufs verÃ¤ndern.
+            // Die Zeilenliste kann sich während eines Layoutdurchlaufs verändern.
         }
     }
 
@@ -2634,7 +2735,7 @@ public sealed partial class MainForm : Form
         {
             var confirmation = MessageBox.Show(
                 $"{message.UserName} wirklich dauerhaft bannen?",
-                "Ban bestÃ¤tigen",
+                "Ban bestätigen",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
             if (confirmation != DialogResult.Yes)
@@ -2653,7 +2754,7 @@ public sealed partial class MainForm : Form
                     await _chatModeration.TimeoutUserAsync(
                         message.UserId,
                         decimal.ToInt32(_moderationTimeoutControl.Value),
-                        "Manueller Timeout Ã¼ber RaidClipPlugin",
+                        "Manueller Timeout über RaidClipPlugin",
                         cancellationToken);
                     AppendLog($"{message.UserName} wurde in Timeout gesetzt.");
                     break;
@@ -2661,7 +2762,7 @@ public sealed partial class MainForm : Form
                 case "Ban":
                     await _chatModeration.BanUserAsync(
                         message.UserId,
-                        "Manueller Ban Ã¼ber RaidClipPlugin",
+                        "Manueller Ban über RaidClipPlugin",
                         cancellationToken);
                     AppendLog($"{message.UserName} wurde gebannt.");
                     break;
@@ -2671,7 +2772,7 @@ public sealed partial class MainForm : Form
                         message.Id,
                         cancellationToken);
                     AppendLog(
-                        $"Nachricht von {message.UserName} wurde gelÃ¶scht.");
+                        $"Nachricht von {message.UserName} wurde gelöscht.");
                     break;
             }
 
@@ -2685,7 +2786,7 @@ public sealed partial class MainForm : Form
         catch (Exception exception)
         {
             AppendLog(
-                $"Moderationsaktion fÃ¼r {message.UserName} fehlgeschlagen: " +
+                $"Moderationsaktion für {message.UserName} fehlgeschlagen: " +
                 exception.Message);
             _chatGrid.Rows[rowIndex].DefaultCellStyle.BackColor =
                 Color.MistyRose;
@@ -2765,7 +2866,7 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        _moderationStatusLabel.Text = $"â— Chat-Moderation: {status}";
+        _moderationStatusLabel.Text = $"● Chat-Moderation: {status}";
         _moderationStatusLabel.ForeColor = color;
     }
 
@@ -2776,6 +2877,45 @@ public sealed partial class MainForm : Form
         _moduleHealth?.Dispose();
         _moduleHealth = new ModuleHealthService(config.ModuleHealth);
         _moduleHealth.StatusChanged += UpdateModuleHealthDisplay;
+        _moduleHealth.LogMessage += AppendLog;
+
+        _moduleHealth.Register("OBS", _ =>
+        {
+            var running = _obs is not null;
+            return Task.FromResult(new ModuleProbeResult(
+                true,
+                running,
+                running ? null : "OBS-Service ist nicht initialisiert"));
+        });
+
+        _moduleHealth.Register("Twitch EventSub", _ =>
+        {
+            var running = _eventSub is not null &&
+                _eventSubTask is { IsCompleted: false };
+            return Task.FromResult(new ModuleProbeResult(
+                true,
+                running,
+                running ? null : "EventSub-Task läuft nicht"));
+        });
+
+        _moduleHealth.Register("LocalPlayer", _ =>
+        {
+            var running = _player is not null &&
+                _playerTask is { IsCompleted: false };
+            return Task.FromResult(new ModuleProbeResult(
+                true,
+                running,
+                running ? null : "LocalPlayerServer läuft nicht"));
+        });
+
+        _moduleHealth.Register("Clip Playback", _ =>
+        {
+            var running = _playback is not null;
+            return Task.FromResult(new ModuleProbeResult(
+                true,
+                running,
+                running ? null : "PlaybackService ist nicht verfügbar"));
+        });
 
         _moduleHealth.Register("Twitch Chat", _ =>
         {
@@ -2786,13 +2926,18 @@ public sealed partial class MainForm : Form
                 true, running, running ? null :
                 diagnostics?.LastError ?? "Chat-WebSocket oder Subscription ist nicht aktiv"));
         });
+
         _moduleHealth.Register("Commands", _ =>
         {
             var running = _chatModerationTask is { IsCompleted: false } &&
-                _minigame is not null;
+                (_minigame is not null ||
+                 _clipCommandService is not null ||
+                 _giveawayService is not null ||
+                 _discordInviteService is not null);
             return Task.FromResult(new ModuleProbeResult(
                 true, running, running ? null : "Command-Dispatcher ist nicht erreichbar"));
         });
+
         _moduleHealth.Register("Punkte", async token =>
         {
             if (!config.Minigame.PointsEnabled)
@@ -2800,6 +2945,7 @@ public sealed partial class MainForm : Form
             await _viewerPoints.CountAsync(token);
             return ModuleProbeResult.Healthy();
         });
+
         _moduleHealth.Register("Minigame", _ =>
         {
             var enabled = ChatMinigameService.ShouldRun(config.Minigame) ||
@@ -2814,6 +2960,7 @@ public sealed partial class MainForm : Form
                 true, running, running ? null :
                 _minigame?.LastRuntimeError ?? "Minigame-Task oder Heartbeat ist ausgefallen"));
         }, RestartMinigameRuntimeAsync);
+
         _moduleHealth.Register("Gamble", _ =>
         {
             var enabled = config.ModuleHealth.GambleHealthcheckEnabled &&
@@ -2824,6 +2971,64 @@ public sealed partial class MainForm : Form
             return Task.FromResult(new ModuleProbeResult(
                 true, running, running ? null :
                 _minigame?.LastRuntimeError ?? "Gamble ist nicht bereit"));
+        });
+
+        _moduleHealth.Register("Jackpot", async token =>
+        {
+            if (!config.Minigame.JackpotEnabled)
+                return ModuleProbeResult.Disabled();
+            _ = await _viewerPoints.GetJackpotAsync(
+                config.Minigame.JackpotStartValue,
+                token);
+            return ModuleProbeResult.Healthy();
+        });
+
+        _moduleHealth.Register("Giveaway", _ =>
+        {
+            if (!config.Giveaways.Enabled)
+                return Task.FromResult(ModuleProbeResult.Disabled());
+            var running = _giveawayService is not null &&
+                _giveawayTask is { IsCompleted: false };
+            return Task.FromResult(new ModuleProbeResult(
+                true,
+                running,
+                running ? null : "Giveaway-Modul läuft nicht"));
+        });
+
+        _moduleHealth.Register("Spotify/Musikwunsch", _ =>
+        {
+            if (!config.MusicRequests.Enabled)
+                return Task.FromResult(ModuleProbeResult.Disabled());
+            var running = _musicRequests is not null &&
+                _musicRequestTask is { IsCompleted: false };
+            return Task.FromResult(new ModuleProbeResult(
+                true,
+                running,
+                running ? null : "Musikwunsch-Modul läuft nicht"));
+        });
+
+        _moduleHealth.Register("Discord Clip-Command", _ =>
+        {
+            if (!config.ClipCommand.Enabled)
+                return Task.FromResult(ModuleProbeResult.Disabled());
+            var running = _clipCommandService is not null &&
+                _clipCommandTask is { IsCompleted: false };
+            return Task.FromResult(new ModuleProbeResult(
+                true,
+                running,
+                running ? null : "Clip-Command-Modul läuft nicht"));
+        });
+
+        _moduleHealth.Register("Auto Discord Clip Poster", _ =>
+        {
+            if (!config.AutoDiscordClipPoster.Enabled)
+                return Task.FromResult(ModuleProbeResult.Disabled());
+            var running = _autoDiscordClipPoster is not null &&
+                _autoDiscordClipPosterTask is { IsCompleted: false };
+            return Task.FromResult(new ModuleProbeResult(
+                true,
+                running,
+                running ? null : "Auto Discord Clip Poster läuft nicht"));
         });
 
         _moduleHealthTask = _moduleHealth.RunAsync(cancellationToken);
@@ -2860,7 +3065,7 @@ public sealed partial class MainForm : Form
             _shutdown.Token);
         _minigameTask = _minigame.RunAsync(_minigameRunCts.Token);
         ObserveMinigameTask(_minigameTask);
-        SetMinigameStatus("Neu gestartet Â· Ã¼berwacht", ActiveColor);
+        SetMinigameStatus("Neu gestartet · überwacht", ActiveColor);
         AppendLog("Minigame-Modul wurde ohne neue Chat-Eventhandler neu gestartet.");
     }
 
@@ -2894,11 +3099,11 @@ public sealed partial class MainForm : Form
         _restartModulesButton.Enabled = false;
         try
         {
-            var restarted = await _moduleHealth.RestartModuleAsync(
-                "Minigame", _shutdown.Token);
-            AppendLog(restarted
-                ? "Manueller Neustart des Minigame-Moduls erfolgreich."
-                : "Minigame-Modul konnte nicht neu gestartet werden.");
+            var restarted = await _moduleHealth.RestartFailedModulesAsync(
+                _shutdown.Token);
+            AppendLog(restarted > 0
+                ? $"Fehlerhafte Module neu gestartet: {restarted}."
+                : "Keine fehlerhaften Module mit Restart-Routine gefunden.");
             await _moduleHealth.CheckNowAsync(_shutdown.Token);
         }
         catch (Exception exception)
@@ -2939,26 +3144,26 @@ public sealed partial class MainForm : Form
         {
             _moduleHealthSummaryLabel.Text = "Healthcheck: Deaktiviert";
             _moduleHealthSummaryLabel.ForeColor = InactiveColor;
-            _moduleHealthLastCheckLabel.Text = "Letzte PrÃ¼fung: â€“";
+            _moduleHealthLastCheckLabel.Text = "Letzte Prüfung: –";
             return;
         }
         static string Icon(ModuleHealthState state) => state switch
         {
-            ModuleHealthState.Healthy => "ðŸŸ¢",
-            ModuleHealthState.Warning => "ðŸŸ¡",
-            ModuleHealthState.Failed => "ðŸ”´",
-            _ => "âšª"
+            ModuleHealthState.Healthy => "🟢",
+            ModuleHealthState.Warning => "🟡",
+            ModuleHealthState.Failed => "🔴",
+            _ => "⚪"
         };
         _moduleHealthSummaryLabel.Text = string.Join("   ", statuses.Select(status =>
             $"{Icon(status.State)} {status.ModuleName}: {status.State}"));
         _moduleHealthSummaryLabel.ForeColor = statuses.Any(status =>
             status.State == ModuleHealthState.Failed) ? ErrorColor : ActiveColor;
         _moduleHealthLastCheckLabel.Text =
-            "Letzte PrÃ¼fung: " + DateTime.Now.ToString("HH:mm:ss");
+            "Letzte Prüfung: " + DateTime.Now.ToString("HH:mm:ss");
         var lastError = statuses.FirstOrDefault(status =>
             !string.IsNullOrWhiteSpace(status.LastError))?.LastError;
         if (!string.IsNullOrWhiteSpace(lastError))
-            _moduleHealthLastCheckLabel.Text += " Â· Letzter Fehler: " + lastError;
+            _moduleHealthLastCheckLabel.Text += " · Letzter Fehler: " + lastError;
     }
 
     private async void ObserveMinigameTask(Task task)
@@ -2969,8 +3174,8 @@ public sealed partial class MainForm : Form
             if (_shutdown is { IsCancellationRequested: false } &&
                 ReferenceEquals(task, _minigameTask))
             {
-                AppendLog("Chat-Minigame wurde unerwartet beendet; Watchdog Ã¼bernimmt.");
-                SetMinigameStatus("Ausgefallen Â· Neustart wird geprÃ¼ft", ErrorColor);
+                AppendLog("Chat-Minigame wurde unerwartet beendet; Watchdog übernimmt.");
+                SetMinigameStatus("Ausgefallen · Neustart wird geprüft", ErrorColor);
             }
         }
         catch (OperationCanceledException)
@@ -2982,7 +3187,7 @@ public sealed partial class MainForm : Form
         catch (Exception exception)
         {
             AppendLog("Chat-Minigame wurde beendet: " + exception);
-            SetMinigameStatus("Fehler Â· Neustart wird geprÃ¼ft", ErrorColor);
+            SetMinigameStatus("Fehler · Neustart wird geprüft", ErrorColor);
         }
     }
 
@@ -3005,7 +3210,7 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        _minigameStatusLabel.Text = $"â— Minigame: {status}";
+        _minigameStatusLabel.Text = $"● Minigame: {status}";
         _minigameStatusLabel.ForeColor = color;
     }
 
@@ -3033,14 +3238,14 @@ public sealed partial class MainForm : Form
         }
         catch (Exception exception)
         {
-            AppendLog("Minigame-Ãœbersicht konnte nicht geladen werden: " +
+            AppendLog("Minigame-Übersicht konnte nicht geladen werden: " +
                 exception.Message);
         }
     }
 
     private void PopulateMinigameDashboard(
         IReadOnlyList<ViewerPointEntry> top,
-        IReadOnlyList<MinigameHistoryEntry> history, long jackpot)
+        IReadOnlyList<MinigameHistoryEntry> history, int jackpot)
     {
         _minigameTopList.BeginUpdate();
         _minigameTopList.Items.Clear();
@@ -3133,8 +3338,8 @@ public sealed partial class MainForm : Form
     private async Task ResetPointDataAsync()
     {
         var confirmation = MessageBox.Show(
-            "Wirklich alle lokal gespeicherten Zuschauerpunkte lÃ¶schen?",
-            "Punktedaten zurÃ¼cksetzen",
+            "Wirklich alle lokal gespeicherten Zuschauerpunkte löschen?",
+            "Punktedaten zurücksetzen",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning);
         if (confirmation != DialogResult.Yes)
@@ -3146,14 +3351,14 @@ public sealed partial class MainForm : Form
         {
             await _viewerPoints.ResetAsync(
                 _shutdown?.Token ?? CancellationToken.None);
-            AppendLog("Alle Minigame-Punktedaten wurden zurÃ¼ckgesetzt.");
-            SetMinigameStatus("Punktedaten zurÃ¼ckgesetzt", ActiveColor);
+            AppendLog("Alle Minigame-Punktedaten wurden zurückgesetzt.");
+            SetMinigameStatus("Punktedaten zurückgesetzt", ActiveColor);
             await RefreshMinigameDashboardAsync();
         }
         catch (Exception exception)
         {
             AppendLog(
-                "Minigame-Punktedaten konnten nicht zurÃ¼ckgesetzt werden: " +
+                "Minigame-Punktedaten konnten nicht zurückgesetzt werden: " +
                 exception.Message);
             SetMinigameStatus("Reset fehlgeschlagen", ErrorColor);
         }
@@ -3171,7 +3376,7 @@ public sealed partial class MainForm : Form
         _settingsGroup.Enabled = false;
         _moderationSettingsGroup.Enabled = false;
         SetMinigameSettingsEditingEnabled(false);
-        SetOverallStatus("Teste Verbindungen â€¦", WaitingColor);
+        SetOverallStatus("Teste Verbindungen …", WaitingColor);
 
         try
         {
@@ -3293,8 +3498,8 @@ public sealed partial class MainForm : Form
         string name,
         Func<Task> test)
     {
-        SetServiceStatus(indicator, name, "Test lÃ¤uft â€¦", WaitingColor);
-        AppendLog($"Teste {name} â€¦");
+        SetServiceStatus(indicator, name, "Test läuft …", WaitingColor);
+        AppendLog($"Teste {name} …");
 
         try
         {
@@ -3332,7 +3537,7 @@ public sealed partial class MainForm : Form
             if (string.IsNullOrWhiteSpace(requestedLogin))
             {
                 AppendLog(
-                    $"Testclip von {_broadcaster.DisplayName} wird gesucht â€¦");
+                    $"Testclip von {_broadcaster.DisplayName} wird gesucht …");
                 success = await _playback.PlayRandomClipAsync(
                     _broadcaster,
                     _shutdown.Token);
@@ -3340,7 +3545,7 @@ public sealed partial class MainForm : Form
             else
             {
                 AppendLog(
-                    $"Testclip vom Kanal {requestedLogin} wird gesucht â€¦");
+                    $"Testclip vom Kanal {requestedLogin} wird gesucht …");
                 success = await _playback.PlayRandomClipAsync(
                     requestedLogin,
                     _shutdown.Token);
@@ -3386,7 +3591,7 @@ public sealed partial class MainForm : Form
 
         if (!keepErrorStatus)
         {
-            SetOverallStatus("Wird gestoppt â€¦", WaitingColor);
+            SetOverallStatus("Wird gestoppt …", WaitingColor);
         }
 
         shutdown.Cancel();
@@ -3421,7 +3626,7 @@ public sealed partial class MainForm : Form
             }
             catch (TimeoutException)
             {
-                AppendLog("Ein Hintergrunddienst wurde verzÃ¶gert beendet.");
+                AppendLog("Ein Hintergrunddienst wurde verzögert beendet.");
             }
             catch (Exception exception)
             {
@@ -3543,7 +3748,7 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        indicator.Text = $"â— {service}{Environment.NewLine}{state}";
+        indicator.Text = $"● {service}{Environment.NewLine}{state}";
         indicator.ForeColor = color;
     }
 
@@ -3628,7 +3833,7 @@ public sealed partial class MainForm : Form
         _updateBusy = true;
         SetUpdateControlsEnabled(false);
         _versionLabel.Text =
-            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}ðŸ”„ Suche â€¦";
+            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}🔄 Suche …";
         _versionLabel.ForeColor = WaitingColor;
 
         try
@@ -3667,28 +3872,28 @@ public sealed partial class MainForm : Form
             {
                 ShowSkippedVersion(_availableUpdate.DisplayVersion);
                 AppendLog(
-                    $"Version {_availableUpdate.DisplayVersion} wurde Ã¼bersprungen.");
+                    $"Version {_availableUpdate.DisplayVersion} wurde übersprungen.");
                 return;
             }
 
             _versionLabel.Text =
                 $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}" +
-                $"ðŸŸ¡ Update verfÃ¼gbar: {_availableUpdate.DisplayVersion}";
+                $"🟡 Update verfügbar: {_availableUpdate.DisplayVersion}";
             _versionLabel.ForeColor = WaitingColor;
             ShowAvailableUpdateButtons();
             AppendLog(
-                $"Update {_availableUpdate.DisplayVersion} ist verfÃ¼gbar.");
+                $"Update {_availableUpdate.DisplayVersion} ist verfügbar.");
         }
         catch (Exception exception)
         {
             _availableUpdate = null;
             _versionLabel.Text =
                 $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}" +
-                "ðŸ”´ Update-PrÃ¼fung fehlgeschlagen";
+                "🔴 Update-Prüfung fehlgeschlagen";
             _versionLabel.ForeColor = ErrorColor;
             HideAvailableUpdateButtons();
-            _updateButton.Text = "Erneut prÃ¼fen";
-            AppendLog("Update-PrÃ¼fung fehlgeschlagen: " + exception.Message);
+            _updateButton.Text = "Erneut prüfen";
+            AppendLog("Update-Prüfung fehlgeschlagen: " + exception.Message);
         }
         finally
         {
@@ -3700,7 +3905,7 @@ public sealed partial class MainForm : Form
     private void ShowCurrentVersion()
     {
         _versionLabel.Text =
-            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}ðŸŸ¢ Aktuell";
+            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}🟢 Aktuell";
         _versionLabel.ForeColor = ActiveColor;
         HideAvailableUpdateButtons();
         _updateButton.Text = "Nach Updates suchen";
@@ -3710,10 +3915,10 @@ public sealed partial class MainForm : Form
     {
         _versionLabel.Text =
             $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}" +
-            $"âšª Version {version} Ã¼bersprungen";
+            $"⚪ Version {version} übersprungen";
         _versionLabel.ForeColor = InactiveColor;
         HideAvailableUpdateButtons();
-        _updateButton.Text = "Trotzdem prÃ¼fen";
+        _updateButton.Text = "Trotzdem prüfen";
     }
 
     private void ShowAvailableUpdateButtons()
@@ -3750,9 +3955,9 @@ public sealed partial class MainForm : Form
 
         MessageBox.Show(
             string.IsNullOrWhiteSpace(update.Changelog)
-                ? "FÃ¼r dieses Update wurde kein Changelog angegeben."
+                ? "Für dieses Update wurde kein Changelog angegeben."
                 : update.Changelog,
-            $"Changelog â€“ Version {update.DisplayVersion}",
+            $"Changelog – Version {update.DisplayVersion}",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
     }
@@ -3772,12 +3977,12 @@ public sealed partial class MainForm : Form
             _configurationService.SaveGuiSettings(config);
             ShowSkippedVersion(update.DisplayVersion);
             AppendLog(
-                $"Update {update.DisplayVersion} wurde Ã¼bersprungen.");
+                $"Update {update.DisplayVersion} wurde übersprungen.");
         }
         catch (Exception exception)
         {
             AppendLog(
-                "Update konnte nicht Ã¼bersprungen werden: " +
+                "Update konnte nicht übersprungen werden: " +
                 exception.Message);
         }
     }
@@ -3799,18 +4004,18 @@ public sealed partial class MainForm : Form
             {
                 _versionLabel.Text =
                     $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}" +
-                    $"ðŸ”„ Download {percent}%";
+                    $"🔄 Download {percent}%";
                 _versionLabel.ForeColor = WaitingColor;
             });
 
             AppendLog(
-                $"Update {update.DisplayVersion} wird heruntergeladen â€¦");
+                $"Update {update.DisplayVersion} wird heruntergeladen …");
             var stagedUpdate = await _updateService.DownloadAndStageAsync(
                 update,
                 progress,
                 CancellationToken.None);
             AppendLog(
-                "Download und SHA256-PrÃ¼fung erfolgreich. " +
+                "Download und SHA256-Prüfung erfolgreich. " +
                 "Der separate Updater wird gestartet.");
 
             if (_shutdown is not null)
@@ -3827,7 +4032,7 @@ public sealed partial class MainForm : Form
         {
             _versionLabel.Text =
                 $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}" +
-                "ðŸ”´ Update fehlgeschlagen";
+                "🔴 Update fehlgeschlagen";
             _versionLabel.ForeColor = ErrorColor;
             AppendLog("Update fehlgeschlagen: " + exception.Message);
             MessageBox.Show(
@@ -4215,12 +4420,12 @@ public sealed partial class MainForm : Form
             SetOverallStatus("Einstellungsfehler", ErrorColor);
             if (IsMinigameConfigurationError(exception.Message))
             {
-                SetMinigameStatus("Einstellungen ungÃ¼ltig", ErrorColor);
+                SetMinigameStatus("Einstellungen ungültig", ErrorColor);
                 ShowSection("minigame");
             }
             else if (IsMusicConfigurationError(exception.Message))
             {
-                SetSpotifyStatus("Einstellungen ungÃ¼ltig", ErrorColor);
+                SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
                 ShowSection("music");
             }
             else if (IsClipConfigurationError(exception.Message))
@@ -4263,6 +4468,7 @@ public sealed partial class MainForm : Form
         _activeConfig.DiscordClips = updated.DiscordClips;
         _activeConfig.AutoDiscordClipPoster = updated.AutoDiscordClipPoster;
         _activeConfig.Giveaways = updated.Giveaways;
+        _activeConfig.ModuleHealth = updated.ModuleHealth;
         _activeConfig.Player.DurationSeconds = updated.Player.DurationSeconds;
         _activeConfig.Player.VolumePercent = updated.Player.VolumePercent;
         _activeConfig.Player.BlacklistedClipIds =
@@ -4294,24 +4500,25 @@ public sealed partial class MainForm : Form
                 new ClipTemplateService());
             _clipCommandService.AttachDiscordService(_discordClipService);
             AppendLog(
-                "Discord-Webhook-Versand wurde fÃ¼r den laufenden Clip-Command aktiviert.");
+                "Discord-Webhook-Versand wurde für den laufenden Clip-Command aktiviert.");
         }
         _discordClipService?.UpdateConfig(updated.DiscordClips);
         _discordInviteService?.UpdateConfig(updated.DiscordClips);
         _autoDiscordClipPoster?.UpdateConfig(
             updated.AutoDiscordClipPoster, _broadcaster);
+        _moduleHealth?.UpdateConfig(updated.ModuleHealth);
         ApplyUiTheme(updated.UiTheme);
         _giveawayService?.UpdateConfig(updated.Giveaways, updated.Minigame);
         UpdateCurrencyPreview();
         if (_minigameTopList.Columns.Count >= 3)
             _minigameTopList.Columns[2].Text = updated.Minigame.CurrencyPlural;
 
-        AppendLog("Laufende Chat- und Minigame-Einstellungen wurden Ã¼bernommen.");
+        AppendLog("Laufende Chat- und Minigame-Einstellungen wurden übernommen.");
         if (moduleRestartRequired)
         {
             AppendLog(
                 "Das Ein- oder Ausschalten eines ganzen Moduls wird nach " +
-                "dem nÃ¤chsten Neustart der Plugin-Verbindung wirksam.");
+                "dem nächsten Neustart der Plugin-Verbindung wirksam.");
         }
     }
 
@@ -4335,7 +4542,7 @@ public sealed partial class MainForm : Form
         message.Contains("Punkte", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Einsatz", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Command-Cooldown", StringComparison.OrdinalIgnoreCase) ||
-        message.Contains("WÃ¤hrung", StringComparison.OrdinalIgnoreCase) ||
+        message.Contains("Währung", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Punkteabfrage", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Heist", StringComparison.OrdinalIgnoreCase) ||
         message.Contains("Command", StringComparison.OrdinalIgnoreCase);
@@ -4422,5 +4629,4 @@ public sealed partial class MainForm : Form
         base.OnFormClosing(e);
     }
 }
-
 
