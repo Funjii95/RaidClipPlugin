@@ -205,9 +205,26 @@ public sealed class ModuleHealthService : IDisposable
                 module.RestartAttempts,
                 module.LastRestartUtc);
 
-            if (state == ModuleHealthState.Failed)
+            if (state == ModuleHealthState.Failed &&
+                await TryAutoRestartAsync(module, result.Message, cancellationToken))
             {
-                await TryAutoRestartAsync(module, result.Message, cancellationToken);
+                var retryResult = await module.Probe(timeout.Token);
+                var retryState = retryResult.State ?? (
+                    !retryResult.IsRelevant
+                        ? ModuleHealthState.Disabled
+                        : retryResult.IsHealthy
+                            ? ModuleHealthState.Healthy
+                            : ModuleHealthState.Failed);
+
+                return new ModuleHealthStatus(
+                    module.Name,
+                    retryState,
+                    retryState is ModuleHealthState.Healthy or ModuleHealthState.Disabled
+                        ? null
+                        : retryResult.Message,
+                    DateTimeOffset.UtcNow,
+                    module.RestartAttempts,
+                    module.LastRestartUtc);
             }
 
             return status;
@@ -240,14 +257,14 @@ public sealed class ModuleHealthService : IDisposable
         }
     }
 
-    private async Task TryAutoRestartAsync(
+    private async Task<bool> TryAutoRestartAsync(
         ModuleRegistration module,
         string? reason,
         CancellationToken cancellationToken)
     {
         if (!_config.AutoRestartEnabled || module.Restart is null)
         {
-            return;
+            return false;
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -262,14 +279,14 @@ public sealed class ModuleHealthService : IDisposable
         if (module.RestartAttempts >= _config.MaxRestartAttempts)
         {
             Log($"Auto-Recovery für '{module.Name}' übersprungen: Neustartlimit erreicht.");
-            return;
+            return false;
         }
 
         if (module.LastRestartUtc is not null &&
             now - module.LastRestartUtc <
             TimeSpan.FromSeconds(_config.RestartCooldownSeconds))
         {
-            return;
+            return false;
         }
 
         try
@@ -279,6 +296,7 @@ public sealed class ModuleHealthService : IDisposable
             module.RestartAttempts++;
             module.LastRestartUtc = DateTimeOffset.UtcNow;
             Log($"Auto-Recovery für '{module.Name}' abgeschlossen.");
+            return true;
         }
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
@@ -288,6 +306,7 @@ public sealed class ModuleHealthService : IDisposable
         catch (Exception exception)
         {
             Log($"Auto-Recovery für '{module.Name}' fehlgeschlagen: {exception.Message}");
+            return false;
         }
     }
 
