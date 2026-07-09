@@ -32,7 +32,8 @@ public sealed class ModuleHealthServiceTests
 
         await service.CheckNowAsync(CancellationToken.None);
 
-        var status = Assert.Single(Assert.NotNull(statuses));
+        Assert.NotNull(statuses);
+        var status = Assert.Single(statuses!);
         Assert.Equal(1, restartCalls);
         Assert.Equal(ModuleHealthState.Healthy, status.State);
         Assert.True(status.IsRunning);
