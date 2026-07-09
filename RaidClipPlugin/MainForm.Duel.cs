@@ -1,4 +1,4 @@
-using RaidClipPlugin.Config;
+﻿using RaidClipPlugin.Config;
 using RaidClipPlugin.Services;
 
 
@@ -11,8 +11,8 @@ public sealed partial class MainForm
     private readonly TextBox _duelCommandBox = new() { Width = 140 };
     private readonly TextBox _duelAcceptCommandBox = new() { Width = 140 };
     private readonly TextBox _duelDenyCommandBox = new() { Width = 140 };
-    private readonly NumericUpDown _duelMinimumBetControl = NewNumber(10, 1, 1_000_000);
-    private readonly NumericUpDown _duelMaximumBetControl = NewNumber(10000, 1, 1_000_000);
+    private readonly NumericUpDown _duelMinimumBetControl = NewNumber(10, 1, 9_000_000_000);
+    private readonly NumericUpDown _duelMaximumBetControl = NewNumber(10000, 1, 9_000_000_000);
     private readonly NumericUpDown _duelTimeoutControl = NewNumber(60, 10, 300);
     private readonly NumericUpDown _duelUserCooldownControl = NewNumber(30, 0, 86400);
     private readonly NumericUpDown _duelGlobalCooldownControl = NewNumber(3, 0, 3600);
@@ -35,14 +35,14 @@ public sealed partial class MainForm
     private readonly TextBox _duelLoserTimeoutReasonBox = new() { Width = 360 };
     private readonly TextBox[] _duelMessageBoxes = Enumerable.Range(0, 12).Select(_ => new TextBox
         { Width = 760, Height = 52, Multiline = true, ScrollBars = ScrollBars.Vertical }).ToArray();
-    private readonly Label _duelStateLabel = new() { Text = "● Inaktiv", AutoSize = true,
+    private readonly Label _duelStateLabel = new() { Text = "â— Inaktiv", AutoSize = true,
         ForeColor = InactiveColor, Font = new Font("Segoe UI", 11F, FontStyle.Bold) };
     private readonly Label _duelOpenLabel = new() { Text = "Offene Anfragen: 0", AutoSize = true };
     private readonly Label _duelDetailsLabel = new() { Text = "Kein Duel aktiv.", AutoSize = true, MaximumSize = new Size(900, 0) };
     private readonly Button _duelSaveButton = NewHeistActionButton("Einstellungen speichern", 210);
     private readonly Button _duelDefaultsButton = NewHeistActionButton("Standardwerte wiederherstellen", 240);
     private readonly Button _duelCancelButton = NewHeistActionButton("Offene Duels abbrechen", 200);
-    private readonly Button _duelTestButton = NewHeistActionButton("Test-Duel ausführen", 180);
+    private readonly Button _duelTestButton = NewHeistActionButton("Test-Duel ausfÃ¼hren", 180);
 
 
     private Control BuildDuelSettingsPanel()
@@ -75,7 +75,7 @@ public sealed partial class MainForm
             _duelSubscribersCheck, _duelVipsCheck, _duelModeratorsCheck, _duelFairModeCheck,
             CreateSettingEditor("Gewinnchance Herausforderer (%)", _duelChallengerChanceControl),
             _duelLoserTimeoutCheck,
-            CreateSettingEditor("Timeout für Verlierer (Sek.)", _duelLoserTimeoutSecondsControl),
+            CreateSettingEditor("Timeout fÃ¼r Verlierer (Sek.)", _duelLoserTimeoutSecondsControl),
             CreateSettingEditor("Timeout-Grund", _duelLoserTimeoutReasonBox) });
         rules.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(900, 0), ForeColor = MutedTextColor,
             Text = "Im fairen Modus haben beide Teilnehmer eine Chance von 50 Prozent." });
@@ -87,7 +87,7 @@ public sealed partial class MainForm
             _duelDenyMessagesCheck, _duelTimeoutMessagesCheck });
         var labels = new[] { "Anfrage", "Angenommen", "Gewinner", "Abgelehnt", "Timeout",
             "Zu wenig Punkte (Herausforderer)", "Zu wenig Punkte (Ziel)", "Selbstduell",
-            "Keine offene Anfrage", "Falscher Benutzer", "Bereits offene Anfrage", "Ungültiger Einsatz" };
+            "Keine offene Anfrage", "Falscher Benutzer", "Bereits offene Anfrage", "UngÃ¼ltiger Einsatz" };
         for (var i = 0; i < labels.Length; i++) messages.Controls.Add(CreateSettingEditor(labels[i], _duelMessageBoxes[i]));
         messages.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(900, 0), ForeColor = MutedTextColor,
             Text = "Platzhalter: {user}, {challenger}, {target}, {winner}, {loser}, {amount}, {pot}, {currencyName}, {seconds}, {duelCommand}, {acceptCommand}, {denyCommand}, {winChance}" });
@@ -111,12 +111,12 @@ public sealed partial class MainForm
         _duelDefaultsButton.Click += (_, _) => LoadDuelSettings(new DuelConfig());
         _duelCancelButton.Click += async (_, _) =>
         {
-            if (_minigame is null) AppendLog("Duel-Abbruch benötigt eine aktive Plugin-Verbindung.");
+            if (_minigame is null) AppendLog("Duel-Abbruch benÃ¶tigt eine aktive Plugin-Verbindung.");
             else await _minigame.CancelDuelsAsync(_shutdown?.Token ?? CancellationToken.None);
         };
         _duelTestButton.Click += async (_, _) =>
         {
-            if (_minigame is null) AppendLog("Test-Duel benötigt eine aktive Plugin-Verbindung.");
+            if (_minigame is null) AppendLog("Test-Duel benÃ¶tigt eine aktive Plugin-Verbindung.");
             else await _minigame.RunTestDuelAsync(_shutdown?.Token ?? CancellationToken.None);
         };
         _duelFairModeCheck.CheckedChanged += (_, _) =>
@@ -173,8 +173,8 @@ public sealed partial class MainForm
         duel.DuelCommand = _duelCommandBox.Text;
         duel.AcceptCommand = _duelAcceptCommandBox.Text;
         duel.DenyCommand = _duelDenyCommandBox.Text;
-        duel.MinimumBet = (int)_duelMinimumBetControl.Value;
-        duel.MaximumBet = (int)_duelMaximumBetControl.Value;
+        duel.MinimumBet = decimal.ToInt64(_duelMinimumBetControl.Value);
+        duel.MaximumBet = decimal.ToInt64(_duelMaximumBetControl.Value);
         duel.RequestTimeoutSeconds = (int)_duelTimeoutControl.Value;
         duel.UserCooldownSeconds = (int)_duelUserCooldownControl.Value;
         duel.GlobalCooldownSeconds = (int)_duelGlobalCooldownControl.Value;
@@ -211,18 +211,18 @@ public sealed partial class MainForm
     private void OnDuelStatusChanged(DuelStatus status)
     {
         if (InvokeRequired) { BeginInvoke(new Action(() => OnDuelStatusChanged(status))); return; }
-        _duelStateLabel.Text = status.TestMode ? "● Testmodus" : status.State switch
+        _duelStateLabel.Text = status.TestMode ? "â— Testmodus" : status.State switch
         {
-            DuelState.Waiting => "● Wartet", DuelState.Accepted => "● Angenommen",
-            DuelState.Denied => "● Abgelehnt", DuelState.Expired => "● Abgelaufen",
-            DuelState.Paid => "● Ausgezahlt", DuelState.Cancelled => "● Abgebrochen", _ => "● Inaktiv"
+            DuelState.Waiting => "â— Wartet", DuelState.Accepted => "â— Angenommen",
+            DuelState.Denied => "â— Abgelehnt", DuelState.Expired => "â— Abgelaufen",
+            DuelState.Paid => "â— Ausgezahlt", DuelState.Cancelled => "â— Abgebrochen", _ => "â— Inaktiv"
         };
         _duelStateLabel.ForeColor = status.State == DuelState.Paid ? ActiveColor :
             status.State is DuelState.Denied or DuelState.Expired or DuelState.Cancelled ? ErrorColor : WaitingColor;
         _duelOpenLabel.Text = $"Offene Anfragen: {status.OpenRequests}";
         _duelDetailsLabel.Text = string.IsNullOrWhiteSpace(status.Challenger)
             ? "Kein Duel aktiv."
-            : $"Herausforderer: {status.Challenger} · Ziel: {status.Target} · Einsatz: {status.Stake:N0} · Restzeit: {status.SecondsRemaining}s · Status: {status.State}";
+            : $"Herausforderer: {status.Challenger} Â· Ziel: {status.Target} Â· Einsatz: {status.Stake:N0} Â· Restzeit: {status.SecondsRemaining}s Â· Status: {status.State}";
         _duelCancelButton.Enabled = status.OpenRequests > 0;
     }
 }
