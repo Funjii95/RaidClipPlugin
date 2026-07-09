@@ -45,30 +45,31 @@ jobs:
         run: dotnet publish "RaidClipPlugin.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o "publish"
 
       - name: Update-ZIP erstellen
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force "installer-output" | Out-Null
           Compress-Archive -Path "publish\*" -DestinationPath "installer-output\RaidClipPlugin-Update-$env:APP_VERSION.zip" -Force
 
       - name: Inno Setup installieren
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: choco install innosetup -y --no-progress
 
       - name: Windows-Installer erstellen
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$env:APP_VERSION" "Installer\RaidClipPlugin.iss"'
 
       - name: update.json erzeugen
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: |
           $zipName = "RaidClipPlugin-Update-$env:APP_VERSION.zip"
           $zipPath = Join-Path "installer-output" $zipName
           $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash
-          $downloadUrl = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$zipName"
+          $releaseTag = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}" } else { "v$env:APP_VERSION" }
+          $downloadUrl = "https://github.com/${{ github.repository }}/releases/download/$releaseTag/$zipName"
           $manifest = [ordered]@{
             latestVersion = $env:APP_VERSION
             downloadUrl = $downloadUrl
@@ -78,12 +79,12 @@ jobs:
           $manifest | ConvertTo-Json | Set-Content "installer-output\update.json" -Encoding UTF8
 
       - name: GitHub Release veröffentlichen
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = "${{ github.ref_name }}"
+          $tag = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}" } else { "v$env:APP_VERSION" }
           gh release view $tag --json tagName 2>$null
           if ($LASTEXITCODE -ne 0) {
             gh release create $tag --title "RaidClipPlugin $env:APP_VERSION" --generate-notes
