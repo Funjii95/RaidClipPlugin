@@ -10,8 +10,8 @@
     <AssemblyName>RaidClipPlugin</AssemblyName>
     <RootNamespace>RaidClipPlugin</RootNamespace>
     <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
-    <Version>1.7.1</Version>
-    <FileVersion>1.7.1.0</FileVersion>
+    <Version>1.7.2</Version>
+    <FileVersion>1.7.2.0</FileVersion>
   </PropertyGroup>
 
 
