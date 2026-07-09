@@ -69,7 +69,7 @@ public sealed class DuelServiceTests
         await using var f = await Fixture.CreateAsync();
         await f.ChallengeAsync();
         await f.Service.ProcessAsync(f.Message("c", "Challenger", "!accept"), default);
-        Assert.Contains(f.Chat.Messages, x => x.Contains("nicht für dich", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(f.Chat.Messages, x => x.Contains("Duel-Anfrage", StringComparison.OrdinalIgnoreCase));
         Assert.Equal(900, await f.Points.GetPointsAsync("c", default));
     }
 
