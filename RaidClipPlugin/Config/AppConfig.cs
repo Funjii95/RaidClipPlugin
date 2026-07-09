@@ -68,7 +68,7 @@ public class ChatConfig
     public bool SendRaidMessage { get; set; } = true;
     public bool SendShoutout { get; set; } = true;
     public string RaidMessageTemplate { get; set; } =
-        "Danke fÃ¼r den Raid, @{name}! Schaut bei https://twitch.tv/{login} vorbei!";
+        "Danke für den Raid, @{name}! Schaut bei https://twitch.tv/{login} vorbei!";
 }
 
 public class ModerationConfig
@@ -134,7 +134,7 @@ public class MinigameConfig
     public long CoinflipMaximumBet { get; set; } = 1000;
     public int CoinflipCooldownSeconds { get; set; } = 20;
     public bool SlotsEnabled { get; set; } = false;
-    public string SlotSymbols { get; set; } = "ðŸ’,ðŸ‹,ðŸ””,â­,ðŸ’Ž,7ï¸âƒ£";
+    public string SlotSymbols { get; set; } = "🍒,🍋,🔔,⭐,💎,7️⃣";
     public decimal SlotsThreeMultiplier { get; set; } = 5.0m;
     public decimal SlotsTwoMultiplier { get; set; } = 1.5m;
     public decimal SlotsSevenMultiplier { get; set; } = 10.0m;
@@ -169,28 +169,28 @@ public class MinigameConfig
                 From = 1,
                 To = 31,
                 Multiplier = 0.0m,
-                ChatText = "@{name} wÃ¼rfelt eine {roll} und verliert {stake} Punkte! Neuer Stand: {balance}."
+                ChatText = "@{name} würfelt eine {roll} und verliert {stake} Punkte! Neuer Stand: {balance}."
             },
             new GambleRangeConfig
             {
                 From = 32,
                 To = 50,
                 Multiplier = 0.5m,
-                ChatText = "@{name} wÃ¼rfelt eine {roll} und erhÃ¤lt {payout} Punkte zurÃ¼ck! Neuer Stand: {balance}."
+                ChatText = "@{name} würfelt eine {roll} und erhält {payout} Punkte zurück! Neuer Stand: {balance}."
             },
             new GambleRangeConfig
             {
                 From = 51,
                 To = 70,
                 Multiplier = 1.0m,
-                ChatText = "@{name} wÃ¼rfelt eine {roll} und erhÃ¤lt den Einsatz zurÃ¼ck! Neuer Stand: {balance}."
+                ChatText = "@{name} würfelt eine {roll} und erhält den Einsatz zurück! Neuer Stand: {balance}."
             },
             new GambleRangeConfig
             {
                 From = 71,
                 To = 100,
                 Multiplier = 2.0m,
-                ChatText = "@{name} wÃ¼rfelt eine {roll} und gewinnt {payout} Punkte! Neuer Stand: {balance}."
+                ChatText = "@{name} würfelt eine {roll} und gewinnt {payout} Punkte! Neuer Stand: {balance}."
             }
         };
 }
