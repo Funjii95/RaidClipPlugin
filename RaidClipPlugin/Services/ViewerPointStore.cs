@@ -710,7 +710,7 @@ public sealed class ViewerPointStore
             var jackpot = Math.Max(_jackpot, Math.Max(0, jackpotStart));
             var baseShare = jackpot / participants.Count;
             var remainder = jackpot % participants.Count;
-            var extras = remainderRecipients.Distinct().Take(remainder).ToHashSet();
+            var extras = remainderRecipients.Distinct().Take((int)remainder).ToHashSet();
             if (extras.Count != remainder || extras.Any(index => index < 0 || index >= participants.Count))
                 throw new InvalidOperationException("Die Restpunktverteilung ist ungÃ¼ltig.");
 
@@ -995,3 +995,4 @@ public sealed class ViewerPointStore
     }
 
 }
+
