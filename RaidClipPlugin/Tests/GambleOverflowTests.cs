@@ -66,7 +66,7 @@ public sealed class GambleOverflowTests
             var store = new ViewerPointStore(directory);
             var result = await store.AddJackpotAsync(100, 0, CancellationToken.None);
             Assert.Equal(int.MaxValue - 5, result.Previous);
-            Assert.Equal(int.MaxValue, result.Current);
+            Assert.Equal((long)int.MaxValue + 95, result.Current);
         }
         finally { Directory.Delete(directory, true); }
     }
@@ -93,7 +93,7 @@ public sealed class GambleOverflowTests
 
             Assert.True(result.Success);
             Assert.Equal(
-                int.MaxValue,
+                (long)int.MaxValue + 995,
                 await store.GetJackpotAsync(0, CancellationToken.None));
         }
         finally
@@ -124,7 +124,7 @@ public sealed class GambleOverflowTests
 
             var profile = await store.GetProfileAsync(
                 "viewer", CancellationToken.None);
-            Assert.Equal(int.MaxValue, profile.Entry.DailyLoss);
+            Assert.Equal(3_000_000_000L, profile.Entry.DailyLoss);
             Assert.Equal(2, profile.Entry.GamesPlayed);
         }
         finally
@@ -168,4 +168,3 @@ public sealed class GambleOverflowTests
         return directory;
     }
 }
-
