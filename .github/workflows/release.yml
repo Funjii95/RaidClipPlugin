@@ -73,7 +73,7 @@ jobs:
           $manifest = [ordered]@{
             latestVersion = $env:APP_VERSION
             downloadUrl = $downloadUrl
-            changelog = "Änderungen siehe GitHub Release ${{ github.ref_name }}."
+            changelog = "Änderungen siehe GitHub Release $releaseTag."
             sha256 = $hash
           }
           $manifest | ConvertTo-Json | Set-Content "installer-output\update.json" -Encoding UTF8
