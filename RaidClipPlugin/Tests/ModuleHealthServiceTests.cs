@@ -27,9 +27,12 @@ public sealed class ModuleHealthServiceTests
                 return Task.CompletedTask;
             });
 
-        var statuses = await service.CheckNowAsync(CancellationToken.None);
+        IReadOnlyList<ModuleHealthStatus>? statuses = null;
+        service.StatusChanged += current => statuses = current;
 
-        var status = Assert.Single(statuses);
+        await service.CheckNowAsync(CancellationToken.None);
+
+        var status = Assert.Single(Assert.NotNull(statuses));
         Assert.Equal(1, restartCalls);
         Assert.Equal(ModuleHealthState.Healthy, status.State);
         Assert.True(status.IsRunning);
