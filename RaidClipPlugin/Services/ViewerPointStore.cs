@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Config;
 
@@ -18,7 +18,7 @@ public sealed class ViewerPointStore
     private readonly string _statePath;
     private Dictionary<string, ViewerPointEntry>? _entries;
     private List<MinigameHistoryEntry> _history = new();
-    private int _jackpot;
+    private long _jackpot;
 
     public ViewerPointStore(string? storageDirectory = null)
     {
@@ -37,7 +37,7 @@ public sealed class ViewerPointStore
                 _history = JsonSerializer.Deserialize<List<MinigameHistoryEntry>>(
                     File.ReadAllText(_historyPath), JsonOptions) ?? new();
             if (File.Exists(_statePath))
-                _jackpot = JsonSerializer.Deserialize<int>(
+                _jackpot = JsonSerializer.Deserialize<long>(
                     File.ReadAllText(_statePath), JsonOptions);
         }
         catch (Exception exception)
@@ -68,8 +68,8 @@ public sealed class ViewerPointStore
     public Task<long> AddPointsAsync(
         string userId,
         string displayName,
-        int amount,
-        int minimumPoints,
+        long amount,
+        long minimumPoints,
         CancellationToken cancellationToken,
         long maximumPoints = long.MaxValue) =>
         ChangePointsAsync(
@@ -81,8 +81,8 @@ public sealed class ViewerPointStore
     public Task<long> RemovePointsAsync(
         string userId,
         string displayName,
-        int amount,
-        int minimumPoints,
+        long amount,
+        long minimumPoints,
         CancellationToken cancellationToken,
         long maximumPoints = long.MaxValue) =>
         ChangePointsAsync(
@@ -93,8 +93,8 @@ public sealed class ViewerPointStore
     public Task<long> SetPointsAsync(
         string userId,
         string displayName,
-        int amount,
-        int minimumPoints,
+        long amount,
+        long minimumPoints,
         CancellationToken cancellationToken,
         long maximumPoints = long.MaxValue) =>
         ChangePointsAsync(
@@ -106,8 +106,8 @@ public sealed class ViewerPointStore
         string senderDisplayName,
         string recipientId,
         string recipientDisplayName,
-        int amount,
-        int minimumPoints,
+        long amount,
+        long minimumPoints,
         long maximumPoints,
         CancellationToken cancellationToken)
     {
@@ -141,21 +141,21 @@ public sealed class ViewerPointStore
             if (amount <= 0)
             {
                 return new PointTransferResult(false,
-                    "Der Betrag muss größer als 0 sein",
+                    "Der Betrag muss grÃ¶ÃŸer als 0 sein",
                     sender.Points, recipientPoints);
             }
 
             if (sender.Points - amount < floor)
             {
                 return new PointTransferResult(false,
-                    "Du hast nicht genug verfügbare Punkte",
+                    "Du hast nicht genug verfÃ¼gbare Punkte",
                     sender.Points, recipientPoints);
             }
 
             if (amount > ceiling - recipientPoints)
             {
                 return new PointTransferResult(false,
-                    "Das Punktekonto des Empfängers würde das Maximum überschreiten",
+                    "Das Punktekonto des EmpfÃ¤ngers wÃ¼rde das Maximum Ã¼berschreiten",
                     sender.Points, recipientPoints);
             }
 
@@ -181,8 +181,8 @@ public sealed class ViewerPointStore
     public async Task<DuelReserveResult> ReserveDuelStakeAsync(
         string userId,
         string displayName,
-        int amount,
-        int minimumPoints,
+        long amount,
+        long minimumPoints,
         int historyLimit,
         CancellationToken cancellationToken)
     {
@@ -193,7 +193,7 @@ public sealed class ViewerPointStore
             var floor = Math.Max(0, minimumPoints);
             var entry = GetOrCreateEntry(userId, displayName, floor);
             if (amount <= 0 || entry.Points - amount < floor)
-                return new DuelReserveResult(false, "Nicht genug verfügbare Punkte", entry.Points);
+                return new DuelReserveResult(false, "Nicht genug verfÃ¼gbare Punkte", entry.Points);
 
             var previous = entry.Points;
             var historyBefore = _history.ToList();
@@ -211,7 +211,7 @@ public sealed class ViewerPointStore
     public async Task<long> RefundDuelStakeAsync(
         string userId,
         string displayName,
-        int amount,
+        long amount,
         int historyLimit,
         CancellationToken cancellationToken)
     {
@@ -227,7 +227,7 @@ public sealed class ViewerPointStore
                 : entry.Points + Math.Max(0, amount);
             entry.DisplayName = displayName;
             entry.UpdatedAt = DateTimeOffset.Now;
-            AddDuelHistory(userId, displayName, "Einsatz zurückgegeben", amount, entry.Points, historyLimit);
+            AddDuelHistory(userId, displayName, "Einsatz zurÃ¼ckgegeben", amount, entry.Points, historyLimit);
             try { await SaveAllAsync(cancellationToken); }
             catch { entry.Points = previous; _history = historyBefore; throw; }
             return entry.Points;
@@ -241,8 +241,8 @@ public sealed class ViewerPointStore
         string targetId,
         string targetName,
         string winnerId,
-        int stake,
-        int minimumPoints,
+        long stake,
+        long minimumPoints,
         long maximumPoints,
         int historyLimit,
         CancellationToken cancellationToken)
@@ -258,21 +258,37 @@ public sealed class ViewerPointStore
             if (stake <= 0 || target.Points - stake < floor)
                 return new DuelResolutionResult(false, "Zielspieler hat nicht genug Punkte", challenger.Points, target.Points, stake * 2);
 
-            var pot = checked(stake * 2);
+            if (stake > long.MaxValue / 2)
+                return new DuelResolutionResult(false,
+                    "Der Duel-Pot überschreitet das technische Punktelimit",
+                    challenger.Points, target.Points, 0);
+            var pot = stake * 2;
             var challengerBefore = challenger.Points;
             var targetBefore = target.Points;
             var historyBefore = _history.ToList();
             var challengerAfter = challengerBefore;
             var targetAfter = targetBefore - stake;
             if (winnerId.Equals(challengerId, StringComparison.Ordinal))
-                challengerAfter = checked(challengerAfter + pot);
+            {
+                if (challengerAfter > long.MaxValue - pot)
+                    return new DuelResolutionResult(false,
+                        "Die Auszahlung überschreitet das technische Punktelimit",
+                        challengerBefore, targetBefore, pot);
+                challengerAfter += pot;
+            }
             else if (winnerId.Equals(targetId, StringComparison.Ordinal))
-                targetAfter = checked(targetAfter + pot);
+            {
+                if (targetAfter > long.MaxValue - pot)
+                    return new DuelResolutionResult(false,
+                        "Die Auszahlung überschreitet das technische Punktelimit",
+                        challengerBefore, targetBefore, pot);
+                targetAfter += pot;
+            }
             else
                 throw new ArgumentException("Der Duel-Gewinner ist kein Teilnehmer.", nameof(winnerId));
 
             if (challengerAfter > ceiling || targetAfter > ceiling)
-                return new DuelResolutionResult(false, "Die Auszahlung würde das technische Punktelimit überschreiten", challengerBefore, targetBefore, pot);
+                return new DuelResolutionResult(false, "Die Auszahlung wÃ¼rde das technische Punktelimit Ã¼berschreiten", challengerBefore, targetBefore, pot);
 
             challenger.Points = challengerAfter;
             target.Points = targetAfter;
@@ -308,8 +324,8 @@ public sealed class ViewerPointStore
     }
 
     public async Task<int> AddPointsToAllAsync(
-        int amount,
-        int minimumPoints,
+        long amount,
+        long minimumPoints,
         long maximumPoints,
         CancellationToken cancellationToken)
     {
@@ -335,8 +351,8 @@ public sealed class ViewerPointStore
 
     public async Task<int> AddPointsToUsersAsync(
         IEnumerable<(string UserId, string DisplayName)> users,
-        int amount,
-        int minimumPoints,
+        long amount,
+        long minimumPoints,
         long maximumPoints,
         CancellationToken cancellationToken)
     {
@@ -365,8 +381,10 @@ public sealed class ViewerPointStore
             {
                 var entry = GetOrCreateEntry(
                     recipient.UserId, recipient.DisplayName, floor);
-                entry.Points = Math.Clamp(
-                    entry.Points + amount, floor, ceiling);
+                var increased = entry.Points > long.MaxValue - amount
+                    ? long.MaxValue
+                    : entry.Points + amount;
+                entry.Points = Math.Clamp(increased, floor, ceiling);
                 entry.DisplayName = recipient.DisplayName;
                 entry.UpdatedAt = DateTimeOffset.Now;
             }
@@ -381,9 +399,9 @@ public sealed class ViewerPointStore
     }
 
     public async Task<int> AwardAttendanceAsync(
-        IEnumerable<(string UserId, string DisplayName, int Points)> awards,
+        IEnumerable<(string UserId, string DisplayName, long Points)> awards,
         int minutes,
-        int minimumPoints,
+        long minimumPoints,
         long maximumPoints,
         CancellationToken cancellationToken)
     {
@@ -430,9 +448,9 @@ public sealed class ViewerPointStore
     public async Task<GambleBalanceResult> ApplyGambleAsync(
         string userId,
         string displayName,
-        int stake,
-        int payout,
-        int minimumPoints,
+        long stake,
+        long payout,
+        long minimumPoints,
         CancellationToken cancellationToken)
     {
         await _lock.WaitAsync(cancellationToken);
@@ -495,7 +513,7 @@ public sealed class ViewerPointStore
     }
 
     public async Task AddWatchtimeAsync(string userId, string name, int minutes,
-        int points, int minimum, CancellationToken cancellationToken,
+        long points, long minimum, CancellationToken cancellationToken,
         long maximum = long.MaxValue)
     {
         await _lock.WaitAsync(cancellationToken);
@@ -503,7 +521,10 @@ public sealed class ViewerPointStore
         {
             await EnsureLoadedAsync(cancellationToken);
             var entry = GetOrCreateEntry(userId, name, minimum);
-            entry.WatchMinutes = checked(entry.WatchMinutes + Math.Max(0, minutes));
+            entry.WatchMinutes = (int)Math.Min(
+                int.MaxValue,
+                (long)Math.Max(0, entry.WatchMinutes) +
+                Math.Max(0, minutes));
             entry.Points = Math.Clamp(
                 points > 0 && entry.Points > long.MaxValue - points
                     ? long.MaxValue
@@ -517,7 +538,7 @@ public sealed class ViewerPointStore
     }
 
     public async Task<DailyClaimResult> ClaimDailyAsync(string userId, string name,
-        int bonus, int minimum, CancellationToken cancellationToken,
+        long bonus, long minimum, CancellationToken cancellationToken,
         long maximum = long.MaxValue)
     {
         await _lock.WaitAsync(cancellationToken);
@@ -574,9 +595,9 @@ public sealed class ViewerPointStore
     }
 
     public async Task<CasinoApplyResult> ApplyCasinoAsync(string userId, string name,
-        string game, int stake, int payout, int minimum, long maximum,
-        int dailyGames, int dailyLoss, int dailyWin, int jackpotContribution,
-        bool jackpotHit, int jackpotStart, int historyLimit,
+        string game, long stake, long payout, long minimum, long maximum,
+        int dailyGames, long dailyLoss, long dailyWin, long jackpotContribution,
+        bool jackpotHit, long jackpotStart, int historyLimit,
         CancellationToken cancellationToken)
     {
         await _lock.WaitAsync(cancellationToken);
@@ -595,12 +616,12 @@ public sealed class ViewerPointStore
             if ((long)entry.Points - safeStake < safeMinimum)
                 return new CasinoApplyResult(false, "Nicht genug Punkte", entry.Points, 0);
             if (dailyGames > 0 && entry.DailyGambles >= dailyGames)
-                return new CasinoApplyResult(false, "Tägliches Spielelimit erreicht", entry.Points, 0);
+                return new CasinoApplyResult(false, "TÃ¤gliches Spielelimit erreicht", entry.Points, 0);
 
             var loss = Math.Max(0L, (long)safeStake - safePayout);
             var win = Math.Max(0L, (long)safePayout - safeStake);
             if (dailyLoss > 0 && (long)Math.Max(0, entry.DailyLoss) + loss > dailyLoss)
-                return new CasinoApplyResult(false, "Tägliches Verlustlimit erreicht", entry.Points, 0);
+                return new CasinoApplyResult(false, "TÃ¤gliches Verlustlimit erreicht", entry.Points, 0);
 
             var jackpotCandidate = jackpotHit
                 ? Math.Max(_jackpot, Math.Max(0, jackpotStart))
@@ -608,29 +629,28 @@ public sealed class ViewerPointStore
             if (dailyWin > 0 &&
                 (long)Math.Max(0, entry.DailyWin) + win + jackpotCandidate > dailyWin)
                 return new CasinoApplyResult(false,
-                    "Tägliches Gewinnlimit erreicht", entry.Points, 0);
+                    "TÃ¤gliches Gewinnlimit erreicht", entry.Points, 0);
 
             var totalPayout = (long)safePayout + jackpotCandidate;
             var balanceChange = totalPayout - safeStake;
-            if (totalPayout > int.MaxValue ||
-                (balanceChange > 0 && entry.Points > long.MaxValue - balanceChange))
+            if (balanceChange > 0 && entry.Points > long.MaxValue - balanceChange)
                 return new CasinoApplyResult(false,
-                    "Die Auszahlung überschreitet das technische Punktelimit",
+                    "Die Auszahlung Ã¼berschreitet das technische Punktelimit",
                     entry.Points, 0);
             var projectedBalance = entry.Points + balanceChange;
 
-            var jackpotWon = 0;
+            var jackpotWon = 0L;
             if (jackpotHit)
             {
                 jackpotWon = jackpotCandidate;
                 _jackpot = Math.Max(0, jackpotStart);
-                safePayout = (int)totalPayout;
+                safePayout = totalPayout;
             }
             else if (loss > 0)
             {
                 var updatedJackpot = (long)Math.Max(_jackpot, Math.Max(0, jackpotStart)) +
                     Math.Max(0, jackpotContribution);
-                _jackpot = (int)Math.Min(int.MaxValue, updatedJackpot);
+                _jackpot = updatedJackpot >= long.MaxValue ? long.MaxValue : updatedJackpot;
             }
 
             var balanceMaximum = jackpotHit ? long.MaxValue : safeMaximum;
@@ -638,11 +658,15 @@ public sealed class ViewerPointStore
                 projectedBalance, safeMinimum, balanceMaximum);
             entry.GamesPlayed = SaturatingIncrement(entry.GamesPlayed);
             entry.DailyGambles = SaturatingIncrement(entry.DailyGambles);
-            entry.DailyLoss = (int)Math.Min(
-                int.MaxValue, (long)Math.Max(0, entry.DailyLoss) + loss);
-            entry.DailyWin = (int)Math.Min(
-                int.MaxValue,
-                (long)Math.Max(0, entry.DailyWin) + win + jackpotWon);
+            entry.DailyLoss = entry.DailyLoss > long.MaxValue - loss
+                ? long.MaxValue
+                : Math.Max(0L, entry.DailyLoss) + loss;
+            var totalWin = win > long.MaxValue - jackpotWon
+                ? long.MaxValue
+                : win + jackpotWon;
+            entry.DailyWin = Math.Max(0L, entry.DailyWin) > long.MaxValue - totalWin
+                ? long.MaxValue
+                : Math.Max(0L, entry.DailyWin) + totalWin;
             if (safePayout > safeStake)
                 entry.Wins = SaturatingIncrement(entry.Wins);
             else if (safePayout < safeStake)
@@ -671,13 +695,13 @@ public sealed class ViewerPointStore
     public async Task<HeistPayoutResult> PayoutHeistJackpotAsync(
         IReadOnlyList<(string UserId, string DisplayName)> participants,
         IReadOnlyCollection<int> remainderRecipients,
-        int jackpotStart,
+        long jackpotStart,
         bool resetToStart,
         int historyLimit,
         CancellationToken cancellationToken)
     {
         if (participants.Count == 0)
-            throw new ArgumentException("Mindestens ein Teilnehmer wird benötigt.", nameof(participants));
+            throw new ArgumentException("Mindestens ein Teilnehmer wird benÃ¶tigt.", nameof(participants));
 
         await _lock.WaitAsync(cancellationToken);
         try
@@ -688,7 +712,7 @@ public sealed class ViewerPointStore
             var remainder = jackpot % participants.Count;
             var extras = remainderRecipients.Distinct().Take(remainder).ToHashSet();
             if (extras.Count != remainder || extras.Any(index => index < 0 || index >= participants.Count))
-                throw new InvalidOperationException("Die Restpunktverteilung ist ungültig.");
+                throw new InvalidOperationException("Die Restpunktverteilung ist ungÃ¼ltig.");
 
             var payouts = new List<HeistParticipantPayout>(participants.Count);
             for (var index = 0; index < participants.Count; index++)
@@ -697,7 +721,7 @@ public sealed class ViewerPointStore
                 var payout = checked(baseShare + (extras.Contains(index) ? 1 : 0));
                 var entry = GetOrCreateEntry(participant.UserId, participant.DisplayName, 0);
                 if (entry.Points > long.MaxValue - payout)
-                    throw new InvalidOperationException("Eine Heist-Auszahlung überschreitet das technische Punktelimit.");
+                    throw new InvalidOperationException("Eine Heist-Auszahlung Ã¼berschreitet das technische Punktelimit.");
                 payouts.Add(new HeistParticipantPayout(participant.UserId, participant.DisplayName, payout, entry.Points + payout));
             }
 
@@ -727,8 +751,8 @@ public sealed class ViewerPointStore
         finally { _lock.Release(); }
     }
 
-    public async Task<(int Previous, int Current)> ResetJackpotAsync(
-        int startValue,
+    public async Task<(long Previous, long Current)> ResetJackpotAsync(
+        long startValue,
         CancellationToken cancellationToken)
     {
         await _lock.WaitAsync(cancellationToken);
@@ -743,9 +767,9 @@ public sealed class ViewerPointStore
         finally { _lock.Release(); }
     }
 
-    public async Task<(int Previous, int Current)> AddJackpotAsync(
-        int amount,
-        int startValue,
+    public async Task<(long Previous, long Current)> AddJackpotAsync(
+        long amount,
+        long startValue,
         CancellationToken cancellationToken)
     {
         if (amount <= 0)
@@ -755,14 +779,16 @@ public sealed class ViewerPointStore
         {
             await EnsureLoadedAsync(cancellationToken);
             var previous = Math.Max(_jackpot, Math.Max(0, startValue));
-            _jackpot = (int)Math.Min(int.MaxValue, (long)previous + amount);
+            _jackpot = previous > long.MaxValue - amount
+                ? long.MaxValue
+                : previous + amount;
             await SaveAllAsync(cancellationToken);
             return (previous, _jackpot);
         }
         finally { _lock.Release(); }
     }
 
-    public async Task<int> GetJackpotAsync(int startValue,
+    public async Task<long> GetJackpotAsync(long startValue,
         CancellationToken cancellationToken)
     {
         await _lock.WaitAsync(cancellationToken);
@@ -798,14 +824,14 @@ public sealed class ViewerPointStore
     {
         var json = await File.ReadAllTextAsync(path, cancellationToken);
         var package = JsonSerializer.Deserialize<MinigameExportPackage>(json, JsonOptions)
-            ?? throw new InvalidOperationException("Die Importdatei ist ungültig.");
+            ?? throw new InvalidOperationException("Die Importdatei ist ungÃ¼ltig.");
         if (package.Users is null || package.Settings is null)
-            throw new InvalidOperationException("Die Importdatei ist unvollständig.");
+            throw new InvalidOperationException("Die Importdatei ist unvollstÃ¤ndig.");
         ConfigurationService.ValidateMinigameSettings(package.Settings);
         if (package.Users.Any(pair => string.IsNullOrWhiteSpace(pair.Key) ||
             pair.Value is null || pair.Value.Points < 0))
             throw new InvalidOperationException(
-                "Die Importdatei enthält ungültige Punktedaten.");
+                "Die Importdatei enthÃ¤lt ungÃ¼ltige Punktedaten.");
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -851,7 +877,7 @@ public sealed class ViewerPointStore
         string userId,
         string displayName,
         Func<long, long> change,
-        int minimumPoints,
+        long minimumPoints,
         long maximumPoints,
         CancellationToken cancellationToken)
     {
@@ -882,7 +908,7 @@ public sealed class ViewerPointStore
     private ViewerPointEntry GetOrCreateEntry(
         string userId,
         string displayName,
-        int minimumPoints)
+        long minimumPoints)
     {
         if (_entries!.TryGetValue(userId, out var entry))
         {
@@ -964,7 +990,7 @@ public sealed class ViewerPointStore
     {
         public Dictionary<string, ViewerPointEntry>? Users { get; set; }
         public List<MinigameHistoryEntry>? History { get; set; }
-        public int Jackpot { get; set; }
+        public long Jackpot { get; set; }
         public MinigameConfig? Settings { get; set; }
     }
 
