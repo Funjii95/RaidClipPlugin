@@ -371,7 +371,7 @@ public sealed class DuelService : IAsyncDisposable
             duel.TimeoutCts.Cancel();
             await RefundAsync(duel, "abgelehnt", CancellationToken.None);
             Remove(duel);
-            Console.WriteLine($"Duel abgelehnt: {duel.Target.DisplayName}; RÃ¼ckerstattung {duel.Stake} an {duel.Challenger.UserName}.");
+            Console.WriteLine($"Duel abgelehnt: {duel.Target.DisplayName}; Rückerstattung {duel.Stake} an {duel.Challenger.UserName}.");
             PublishStatus(duel);
             if (_config.SendDenyMessage)
                 await SendTemplateAsync(_config.DuelDeniedMessage, duel.Challenger.UserName,
@@ -407,7 +407,7 @@ public sealed class DuelService : IAsyncDisposable
                 duel.State = DuelState.Expired;
                 await RefundAsync(duel, "Timeout", CancellationToken.None);
                 Remove(duel);
-                Console.WriteLine($"Duel-Timeout: {duel.Challenger.UserName} gegen {duel.Target.DisplayName}; RÃ¼ckerstattung {duel.Stake}.");
+                Console.WriteLine($"Duel-Timeout: {duel.Challenger.UserName} gegen {duel.Target.DisplayName}; Rückerstattung {duel.Stake}.");
                 PublishStatus(duel);
                 if (_config.SendTimeoutMessage)
                     await SendTemplateAsync(_config.DuelTimeoutMessage, duel.Challenger.UserName,
@@ -433,12 +433,12 @@ public sealed class DuelService : IAsyncDisposable
                 duel.TimeoutCts.Cancel();
                 await RefundAsync(duel, "Abbruch", CancellationToken.None);
                 duel.TimeoutCts.Dispose();
-                Console.WriteLine($"Duel abgebrochen: {duel.Id}; RÃ¼ckerstattung {duel.Stake}.");
+                Console.WriteLine($"Duel abgebrochen: {duel.Id}; Rückerstattung {duel.Stake}.");
             }
             _byUserId.Clear();
             StatusChanged?.Invoke(new DuelStatus(0, "", "", 0, 0, DuelState.Cancelled));
             if (announce && duels.Length > 0)
-                await SendAsync("Alle offenen Duel-Anfragen wurden abgebrochen und die EinsÃ¤tze zurÃ¼ckgegeben.", cancellationToken);
+                await SendAsync("Alle offenen Duel-Anfragen wurden abgebrochen und die Einsätze zurückgegeben.", cancellationToken);
         }
         finally { _gate.Release(); }
     }
@@ -452,10 +452,10 @@ public sealed class DuelService : IAsyncDisposable
         var loser = winner == "TestChallenger" ? "TestTarget" : "TestChallenger";
         var target = new TwitchUser("test-target", "testtarget", "TestTarget");
         var stake = Math.Max(_config.MinimumBet, 100L);
-        Console.WriteLine($"TEST-DUEL: Zufallswert {roll}; Chance {chance}%; Gewinner {winner}; keine Punkte verÃ¤ndert.");
+        Console.WriteLine($"TEST-DUEL: Zufallswert {roll}; Chance {chance}%; Gewinner {winner}; keine Punkte verändert.");
         await SendTemplateAsync("[TEST] " + _config.DuelRequestMessage, "TestChallenger", target, stake, "", "", cancellationToken);
         await SendTemplateAsync("[TEST] " + _config.DuelAcceptedMessage, "TestChallenger", target, stake, winner, loser, cancellationToken);
-        await SendTemplateAsync("[TEST] " + _config.DuelWinMessage + " Keine echten Punkte verÃ¤ndert.", "TestChallenger", target, stake, winner, loser, cancellationToken);
+        await SendTemplateAsync("[TEST] " + _config.DuelWinMessage + " Keine echten Punkte verändert.", "TestChallenger", target, stake, winner, loser, cancellationToken);
         StatusChanged?.Invoke(new DuelStatus(0, "TestChallenger", "TestTarget", stake, 0, DuelState.Paid, true));
     }
 
@@ -485,7 +485,7 @@ public sealed class DuelService : IAsyncDisposable
         catch (Exception exception)
         {
             Console.WriteLine(
-                $"Duel-Verlierer Timeout fÃ¼r {loserName} fehlgeschlagen: " +
+                $"Duel-Verlierer Timeout für {loserName} fehlgeschlagen: " +
                 exception.Message);
         }
     }
@@ -495,7 +495,7 @@ public sealed class DuelService : IAsyncDisposable
     {
         var balance = await _points.RefundDuelStakeAsync(duel.Challenger.UserId,
             duel.Challenger.UserName, duel.Stake, _minigame.HistoryLimit, token);
-        Console.WriteLine($"Duel-RÃ¼ckerstattung: {duel.Challenger.UserName} +{duel.Stake}; Stand {balance}; Grund {reason}.");
+        Console.WriteLine($"Duel-Rückerstattung: {duel.Challenger.UserName} +{duel.Stake}; Stand {balance}; Grund {reason}.");
     }
 
 
