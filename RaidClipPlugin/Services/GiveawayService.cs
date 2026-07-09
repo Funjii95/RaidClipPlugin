@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
@@ -150,7 +150,7 @@ public sealed class GiveawayService : IDisposable
             }
             catch (Exception exception)
             {
-                return new(false, "Livestatus konnte nicht geprüft werden: " +
+                return new(false, "Livestatus konnte nicht geprÃ¼ft werden: " +
                     SafeError(exception));
             }
         }
@@ -160,7 +160,7 @@ public sealed class GiveawayService : IDisposable
         {
             await EnsureInitializedLockedAsync(cancellationToken);
             if (_state.IsRunning)
-                return new(false, "Es läuft bereits ein Giveaway.");
+                return new(false, "Es lÃ¤uft bereits ein Giveaway.");
             var now = DateTimeOffset.UtcNow;
             _state = new GiveawayRuntimeState
             {
@@ -284,7 +284,7 @@ public sealed class GiveawayService : IDisposable
             _state.Participants.Clear();
             _state.Winners.Clear();
             await SaveLockedAsync(cancellationToken);
-            Console.WriteLine("Giveaway-Teilnehmer wurden zurückgesetzt.");
+            Console.WriteLine("Giveaway-Teilnehmer wurden zurÃ¼ckgesetzt.");
             NotifyStateChanged();
             return new(true);
         }
@@ -319,7 +319,7 @@ public sealed class GiveawayService : IDisposable
         {
             await EnsureInitializedLockedAsync(cancellationToken);
             if (_state.Winners.Count == 0)
-                return new(false, "Es gibt noch keinen Gewinner für eine Neuauslosung.");
+                return new(false, "Es gibt noch keinen Gewinner fÃ¼r eine Neuauslosung.");
             var replaced = _state.Winners[^1];
             _state.Winners.RemoveAt(_state.Winners.Count - 1);
             var participant = _state.Participants.FirstOrDefault(item =>
@@ -393,13 +393,17 @@ public sealed class GiveawayService : IDisposable
             var extraTickets = _config.ExtraTicketsEnabled
                 ? Math.Clamp(requestedExtraTickets, 0, _config.MaximumExtraTickets)
                 : 0;
-            var totalCost = Math.Max(0, _config.EntryCost) +
-                            extraTickets * Math.Max(0, _config.ExtraTicketCost);
+            var totalCost = Math.Max(0L, _config.EntryCost) +
+                            Math.Max(0L, extraTickets) *
+                            Math.Max(0L, _config.ExtraTicketCost);
             var currentPoints = await _points.GetPointsAsync(
                 message.UserId, cancellationToken);
             var requiredPoints = Math.Max(_config.MinimumPoints,
                 _config.DeductPointsAtJoin
-                    ? checked(_minigame.MinimumPoints + totalCost) : 0);
+                    ? (_minigame.MinimumPoints > long.MaxValue - totalCost
+                        ? long.MaxValue
+                        : _minigame.MinimumPoints + totalCost)
+                    : 0L);
             if (currentPoints < requiredPoints)
             {
                 await SendTemplateAsync(_config.ChatMessages.InsufficientPoints,
@@ -408,7 +412,7 @@ public sealed class GiveawayService : IDisposable
                 return Reject(message, "insufficient-points");
             }
 
-            var pointsUsed = 0;
+            var pointsUsed = 0L;
             if (_config.DeductPointsAtJoin && totalCost > 0)
             {
                 var spend = await _points.ApplyGambleAsync(
@@ -485,7 +489,7 @@ public sealed class GiveawayService : IDisposable
                 IsValid = true
             });
             await SaveLockedAsync(cancellationToken);
-            Console.WriteLine("Giveaway-Teilnehmer manuell hinzugefügt: " + user.Login);
+            Console.WriteLine("Giveaway-Teilnehmer manuell hinzugefÃ¼gt: " + user.Login);
             NotifyStateChanged();
             return new(true);
         }
@@ -545,7 +549,7 @@ public sealed class GiveawayService : IDisposable
                             !previousWinnerIds.Contains(item.UserId)))
             .ToList();
         if (candidates.Count == 0)
-            return new(false, "Keine gültigen Teilnehmer vorhanden.");
+            return new(false, "Keine gÃ¼ltigen Teilnehmer vorhanden.");
 
         var count = Math.Min(Math.Max(1, requestedCount), candidates.Count);
         var selected = new List<GiveawayWinner>();
@@ -715,9 +719,9 @@ public sealed class GiveawayService : IDisposable
                 participant.PointsUsed, _minigame.MinimumPoints,
                 cancellationToken,
                 _minigame.MaximumAccountEnabled
-                    ? _minigame.MaximumAccountPoints : int.MaxValue);
+                    ? _minigame.MaximumAccountPoints : long.MaxValue);
             Console.WriteLine(
-                $"Giveaway-Rückerstattung: {participant.UserLogin}, {participant.PointsUsed} Punkte.");
+                $"Giveaway-RÃ¼ckerstattung: {participant.UserLogin}, {participant.PointsUsed} Punkte.");
             participant.PointsUsed = 0;
         }
     }
@@ -727,7 +731,7 @@ public sealed class GiveawayService : IDisposable
         ChatMessage? user,
         IReadOnlyList<GiveawayWinner> winners,
         CancellationToken cancellationToken,
-        int? requiredPoints = null)
+        long? requiredPoints = null)
     {
         if (!configured.Enabled || string.IsNullOrWhiteSpace(configured.Text)) return;
         var winner = winners.FirstOrDefault()?.DisplayName ??
@@ -812,7 +816,7 @@ public sealed class GiveawayService : IDisposable
         if (state.Status == GiveawayStatus.Paused)
             return TimeSpan.FromSeconds(Math.Max(0, state.PausedRemainingSeconds))
                 .ToString(@"hh\:mm\:ss");
-        if (state.EndsAtUtc is null) return "–";
+        if (state.EndsAtUtc is null) return "â€“";
         var remaining = state.EndsAtUtc.Value - DateTimeOffset.UtcNow;
         if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
         return remaining.ToString(@"hh\:mm\:ss");
