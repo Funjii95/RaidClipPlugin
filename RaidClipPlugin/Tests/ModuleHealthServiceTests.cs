@@ -36,8 +36,8 @@ public sealed class ModuleHealthServiceTests
         var status = Assert.Single(statuses!);
         Assert.Equal(1, restartCalls);
         Assert.Equal(ModuleHealthState.Healthy, status.State);
-        Assert.True(status.IsRunning);
-        Assert.Equal(1, status.RestartCount);
+        Assert.Null(status.LastError);
+        Assert.Equal(1, status.RestartAttempts);
     }
 
     [Fact]
