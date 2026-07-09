@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 
@@ -7,7 +7,7 @@ namespace RaidClipPlugin.Services;
 public enum HeistState { Inactive, Joining, Evaluating, Successful, Failed, Cancelled }
 public sealed record HeistParticipant(string UserId,string Login,string DisplayName);
 public sealed record HeistStatus(HeistState State,string Creator,int ParticipantCount,int SecondsRemaining,
-    int Jackpot,int SuccessChancePercent,IReadOnlyList<string> Participants,bool TestMode=false);
+    long Jackpot,int SuccessChancePercent,IReadOnlyList<string> Participants,bool TestMode=false);
 
 public interface IHeistTwitchClient
 {
@@ -28,13 +28,13 @@ public sealed class CryptoHeistRandom : IHeistRandom
 public static class HeistRules
 {
     public static bool IsSuccess(int chancePercent,int roll) => roll >= 1 && roll <= 100 && roll <= Math.Clamp(chancePercent,0,100);
-    public static int[] CalculatePayouts(int jackpot,int participantCount,IReadOnlyCollection<int> extraRecipients)
+    public static long[] CalculatePayouts(long jackpot,int participantCount,IReadOnlyCollection<int> extraRecipients)
     {
         if(participantCount<1)throw new ArgumentOutOfRangeException(nameof(participantCount));
         if(jackpot<0)throw new ArgumentOutOfRangeException(nameof(jackpot));
         var remainder=jackpot%participantCount; var extras=extraRecipients.Distinct().ToHashSet();
-        if(extras.Count!=remainder||extras.Any(x=>x<0||x>=participantCount))throw new ArgumentException("Ungültige Restpunktverteilung.",nameof(extraRecipients));
-        var share=jackpot/participantCount; return Enumerable.Range(0,participantCount).Select(i=>share+(extras.Contains(i)?1:0)).ToArray();
+        if(extras.Count!=remainder||extras.Any(x=>x<0||x>=participantCount))throw new ArgumentException("UngÃ¼ltige Restpunktverteilung.",nameof(extraRecipients));
+        var share=jackpot/participantCount; return Enumerable.Range(0,participantCount).Select(i=>share+(extras.Contains(i)?1L:0L)).ToArray();
     }
 }
 
@@ -117,7 +117,7 @@ public sealed class HeistService : IAsyncDisposable
         {
             var now=DateTimeOffset.UtcNow;
             if(State is HeistState.Joining or HeistState.Evaluating)
-            { await SendAsync($"@{creator.UserName}, es läuft bereits ein Heist.",cancellationToken); return; }
+            { await SendAsync($"@{creator.UserName}, es lÃ¤uft bereits ein Heist.",cancellationToken); return; }
             var globalCooldown=TimeSpan.FromMinutes(_config.GlobalCooldownMinutes);
             if(now-_lastGlobalCompletion<globalCooldown)
             {
@@ -192,7 +192,7 @@ public sealed class HeistService : IAsyncDisposable
                 await Task.Delay(TimeSpan.FromSeconds(1),cancellationToken);
                 _remaining--;
                 if(_config.SendCountdownMessages && (_remaining is 30 or 10 or 5 or 3 or 2 or 1) && announced.Add(_remaining))
-                    await SendAsync($"Heist startet in {_remaining} Sekunden – Beitritt mit {_config.JoinCommand}.",cancellationToken);
+                    await SendAsync($"Heist startet in {_remaining} Sekunden â€“ Beitritt mit {_config.JoinCommand}.",cancellationToken);
                 StatusChanged?.Invoke(CurrentStatus(0));
             }
             await ResolveAsync(cancellationToken);
@@ -231,7 +231,7 @@ public sealed class HeistService : IAsyncDisposable
             {
                 State=HeistState.Failed;
                 if(_config.SendResultMessages)await SendAsync(Format(_config.FailureMessage,"",participants.Length,jackpot,0),cancellationToken);
-                Console.WriteLine($"Heist fehlgeschlagen. Jackpot unverändert: {jackpot}.");
+                Console.WriteLine($"Heist fehlgeschlagen. Jackpot unverÃ¤ndert: {jackpot}.");
                 StatusChanged?.Invoke(CurrentStatus(jackpot)); CleanupSession(); return;
             }
             var remainder=jackpot%participants.Length;
@@ -271,9 +271,9 @@ public sealed class HeistService : IAsyncDisposable
         var startText="[TEST] "+Format(_config.StartMessage,"TestStreamer",1,0,0);
         var evaluationText="[TEST] "+Format(_config.EvaluationMessage,"",count,jackpot,jackpot/count);
         var resultText="[TEST] "+Format(roll<=_config.SuccessChancePercent?_config.SuccessMessage:_config.FailureMessage,"",count,jackpot,jackpot/count);
-        Console.WriteLine("TESTMODUS – keine echte Auszahlung");
+        Console.WriteLine("TESTMODUS â€“ keine echte Auszahlung");
         Console.WriteLine(startText); Console.WriteLine(evaluationText); Console.WriteLine(resultText);
-        Console.WriteLine($"Test-Heist: Chance {_config.SuccessChancePercent}%, Zufallswert {roll}; Jackpot und Punkte unverändert.");
+        Console.WriteLine($"Test-Heist: Chance {_config.SuccessChancePercent}%, Zufallswert {roll}; Jackpot und Punkte unverÃ¤ndert.");
         await SendAsync(startText,cancellationToken);
         await SendAsync(evaluationText,cancellationToken);
         await SendAsync(resultText+" Keine echte Auszahlung.",cancellationToken);
@@ -291,7 +291,7 @@ public sealed class HeistService : IAsyncDisposable
         if(_config.AllowModerators&&user.IsModerator||_config.AllowVips&&user.IsVip||_config.AllowSubscribers&&user.IsSubscriber)return true;
         return _config.AllowFollowers&&await _twitch.IsFollowerAsync(_broadcasterId,user.UserId,token);
     }
-    private string Format(string template,string user,int current,int jackpot,int share)=>template
+    private string Format(string template,string user,int current,long jackpot,long share)=>template
         .Replace("{user}",user).Replace("{seconds}",_config.JoinDurationSeconds.ToString())
         .Replace("{minimum}",_config.MinimumParticipants.ToString()).Replace("{maximum}",_config.MaximumParticipants.ToString())
         .Replace("{current}",current.ToString()).Replace("{count}",current.ToString())
@@ -300,9 +300,10 @@ public sealed class HeistService : IAsyncDisposable
         .Replace("{joinCommand}",_config.JoinCommand).Replace("{successChance}",_config.SuccessChancePercent.ToString());
     private async Task SendAsync(string message,CancellationToken token)
     { try{await _twitch.SendChatMessageAsync(_broadcasterId,_chatUserId,message,token);}catch(OperationCanceledException)when(token.IsCancellationRequested){}catch(Exception ex){Console.WriteLine("Heist-Chatantwort fehlgeschlagen: "+ex.Message);} }
-    private HeistStatus CurrentStatus(int jackpot)=>new(State,_creator,_participants?.Count??0,_remaining,jackpot,
+    private HeistStatus CurrentStatus(long jackpot)=>new(State,_creator,_participants?.Count??0,_remaining,jackpot,
         _config.SuccessChancePercent,_participants?.Values.Select(x=>x.DisplayName).ToArray()??Array.Empty<string>());
     private async Task PublishStatusAsync(CancellationToken token)=>StatusChanged?.Invoke(CurrentStatus(await _points.GetJackpotAsync(_minigame.JackpotStartValue,token)));
     private void CleanupSession(){_participants=null;_creator="";_remaining=0;_sessionCts?.Dispose();_sessionCts=null;}
     public async ValueTask DisposeAsync(){if(_disposed)return;_disposed=true;await CancelAsync(false);if(_sessionTask is not null)try{await _sessionTask;}catch(OperationCanceledException){} _gate.Dispose();}
 }
+
