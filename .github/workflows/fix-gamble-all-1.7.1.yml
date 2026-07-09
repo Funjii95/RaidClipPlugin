@@ -1,0 +1,99 @@
+name: Fix gamble all and release 1.7.1
+
+on:
+  push:
+    paths:
+      - ".github/workflows/fix-gamble-all-1.7.1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  fix-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Apply gamble all fix
+        shell: pwsh
+        run: |
+          $servicePath = "RaidClipPlugin/Services/ChatMinigameService.cs"
+          $service = Get-Content $servicePath -Raw
+          $oldService = @'
+              public const int MaximumAllInStake = 10_000_000;
+
+              public static int CalculateAllInStake(long availablePoints) =>
+                  (int)Math.Min(MaximumAllInStake, Math.Max(0L, availablePoints));
+          '@
+          $newService = @'
+              public static int CalculateAllInStake(long availablePoints) =>
+                  (int)Math.Min(int.MaxValue, Math.Max(0L, availablePoints));
+          '@
+          if (-not $service.Contains($oldService)) { throw "Expected gamble-all cap block was not found." }
+          $service = $service.Replace($oldService, $newService)
+          Set-Content $servicePath $service -Encoding UTF8
+
+          $testPath = "RaidClipPlugin/Tests/GambleOverflowTests.cs"
+          $tests = Get-Content $testPath -Raw
+          $oldTests = @'
+              [Theory]
+              [InlineData(50, 50)]
+              [InlineData(10_000_000, 10_000_000)]
+              [InlineData(50_000_000, 10_000_000)]
+              public void GambleAllNeverExceedsTenMillion(long available, int expected)
+              {
+                  var stake = ChatMinigameService.CalculateAllInStake(available);
+
+                  Assert.Equal(expected, stake);
+              }
+          '@
+          $newTests = @'
+              [Theory]
+              [InlineData(50, 50)]
+              [InlineData(10_000_000, 10_000_000)]
+              [InlineData(50_000_000, 50_000_000)]
+              [InlineData(2_147_483_647L, int.MaxValue)]
+              [InlineData(2_147_483_648L, int.MaxValue)]
+              public void GambleAllUsesAllAvailablePointsWithinIntegerRange(long available, int expected)
+              {
+                  var stake = ChatMinigameService.CalculateAllInStake(available);
+
+                  Assert.Equal(expected, stake);
+              }
+          '@
+          if (-not $tests.Contains($oldTests)) { throw "Expected gamble-all overflow test block was not found." }
+          $tests = $tests.Replace($oldTests, $newTests)
+          Set-Content $testPath $tests -Encoding UTF8
+
+          $projectPath = "RaidClipPlugin/RaidClipPlugin.csproj"
+          $project = Get-Content $projectPath -Raw
+          $project = $project.Replace("<Version>1.7.0</Version>", "<Version>1.7.1</Version>")
+          $project = $project.Replace("<FileVersion>1.7.0.0</FileVersion>", "<FileVersion>1.7.1.0</FileVersion>")
+          $project = $project.Replace("<AssemblyVersion>1.7.0.0</AssemblyVersion>", "<AssemblyVersion>1.7.1.0</AssemblyVersion>")
+          Set-Content $projectPath $project -Encoding UTF8
+
+      - name: Run tests
+        shell: pwsh
+        run: dotnet test "RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj" -c Release
+
+      - name: Commit, tag and trigger release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/Services/ChatMinigameService.cs RaidClipPlugin/Tests/GambleOverflowTests.cs RaidClipPlugin/RaidClipPlugin.csproj
+          git commit -m "Fix gamble all full balance for 1.7.1"
+          git push origin main
+          git tag v1.7.1
+          git push origin v1.7.1
+          gh workflow run release.yml --ref v1.7.1
