@@ -1,4 +1,4 @@
-namespace RaidClipPlugin.Models;
+﻿namespace RaidClipPlugin.Models;
 
 public enum GiveawayStatus
 {
@@ -37,7 +37,7 @@ public sealed class GiveawayParticipant
     public bool IsSubscriber { get; set; }
     public bool IsVip { get; set; }
     public bool IsBroadcaster { get; set; }
-    public int PointsUsed { get; set; }
+    public long PointsUsed { get; set; }
     public int ExtraTickets { get; set; }
     public bool IsValid { get; set; } = true;
     public string InvalidReason { get; set; } = "";
