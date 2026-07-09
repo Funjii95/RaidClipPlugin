@@ -130,8 +130,8 @@ public sealed class CustomCommandImportTests
             "!gamble => Eigene Antwort", "Paste"), config));
         item.Action = CustomCommandImportAction.Rename;
         var result = _service.Apply(new[] { item }, config);
-        var imported = Assert.Single(result.Commands.Where(command =>
-            command.Response == "Eigene Antwort"));
+        var imported = Assert.Single(result.Commands, command =>
+            command.Response == "Eigene Antwort");
         Assert.False(imported.Command.Equals("!gamble",
             StringComparison.OrdinalIgnoreCase));
     }
