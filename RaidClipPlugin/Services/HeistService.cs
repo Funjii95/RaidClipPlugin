@@ -237,7 +237,7 @@ public sealed class HeistService : IAsyncDisposable
             var remainder=jackpot%participants.Length;
             var candidates=Enumerable.Range(0,participants.Length).ToList();
             for(var i=candidates.Count-1;i>0;i--){var j=_random.NextInclusive(0,i);(candidates[i],candidates[j])=(candidates[j],candidates[i]);}
-            var extras=candidates.Take(remainder).ToArray();
+            var extras=candidates.Take((int)remainder).ToArray();
             var payout=await _points.PayoutHeistJackpotAsync(participants.Select(x=>(x.UserId,x.DisplayName)).ToArray(),extras,
                 _minigame.JackpotStartValue,_config.ResetJackpotAfterSuccess,_minigame.HistoryLimit,cancellationToken);
             foreach(var item in payout.Payouts)Console.WriteLine($"Heist-Auszahlung: {item.DisplayName} +{item.Payout}; Stand {item.NewBalance}.");
@@ -306,4 +306,5 @@ public sealed class HeistService : IAsyncDisposable
     private void CleanupSession(){_participants=null;_creator="";_remaining=0;_sessionCts?.Dispose();_sessionCts=null;}
     public async ValueTask DisposeAsync(){if(_disposed)return;_disposed=true;await CancelAsync(false);if(_sessionTask is not null)try{await _sessionTask;}catch(OperationCanceledException){} _gate.Dispose();}
 }
+
 
