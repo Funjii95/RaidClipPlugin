@@ -30,8 +30,10 @@ public sealed class GambleOverflowTests
     [Theory]
     [InlineData(50, 50)]
     [InlineData(10_000_000, 10_000_000)]
-    [InlineData(50_000_000, 10_000_000)]
-    public void GambleAllNeverExceedsTenMillion(long available, int expected)
+    [InlineData(50_000_000, 50_000_000)]
+    [InlineData(2_147_483_647L, int.MaxValue)]
+    [InlineData(2_147_483_648L, int.MaxValue)]
+    public void GambleAllUsesAllAvailablePointsWithinIntegerRange(long available, int expected)
     {
         Assert.Equal(expected,
             ChatMinigameService.CalculateAllInStake(available));
@@ -166,3 +168,4 @@ public sealed class GambleOverflowTests
         return directory;
     }
 }
+

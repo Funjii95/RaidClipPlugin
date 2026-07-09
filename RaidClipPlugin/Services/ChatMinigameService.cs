@@ -83,10 +83,8 @@ public sealed class ChatMinigameService : IDisposable
             entry.Equals(normalizedDisplayName, StringComparison.OrdinalIgnoreCase));
     }
 
-    public const int MaximumAllInStake = 10_000_000;
-
     public static int CalculateAllInStake(long availablePoints) =>
-        (int)Math.Min(MaximumAllInStake, Math.Max(0L, availablePoints));
+        (int)Math.Min(int.MaxValue, Math.Max(0L, availablePoints));
 
     public static bool ShouldRun(MinigameConfig config) =>
         config.Enabled || config.PointsEnabled;
