@@ -3245,7 +3245,7 @@ public sealed partial class MainForm : Form
 
     private void PopulateMinigameDashboard(
         IReadOnlyList<ViewerPointEntry> top,
-        IReadOnlyList<MinigameHistoryEntry> history, int jackpot)
+        IReadOnlyList<MinigameHistoryEntry> history, long jackpot)
     {
         _minigameTopList.BeginUpdate();
         _minigameTopList.Items.Clear();
@@ -4629,4 +4629,3 @@ public sealed partial class MainForm : Form
         base.OnFormClosing(e);
     }
 }
-
