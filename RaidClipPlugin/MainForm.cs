@@ -19,6 +19,11 @@ public sealed partial class MainForm : Form
     private static readonly Color WaitingColor = Color.DarkOrange;
     private static readonly Color ErrorColor = Color.OrangeRed;
     private static readonly Color InactiveColor = Color.FromArgb(145, 145, 150);
+    private static readonly Color HealthyStatusColor = Color.FromArgb(64, 214, 126);
+    private static readonly Color WarningStatusColor = Color.FromArgb(245, 176, 65);
+    private static readonly Color UnhealthyStatusColor = Color.FromArgb(255, 91, 91);
+    private static readonly Color DisabledStatusColor = Color.FromArgb(130, 134, 142);
+    private static readonly Color UnknownStatusColor = Color.FromArgb(95, 146, 212);
 
     private readonly Button _startButton = new()
     {
@@ -566,11 +571,12 @@ public sealed partial class MainForm : Form
 
     private readonly Label _moduleHealthSummaryLabel = new()
     {
-        Text = "Healthcheck: Nicht gestartet",
+        Text = "Systemstatus: Noch nicht geprüft",
         AutoSize = true,
-        MaximumSize = new Size(720, 0),
+        MaximumSize = new Size(900, 0),
         ForeColor = InactiveColor,
-        Margin = new Padding(8, 12, 8, 4)
+        Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+        Margin = new Padding(8, 6, 8, 4)
     };
     private readonly Label _moduleHealthLastCheckLabel = new()
     {
@@ -579,6 +585,38 @@ public sealed partial class MainForm : Form
         ForeColor = InactiveColor,
         Margin = new Padding(8, 12, 8, 4)
     };
+    private readonly StatusDotControl _moduleHealthOverallDot = new()
+    {
+        DotColor = UnknownStatusColor,
+        Width = 16,
+        Height = 16,
+        Margin = new Padding(8, 10, 2, 0)
+    };
+    private readonly Label _moduleHealthProgressLabel = new()
+    {
+        Text = "Prüfung läuft ...",
+        AutoSize = true,
+        ForeColor = WarningStatusColor,
+        Visible = false,
+        Margin = new Padding(8, 8, 8, 0)
+    };
+    private readonly FlowLayoutPanel _moduleHealthGrid = new()
+    {
+        Dock = DockStyle.Fill,
+        FlowDirection = FlowDirection.LeftToRight,
+        WrapContents = true,
+        AutoScroll = true,
+        Padding = new Padding(2, 10, 8, 10),
+        BackColor = BackgroundColor
+    };
+    private readonly ToolTip _moduleHealthToolTip = new()
+    {
+        InitialDelay = 250,
+        ReshowDelay = 100,
+        AutoPopDelay = 12000
+    };
+    private readonly Dictionary<string, ModuleHealthCard> _moduleHealthCards =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly Button _checkModulesButton = NewActionButton("Module prüfen");
     private readonly Button _restartModulesButton = NewActionButton("Module neu starten");
     private readonly CheckBox _healthcheckEnabledCheck = NewCheck(
@@ -1323,8 +1361,6 @@ public sealed partial class MainForm : Form
             "Max. Neustarts", _healthMaxRestartsControl));
         settings.Controls.Add(CreateSettingEditor(
             "Restart-Cooldown (Sek.)", _healthRestartCooldownControl));
-        settings.Controls.Add(_checkModulesButton);
-        settings.Controls.Add(_restartModulesButton);
 
         var statusBox = new GroupBox
         {
@@ -1334,17 +1370,60 @@ public sealed partial class MainForm : Form
             ForeColor = TextColor
         };
 
-        var statusFlow = new FlowLayoutPanel
+        var statusHeader = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
-            AutoScroll = true,
-            Padding = new Padding(8)
+            ColumnCount = 3,
+            RowCount = 1,
+            BackColor = BackgroundColor,
+            Padding = new Padding(4, 0, 4, 4)
         };
-        statusFlow.Controls.Add(_moduleHealthSummaryLabel);
-        statusFlow.Controls.Add(_moduleHealthLastCheckLabel);
-        statusBox.Controls.Add(statusFlow);
+        statusHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        statusHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        statusHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+        var summaryFlow = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = true,
+            BackColor = BackgroundColor,
+            Margin = new Padding(0)
+        };
+        summaryFlow.Controls.Add(_moduleHealthOverallDot);
+        summaryFlow.Controls.Add(_moduleHealthSummaryLabel);
+        summaryFlow.Controls.Add(_moduleHealthProgressLabel);
+        statusHeader.Controls.Add(summaryFlow, 0, 0);
+        statusHeader.Controls.Add(_checkModulesButton, 1, 0);
+        statusHeader.Controls.Add(_restartModulesButton, 2, 0);
+
+        _checkModulesButton.Text = "Jetzt prüfen";
+        _restartModulesButton.Text = "Fehlerhafte neu starten";
+
+        var statusFooter = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = BackgroundColor,
+            Padding = new Padding(4, 0, 8, 0)
+        };
+        _moduleHealthLastCheckLabel.Dock = DockStyle.Right;
+        statusFooter.Controls.Add(_moduleHealthLastCheckLabel);
+
+        var statusLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            BackColor = BackgroundColor
+        };
+        statusLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+        statusLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        statusLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        statusLayout.Controls.Add(statusHeader, 0, 0);
+        statusLayout.Controls.Add(_moduleHealthGrid, 0, 1);
+        statusLayout.Controls.Add(statusFooter, 0, 2);
+        _moduleHealthGrid.Resize += (_, _) => UpdateModuleHealthCardWidths();
+        statusBox.Controls.Add(statusLayout);
 
         var tabs = new TabControl
         {
@@ -1743,19 +1822,6 @@ public sealed partial class MainForm : Form
         overviewFlow.Controls.Add(_minigameEnabledCheck);
         overviewFlow.Controls.Add(_pointsEnabledCheck);
         overviewFlow.Controls.Add(_jackpotValueLabel);
-        overviewFlow.Controls.Add(_healthcheckEnabledCheck);
-        overviewFlow.Controls.Add(_healthAutoRestartCheck);
-        overviewFlow.Controls.Add(_gambleHealthcheckCheck);
-        overviewFlow.Controls.Add(CreateSettingEditor(
-            "Healthcheck-Intervall (Sek.)", _healthIntervalControl));
-        overviewFlow.Controls.Add(CreateSettingEditor(
-            "Max. Neustarts", _healthMaxRestartsControl));
-        overviewFlow.Controls.Add(CreateSettingEditor(
-            "Restart-Cooldown (Sek.)", _healthRestartCooldownControl));
-        overviewFlow.Controls.Add(_moduleHealthSummaryLabel);
-        overviewFlow.Controls.Add(_moduleHealthLastCheckLabel);
-        overviewFlow.Controls.Add(_checkModulesButton);
-        overviewFlow.Controls.Add(_restartModulesButton);
         overviewFlow.Controls.Add(_saveMinigameSettingsButton);
 
         var pointsFlow = CreateMinigameFlow();
@@ -3073,10 +3139,20 @@ public sealed partial class MainForm : Form
     {
         if (_moduleHealth is null || _shutdown is null)
         {
-            _moduleHealthSummaryLabel.Text = "Healthcheck: Plugin ist nicht gestartet";
+            _moduleHealthSummaryLabel.Text =
+                "Systemstatus: Plugin ist nicht gestartet";
+            _moduleHealthSummaryLabel.ForeColor = UnknownStatusColor;
+            _moduleHealthOverallDot.DotColor = UnknownStatusColor;
             return;
         }
+        if (!_checkModulesButton.Enabled)
+            return;
+
         _checkModulesButton.Enabled = false;
+        _moduleHealthProgressLabel.Visible = true;
+        _moduleHealthSummaryLabel.Text = "Systemstatus: Prüfung läuft ...";
+        _moduleHealthSummaryLabel.ForeColor = WarningStatusColor;
+        _moduleHealthOverallDot.DotColor = WarningStatusColor;
         try
         {
             AppendLog("Manueller Modul-Healthcheck gestartet.");
@@ -3086,14 +3162,21 @@ public sealed partial class MainForm : Form
         {
             AppendLog("Manueller Modul-Healthcheck fehlgeschlagen: " + exception.Message);
         }
-        finally { _checkModulesButton.Enabled = true; }
+        finally
+        {
+            _moduleHealthProgressLabel.Visible = false;
+            _checkModulesButton.Enabled = true;
+        }
     }
 
     private async Task RestartModulesNowAsync()
     {
         if (_moduleHealth is null || _shutdown is null)
         {
-            _moduleHealthSummaryLabel.Text = "Healthcheck: Plugin ist nicht gestartet";
+            _moduleHealthSummaryLabel.Text =
+                "Systemstatus: Plugin ist nicht gestartet";
+            _moduleHealthSummaryLabel.ForeColor = UnknownStatusColor;
+            _moduleHealthOverallDot.DotColor = UnknownStatusColor;
             return;
         }
         _restartModulesButton.Enabled = false;
@@ -3121,8 +3204,9 @@ public sealed partial class MainForm : Form
         catch (Exception exception)
         {
             AppendLog("Modul-Healthcheck ausgefallen: " + exception);
-            _moduleHealthSummaryLabel.Text = "Healthcheck: Fehler";
-            _moduleHealthSummaryLabel.ForeColor = ErrorColor;
+            _moduleHealthSummaryLabel.Text = "Systemstatus: Healthcheck-Fehler";
+            _moduleHealthSummaryLabel.ForeColor = UnhealthyStatusColor;
+            _moduleHealthOverallDot.DotColor = UnhealthyStatusColor;
         }
     }
 
@@ -3140,30 +3224,440 @@ public sealed partial class MainForm : Form
             return;
         }
 
+        _moduleHealthProgressLabel.Visible = false;
+
         if (statuses.Count == 0)
         {
-            _moduleHealthSummaryLabel.Text = "Healthcheck: Deaktiviert";
-            _moduleHealthSummaryLabel.ForeColor = InactiveColor;
+            _moduleHealthSummaryLabel.Text = "Systemstatus: Healthcheck deaktiviert";
+            _moduleHealthSummaryLabel.ForeColor = DisabledStatusColor;
+            _moduleHealthOverallDot.DotColor = DisabledStatusColor;
             _moduleHealthLastCheckLabel.Text = "Letzte Prüfung: –";
+            _moduleHealthGrid.Controls.Clear();
+            _moduleHealthCards.Clear();
             return;
         }
-        static string Icon(ModuleHealthState state) => state switch
-        {
-            ModuleHealthState.Healthy => "🟢",
-            ModuleHealthState.Warning => "🟡",
-            ModuleHealthState.Failed => "🔴",
-            _ => "⚪"
-        };
-        _moduleHealthSummaryLabel.Text = string.Join("   ", statuses.Select(status =>
-            $"{Icon(status.State)} {status.ModuleName}: {status.State}"));
-        _moduleHealthSummaryLabel.ForeColor = statuses.Any(status =>
-            status.State == ModuleHealthState.Failed) ? ErrorColor : ActiveColor;
+
+        var checkedAt = DateTime.Now;
+        var models = statuses
+            .Select(status => CreateModuleHealthViewModel(status, checkedAt))
+            .OrderBy(model => ModuleHealthGroupIndex(model.Group))
+            .ThenBy(model => model.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+        UpdateModuleHealthSummary(models);
+        UpdateModuleHealthGrid(models);
         _moduleHealthLastCheckLabel.Text =
-            "Letzte Prüfung: " + DateTime.Now.ToString("HH:mm:ss");
-        var lastError = statuses.FirstOrDefault(status =>
-            !string.IsNullOrWhiteSpace(status.LastError))?.LastError;
-        if (!string.IsNullOrWhiteSpace(lastError))
-            _moduleHealthLastCheckLabel.Text += " · Letzter Fehler: " + lastError;
+            "Letzte Prüfung: " + checkedAt.ToString("HH:mm:ss");
+    }
+
+    private ModuleHealthViewModel CreateModuleHealthViewModel(
+        ModuleHealthStatus status,
+        DateTime lastChecked)
+    {
+        var viewState = status.State switch
+        {
+            ModuleHealthState.Healthy => ModuleHealthViewState.Healthy,
+            ModuleHealthState.Warning => ModuleHealthViewState.Warning,
+            ModuleHealthState.Failed => ModuleHealthViewState.Unhealthy,
+            ModuleHealthState.Disabled => ModuleHealthViewState.Disabled,
+            _ => ModuleHealthViewState.Unknown
+        };
+
+        var statusText = viewState switch
+        {
+            ModuleHealthViewState.Healthy => "Bereit",
+            ModuleHealthViewState.Warning => "Eingeschränkt",
+            ModuleHealthViewState.Unhealthy => "Fehler",
+            ModuleHealthViewState.Disabled => "Deaktiviert",
+            ModuleHealthViewState.Checking => "Prüfung läuft",
+            _ => "Noch nicht geprüft"
+        };
+
+        var detailText = viewState == ModuleHealthViewState.Disabled
+            ? "Dieses Modul ist in den Einstellungen deaktiviert."
+            : SanitizeModuleHealthDetail(status.LastError);
+
+        return new ModuleHealthViewModel(
+            status.ModuleName,
+            GetModuleHealthGroup(status.ModuleName),
+            viewState,
+            statusText,
+            detailText,
+            viewState != ModuleHealthViewState.Disabled,
+            lastChecked);
+    }
+
+    private static string SanitizeModuleHealthDetail(string? detail)
+    {
+        if (string.IsNullOrWhiteSpace(detail))
+            return string.Empty;
+
+        var cleaned = detail
+            .Replace("\r", " ")
+            .Replace("\n", " ")
+            .Replace("\t", " ")
+            .Trim();
+
+        var sensitiveMarkers = new[]
+        {
+            "token", "secret", "password", "passwort", "webhook"
+        };
+        if (sensitiveMarkers.Any(marker =>
+                cleaned.Contains(marker, StringComparison.OrdinalIgnoreCase)))
+            return "Details enthalten sensible Daten und werden nicht angezeigt.";
+
+        return cleaned.Length <= 240 ? cleaned : cleaned[..237] + "...";
+    }
+
+    private static string GetModuleHealthGroup(string moduleName)
+    {
+        return moduleName switch
+        {
+            "OBS" or "Twitch EventSub" or "Twitch Chat" or "Discord" =>
+                "Verbindungen",
+            "LocalPlayer" or "Clip Playback" or "Discord Clip-Command" or
+                "Auto Discord Clip Poster" => "Clip-System",
+            "Commands" or "Punkte" or "Minigame" or "Gamble" or "Jackpot" or
+                "Giveaway" => "Bot-Funktionen",
+            "Spotify/Musikwunsch" => "Musik",
+            _ => "Weitere Module"
+        };
+    }
+
+    private static int ModuleHealthGroupIndex(string group) => group switch
+    {
+        "Verbindungen" => 0,
+        "Clip-System" => 1,
+        "Bot-Funktionen" => 2,
+        "Musik" => 3,
+        _ => 4
+    };
+
+    private void UpdateModuleHealthSummary(
+        IReadOnlyList<ModuleHealthViewModel> models)
+    {
+        var enabled = models.Where(model => model.IsEnabled).ToArray();
+        var failed = enabled.Count(model =>
+            model.Status == ModuleHealthViewState.Unhealthy);
+        var warnings = enabled.Count(model =>
+            model.Status == ModuleHealthViewState.Warning ||
+            model.Status == ModuleHealthViewState.Checking);
+
+        if (enabled.Length == 0)
+        {
+            _moduleHealthSummaryLabel.Text =
+                "Systemstatus: Alle Module sind deaktiviert";
+            _moduleHealthSummaryLabel.ForeColor = DisabledStatusColor;
+            _moduleHealthOverallDot.DotColor = DisabledStatusColor;
+        }
+        else if (failed > 0)
+        {
+            _moduleHealthSummaryLabel.Text =
+                $"Systemstatus: {failed} Module benötigen Aufmerksamkeit";
+            _moduleHealthSummaryLabel.ForeColor = UnhealthyStatusColor;
+            _moduleHealthOverallDot.DotColor = UnhealthyStatusColor;
+        }
+        else if (warnings > 0)
+        {
+            _moduleHealthSummaryLabel.Text =
+                "Systemstatus: Verbindung wird wiederhergestellt";
+            _moduleHealthSummaryLabel.ForeColor = WarningStatusColor;
+            _moduleHealthOverallDot.DotColor = WarningStatusColor;
+        }
+        else
+        {
+            _moduleHealthSummaryLabel.Text =
+                "Systemstatus: Alle aktiven Module funktionieren";
+            _moduleHealthSummaryLabel.ForeColor = HealthyStatusColor;
+            _moduleHealthOverallDot.DotColor = HealthyStatusColor;
+        }
+    }
+
+    private void UpdateModuleHealthGrid(
+        IReadOnlyList<ModuleHealthViewModel> models)
+    {
+        var currentNames = _moduleHealthCards.Keys
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase);
+        var nextNames = models.Select(model => model.Name)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase);
+        if (!currentNames.SequenceEqual(nextNames,
+                StringComparer.OrdinalIgnoreCase))
+        {
+            RebuildModuleHealthGrid(models);
+        }
+
+        foreach (var model in models)
+        {
+            if (_moduleHealthCards.TryGetValue(model.Name, out var card))
+            {
+                UpdateModuleHealthCard(card, model);
+            }
+        }
+
+        UpdateModuleHealthCardWidths();
+    }
+
+    private void RebuildModuleHealthGrid(
+        IReadOnlyList<ModuleHealthViewModel> models)
+    {
+        _moduleHealthGrid.SuspendLayout();
+        try
+        {
+            _moduleHealthGrid.Controls.Clear();
+            _moduleHealthCards.Clear();
+
+            foreach (var group in models
+                         .GroupBy(model => model.Group)
+                         .OrderBy(group => ModuleHealthGroupIndex(group.Key)))
+            {
+                var header = CreateModuleHealthGroupHeader(group.Key);
+                _moduleHealthGrid.Controls.Add(header);
+                _moduleHealthGrid.SetFlowBreak(header, true);
+
+                foreach (var model in group)
+                {
+                    var card = CreateModuleHealthCard(model.Name);
+                    _moduleHealthCards[model.Name] = card;
+                    _moduleHealthGrid.Controls.Add(card.Container);
+                    UpdateModuleHealthCard(card, model);
+                }
+            }
+        }
+        finally
+        {
+            _moduleHealthGrid.ResumeLayout();
+        }
+    }
+
+    private Label CreateModuleHealthGroupHeader(string groupName) => new()
+    {
+        Text = groupName,
+        AutoEllipsis = true,
+        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        ForeColor = MutedTextColor,
+        Width = Math.Max(240, _moduleHealthGrid.ClientSize.Width -
+            _moduleHealthGrid.Padding.Horizontal - 20),
+        Height = 28,
+        TextAlign = ContentAlignment.BottomLeft,
+        Margin = new Padding(6, 10, 6, 2)
+    };
+
+    private ModuleHealthCard CreateModuleHealthCard(string moduleName)
+    {
+        var container = new Panel
+        {
+            Width = 260,
+            Height = 104,
+            BackColor = SurfaceColor,
+            BorderStyle = BorderStyle.FixedSingle,
+            Padding = new Padding(12),
+            Margin = new Padding(6)
+        };
+
+        var title = new Label
+        {
+            Text = moduleName,
+            Dock = DockStyle.Top,
+            Height = 24,
+            AutoEllipsis = true,
+            ForeColor = TextColor,
+            Font = new Font("Segoe UI", 10F, FontStyle.Bold)
+        };
+
+        var statusRow = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            Height = 30,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            Margin = new Padding(0),
+            Padding = new Padding(0, 4, 0, 0),
+            BackColor = SurfaceColor
+        };
+
+        var dot = new StatusDotControl
+        {
+            Width = 13,
+            Height = 13,
+            Margin = new Padding(0, 5, 8, 0),
+            DotColor = UnknownStatusColor
+        };
+
+        var status = new Label
+        {
+            Text = "Noch nicht geprüft",
+            AutoSize = false,
+            Width = 198,
+            Height = 22,
+            AutoEllipsis = true,
+            ForeColor = UnknownStatusColor,
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+            Margin = new Padding(0, 2, 0, 0)
+        };
+        statusRow.Controls.Add(dot);
+        statusRow.Controls.Add(status);
+
+        var detail = new Label
+        {
+            Text = "",
+            Dock = DockStyle.Fill,
+            AutoEllipsis = true,
+            ForeColor = MutedTextColor,
+            Font = new Font("Segoe UI", 8.5F),
+            Padding = new Padding(0, 3, 0, 0)
+        };
+
+        container.Controls.Add(detail);
+        container.Controls.Add(statusRow);
+        container.Controls.Add(title);
+
+        var card = new ModuleHealthCard(container, dot, title, status, detail);
+        container.Tag = card;
+        return card;
+    }
+
+    private void UpdateModuleHealthCard(
+        ModuleHealthCard card,
+        ModuleHealthViewModel model)
+    {
+        var color = GetModuleHealthStatusColor(model.Status);
+        card.NameLabel.Text = model.Name;
+        card.StatusLabel.Text = model.StatusText;
+        card.StatusLabel.ForeColor = color;
+        card.Dot.DotColor = color;
+        card.DetailLabel.Text = GetModuleHealthPreviewText(model);
+        card.Container.AccessibleName = $"{model.Name}: {model.StatusText}";
+        card.Container.AccessibleDescription = string.IsNullOrWhiteSpace(
+            model.DetailText) ? model.StatusText : model.DetailText;
+
+        var tooltip = string.IsNullOrWhiteSpace(model.DetailText)
+            ? $"{model.Name}: {model.StatusText}"
+            : $"{model.Name}: {model.StatusText}\n{model.DetailText}";
+        _moduleHealthToolTip.SetToolTip(card.Container, tooltip);
+        _moduleHealthToolTip.SetToolTip(card.NameLabel, tooltip);
+        _moduleHealthToolTip.SetToolTip(card.StatusLabel, tooltip);
+        _moduleHealthToolTip.SetToolTip(card.DetailLabel, tooltip);
+        _moduleHealthToolTip.SetToolTip(card.Dot, tooltip);
+    }
+
+    private static string GetModuleHealthPreviewText(
+        ModuleHealthViewModel model)
+    {
+        if (!string.IsNullOrWhiteSpace(model.DetailText))
+            return model.DetailText.Length <= 78
+                ? model.DetailText
+                : model.DetailText[..75] + "...";
+
+        return model.Status switch
+        {
+            ModuleHealthViewState.Healthy => "Keine Auffälligkeiten",
+            ModuleHealthViewState.Disabled => "In den Einstellungen deaktiviert",
+            ModuleHealthViewState.Checking => "Aktuelle Prüfung läuft",
+            _ => "Keine Detailmeldung"
+        };
+    }
+
+    private static Color GetModuleHealthStatusColor(
+        ModuleHealthViewState status) => status switch
+    {
+        ModuleHealthViewState.Healthy => HealthyStatusColor,
+        ModuleHealthViewState.Warning => WarningStatusColor,
+        ModuleHealthViewState.Unhealthy => UnhealthyStatusColor,
+        ModuleHealthViewState.Disabled => DisabledStatusColor,
+        ModuleHealthViewState.Checking => WarningStatusColor,
+        _ => UnknownStatusColor
+    };
+
+    private void UpdateModuleHealthCardWidths()
+    {
+        if (_moduleHealthGrid.ClientSize.Width <= 0)
+            return;
+
+        var available = Math.Max(220,
+            _moduleHealthGrid.ClientSize.Width -
+            _moduleHealthGrid.Padding.Horizontal -
+            SystemInformation.VerticalScrollBarWidth - 10);
+        const int minimumCardWidth = 220;
+        const int maximumCardWidth = 340;
+        const int horizontalGap = 14;
+
+        var columns = Math.Max(1,
+            (available + horizontalGap) / (minimumCardWidth + horizontalGap));
+        var cardWidth = Math.Clamp(
+            (available / columns) - horizontalGap,
+            minimumCardWidth,
+            maximumCardWidth);
+
+        foreach (Control control in _moduleHealthGrid.Controls)
+        {
+            if (control is Label header)
+            {
+                header.Width = available;
+                continue;
+            }
+
+            if (control.Tag is ModuleHealthCard)
+            {
+                control.Width = cardWidth;
+            }
+        }
+    }
+
+    private enum ModuleHealthViewState
+    {
+        Healthy,
+        Warning,
+        Unhealthy,
+        Disabled,
+        Unknown,
+        Checking
+    }
+
+    private sealed record ModuleHealthViewModel(
+        string Name,
+        string Group,
+        ModuleHealthViewState Status,
+        string StatusText,
+        string DetailText,
+        bool IsEnabled,
+        DateTime LastChecked);
+
+    private sealed record ModuleHealthCard(
+        Panel Container,
+        StatusDotControl Dot,
+        Label NameLabel,
+        Label StatusLabel,
+        Label DetailLabel);
+
+    private sealed class StatusDotControl : Control
+    {
+        private Color _dotColor = UnknownStatusColor;
+
+        public Color DotColor
+        {
+            get => _dotColor;
+            set
+            {
+                if (_dotColor == value)
+                    return;
+
+                _dotColor = value;
+                Invalidate();
+            }
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            e.Graphics.SmoothingMode =
+                System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using var brush = new SolidBrush(_dotColor);
+            var diameter = Math.Min(ClientSize.Width, ClientSize.Height) - 2;
+            if (diameter <= 0)
+                return;
+
+            e.Graphics.FillEllipse(brush, 1, 1, diameter, diameter);
+        }
     }
 
     private async void ObserveMinigameTask(Task task)
