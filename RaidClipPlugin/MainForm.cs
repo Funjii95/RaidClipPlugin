@@ -2988,9 +2988,27 @@ public sealed partial class MainForm : Form
             var diagnostics = _lastChatConnectionStatus;
             var running = _chatModerationTask is { IsCompleted: false } &&
                 diagnostics is { WebSocketConnected: true, SubscriptionEnabled: true };
-            return Task.FromResult(new ModuleProbeResult(
-                true, running, running ? null :
-                diagnostics?.LastError ?? "Chat-WebSocket oder Subscription ist nicht aktiv"));
+            if (!running)
+            {
+                return Task.FromResult(ModuleProbeResult.Failed(
+                    diagnostics?.LastError ??
+                    "Chat-WebSocket oder Subscription ist nicht aktiv"));
+            }
+
+            if (diagnostics.PendingCommandBatches > 25)
+            {
+                return Task.FromResult(ModuleProbeResult.Warning(
+                    $"Chat-Command-Queue enthält {diagnostics.PendingCommandBatches} offene Nachrichten."));
+            }
+
+            if (!string.IsNullOrWhiteSpace(diagnostics.LastError))
+            {
+                return Task.FromResult(ModuleProbeResult.Warning(
+                    diagnostics.LastError));
+            }
+
+            return Task.FromResult(ModuleProbeResult.Healthy(
+                $"Bereit · {diagnostics.ProcessedMessages} Nachrichten verarbeitet"));
         });
 
         _moduleHealth.Register("Commands", _ =>
@@ -3000,8 +3018,32 @@ public sealed partial class MainForm : Form
                  _clipCommandService is not null ||
                  _giveawayService is not null ||
                  _discordInviteService is not null);
-            return Task.FromResult(new ModuleProbeResult(
-                true, running, running ? null : "Command-Dispatcher ist nicht erreichbar"));
+            var diagnostics = _lastChatConnectionStatus;
+            if (!running)
+            {
+                return Task.FromResult(ModuleProbeResult.Failed(
+                    "Command-Dispatcher ist nicht erreichbar"));
+            }
+
+            if (diagnostics.PendingCommandBatches > 25)
+            {
+                return Task.FromResult(ModuleProbeResult.Warning(
+                    $"Command-Verarbeitung ist verzögert ({diagnostics.PendingCommandBatches} offen)."));
+            }
+
+            if (diagnostics.FailedHandlers > 0 &&
+                diagnostics.LastCommandCompletedAt is not null &&
+                DateTimeOffset.Now - diagnostics.LastCommandCompletedAt <
+                TimeSpan.FromMinutes(5))
+            {
+                return Task.FromResult(ModuleProbeResult.Warning(
+                    diagnostics.LastError.Length > 0
+                        ? diagnostics.LastError
+                        : "Zuletzt ist ein Chat-Command-Handler fehlgeschlagen."));
+            }
+
+            return Task.FromResult(ModuleProbeResult.Healthy(
+                $"Aktiv · {diagnostics.ProcessedMessages} Nachrichten verarbeitet"));
         });
 
         _moduleHealth.Register("Punkte", async token =>
