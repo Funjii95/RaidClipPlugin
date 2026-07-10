@@ -14,7 +14,13 @@ public sealed record ChatConnectionDiagnostics(
     bool SubscriptionEnabled = false,
     string SessionId = "",
     DateTimeOffset? LastReceivedAt = null,
-    string LastError = "");
+    string LastError = "",
+    DateTimeOffset? LastCommandReceivedAt = null,
+    DateTimeOffset? LastCommandCompletedAt = null,
+    int PendingCommandBatches = 0,
+    long ReceivedMessages = 0,
+    long ProcessedMessages = 0,
+    long FailedHandlers = 0);
 
 
 public sealed class ChatModerationService : IDisposable
@@ -23,6 +29,9 @@ public sealed class ChatModerationService : IDisposable
     private const string SubscriptionsUrl = "https://api.twitch.tv/helix/eventsub/subscriptions";
     private const string BansUrl = "https://api.twitch.tv/helix/moderation/bans";
     private const string DeleteMessageUrl = "https://api.twitch.tv/helix/moderation/chat";
+    private static readonly TimeSpan HandlerTimeout = TimeSpan.FromSeconds(30);
+    private const int MaxParallelMessageBatches = 4;
+    private const int MaxPendingMessageBatches = 100;
 
 
     private readonly string _clientId;
@@ -31,8 +40,14 @@ public sealed class ChatModerationService : IDisposable
     private readonly string _moderatorId;
     private readonly SharedChatCommandGuard _sharedChatCommandGuard;
     private readonly HttpClient _http = new();
+    private readonly SemaphoreSlim _messageDispatchSlots =
+        new(MaxParallelMessageBatches, MaxParallelMessageBatches);
     private bool _disposed;
     private int _runState;
+    private int _pendingMessageBatches;
+    private long _receivedMessages;
+    private long _processedMessages;
+    private long _failedHandlers;
 
 
     private ChatConnectionDiagnostics _diagnostics = new();
@@ -468,7 +483,7 @@ public sealed class ChatModerationService : IDisposable
             $"Chatnachricht empfangen: Kanal {broadcasterLogin} " +
             $"({_broadcasterId}), Nutzer {message.UserName} " +
             $"({message.UserId}) -> {message.Text}");
-        LogCommandDetection(message.Text);
+        var parsedCommand = LogCommandDetection(message.Text);
 
 
         var handlers = MessageReceived?.GetInvocationList()
@@ -480,34 +495,163 @@ public sealed class ChatModerationService : IDisposable
         var observers = MessageObserved?.GetInvocationList()
             .Cast<Func<ChatMessage, Task>>()
             .ToArray() ?? Array.Empty<Func<ChatMessage, Task>>();
+
+        QueueMessageDispatch(
+            message,
+            parsedCommand.IsCommand,
+            observers,
+            authorizers,
+            handlers);
+    }
+
+
+    private void QueueMessageDispatch(
+        ChatMessage message,
+        bool isCommand,
+        Func<ChatMessage, Task>[] observers,
+        Func<ChatMessage, Task>[] authorizers,
+        Func<ChatMessage, Task>[] handlers)
+    {
+        var pending = Interlocked.Increment(ref _pendingMessageBatches);
+        var received = Interlocked.Increment(ref _receivedMessages);
+
+        PublishDiagnostics(_diagnostics with
+        {
+            LastReceivedAt = message.ReceivedAt,
+            LastCommandReceivedAt = isCommand
+                ? message.ReceivedAt
+                : _diagnostics.LastCommandReceivedAt,
+            PendingCommandBatches = pending,
+            ReceivedMessages = received,
+            ProcessedMessages = Interlocked.Read(ref _processedMessages),
+            FailedHandlers = Interlocked.Read(ref _failedHandlers),
+            LastError = ""
+        });
+
+        if (pending > MaxPendingMessageBatches)
+        {
+            Interlocked.Decrement(ref _pendingMessageBatches);
+            var failed = Interlocked.Increment(ref _failedHandlers);
+            var error =
+                "Chat-Command-Queue ist voll; Nachricht wurde verworfen, " +
+                "damit der Twitch-WebSocket nicht blockiert.";
+            Console.WriteLine(error);
+            PublishDiagnostics(_diagnostics with
+            {
+                LastError = error,
+                PendingCommandBatches = Volatile.Read(ref _pendingMessageBatches),
+                FailedHandlers = failed
+            });
+            return;
+        }
+
         _ = Task.Run(async () =>
         {
-            await Task.WhenAll(observers.Select(observer =>
-                InvokeMessageHandlerAsync(observer, message)));
-
-            var decision = _sharedChatCommandGuard.Evaluate(message);
-            if (decision.IsCommand && !decision.Allowed)
+            var slotTaken = false;
+            try
             {
+                slotTaken = await _messageDispatchSlots
+                    .WaitAsync(TimeSpan.FromSeconds(2));
+                if (!slotTaken)
+                {
+                    var error =
+                        "Chat-Command-Verarbeitung ist ausgelastet; Nachricht wurde verworfen.";
+                    Console.WriteLine(error);
+                    Interlocked.Increment(ref _failedHandlers);
+                    PublishDiagnostics(_diagnostics with
+                    {
+                        LastError = error,
+                        FailedHandlers = Interlocked.Read(ref _failedHandlers)
+                    });
+                    return;
+                }
+
+                await DispatchMessageAsync(
+                    message,
+                    observers,
+                    authorizers,
+                    handlers);
+
+                Interlocked.Increment(ref _processedMessages);
+                PublishDiagnostics(_diagnostics with
+                {
+                    LastCommandCompletedAt = isCommand
+                        ? DateTimeOffset.Now
+                        : _diagnostics.LastCommandCompletedAt,
+                    ProcessedMessages = Interlocked.Read(ref _processedMessages),
+                    LastError = ""
+                });
+            }
+            catch (Exception exception)
+            {
+                Interlocked.Increment(ref _failedHandlers);
                 Console.WriteLine(
-                    $"Shared Chat Command ignoriert: Command={decision.Command}, " +
-                    $"User={message.UserName}, SourceRoomId={decision.SourceRoomId}, " +
-                    $"CurrentRoomId={decision.CurrentRoomId}, " +
-                    $"ConfiguredBroadcasterId={decision.ConfiguredBroadcasterId}");
-                return;
+                    "Chat-Command-Verarbeitung fehlgeschlagen: " +
+                    exception.Message);
+                PublishDiagnostics(_diagnostics with
+                {
+                    LastError = exception.Message,
+                    FailedHandlers = Interlocked.Read(ref _failedHandlers)
+                });
             }
-
-            foreach (var authorizer in authorizers)
-                await InvokeMessageHandlerAsync(authorizer, message);
-            if (message.CommandAuthorization == CommandAuthorization.Denied)
-                return;
-            if (handlers.Length == 0)
+            finally
             {
-                Console.WriteLine("Chatnachricht ignoriert: kein aktiver Command-Handler.");
-                return;
+                if (slotTaken)
+                {
+                    _messageDispatchSlots.Release();
+                }
+
+                PublishDiagnostics(_diagnostics with
+                {
+                    PendingCommandBatches =
+                        Interlocked.Decrement(ref _pendingMessageBatches),
+                    ReceivedMessages = Interlocked.Read(ref _receivedMessages),
+                    ProcessedMessages = Interlocked.Read(ref _processedMessages),
+                    FailedHandlers = Interlocked.Read(ref _failedHandlers)
+                });
             }
-            await Task.WhenAll(handlers.Select(handler =>
-                InvokeMessageHandlerAsync(handler, message)));
         });
+    }
+
+
+    private async Task DispatchMessageAsync(
+        ChatMessage message,
+        Func<ChatMessage, Task>[] observers,
+        Func<ChatMessage, Task>[] authorizers,
+        Func<ChatMessage, Task>[] handlers)
+    {
+        await Task.WhenAll(observers.Select(observer =>
+            InvokeMessageHandlerAsync(observer, message)));
+
+        var decision = _sharedChatCommandGuard.Evaluate(message);
+        if (decision.IsCommand && !decision.Allowed)
+        {
+            Console.WriteLine(
+                $"Shared Chat Command ignoriert: Command={decision.Command}, " +
+                $"User={message.UserName}, SourceRoomId={decision.SourceRoomId}, " +
+                $"CurrentRoomId={decision.CurrentRoomId}, " +
+                $"ConfiguredBroadcasterId={decision.ConfiguredBroadcasterId}");
+            return;
+        }
+
+        foreach (var authorizer in authorizers)
+        {
+            await InvokeMessageHandlerAsync(authorizer, message);
+        }
+
+        if (message.CommandAuthorization == CommandAuthorization.Denied)
+        {
+            return;
+        }
+
+        if (handlers.Length == 0)
+        {
+            Console.WriteLine("Chatnachricht ignoriert: kein aktiver Command-Handler.");
+            return;
+        }
+
+        await Task.WhenAll(handlers.Select(handler =>
+            InvokeMessageHandlerAsync(handler, message)));
     }
 
 
@@ -520,18 +664,43 @@ public sealed class ChatModerationService : IDisposable
             : "";
 
 
-    private static async Task InvokeMessageHandlerAsync(
+    private async Task InvokeMessageHandlerAsync(
         Func<ChatMessage, Task> handler,
         ChatMessage message)
     {
         try
         {
-            await handler(message);
+            var task = handler(message);
+            if (task is null)
+            {
+                return;
+            }
+
+            await task.WaitAsync(HandlerTimeout);
+        }
+        catch (TimeoutException)
+        {
+            Interlocked.Increment(ref _failedHandlers);
+            var error =
+                $"Chat-Command-Handler für {message.UserName} " +
+                $"überschritt {HandlerTimeout.TotalSeconds:0} Sekunden.";
+            Console.WriteLine(error);
+            PublishDiagnostics(_diagnostics with
+            {
+                LastError = error,
+                FailedHandlers = Interlocked.Read(ref _failedHandlers)
+            });
         }
         catch (Exception exception)
         {
+            Interlocked.Increment(ref _failedHandlers);
             Console.WriteLine(
                 "Chat-Command-Handler fehlgeschlagen: " + exception.Message);
+            PublishDiagnostics(_diagnostics with
+            {
+                LastError = exception.Message,
+                FailedHandlers = Interlocked.Read(ref _failedHandlers)
+            });
         }
     }
 
@@ -549,19 +718,20 @@ public sealed class ChatModerationService : IDisposable
             : sessionId[..4] + "…" + sessionId[^4..];
 
 
-    private static void LogCommandDetection(string text)
+    private static ChatCommandParseResult LogCommandDetection(string text)
     {
         var parsed = ChatCommandParser.Parse(text);
         if (!parsed.IsCommand)
         {
             Console.WriteLine("Chatnachricht ignoriert: " + parsed.IgnoreReason);
-            return;
+            return parsed;
         }
 
 
         Console.WriteLine(
             $"Command erkannt: Prefix {parsed.Prefix}; " +
             $"Command {parsed.Command}; Argumente: {parsed.Arguments}");
+        return parsed;
     }
 
 
@@ -631,6 +801,7 @@ public sealed class ChatModerationService : IDisposable
 
 
         _http.Dispose();
+        _messageDispatchSlots.Dispose();
         _disposed = true;
     }
 }
