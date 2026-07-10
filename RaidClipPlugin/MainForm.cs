@@ -3633,6 +3633,8 @@ public sealed partial class MainForm : Form
     {
         private Color _dotColor = UnknownStatusColor;
 
+        [System.ComponentModel.DesignerSerializationVisibility(
+            System.ComponentModel.DesignerSerializationVisibility.Hidden)]
         public Color DotColor
         {
             get => _dotColor;
