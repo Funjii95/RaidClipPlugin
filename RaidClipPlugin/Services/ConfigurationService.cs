@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using System.Net;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
@@ -425,7 +425,7 @@ public sealed class ConfigurationService
     private static void Normalize(AppConfig config)
     {
         config.UiTheme = (config.UiTheme ?? "RaidRed").Trim();
-        if (config.UiTheme is not ("RaidRed" or "NeonGreen" or "TwitchPurple"))
+        if (config.UiTheme is not ("RaidRed" or "DarkPurple" or "DarkBlue" or "LightModern" or "NeonGreen" or "TwitchPurple"))
             config.UiTheme = "RaidRed";
         config.Twitch.BroadcasterLogin =
             (config.Twitch.BroadcasterLogin ?? "").Trim().TrimStart('@');
@@ -1388,3 +1388,4 @@ public sealed class ConfigurationService
         public ModuleHealthConfig? ModuleHealth { get; set; }
     }
 }
+

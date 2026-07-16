@@ -74,7 +74,7 @@ public sealed partial class MainForm : Form
         Text = "Bereit",
         AutoSize = true,
         ForeColor = Color.DimGray,
-        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
         Margin = new Padding(12, 14, 0, 0)
     };
 
@@ -246,7 +246,7 @@ public sealed partial class MainForm : Form
         Text = "Version 1.4.2\n🟢 Aktuell",
         AutoSize = true,
         ForeColor = Color.ForestGreen,
-        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
         Margin = new Padding(8, 8, 8, 0)
     };
 
@@ -565,7 +565,7 @@ public sealed partial class MainForm : Form
         Text = "● Minigame: Deaktiviert",
         AutoSize = true,
         ForeColor = InactiveColor,
-        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
         Padding = new Padding(4)
     };
 
@@ -712,7 +712,7 @@ public sealed partial class MainForm : Form
         Text = "● Chat-Moderation: Deaktiviert",
         AutoSize = true,
         ForeColor = InactiveColor,
-        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
         Padding = new Padding(4)
     };
 
@@ -896,7 +896,7 @@ private enum CloseChoice
             ForeColor = InactiveColor,
             BackColor = SurfaceColor,
             BorderStyle = BorderStyle.FixedSingle,
-            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
             Margin = new Padding(4)
         };
     }
@@ -906,16 +906,16 @@ private enum CloseChoice
         return new Button
         {
             Text = $"{title}{Environment.NewLine}{subtitle}",
-            Width = 242,
-            Height = 88,
+            Width = 228,
+            Height = 54,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
             TextAlign = ContentAlignment.MiddleLeft,
-            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
             ForeColor = TextColor,
             BackColor = SidebarColor,
-            Padding = new Padding(18, 8, 12, 8),
-            Margin = new Padding(5, 5, 5, 2),
+            Padding = new Padding(15, 6, 12, 6),
+            Margin = new Padding(5, 4, 5, 2),
             Cursor = Cursors.Hand
         };
     }
@@ -1170,7 +1170,7 @@ private enum CloseChoice
         button.FlatAppearance.BorderSize = 1;
         button.FlatAppearance.BorderColor = BorderColor;
         button.FlatAppearance.MouseOverBackColor = AccentDarkColor;
-        button.FlatAppearance.MouseDownBackColor = Color.FromArgb(125, 12, 17);
+        button.FlatAppearance.MouseDownBackColor = ControlPaint.Dark(AccentDarkColor);
         button.AutoEllipsis = false;
         button.UseCompatibleTextRendering = false;
         button.MinimumSize = new Size(
@@ -1192,7 +1192,7 @@ private enum CloseChoice
         var background = !button.Enabled
             ? Color.FromArgb(31, 31, 34)
             : pressed
-                ? Color.FromArgb(125, 12, 17)
+                ? ControlPaint.Dark(AccentDarkColor)
                 : hovered ? AccentDarkColor : button.BackColor;
         using var backgroundBrush = new SolidBrush(background);
         e.Graphics.FillRectangle(backgroundBrush, bounds);
@@ -1229,7 +1229,7 @@ private enum CloseChoice
 
     private static void StylePrimaryButton(Button button)
     {
-        button.BackColor = Color.FromArgb(38, 15, 17);
+        button.BackColor = AccentDarkColor;
         button.ForeColor = Color.White;
         button.FlatAppearance.BorderColor = AccentColor;
     }
@@ -1886,7 +1886,7 @@ private enum CloseChoice
         commandsFlow.Controls.Add(new Label
         {
             Text = "Commands für Punkteabfrage", AutoSize = true,
-            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
             Margin = new Padding(8, 24, 8, 4)
         });
         commandsFlow.Controls.Add(_pointsCommandPunkteCheck);
@@ -2091,7 +2091,7 @@ private enum CloseChoice
             Image = LoadBrandImage(),
             SizeMode = PictureBoxSizeMode.Zoom,
             Width = 238,
-            Height = 205,
+            Height = 150,
             Margin = new Padding(0, 4, 0, 14),
             BackColor = SidebarColor
         };
@@ -3492,7 +3492,7 @@ private enum CloseChoice
     {
         Text = groupName,
         AutoEllipsis = true,
-        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+        Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
         ForeColor = MutedTextColor,
         Width = Math.Max(240, _moduleHealthGrid.ClientSize.Width -
             _moduleHealthGrid.Padding.Horizontal - 20),
@@ -5511,3 +5511,4 @@ private enum CloseChoice
         base.OnFormClosing(e);
     }
 }
+

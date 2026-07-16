@@ -4,7 +4,7 @@ public sealed partial class MainForm
 {
     private readonly ComboBox _uiThemeBox = new()
     {
-        Width = 190,
+        Width = 210,
         DropDownStyle = ComboBoxStyle.DropDownList
     };
 
@@ -13,7 +13,7 @@ public sealed partial class MainForm
         _uiThemeBox.Items.Clear();
         _uiThemeBox.Items.AddRange(new object[]
         {
-            "Raid-Rot", "Giftgrün", "Twitch-Lila"
+            "Modern Rot", "Dark Purple", "Dark Blue", "Light Modern", "Giftgrün", "Twitch-Lila"
         });
         _uiThemeBox.SelectedIndexChanged += (_, _) =>
         {
@@ -24,8 +24,11 @@ public sealed partial class MainForm
 
     private string ThemeKeyFromSelection() => _uiThemeBox.SelectedIndex switch
     {
-        1 => "NeonGreen",
-        2 => "TwitchPurple",
+        1 => "DarkPurple",
+        2 => "DarkBlue",
+        3 => "LightModern",
+        4 => "NeonGreen",
+        5 => "TwitchPurple",
         _ => "RaidRed"
     };
 
@@ -33,8 +36,11 @@ public sealed partial class MainForm
     {
         _uiThemeBox.SelectedIndex = key?.Trim().ToLowerInvariant() switch
         {
-            "neongreen" => 1,
-            "twitchpurple" => 2,
+            "darkpurple" => 1,
+            "darkblue" => 2,
+            "lightmodern" => 3,
+            "neongreen" => 4,
+            "twitchpurple" => 5,
             _ => 0
         };
     }
@@ -43,6 +49,46 @@ public sealed partial class MainForm
     {
         switch (key?.Trim().ToLowerInvariant())
         {
+            case "darkpurple":
+            case "twitchpurple":
+                BackgroundColor = Color.FromArgb(9, 7, 15);
+                SidebarColor = Color.FromArgb(15, 10, 27);
+                SurfaceColor = Color.FromArgb(22, 18, 34);
+                InputColor = Color.FromArgb(13, 10, 22);
+                BorderColor = Color.FromArgb(62, 45, 93);
+                AccentColor = Color.FromArgb(170, 92, 255);
+                AccentDarkColor = Color.FromArgb(101, 47, 173);
+                TextColor = Color.FromArgb(246, 242, 255);
+                MutedTextColor = Color.FromArgb(190, 178, 214);
+                ActiveColor = Color.FromArgb(91, 232, 112);
+                break;
+
+            case "darkblue":
+                BackgroundColor = Color.FromArgb(3, 13, 28);
+                SidebarColor = Color.FromArgb(5, 20, 42);
+                SurfaceColor = Color.FromArgb(8, 28, 56);
+                InputColor = Color.FromArgb(4, 17, 36);
+                BorderColor = Color.FromArgb(31, 86, 150);
+                AccentColor = Color.FromArgb(26, 128, 255);
+                AccentDarkColor = Color.FromArgb(5, 78, 165);
+                TextColor = Color.FromArgb(235, 247, 255);
+                MutedTextColor = Color.FromArgb(165, 196, 226);
+                ActiveColor = Color.FromArgb(91, 232, 112);
+                break;
+
+            case "lightmodern":
+                BackgroundColor = Color.FromArgb(246, 248, 250);
+                SidebarColor = Color.FromArgb(255, 255, 255);
+                SurfaceColor = Color.FromArgb(255, 255, 255);
+                InputColor = Color.FromArgb(250, 252, 253);
+                BorderColor = Color.FromArgb(220, 225, 230);
+                AccentColor = Color.FromArgb(55, 184, 91);
+                AccentDarkColor = Color.FromArgb(213, 242, 219);
+                TextColor = Color.FromArgb(28, 32, 38);
+                MutedTextColor = Color.FromArgb(93, 104, 116);
+                ActiveColor = Color.FromArgb(25, 150, 60);
+                break;
+
             case "neongreen":
                 BackgroundColor = Color.FromArgb(4, 12, 7);
                 SidebarColor = Color.FromArgb(5, 18, 9);
@@ -56,30 +102,17 @@ public sealed partial class MainForm
                 ActiveColor = Color.FromArgb(84, 255, 62);
                 break;
 
-            case "twitchpurple":
-                BackgroundColor = Color.FromArgb(10, 8, 18);
-                SidebarColor = Color.FromArgb(15, 10, 28);
-                SurfaceColor = Color.FromArgb(24, 18, 40);
-                InputColor = Color.FromArgb(14, 10, 24);
-                BorderColor = Color.FromArgb(105, 80, 150);
-                AccentColor = Color.FromArgb(145, 70, 255);
-                AccentDarkColor = Color.FromArgb(67, 36, 112);
-                TextColor = Color.FromArgb(246, 242, 255);
-                MutedTextColor = Color.FromArgb(190, 177, 214);
-                ActiveColor = Color.FromArgb(169, 112, 255);
-                break;
-
             default:
-                BackgroundColor = Color.FromArgb(8, 8, 9);
-                SidebarColor = Color.FromArgb(12, 12, 13);
-                SurfaceColor = Color.FromArgb(19, 19, 21);
-                InputColor = Color.FromArgb(13, 13, 14);
-                BorderColor = Color.FromArgb(86, 86, 90);
-                AccentColor = Color.FromArgb(222, 24, 30);
-                AccentDarkColor = Color.FromArgb(92, 12, 15);
-                TextColor = Color.FromArgb(235, 235, 238);
-                MutedTextColor = Color.FromArgb(174, 174, 180);
-                ActiveColor = Color.FromArgb(239, 36, 42);
+                BackgroundColor = Color.FromArgb(8, 8, 10);
+                SidebarColor = Color.FromArgb(13, 13, 16);
+                SurfaceColor = Color.FromArgb(22, 22, 26);
+                InputColor = Color.FromArgb(13, 13, 16);
+                BorderColor = Color.FromArgb(83, 39, 43);
+                AccentColor = Color.FromArgb(255, 48, 58);
+                AccentDarkColor = Color.FromArgb(112, 17, 24);
+                TextColor = Color.FromArgb(245, 245, 248);
+                MutedTextColor = Color.FromArgb(180, 180, 188);
+                ActiveColor = Color.FromArgb(91, 232, 112);
                 break;
         }
 
@@ -89,3 +122,4 @@ public sealed partial class MainForm
         Invalidate(true);
     }
 }
+
