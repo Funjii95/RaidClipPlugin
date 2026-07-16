@@ -1218,7 +1218,7 @@ private enum CloseChoice
             Math.Max(button.Padding.Left, button.Width - button.Padding.Right),
             Math.Max(button.Padding.Top, button.Height - button.Padding.Bottom));
         var flags = TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding |
-                    TextFormatFlags.WordBreak |
+                    TextFormatFlags.WordBreak | TextFormatFlags.EndEllipsis |
                     (isNavigation
                         ? TextFormatFlags.Left | TextFormatFlags.VerticalCenter
                         : TextFormatFlags.HorizontalCenter |
@@ -1577,7 +1577,7 @@ private enum CloseChoice
             WrapContents = true,
             Dock = DockStyle.Fill,
             AutoSize = true,
-            Padding = new Padding(0, 8, 0, 8)
+            Padding = new Padding(8, 6, 8, 6),\n            AutoScroll = true
         };
         actions.Controls.Add(_startButton);
         actions.Controls.Add(_testConnectionsButton);
@@ -1625,6 +1625,18 @@ private enum CloseChoice
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Raid-Chatnachricht", _chatTemplateBox));
         raidSettingsFlow.Controls.Add(_saveSettingsButton);
+        raidSettingsFlow.Resize += (_, _) =>
+        {
+            foreach (Control child in raidSettingsFlow.Controls)
+            {
+                if (child is Panel panel && panel.Controls.Count > 0)
+                {
+                    panel.Width = Math.Min(
+                        Math.Max(panel.Width, panel.Controls[0].Width + 18),
+                        Math.Max(220, raidSettingsFlow.ClientSize.Width - 48));
+                }
+            }
+        };
         _settingsGroup.Controls.Add(raidSettingsFlow);
 
         var moderationSettingsFlow = new FlowLayoutPanel
@@ -1729,7 +1741,7 @@ private enum CloseChoice
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 5,
-            Padding = new Padding(26, 18, 26, 22),
+            Padding = new Padding(22, 18, 22, 22),
             BackColor = BackgroundColor
         };
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 128));
@@ -5541,5 +5553,6 @@ private enum CloseChoice
         base.OnFormClosing(e);
     }
 }
+
 
 

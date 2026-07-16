@@ -23,7 +23,7 @@ public sealed partial class MainForm
             BackColor = BackgroundColor
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 430));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 460));
 
         header.Dock = DockStyle.Fill;
         header.Margin = new Padding(0, 0, 14, 10);
@@ -92,9 +92,9 @@ public sealed partial class MainForm
         actions.Margin = Padding.Empty;
         if (actions is FlowLayoutPanel flow)
         {
-            flow.AutoScroll = false;
+            flow.AutoScroll = true;
             flow.Padding = new Padding(8, 7, 8, 7);
-            flow.WrapContents = false;
+            flow.WrapContents = true;
         }
 
         return CreateDashboardCard(actions, new Padding(0, 0, 0, 10));
@@ -121,3 +121,4 @@ public sealed partial class MainForm
         return card;
     }
 }
+

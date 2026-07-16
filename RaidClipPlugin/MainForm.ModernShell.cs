@@ -5,7 +5,7 @@ namespace RaidClipPlugin;
 
 public sealed partial class MainForm
 {
-    private const int SidebarExpandedWidth = 268;
+    private const int SidebarExpandedWidth = 308;
     private const int SidebarCompactWidth = 82;
 
     private readonly Label _modernSidebarBotStateLabel = new()
@@ -150,7 +150,7 @@ public sealed partial class MainForm
     {
         _modernRootLayout ??= Controls.Find("ModernRootLayout", true).OfType<TableLayoutPanel>().FirstOrDefault();
         if (_modernRootLayout is null || _modernRootLayout.ColumnStyles.Count == 0) return;
-        var compact = ClientSize.Width < 1160;
+        var compact = ClientSize.Width < 1240;
         if (_modernCompactSidebar == compact) return;
         _modernCompactSidebar = compact;
         _modernRootLayout.ColumnStyles[0].Width = compact ? SidebarCompactWidth : SidebarExpandedWidth;
@@ -160,10 +160,10 @@ public sealed partial class MainForm
             if (control is PictureBox picture) { picture.Visible = !compact; continue; }
             if (control is Button button && button.Tag is Tuple<string, string> meta)
             {
-                button.Width = compact ? 48 : 228;
-                button.Height = compact ? 48 : 58;
+                button.Width = compact ? 48 : 266;
+                button.Height = compact ? 48 : 64;
                 button.TextAlign = compact ? ContentAlignment.MiddleCenter : ContentAlignment.MiddleLeft;
-                button.Padding = compact ? Padding.Empty : new Padding(14, 7, 12, 7);
+                button.Padding = compact ? Padding.Empty : new Padding(14, 8, 12, 8);
                 button.Text = compact ? meta.Item1.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? meta.Item1 : $"{meta.Item1}{Environment.NewLine}{meta.Item2}";
                 _moduleHealthToolTip.SetToolTip(button, meta.Item1.Trim());
             }
@@ -178,7 +178,7 @@ public sealed partial class MainForm
             var state = JsonSerializer.Deserialize<ModernWindowState>(File.ReadAllText(WindowStatePath));
             if (state is null || state.Width < 900 || state.Height < 650) return;
             StartPosition = FormStartPosition.Manual;
-            Size = new Size(state.Width, state.Height);
+            Size = new Size(Math.Max(state.Width, MinimumSize.Width), Math.Max(state.Height, MinimumSize.Height));
             Location = new Point(state.Left, state.Top);
         }
         catch { StartPosition = FormStartPosition.CenterScreen; }
@@ -197,3 +197,4 @@ public sealed partial class MainForm
 
     private sealed record ModernWindowState(int Left, int Top, int Width, int Height);
 }
+
