@@ -1,0 +1,255 @@
+﻿name: Apply modern GUI themes
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Apply modern GUI theme update
+        shell: pwsh
+        run: |
+          $script = @'
+          from pathlib import Path
+
+          themes = Path("RaidClipPlugin/MainForm.Themes.cs")
+          themes.write_text(r'''namespace RaidClipPlugin;
+
+public sealed partial class MainForm
+{
+    private readonly ComboBox _uiThemeBox = new()
+    {
+        Width = 210,
+        DropDownStyle = ComboBoxStyle.DropDownList
+    };
+
+    private void InitializeThemeEvents()
+    {
+        _uiThemeBox.Items.Clear();
+        _uiThemeBox.Items.AddRange(new object[]
+        {
+            "Modern Rot", "Dark Purple", "Dark Blue", "Light Modern", "Giftgrün", "Twitch-Lila"
+        });
+        _uiThemeBox.SelectedIndexChanged += (_, _) =>
+        {
+            if (_uiThemeBox.SelectedIndex >= 0)
+                ApplyUiTheme(ThemeKeyFromSelection());
+        };
+    }
+
+    private string ThemeKeyFromSelection() => _uiThemeBox.SelectedIndex switch
+    {
+        1 => "DarkPurple",
+        2 => "DarkBlue",
+        3 => "LightModern",
+        4 => "NeonGreen",
+        5 => "TwitchPurple",
+        _ => "RaidRed"
+    };
+
+    private void SelectUiTheme(string? key)
+    {
+        _uiThemeBox.SelectedIndex = key?.Trim().ToLowerInvariant() switch
+        {
+            "darkpurple" => 1,
+            "darkblue" => 2,
+            "lightmodern" => 3,
+            "neongreen" => 4,
+            "twitchpurple" => 5,
+            _ => 0
+        };
+    }
+
+    private void ApplyUiTheme(string? key)
+    {
+        switch (key?.Trim().ToLowerInvariant())
+        {
+            case "darkpurple":
+            case "twitchpurple":
+                BackgroundColor = Color.FromArgb(9, 7, 15);
+                SidebarColor = Color.FromArgb(15, 10, 27);
+                SurfaceColor = Color.FromArgb(22, 18, 34);
+                InputColor = Color.FromArgb(13, 10, 22);
+                BorderColor = Color.FromArgb(62, 45, 93);
+                AccentColor = Color.FromArgb(170, 92, 255);
+                AccentDarkColor = Color.FromArgb(101, 47, 173);
+                TextColor = Color.FromArgb(246, 242, 255);
+                MutedTextColor = Color.FromArgb(190, 178, 214);
+                ActiveColor = Color.FromArgb(91, 232, 112);
+                break;
+
+            case "darkblue":
+                BackgroundColor = Color.FromArgb(3, 13, 28);
+                SidebarColor = Color.FromArgb(5, 20, 42);
+                SurfaceColor = Color.FromArgb(8, 28, 56);
+                InputColor = Color.FromArgb(4, 17, 36);
+                BorderColor = Color.FromArgb(31, 86, 150);
+                AccentColor = Color.FromArgb(26, 128, 255);
+                AccentDarkColor = Color.FromArgb(5, 78, 165);
+                TextColor = Color.FromArgb(235, 247, 255);
+                MutedTextColor = Color.FromArgb(165, 196, 226);
+                ActiveColor = Color.FromArgb(91, 232, 112);
+                break;
+
+            case "lightmodern":
+                BackgroundColor = Color.FromArgb(246, 248, 250);
+                SidebarColor = Color.FromArgb(255, 255, 255);
+                SurfaceColor = Color.FromArgb(255, 255, 255);
+                InputColor = Color.FromArgb(250, 252, 253);
+                BorderColor = Color.FromArgb(220, 225, 230);
+                AccentColor = Color.FromArgb(55, 184, 91);
+                AccentDarkColor = Color.FromArgb(213, 242, 219);
+                TextColor = Color.FromArgb(28, 32, 38);
+                MutedTextColor = Color.FromArgb(93, 104, 116);
+                ActiveColor = Color.FromArgb(25, 150, 60);
+                break;
+
+            case "neongreen":
+                BackgroundColor = Color.FromArgb(4, 12, 7);
+                SidebarColor = Color.FromArgb(5, 18, 9);
+                SurfaceColor = Color.FromArgb(10, 27, 15);
+                InputColor = Color.FromArgb(4, 15, 8);
+                BorderColor = Color.FromArgb(52, 128, 63);
+                AccentColor = Color.FromArgb(57, 255, 20);
+                AccentDarkColor = Color.FromArgb(20, 88, 18);
+                TextColor = Color.FromArgb(238, 255, 239);
+                MutedTextColor = Color.FromArgb(166, 205, 172);
+                ActiveColor = Color.FromArgb(84, 255, 62);
+                break;
+
+            default:
+                BackgroundColor = Color.FromArgb(8, 8, 10);
+                SidebarColor = Color.FromArgb(13, 13, 16);
+                SurfaceColor = Color.FromArgb(22, 22, 26);
+                InputColor = Color.FromArgb(13, 13, 16);
+                BorderColor = Color.FromArgb(83, 39, 43);
+                AccentColor = Color.FromArgb(255, 48, 58);
+                AccentDarkColor = Color.FromArgb(112, 17, 24);
+                TextColor = Color.FromArgb(245, 245, 248);
+                MutedTextColor = Color.FromArgb(180, 180, 188);
+                ActiveColor = Color.FromArgb(91, 232, 112);
+                break;
+        }
+
+        BackColor = BackgroundColor;
+        ForeColor = TextColor;
+        ApplyRaidClipTheme(this);
+        Invalidate(true);
+    }
+}
+''', encoding="utf-8")
+
+          config = Path("RaidClipPlugin/Services/ConfigurationService.cs")
+          text = config.read_text(encoding="utf-8-sig")
+          text = text.replace(
+              'if (config.UiTheme is not ("RaidRed" or "NeonGreen" or "TwitchPurple"))',
+              'if (config.UiTheme is not ("RaidRed" or "DarkPurple" or "DarkBlue" or "LightModern" or "NeonGreen" or "TwitchPurple"))')
+          config.write_text(text, encoding="utf-8")
+
+          main = Path("RaidClipPlugin/MainForm.cs")
+          text = main.read_text(encoding="utf-8-sig")
+          text = text.replace('''            Text = $"● {service}{Environment.NewLine}Nicht verbunden",
+            AutoSize = false,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleCenter,
+            ForeColor = InactiveColor,
+            BackColor = SurfaceColor,
+            BorderStyle = BorderStyle.FixedSingle,
+            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            Margin = new Padding(4)''', '''            Text = $"{service}{Environment.NewLine}Nicht verbunden",
+            AutoSize = false,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleLeft,
+            ForeColor = InactiveColor,
+            BackColor = SurfaceColor,
+            BorderStyle = BorderStyle.None,
+            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            Padding = new Padding(16, 10, 12, 10),
+            Margin = new Padding(6)''')
+          text = text.replace('''            Width = 242,
+            Height = 88,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0 },
+            TextAlign = ContentAlignment.MiddleLeft,
+            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            ForeColor = TextColor,
+            BackColor = SidebarColor,
+            Padding = new Padding(18, 8, 12, 8),
+            Margin = new Padding(5, 5, 5, 2),''', '''            Width = 228,
+            Height = 54,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0 },
+            TextAlign = ContentAlignment.MiddleLeft,
+            Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
+            ForeColor = TextColor,
+            BackColor = SidebarColor,
+            Padding = new Padding(15, 6, 12, 6),
+            Margin = new Padding(5, 4, 5, 2),''')
+          text = text.replace('button.BackColor = active ? AccentDarkColor : SidebarColor;\n        button.ForeColor = active ? Color.White : TextColor;\n        button.FlatAppearance.BorderSize = active ? 1 : 0;\n        button.FlatAppearance.BorderColor = AccentColor;', 'button.BackColor = active ? AccentDarkColor : SidebarColor;\n        button.ForeColor = active ? Color.White : TextColor;\n        button.FlatAppearance.BorderSize = 1;\n        button.FlatAppearance.BorderColor = active ? AccentColor : Color.Transparent;')
+          text = text.replace('''            case GroupBox groupBox:
+                    groupBox.BackColor = BackgroundColor;
+                    groupBox.ForeColor = AccentColor;
+                    groupBox.FlatStyle = FlatStyle.Flat;
+                    break;''', '''            case GroupBox groupBox:
+                    groupBox.BackColor = SurfaceColor;
+                    groupBox.ForeColor = AccentColor;
+                    groupBox.FlatStyle = FlatStyle.Flat;
+                    break;''')
+          text = text.replace('''                    grid.GridColor = Color.FromArgb(50, 50, 54);
+                    grid.BorderStyle = BorderStyle.FixedSingle;
+                    grid.EnableHeadersVisualStyles = false;
+                    grid.ColumnHeadersDefaultCellStyle.BackColor =
+                        Color.FromArgb(28, 28, 31);''', '''                    grid.GridColor = BorderColor;
+                    grid.BorderStyle = BorderStyle.None;
+                    grid.EnableHeadersVisualStyles = false;
+                    grid.ColumnHeadersDefaultCellStyle.BackColor = SurfaceColor;''')
+          text = text.replace('''        button.FlatAppearance.MouseOverBackColor = AccentDarkColor;
+        button.FlatAppearance.MouseDownBackColor = Color.FromArgb(125, 12, 17);''', '''        button.FlatAppearance.MouseOverBackColor = AccentDarkColor;
+        button.FlatAppearance.MouseDownBackColor = ControlPaint.Dark(AccentDarkColor);''')
+          text = text.replace('''            : pressed
+                ? Color.FromArgb(125, 12, 17)
+                : hovered ? AccentDarkColor : button.BackColor;''', '''            : pressed
+                ? ControlPaint.Dark(AccentDarkColor)
+                : hovered ? AccentDarkColor : button.BackColor;''')
+          text = text.replace('''        button.BackColor = Color.FromArgb(38, 15, 17);
+        button.ForeColor = Color.White;
+        button.FlatAppearance.BorderColor = AccentColor;''', '''        button.BackColor = AccentDarkColor;
+        button.ForeColor = Color.White;
+        button.FlatAppearance.BorderColor = AccentColor;''')
+          text = text.replace('''            Width = 238,
+            Height = 205,''', '''            Width = 238,
+            Height = 150,''')
+          text = text.replace('''            Padding = new Padding(6),
+            AutoScroll = true''', '''            Padding = new Padding(10, 8, 10, 8),
+            AutoScroll = true''')
+          main.write_text(text, encoding="utf-8")
+          print("Modern GUI themes patched.")
+          '@
+          Set-Content -Path patch_modern_gui.py -Value $script -Encoding UTF8
+          python patch_modern_gui.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/MainForm.Themes.cs RaidClipPlugin/Services/ConfigurationService.cs
+          if (git diff --cached --quiet) {
+            Write-Host "No changes to commit."
+            exit 0
+          }
+          git commit -m "Modernize GUI themes and add red variant"
+          git push
