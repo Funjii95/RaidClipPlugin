@@ -1211,7 +1211,7 @@ private enum CloseChoice
             e.Graphics.DrawRectangle(borderPen, border);
         }
 
-        var isNavigation = button.Width >= 220 && button.Height >= 70;
+        var isNavigation = button.Tag is Tuple<string, string>;
         var textBounds = Rectangle.FromLTRB(
             button.Padding.Left,
             button.Padding.Top,
@@ -1472,7 +1472,7 @@ private enum CloseChoice
     {
         var title = new Label
         {
-            Text = "RaidClip",
+            Text = "Raid Clip",
             AutoSize = true,
             Font = new Font("Segoe UI", 20F, FontStyle.Bold),
             ForeColor = Color.White,
@@ -1498,7 +1498,7 @@ private enum CloseChoice
 
         var subtitle = new Label
         {
-            Text = "Dashboard für Raids, Clips, Chatbot, Minigames und Systemstatus",
+            Text = "Twitch-Raids erkennen und Clips automatisch in OBS abspielen",
             AutoSize = true,
             ForeColor = Color.DimGray,
             Margin = new Padding(2, 3, 0, 0)
@@ -1714,25 +1714,34 @@ private enum CloseChoice
         raidTabs.TabPages.Add(logPage);
         raidTabs.TabPages.Add(historyPage);
 
+        var dashboardHeader = CreateDashboardHeader(headerRow, updatePanel);
+        var dashboardIndicators = CreateDashboardIndicatorGrid(
+            _obsIndicator,
+            _twitchIndicator,
+            _eventSubIndicator,
+            _playerIndicator);
+        var dashboardActions = CreateDashboardActionBar(actions);
+        var dashboardSettings = CreateDashboardSection(_settingsGroup, new Padding(0));
+        var dashboardTabs = CreateDashboardSection(raidTabs, new Padding(0));
+
         var raidLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 6,
-            Padding = new Padding(20)
+            RowCount = 5,
+            Padding = new Padding(26, 18, 26, 22),
+            BackColor = BackgroundColor
         };
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 76));
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 125));
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 220));
+        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 128));
+        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
+        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
+        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 245));
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        raidLayout.Controls.Add(headerRow, 0, 0);
-        raidLayout.Controls.Add(updatePanel, 0, 1);
-        raidLayout.Controls.Add(indicators, 0, 2);
-        raidLayout.Controls.Add(actions, 0, 3);
-        raidLayout.Controls.Add(_settingsGroup, 0, 4);
-        raidLayout.Controls.Add(raidTabs, 0, 5);
+        raidLayout.Controls.Add(dashboardHeader, 0, 0);
+        raidLayout.Controls.Add(dashboardIndicators, 0, 1);
+        raidLayout.Controls.Add(dashboardActions, 0, 2);
+        raidLayout.Controls.Add(dashboardSettings, 0, 3);
+        raidLayout.Controls.Add(dashboardTabs, 0, 4);
         _raidPage.Controls.Add(raidLayout);
 
         var moderationTitle = new Label
@@ -4322,7 +4331,7 @@ private enum CloseChoice
             return;
         }
 
-        indicator.Text = $"● {service}{Environment.NewLine}{state}";
+        indicator.Text = $"{GetServiceIcon(service)}  {service}{Environment.NewLine}{state.ToUpperInvariant()}";
         indicator.ForeColor = color;
         UpdateModernServiceStatus(service, state, color);
     }
@@ -5532,4 +5541,5 @@ private enum CloseChoice
         base.OnFormClosing(e);
     }
 }
+
 
