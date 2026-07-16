@@ -71,161 +71,27 @@ jobs:
             'ICAgICAgICAgICAgICAgVGV4dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjQ1LCAyNDUsIDI0OCk7CiAgICAgICAgICAgICAgICBNdXRlZFRleHRDb2xvciA9',
             'IENvbG9yLkZyb21BcmdiKDE4MCwgMTgwLCAxODgpOwogICAgICAgICAgICAgICAgQWN0aXZlQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig5MSwgMjMyLCAxMTIp',
             'OwogICAgICAgICAgICAgICAgYnJlYWs7CiAgICAgICAgfQoKICAgICAgICBCYWNrQ29sb3IgPSBCYWNrZ3JvdW5kQ29sb3I7CiAgICAgICAgRm9yZUNvbG9y',
-            'ID0gVGV4dENvbG9yOwogICAgICAgIEFwcGx5UmFpZENsaXBUaGVtZSh0aGlzKTsKICAgICAgICBJbnZhbGlkYXRlKHRydWUpOwogICAgfQp9'
+            'ID0gVGV4dENvbG9yOwogICAgICAgIEFwcGx5UmFpZENsaXBUaGVtZSh0aGlzKTsKICAgICAgICBJbnZhbGlkYXRlKHRydWUpOwogICAgfQp9Cicn'
           ) -join ''
           $themeText = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($themeB64))
           Set-Content -Path 'RaidClipPlugin/MainForm.Themes.cs' -Value $themeText -Encoding UTF8
 
-          $configPath$themeB64 = @(
-            'bmFtZXNwYWNlIFJhaWRDbGlwUGx1Z2luOwoKcHVibGljIHNlYWxlZCBwYXJ0aWFsIGNsYXNzIE1haW5Gb3JtCnsKICAgIHByaXZhdGUgcmVhZG9ubHkgQ29t',
-            'Ym9Cb3ggX3VpVGhlbWVCb3ggPSBuZXcoKQogICAgewogICAgICAgIFdpZHRoID0gMjEwLAogICAgICAgIERyb3BEb3duU3R5bGUgPSBDb21ib0JveFN0eWxl',
-            'LkRyb3BEb3duTGlzdAogICAgfTsKCiAgICBwcml2YXRlIHZvaWQgSW5pdGlhbGl6ZVRoZW1lRXZlbnRzKCkKICAgIHsKICAgICAgICBfdWlUaGVtZUJveC5J',
-            'dGVtcy5DbGVhcigpOwogICAgICAgIF91aVRoZW1lQm94Lkl0ZW1zLkFkZFJhbmdlKG5ldyBvYmplY3RbXQogICAgICAgIHsKICAgICAgICAgICAgIk1vZGVy',
-            'biBSb3QiLCAiRGFyayBQdXJwbGUiLCAiRGFyayBCbHVlIiwgIkxpZ2h0IE1vZGVybiIsICJHaWZ0Z3LDvG4iLCAiVHdpdGNoLUxpbGEiCiAgICAgICAgfSk7',
-            'CiAgICAgICAgX3VpVGhlbWVCb3guU2VsZWN0ZWRJbmRleENoYW5nZWQgKz0gKF8sIF8pID0+CiAgICAgICAgewogICAgICAgICAgICBpZiAoX3VpVGhlbWVC',
-            'b3guU2VsZWN0ZWRJbmRleCA+PSAwKQogICAgICAgICAgICAgICAgQXBwbHlVaVRoZW1lKFRoZW1lS2V5RnJvbVNlbGVjdGlvbigpKTsKICAgICAgICB9Owog',
-            'ICAgfQoKICAgIHByaXZhdGUgc3RyaW5nIFRoZW1lS2V5RnJvbVNlbGVjdGlvbigpID0+IF91aVRoZW1lQm94LlNlbGVjdGVkSW5kZXggc3dpdGNoCiAgICB7',
-            'CiAgICAgICAgMSA9PiAiRGFya1B1cnBsZSIsCiAgICAgICAgMiA9PiAiRGFya0JsdWUiLAogICAgICAgIDMgPT4gIkxpZ2h0TW9kZXJuIiwKICAgICAgICA0',
-            'ID0+ICJOZW9uR3JlZW4iLAogICAgICAgIDUgPT4gIlR3aXRjaFB1cnBsZSIsCiAgICAgICAgXyA9PiAiUmFpZFJlZCIKICAgIH07CgogICAgcHJpdmF0ZSB2',
-            'b2lkIFNlbGVjdFVpVGhlbWUoc3RyaW5nPyBrZXkpCiAgICB7CiAgICAgICAgX3VpVGhlbWVCb3guU2VsZWN0ZWRJbmRleCA9IGtleT8uVHJpbSgpLlRvTG93',
-            'ZXJJbnZhcmlhbnQoKSBzd2l0Y2gKICAgICAgICB7CiAgICAgICAgICAgICJkYXJrcHVycGxlIiA9PiAxLAogICAgICAgICAgICAiZGFya2JsdWUiID0+IDIs',
-            'CiAgICAgICAgICAgICJsaWdodG1vZGVybiIgPT4gMywKICAgICAgICAgICAgIm5lb25ncmVlbiIgPT4gNCwKICAgICAgICAgICAgInR3aXRjaHB1cnBsZSIg',
-            'PT4gNSwKICAgICAgICAgICAgXyA9PiAwCiAgICAgICAgfTsKICAgIH0KCiAgICBwcml2YXRlIHZvaWQgQXBwbHlVaVRoZW1lKHN0cmluZz8ga2V5KQogICAg',
-            'ewogICAgICAgIHN3aXRjaCAoa2V5Py5UcmltKCkuVG9Mb3dlckludmFyaWFudCgpKQogICAgICAgIHsKICAgICAgICAgICAgY2FzZSAiZGFya3B1cnBsZSI6',
-            'CiAgICAgICAgICAgIGNhc2UgInR3aXRjaHB1cnBsZSI6CiAgICAgICAgICAgICAgICBCYWNrZ3JvdW5kQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig5LCA3LCAx',
-            'NSk7CiAgICAgICAgICAgICAgICBTaWRlYmFyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYigxNSwgMTAsIDI3KTsKICAgICAgICAgICAgICAgIFN1cmZhY2VDb2xv',
-            'ciA9IENvbG9yLkZyb21BcmdiKDIyLCAxOCwgMzQpOwogICAgICAgICAgICAgICAgSW5wdXRDb2xvciA9IENvbG9yLkZyb21BcmdiKDEzLCAxMCwgMjIpOwog',
-            'ICAgICAgICAgICAgICAgQm9yZGVyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig2MiwgNDUsIDkzKTsKICAgICAgICAgICAgICAgIEFjY2VudENvbG9yID0gQ29s',
-            'b3IuRnJvbUFyZ2IoMTcwLCA5MiwgMjU1KTsKICAgICAgICAgICAgICAgIEFjY2VudERhcmtDb2xvciA9IENvbG9yLkZyb21BcmdiKDEwMSwgNDcsIDE3Myk7',
-            'CiAgICAgICAgICAgICAgICBUZXh0Q29sb3IgPSBDb2xvci5Gcm9tQXJnYigyNDYsIDI0MiwgMjU1KTsKICAgICAgICAgICAgICAgIE11dGVkVGV4dENvbG9y',
-            'ID0gQ29sb3IuRnJvbUFyZ2IoMTkwLCAxNzgsIDIxNCk7CiAgICAgICAgICAgICAgICBBY3RpdmVDb2xvciA9IENvbG9yLkZyb21BcmdiKDkxLCAyMzIsIDEx',
-            'Mik7CiAgICAgICAgICAgICAgICBicmVhazsKCiAgICAgICAgICAgIGNhc2UgImRhcmtibHVlIjoKICAgICAgICAgICAgICAgIEJhY2tncm91bmRDb2xvciA9',
-            'IENvbG9yLkZyb21BcmdiKDMsIDEzLCAyOCk7CiAgICAgICAgICAgICAgICBTaWRlYmFyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig1LCAyMCwgNDIpOwogICAg',
-            'ICAgICAgICAgICAgU3VyZmFjZUNvbG9yID0gQ29sb3IuRnJvbUFyZ2IoOCwgMjgsIDU2KTsKICAgICAgICAgICAgICAgIElucHV0Q29sb3IgPSBDb2xvci5G',
-            'cm9tQXJnYig0LCAxNywgMzYpOwogICAgICAgICAgICAgICAgQm9yZGVyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYigzMSwgODYsIDE1MCk7CiAgICAgICAgICAg',
-            'ICAgICBBY2NlbnRDb2xvciA9IENvbG9yLkZyb21BcmdiKDI2LCAxMjgsIDI1NSk7CiAgICAgICAgICAgICAgICBBY2NlbnREYXJrQ29sb3IgPSBDb2xvci5G',
-            'cm9tQXJnYig1LCA3OCwgMTY1KTsKICAgICAgICAgICAgICAgIFRleHRDb2xvciA9IENvbG9yLkZyb21BcmdiKDIzNSwgMjQ3LCAyNTUpOwogICAgICAgICAg',
-            'ICAgICAgTXV0ZWRUZXh0Q29sb3IgPSBDb2xvci5Gcm9tQXJnYigxNjUsIDE5NiwgMjI2KTsKICAgICAgICAgICAgICAgIEFjdGl2ZUNvbG9yID0gQ29sb3Iu',
-            'RnJvbUFyZ2IoOTEsIDIzMiwgMTEyKTsKICAgICAgICAgICAgICAgIGJyZWFrOwoKICAgICAgICAgICAgY2FzZSAibGlnaHRtb2Rlcm4iOgogICAgICAgICAg',
-            'ICAgICAgQmFja2dyb3VuZENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjQ2LCAyNDgsIDI1MCk7CiAgICAgICAgICAgICAgICBTaWRlYmFyQ29sb3IgPSBDb2xv',
-            'ci5Gcm9tQXJnYigyNTUsIDI1NSwgMjU1KTsKICAgICAgICAgICAgICAgIFN1cmZhY2VDb2xvciA9IENvbG9yLkZyb21BcmdiKDI1NSwgMjU1LCAyNTUpOwog',
-            'ICAgICAgICAgICAgICAgSW5wdXRDb2xvciA9IENvbG9yLkZyb21BcmdiKDI1MCwgMjUyLCAyNTMpOwogICAgICAgICAgICAgICAgQm9yZGVyQ29sb3IgPSBD',
-            'b2xvci5Gcm9tQXJnYigyMjAsIDIyNSwgMjMwKTsKICAgICAgICAgICAgICAgIEFjY2VudENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoNTUsIDE4NCwgOTEpOwog',
-            'ICAgICAgICAgICAgICAgQWNjZW50RGFya0NvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjEzLCAyNDIsIDIxOSk7CiAgICAgICAgICAgICAgICBUZXh0Q29sb3Ig',
-            'PSBDb2xvci5Gcm9tQXJnYigyOCwgMzIsIDM4KTsKICAgICAgICAgICAgICAgIE11dGVkVGV4dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoOTMsIDEwNCwgMTE2',
-            'KTsKICAgICAgICAgICAgICAgIEFjdGl2ZUNvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjUsIDE1MCwgNjApOwogICAgICAgICAgICAgICAgYnJlYWs7CgogICAg',
-            'ICAgICAgICBjYXNlICJuZW9uZ3JlZW4iOgogICAgICAgICAgICAgICAgQmFja2dyb3VuZENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoNCwgMTIsIDcpOwogICAg',
-            'ICAgICAgICAgICAgU2lkZWJhckNvbG9yID0gQ29sb3IuRnJvbUFyZ2IoNSwgMTgsIDkpOwogICAgICAgICAgICAgICAgU3VyZmFjZUNvbG9yID0gQ29sb3Iu',
-            'RnJvbUFyZ2IoMTAsIDI3LCAxNSk7CiAgICAgICAgICAgICAgICBJbnB1dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoNCwgMTUsIDgpOwogICAgICAgICAgICAg',
-            'ICAgQm9yZGVyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig1MiwgMTI4LCA2Myk7CiAgICAgICAgICAgICAgICBBY2NlbnRDb2xvciA9IENvbG9yLkZyb21Bcmdi',
-            'KDU3LCAyNTUsIDIwKTsKICAgICAgICAgICAgICAgIEFjY2VudERhcmtDb2xvciA9IENvbG9yLkZyb21BcmdiKDIwLCA4OCwgMTgpOwogICAgICAgICAgICAg',
-            'ICAgVGV4dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjM4LCAyNTUsIDIzOSk7CiAgICAgICAgICAgICAgICBNdXRlZFRleHRDb2xvciA9IENvbG9yLkZyb21B',
-            'cmdiKDE2NiwgMjA1LCAxNzIpOwogICAgICAgICAgICAgICAgQWN0aXZlQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig4NCwgMjU1LCA2Mik7CiAgICAgICAgICAg',
-            'ICAgICBicmVhazsKCiAgICAgICAgICAgIGRlZmF1bHQ6CiAgICAgICAgICAgICAgICBCYWNrZ3JvdW5kQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig4LCA4LCAx',
-            'MCk7CiAgICAgICAgICAgICAgICBTaWRlYmFyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYigxMywgMTMsIDE2KTsKICAgICAgICAgICAgICAgIFN1cmZhY2VDb2xv',
-            'ciA9IENvbG9yLkZyb21BcmdiKDIyLCAyMiwgMjYpOwogICAgICAgICAgICAgICAgSW5wdXRDb2xvciA9IENvbG9yLkZyb21BcmdiKDEzLCAxMywgMTYpOwog',
-            'ICAgICAgICAgICAgICAgQm9yZGVyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig4MywgMzksIDQzKTsKICAgICAgICAgICAgICAgIEFjY2VudENvbG9yID0gQ29s',
-            'b3IuRnJvbUFyZ2IoMjU1LCA0OCwgNTgpOwogICAgICAgICAgICAgICAgQWNjZW50RGFya0NvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMTEyLCAxNywgMjQpOwog',
-            'ICAgICAgICAgICAgICAgVGV4dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjQ1LCAyNDUsIDI0OCk7CiAgICAgICAgICAgICAgICBNdXRlZFRleHRDb2xvciA9',
-            'IENvbG9yLkZyb21BcmdiKDE4MCwgMTgwLCAxODgpOwogICAgICAgICAgICAgICAgQWN0aXZlQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig5MSwgMjMyLCAxMTIp',
-            'OwogICAgICAgICAgICAgICAgYnJlYWs7CiAgICAgICAgfQoKICAgICAgICBCYWNrQ29sb3IgPSBCYWNrZ3JvdW5kQ29sb3I7CiAgICAgICAgRm9yZUNvbG9y',
-            'ID0gVGV4dENvbG9yOwogICAgICAgIEFwcGx5UmFpZENsaXBUaGVtZSh0aGlzKTsKICAgICAgICBJbnZhbGlkYXRlKHRydWUpOwogICAgfQp9'
-          ) -join ''
+          $configPath = 'RaidClipPlugin/Services/ConfigurationService.cs'
           $configText = Get-Content -Raw -Path $configPath -Encoding UTF8
           $configText = $configText.Replace('if (config.UiTheme is not ("RaidRed" or "NeonGreen" or "TwitchPurple"))', 'if (config.UiTheme is not ("RaidRed" or "DarkPurple" or "DarkBlue" or "LightModern" or "NeonGreen" or "TwitchPurple"))')
           Set-Content -Path $configPath -Value $configText -Encoding UTF8
 
-          $mainPath$themeB64 = @(
-            'bmFtZXNwYWNlIFJhaWRDbGlwUGx1Z2luOwoKcHVibGljIHNlYWxlZCBwYXJ0aWFsIGNsYXNzIE1haW5Gb3JtCnsKICAgIHByaXZhdGUgcmVhZG9ubHkgQ29t',
-            'Ym9Cb3ggX3VpVGhlbWVCb3ggPSBuZXcoKQogICAgewogICAgICAgIFdpZHRoID0gMjEwLAogICAgICAgIERyb3BEb3duU3R5bGUgPSBDb21ib0JveFN0eWxl',
-            'LkRyb3BEb3duTGlzdAogICAgfTsKCiAgICBwcml2YXRlIHZvaWQgSW5pdGlhbGl6ZVRoZW1lRXZlbnRzKCkKICAgIHsKICAgICAgICBfdWlUaGVtZUJveC5J',
-            'dGVtcy5DbGVhcigpOwogICAgICAgIF91aVRoZW1lQm94Lkl0ZW1zLkFkZFJhbmdlKG5ldyBvYmplY3RbXQogICAgICAgIHsKICAgICAgICAgICAgIk1vZGVy',
-            'biBSb3QiLCAiRGFyayBQdXJwbGUiLCAiRGFyayBCbHVlIiwgIkxpZ2h0IE1vZGVybiIsICJHaWZ0Z3LDvG4iLCAiVHdpdGNoLUxpbGEiCiAgICAgICAgfSk7',
-            'CiAgICAgICAgX3VpVGhlbWVCb3guU2VsZWN0ZWRJbmRleENoYW5nZWQgKz0gKF8sIF8pID0+CiAgICAgICAgewogICAgICAgICAgICBpZiAoX3VpVGhlbWVC',
-            'b3guU2VsZWN0ZWRJbmRleCA+PSAwKQogICAgICAgICAgICAgICAgQXBwbHlVaVRoZW1lKFRoZW1lS2V5RnJvbVNlbGVjdGlvbigpKTsKICAgICAgICB9Owog',
-            'ICAgfQoKICAgIHByaXZhdGUgc3RyaW5nIFRoZW1lS2V5RnJvbVNlbGVjdGlvbigpID0+IF91aVRoZW1lQm94LlNlbGVjdGVkSW5kZXggc3dpdGNoCiAgICB7',
-            'CiAgICAgICAgMSA9PiAiRGFya1B1cnBsZSIsCiAgICAgICAgMiA9PiAiRGFya0JsdWUiLAogICAgICAgIDMgPT4gIkxpZ2h0TW9kZXJuIiwKICAgICAgICA0',
-            'ID0+ICJOZW9uR3JlZW4iLAogICAgICAgIDUgPT4gIlR3aXRjaFB1cnBsZSIsCiAgICAgICAgXyA9PiAiUmFpZFJlZCIKICAgIH07CgogICAgcHJpdmF0ZSB2',
-            'b2lkIFNlbGVjdFVpVGhlbWUoc3RyaW5nPyBrZXkpCiAgICB7CiAgICAgICAgX3VpVGhlbWVCb3guU2VsZWN0ZWRJbmRleCA9IGtleT8uVHJpbSgpLlRvTG93',
-            'ZXJJbnZhcmlhbnQoKSBzd2l0Y2gKICAgICAgICB7CiAgICAgICAgICAgICJkYXJrcHVycGxlIiA9PiAxLAogICAgICAgICAgICAiZGFya2JsdWUiID0+IDIs',
-            'CiAgICAgICAgICAgICJsaWdodG1vZGVybiIgPT4gMywKICAgICAgICAgICAgIm5lb25ncmVlbiIgPT4gNCwKICAgICAgICAgICAgInR3aXRjaHB1cnBsZSIg',
-            'PT4gNSwKICAgICAgICAgICAgXyA9PiAwCiAgICAgICAgfTsKICAgIH0KCiAgICBwcml2YXRlIHZvaWQgQXBwbHlVaVRoZW1lKHN0cmluZz8ga2V5KQogICAg',
-            'ewogICAgICAgIHN3aXRjaCAoa2V5Py5UcmltKCkuVG9Mb3dlckludmFyaWFudCgpKQogICAgICAgIHsKICAgICAgICAgICAgY2FzZSAiZGFya3B1cnBsZSI6',
-            'CiAgICAgICAgICAgIGNhc2UgInR3aXRjaHB1cnBsZSI6CiAgICAgICAgICAgICAgICBCYWNrZ3JvdW5kQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig5LCA3LCAx',
-            'NSk7CiAgICAgICAgICAgICAgICBTaWRlYmFyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYigxNSwgMTAsIDI3KTsKICAgICAgICAgICAgICAgIFN1cmZhY2VDb2xv',
-            'ciA9IENvbG9yLkZyb21BcmdiKDIyLCAxOCwgMzQpOwogICAgICAgICAgICAgICAgSW5wdXRDb2xvciA9IENvbG9yLkZyb21BcmdiKDEzLCAxMCwgMjIpOwog',
-            'ICAgICAgICAgICAgICAgQm9yZGVyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig2MiwgNDUsIDkzKTsKICAgICAgICAgICAgICAgIEFjY2VudENvbG9yID0gQ29s',
-            'b3IuRnJvbUFyZ2IoMTcwLCA5MiwgMjU1KTsKICAgICAgICAgICAgICAgIEFjY2VudERhcmtDb2xvciA9IENvbG9yLkZyb21BcmdiKDEwMSwgNDcsIDE3Myk7',
-            'CiAgICAgICAgICAgICAgICBUZXh0Q29sb3IgPSBDb2xvci5Gcm9tQXJnYigyNDYsIDI0MiwgMjU1KTsKICAgICAgICAgICAgICAgIE11dGVkVGV4dENvbG9y',
-            'ID0gQ29sb3IuRnJvbUFyZ2IoMTkwLCAxNzgsIDIxNCk7CiAgICAgICAgICAgICAgICBBY3RpdmVDb2xvciA9IENvbG9yLkZyb21BcmdiKDkxLCAyMzIsIDEx',
-            'Mik7CiAgICAgICAgICAgICAgICBicmVhazsKCiAgICAgICAgICAgIGNhc2UgImRhcmtibHVlIjoKICAgICAgICAgICAgICAgIEJhY2tncm91bmRDb2xvciA9',
-            'IENvbG9yLkZyb21BcmdiKDMsIDEzLCAyOCk7CiAgICAgICAgICAgICAgICBTaWRlYmFyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig1LCAyMCwgNDIpOwogICAg',
-            'ICAgICAgICAgICAgU3VyZmFjZUNvbG9yID0gQ29sb3IuRnJvbUFyZ2IoOCwgMjgsIDU2KTsKICAgICAgICAgICAgICAgIElucHV0Q29sb3IgPSBDb2xvci5G',
-            'cm9tQXJnYig0LCAxNywgMzYpOwogICAgICAgICAgICAgICAgQm9yZGVyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYigzMSwgODYsIDE1MCk7CiAgICAgICAgICAg',
-            'ICAgICBBY2NlbnRDb2xvciA9IENvbG9yLkZyb21BcmdiKDI2LCAxMjgsIDI1NSk7CiAgICAgICAgICAgICAgICBBY2NlbnREYXJrQ29sb3IgPSBDb2xvci5G',
-            'cm9tQXJnYig1LCA3OCwgMTY1KTsKICAgICAgICAgICAgICAgIFRleHRDb2xvciA9IENvbG9yLkZyb21BcmdiKDIzNSwgMjQ3LCAyNTUpOwogICAgICAgICAg',
-            'ICAgICAgTXV0ZWRUZXh0Q29sb3IgPSBDb2xvci5Gcm9tQXJnYigxNjUsIDE5NiwgMjI2KTsKICAgICAgICAgICAgICAgIEFjdGl2ZUNvbG9yID0gQ29sb3Iu',
-            'RnJvbUFyZ2IoOTEsIDIzMiwgMTEyKTsKICAgICAgICAgICAgICAgIGJyZWFrOwoKICAgICAgICAgICAgY2FzZSAibGlnaHRtb2Rlcm4iOgogICAgICAgICAg',
-            'ICAgICAgQmFja2dyb3VuZENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjQ2LCAyNDgsIDI1MCk7CiAgICAgICAgICAgICAgICBTaWRlYmFyQ29sb3IgPSBDb2xv',
-            'ci5Gcm9tQXJnYigyNTUsIDI1NSwgMjU1KTsKICAgICAgICAgICAgICAgIFN1cmZhY2VDb2xvciA9IENvbG9yLkZyb21BcmdiKDI1NSwgMjU1LCAyNTUpOwog',
-            'ICAgICAgICAgICAgICAgSW5wdXRDb2xvciA9IENvbG9yLkZyb21BcmdiKDI1MCwgMjUyLCAyNTMpOwogICAgICAgICAgICAgICAgQm9yZGVyQ29sb3IgPSBD',
-            'b2xvci5Gcm9tQXJnYigyMjAsIDIyNSwgMjMwKTsKICAgICAgICAgICAgICAgIEFjY2VudENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoNTUsIDE4NCwgOTEpOwog',
-            'ICAgICAgICAgICAgICAgQWNjZW50RGFya0NvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjEzLCAyNDIsIDIxOSk7CiAgICAgICAgICAgICAgICBUZXh0Q29sb3Ig',
-            'PSBDb2xvci5Gcm9tQXJnYigyOCwgMzIsIDM4KTsKICAgICAgICAgICAgICAgIE11dGVkVGV4dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoOTMsIDEwNCwgMTE2',
-            'KTsKICAgICAgICAgICAgICAgIEFjdGl2ZUNvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjUsIDE1MCwgNjApOwogICAgICAgICAgICAgICAgYnJlYWs7CgogICAg',
-            'ICAgICAgICBjYXNlICJuZW9uZ3JlZW4iOgogICAgICAgICAgICAgICAgQmFja2dyb3VuZENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoNCwgMTIsIDcpOwogICAg',
-            'ICAgICAgICAgICAgU2lkZWJhckNvbG9yID0gQ29sb3IuRnJvbUFyZ2IoNSwgMTgsIDkpOwogICAgICAgICAgICAgICAgU3VyZmFjZUNvbG9yID0gQ29sb3Iu',
-            'RnJvbUFyZ2IoMTAsIDI3LCAxNSk7CiAgICAgICAgICAgICAgICBJbnB1dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoNCwgMTUsIDgpOwogICAgICAgICAgICAg',
-            'ICAgQm9yZGVyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig1MiwgMTI4LCA2Myk7CiAgICAgICAgICAgICAgICBBY2NlbnRDb2xvciA9IENvbG9yLkZyb21Bcmdi',
-            'KDU3LCAyNTUsIDIwKTsKICAgICAgICAgICAgICAgIEFjY2VudERhcmtDb2xvciA9IENvbG9yLkZyb21BcmdiKDIwLCA4OCwgMTgpOwogICAgICAgICAgICAg',
-            'ICAgVGV4dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjM4LCAyNTUsIDIzOSk7CiAgICAgICAgICAgICAgICBNdXRlZFRleHRDb2xvciA9IENvbG9yLkZyb21B',
-            'cmdiKDE2NiwgMjA1LCAxNzIpOwogICAgICAgICAgICAgICAgQWN0aXZlQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig4NCwgMjU1LCA2Mik7CiAgICAgICAgICAg',
-            'ICAgICBicmVhazsKCiAgICAgICAgICAgIGRlZmF1bHQ6CiAgICAgICAgICAgICAgICBCYWNrZ3JvdW5kQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig4LCA4LCAx',
-            'MCk7CiAgICAgICAgICAgICAgICBTaWRlYmFyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYigxMywgMTMsIDE2KTsKICAgICAgICAgICAgICAgIFN1cmZhY2VDb2xv',
-            'ciA9IENvbG9yLkZyb21BcmdiKDIyLCAyMiwgMjYpOwogICAgICAgICAgICAgICAgSW5wdXRDb2xvciA9IENvbG9yLkZyb21BcmdiKDEzLCAxMywgMTYpOwog',
-            'ICAgICAgICAgICAgICAgQm9yZGVyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig4MywgMzksIDQzKTsKICAgICAgICAgICAgICAgIEFjY2VudENvbG9yID0gQ29s',
-            'b3IuRnJvbUFyZ2IoMjU1LCA0OCwgNTgpOwogICAgICAgICAgICAgICAgQWNjZW50RGFya0NvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMTEyLCAxNywgMjQpOwog',
-            'ICAgICAgICAgICAgICAgVGV4dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjQ1LCAyNDUsIDI0OCk7CiAgICAgICAgICAgICAgICBNdXRlZFRleHRDb2xvciA9',
-            'IENvbG9yLkZyb21BcmdiKDE4MCwgMTgwLCAxODgpOwogICAgICAgICAgICAgICAgQWN0aXZlQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig5MSwgMjMyLCAxMTIp',
-            'OwogICAgICAgICAgICAgICAgYnJlYWs7CiAgICAgICAgfQoKICAgICAgICBCYWNrQ29sb3IgPSBCYWNrZ3JvdW5kQ29sb3I7CiAgICAgICAgRm9yZUNvbG9y',
-            'ID0gVGV4dENvbG9yOwogICAgICAgIEFwcGx5UmFpZENsaXBUaGVtZSh0aGlzKTsKICAgICAgICBJbnZhbGlkYXRlKHRydWUpOwogICAgfQp9'
-          ) -join ''
+          $mainPath = 'RaidClipPlugin/MainForm.cs'
           $mainText = Get-Content -Raw -Path $mainPath -Encoding UTF8
-          $mainText = $mainText.Replace('Text = $"● {service}{Environment.NewLine}Nicht verbunden",', 'Text = $"{service}{Environment.NewLine}Nicht verbunden",')
-          $mainText = $mainText.Replace('TextAlign = ContentAlignment.MiddleCenter,', 'TextAlign = ContentAlignment.MiddleLeft,')
-          $mainText = $mainText.Replace('BorderStyle = BorderStyle.FixedSingle,
-            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-            Margin = new Padding(4)', 'BorderStyle = BorderStyle.None,
-            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-            Padding = new Padding(16, 10, 12, 10),
-            Margin = new Padding(6)')
-          $mainText = $mainText.Replace('Width = 242,
-            Height = 88,', 'Width = 228,
-            Height = 54,')
-          $mainText = $mainText.Replace('Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-            ForeColor = TextColor,
-            BackColor = SidebarColor,
-            Padding = new Padding(18, 8, 12, 8),
-            Margin = new Padding(5, 5, 5, 2),', 'Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
-            ForeColor = TextColor,
-            BackColor = SidebarColor,
-            Padding = new Padding(15, 6, 12, 6),
-            Margin = new Padding(5, 4, 5, 2),')
-          $mainText = $mainText.Replace('button.FlatAppearance.BorderSize = active ? 1 : 0;
-        button.FlatAppearance.BorderColor = AccentColor;', 'button.FlatAppearance.BorderSize = 1;
-        button.FlatAppearance.BorderColor = active ? AccentColor : Color.Transparent;')
-          $mainText = $mainText.Replace('groupBox.BackColor = BackgroundColor;', 'groupBox.BackColor = SurfaceColor;')
-          $mainText = $mainText.Replace('grid.GridColor = Color.FromArgb(50, 50, 54);
-                    grid.BorderStyle = BorderStyle.FixedSingle;', 'grid.GridColor = BorderColor;
-                    grid.BorderStyle = BorderStyle.None;')
-          $mainText = $mainText.Replace('Color.FromArgb(28, 28, 31);', 'SurfaceColor;')
+          $mainText = $mainText.Replace('Width = 242,', 'Width = 228,')
+          $mainText = $mainText.Replace('Height = 88,', 'Height = 54,')
+          $mainText = $mainText.Replace('Font = new Font("Segoe UI", 10F, FontStyle.Bold),', 'Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),')
+          $mainText = $mainText.Replace('Padding = new Padding(18, 8, 12, 8),', 'Padding = new Padding(15, 6, 12, 6),')
+          $mainText = $mainText.Replace('Margin = new Padding(5, 5, 5, 2),', 'Margin = new Padding(5, 4, 5, 2),')
           $mainText = $mainText.Replace('button.FlatAppearance.MouseDownBackColor = Color.FromArgb(125, 12, 17);', 'button.FlatAppearance.MouseDownBackColor = ControlPaint.Dark(AccentDarkColor);')
           $mainText = $mainText.Replace('? Color.FromArgb(125, 12, 17)', '? ControlPaint.Dark(AccentDarkColor)')
           $mainText = $mainText.Replace('button.BackColor = Color.FromArgb(38, 15, 17);', 'button.BackColor = AccentDarkColor;')
           $mainText = $mainText.Replace('Height = 205,', 'Height = 150,')
-          $mainText = $mainText.Replace('Padding = new Padding(6),
-            AutoScroll = true', 'Padding = new Padding(10, 8, 10, 8),
-            AutoScroll = true')
           Set-Content -Path $mainPath -Value $mainText -Encoding UTF8
 
       - name: Build
@@ -244,5 +110,4 @@ jobs:
           }
           git commit -m "Modernize GUI themes and add red variant"
           git push
-
 
