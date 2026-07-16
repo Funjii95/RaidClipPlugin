@@ -1,0 +1,90 @@
+name: Fix clipped dashboard fields
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  patch:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply clipped field fix
+        shell: pwsh
+        run: |
+          $patchB64 = @'
+          CiRFcnJvckFjdGlvblByZWZlcmVuY2UgPSAnU3RvcCcKCiRtYWluUGF0aCA9ICdSYWlkQ2xpcFBsdWdpbi9NYWluRm9ybS5jcycK
+          JHNoZWxsUGF0aCA9ICdSYWlkQ2xpcFBsdWdpbi9NYWluRm9ybS5Nb2Rlcm5TaGVsbC5jcycKJGRhc2hib2FyZFBhdGggPSAnUmFp
+          ZENsaXBQbHVnaW4vTWFpbkZvcm0uRGFzaGJvYXJkTW9kZXJuLmNzJwoKJG1haW4gPSBHZXQtQ29udGVudCAtUGF0aCAkbWFpblBh
+          dGggLVJhdyAtRW5jb2RpbmcgVVRGOAokc2hlbGwgPSBHZXQtQ29udGVudCAtUGF0aCAkc2hlbGxQYXRoIC1SYXcgLUVuY29kaW5n
+          IFVURjgKJGRhc2hib2FyZCA9IEdldC1Db250ZW50IC1QYXRoICRkYXNoYm9hcmRQYXRoIC1SYXcgLUVuY29kaW5nIFVURjgKCiRt
+          YWluID0gJG1haW4uUmVwbGFjZSgnV2lkdGggPSAyNjAsXG4gICAgICAgIE1hcmdpbiA9IG5ldyBQYWRkaW5nKDEyLCAxMCwgNCwg
+          MCknLCAnV2lkdGggPSAyODAsXG4gICAgICAgIE1hcmdpbiA9IG5ldyBQYWRkaW5nKDEyLCA4LCA0LCAwKScpCiRtYWluID0gJG1h
+          aW4uUmVwbGFjZSgnV2lkdGggPSAyODAsXG4gICAgICAgIFBsYWNlaG9sZGVyVGV4dCA9ICJDbGlwLUlEcywgZHVyY2ggS29tbWEg
+          Z2V0cmVubnQiJywgJ1dpZHRoID0gMzYwLFxuICAgICAgICBQbGFjZWhvbGRlclRleHQgPSAiQ2xpcC1JRHMsIGR1cmNoIEtvbW1h
+          IGdldHJlbm50IicpCiRtYWluID0gJG1haW4uUmVwbGFjZSgnV2lkdGggPSA0MjAsXG4gICAgICAgIFBsYWNlaG9sZGVyVGV4dCA9
+          ICJ7bmFtZX0sIHtsb2dpbn0gdW5kIHt2aWV3ZXJzfSBzaW5kIHZlcmbDvGdiYXIiJywgJ1dpZHRoID0gNTYwLFxuICAgICAgICBQ
+          bGFjZWhvbGRlclRleHQgPSAie25hbWV9LCB7bG9naW59IHVuZCB7dmlld2Vyc30gc2luZCB2ZXJmw7xnYmFyIicpCgokbWFpbiA9
+          ICRtYWluLlJlcGxhY2UoJyAgICAgICAgICAgIFBhZGRpbmcgPSBuZXcgUGFkZGluZygwLCA4LCAwLCA4KScsICcgICAgICAgICAg
+          ICBQYWRkaW5nID0gbmV3IFBhZGRpbmcoOCwgNiwgOCwgNiksXG4gICAgICAgICAgICBBdXRvU2Nyb2xsID0gdHJ1ZScpCiRtYWlu
+          ID0gJG1haW4uUmVwbGFjZSgnICAgICAgICAgICAgUGFkZGluZyA9IG5ldyBQYWRkaW5nKDQpXG4gICAgICAgIH07JywgJyAgICAg
+          ICAgICAgIFBhZGRpbmcgPSBuZXcgUGFkZGluZygxMCksXG4gICAgICAgICAgICBBdXRvU2l6ZSA9IGZhbHNlXG4gICAgICAgIH07
+          JywgMSkKCiRtYWluID0gJG1haW4uUmVwbGFjZSgncmFpZExheW91dC5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlw
+          ZS5BYnNvbHV0ZSwgNzIpKTtcbiAgICAgICAgcmFpZExheW91dC5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5B
+          YnNvbHV0ZSwgMjQ1KSk7JywgJ3JhaWRMYXlvdXQuUm93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUs
+          IDg2KSk7XG4gICAgICAgIHJhaWRMYXlvdXQuUm93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDI4
+          NSkpOycpCiRtYWluID0gJG1haW4uUmVwbGFjZSgnICAgICAgICAgICAgUGFkZGluZyA9IG5ldyBQYWRkaW5nKDI2LCAxOCwgMjYs
+          IDIyKSwnLCAnICAgICAgICAgICAgUGFkZGluZyA9IG5ldyBQYWRkaW5nKDIyLCAxOCwgMjIsIDIyKSwnKQoKJG1haW4gPSAkbWFp
+          bi5SZXBsYWNlKCcgICAgICAgIF9zZXR0aW5nc0dyb3VwLkNvbnRyb2xzLkFkZChyYWlkU2V0dGluZ3NGbG93KTsnLCBAJwogICAg
+          ICAgIHJhaWRTZXR0aW5nc0Zsb3cuUmVzaXplICs9IChfLCBfKSA9PgogICAgICAgIHsKICAgICAgICAgICAgZm9yZWFjaCAoQ29u
+          dHJvbCBjaGlsZCBpbiByYWlkU2V0dGluZ3NGbG93LkNvbnRyb2xzKQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICBpZiAo
+          Y2hpbGQgaXMgUGFuZWwgcGFuZWwgJiYgcGFuZWwuQ29udHJvbHMuQ291bnQgPiAwKQogICAgICAgICAgICAgICAgewogICAgICAg
+          ICAgICAgICAgICAgIHBhbmVsLldpZHRoID0gTWF0aC5NaW4oCiAgICAgICAgICAgICAgICAgICAgICAgIE1hdGguTWF4KHBhbmVs
+          LldpZHRoLCBwYW5lbC5Db250cm9sc1swXS5XaWR0aCArIDE4KSwKICAgICAgICAgICAgICAgICAgICAgICAgTWF0aC5NYXgoMjIw
+          LCByYWlkU2V0dGluZ3NGbG93LkNsaWVudFNpemUuV2lkdGggLSA0OCkpOwogICAgICAgICAgICAgICAgfQogICAgICAgICAgICB9
+          CiAgICAgICAgfTsKICAgICAgICBfc2V0dGluZ3NHcm91cC5Db250cm9scy5BZGQocmFpZFNldHRpbmdzRmxvdyk7CidAKQoKJG1h
+          aW4gPSAkbWFpbi5SZXBsYWNlKCdUZXh0Rm9ybWF0RmxhZ3MuV29yZEJyZWFrIHwnLCAnVGV4dEZvcm1hdEZsYWdzLldvcmRCcmVh
+          ayB8IFRleHRGb3JtYXRGbGFncy5FbmRFbGxpcHNpcyB8JykKCiRzaGVsbCA9ICRzaGVsbC5SZXBsYWNlKCdwcml2YXRlIGNvbnN0
+          IGludCBTaWRlYmFyRXhwYW5kZWRXaWR0aCA9IDI2ODsnLCAncHJpdmF0ZSBjb25zdCBpbnQgU2lkZWJhckV4cGFuZGVkV2lkdGgg
+          PSAzMDg7JykKJHNoZWxsID0gJHNoZWxsLlJlcGxhY2UoJ3ZhciBjb21wYWN0ID0gQ2xpZW50U2l6ZS5XaWR0aCA8IDExNjA7Jywg
+          J3ZhciBjb21wYWN0ID0gQ2xpZW50U2l6ZS5XaWR0aCA8IDEyNDA7JykKJHNoZWxsID0gJHNoZWxsLlJlcGxhY2UoJ2J1dHRvbi5X
+          aWR0aCA9IGNvbXBhY3QgPyA0OCA6IDIyODsnLCAnYnV0dG9uLldpZHRoID0gY29tcGFjdCA/IDQ4IDogMjY2OycpCiRzaGVsbCA9
+          ICRzaGVsbC5SZXBsYWNlKCdidXR0b24uSGVpZ2h0ID0gY29tcGFjdCA/IDQ4IDogNTg7JywgJ2J1dHRvbi5IZWlnaHQgPSBjb21w
+          YWN0ID8gNDggOiA2NDsnKQokc2hlbGwgPSAkc2hlbGwuUmVwbGFjZSgnbmV3IFBhZGRpbmcoMTQsIDcsIDEyLCA3KScsICduZXcg
+          UGFkZGluZygxNCwgOCwgMTIsIDgpJykKJHNoZWxsID0gJHNoZWxsLlJlcGxhY2UoJ1NpemUgPSBuZXcgU2l6ZShzdGF0ZS5XaWR0
+          aCwgc3RhdGUuSGVpZ2h0KTsnLCAnU2l6ZSA9IG5ldyBTaXplKE1hdGguTWF4KHN0YXRlLldpZHRoLCBNaW5pbXVtU2l6ZS5XaWR0
+          aCksIE1hdGguTWF4KHN0YXRlLkhlaWdodCwgTWluaW11bVNpemUuSGVpZ2h0KSk7JykKCiRkYXNoYm9hcmQgPSAkZGFzaGJvYXJk
+          LlJlcGxhY2UoJ2xheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgNDMwKSk7
+          JywgJ2xheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgNDYwKSk7JykKJGRh
+          c2hib2FyZCA9ICRkYXNoYm9hcmQuUmVwbGFjZSgnZmxvdy5XcmFwQ29udGVudHMgPSBmYWxzZTsnLCAnZmxvdy5XcmFwQ29udGVu
+          dHMgPSB0cnVlOycpCiRkYXNoYm9hcmQgPSAkZGFzaGJvYXJkLlJlcGxhY2UoJ2Zsb3cuQXV0b1Njcm9sbCA9IGZhbHNlOycsICdm
+          bG93LkF1dG9TY3JvbGwgPSB0cnVlOycpCgpTZXQtQ29udGVudCAtUGF0aCAkbWFpblBhdGggLVZhbHVlICRtYWluIC1FbmNvZGlu
+          ZyBVVEY4ClNldC1Db250ZW50IC1QYXRoICRzaGVsbFBhdGggLVZhbHVlICRzaGVsbCAtRW5jb2RpbmcgVVRGOApTZXQtQ29udGVu
+          dCAtUGF0aCAkZGFzaGJvYXJkUGF0aCAtVmFsdWUgJGRhc2hib2FyZCAtRW5jb2RpbmcgVVRGOAoKZG90bmV0IHRlc3QgVGVzdHMv
+          UmFpZENsaXBQbHVnaW4uVGVzdHMvUmFpZENsaXBQbHVnaW4uVGVzdHMuY3Nwcm9qIC0tY29uZmlndXJhdGlvbiBSZWxlYXNlCmRv
+          dG5ldCBidWlsZCBSYWlkQ2xpcFBsdWdpbi9SYWlkQ2xpcFBsdWdpbi5jc3Byb2ogLS1jb25maWd1cmF0aW9uIFJlbGVhc2UgLS1u
+          by1yZXN0b3JlCgpnaXQgY29uZmlnIHVzZXIubmFtZSAnZ2l0aHViLWFjdGlvbnNbYm90XScKZ2l0IGNvbmZpZyB1c2VyLmVtYWls
+          ICc0MTg5ODI4MitnaXRodWItYWN0aW9uc1tib3RdQHVzZXJzLm5vcmVwbHkuZ2l0aHViLmNvbScKZ2l0IGFkZCBSYWlkQ2xpcFBs
+          dWdpbi9NYWluRm9ybS5jcyBSYWlkQ2xpcFBsdWdpbi9NYWluRm9ybS5Nb2Rlcm5TaGVsbC5jcyBSYWlkQ2xpcFBsdWdpbi9NYWlu
+          Rm9ybS5EYXNoYm9hcmRNb2Rlcm4uY3MKaWYgKC1ub3QgKGdpdCBkaWZmIC0tY2FjaGVkIC0tcXVpZXQpKSB7CiAgICBnaXQgY29t
+          bWl0IC1tICdGaXggY2xpcHBlZCBkYXNoYm9hcmQgZmllbGRzJwogICAgZ2l0IHB1c2gKfSBlbHNlIHsKICAgIFdyaXRlLUhvc3Qg
+          J05vIGNsaXBwZWQtZmllbGQgY2hhbmdlcyB0byBjb21taXQuJwp9Cg==
+          '@
+          $patchB64 = $patchB64 -replace '\s', ''
+          [IO.File]::WriteAllBytes('fix-clipped-dashboard-fields.ps1', [Convert]::FromBase64String($patchB64))
+          ./fix-clipped-dashboard-fields.ps1
