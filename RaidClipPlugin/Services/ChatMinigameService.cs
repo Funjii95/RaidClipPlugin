@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Text;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 
@@ -39,6 +40,10 @@ public sealed class ChatMinigameService : IDisposable
     private DateTimeOffset _lastCommandsGlobal = DateTimeOffset.MinValue;
     private readonly ConcurrentDictionary<string, byte> _processedMessages =
         new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, DateTimeOffset> _processedGambleMessages =
+        new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _gambleUserLocks =
+        new(StringComparer.Ordinal);
     private DateTimeOffset _lastGlobalCommand = DateTimeOffset.MinValue;
     private bool _disposed;
     private volatile bool _isRunning;
@@ -57,6 +62,100 @@ public sealed class ChatMinigameService : IDisposable
             "!gambel" => "!gamble",
             _ => (command ?? "").Trim().ToLowerInvariant()
         };
+
+    public static MinigameCommandParseResult ParseMinigameCommand(string? text)
+    {
+        var normalized = NormalizeChatCommandText(text);
+        if (normalized.Length == 0)
+        {
+            return new(false, "", "", "", normalized,
+                Array.Empty<string>(), "Nachricht ist leer.");
+        }
+
+        if (!normalized.StartsWith('!'))
+        {
+            return new(false, "", "", "", normalized,
+                Array.Empty<string>(), "Command-Prefix fehlt.");
+        }
+
+        var firstSpace = normalized.IndexOf(' ');
+        var rawCommand = firstSpace < 0
+            ? normalized
+            : normalized[..firstSpace];
+        var command = NormalizeIncomingCommand(rawCommand);
+        var arguments = firstSpace < 0
+            ? ""
+            : normalized[(firstSpace + 1)..].Trim();
+        var parts = arguments.Length == 0
+            ? new[] { command }
+            : new[] { command }.Concat(arguments.Split(' ',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries)).ToArray();
+
+        if (command.Length <= 1)
+        {
+            return new(false, command, "", arguments, normalized,
+                parts, "Commandname fehlt.");
+        }
+
+        return new(true, command, command[1..], arguments, normalized,
+            parts, "");
+    }
+
+    private static string NormalizeChatCommandText(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return "";
+        }
+
+        var builder = new StringBuilder(text.Length);
+        var previousWasWhitespace = false;
+        foreach (var character in text.Trim())
+        {
+            if (IsZeroWidthCharacter(character))
+            {
+                continue;
+            }
+
+            if (char.IsWhiteSpace(character))
+            {
+                if (!previousWasWhitespace)
+                {
+                    builder.Append(' ');
+                    previousWasWhitespace = true;
+                }
+
+                continue;
+            }
+
+            builder.Append(character);
+            previousWasWhitespace = false;
+        }
+
+        return builder.ToString().Trim();
+    }
+
+    private static bool IsZeroWidthCharacter(char character) =>
+        character is '\u200B' or '\u200C' or '\u200D' or '\uFEFF' or '\u2060';
+
+    public static GambleArgumentParseResult ParseGambleArgument(string? arguments)
+    {
+        var normalized = NormalizeChatCommandText(arguments);
+        if (normalized.Length == 0 || normalized.Contains(' '))
+        {
+            return new(false, false, 0, normalized);
+        }
+
+        if (normalized.Equals("all", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(true, true, 0, normalized);
+        }
+
+        return long.TryParse(normalized, out var stake) && stake > 0
+            ? new(true, false, stake, normalized)
+            : new(false, false, 0, normalized);
+    }
 
     private void TouchHeartbeat() =>
         _lastHeartbeatUtc = DateTimeOffset.UtcNow;
@@ -261,9 +360,17 @@ public sealed class ChatMinigameService : IDisposable
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(message.Id) ||
-                !_processedMessages.TryAdd(message.Id, 0))
+            if (string.IsNullOrWhiteSpace(message.Id))
             {
+                Console.WriteLine(
+                    $"Minigame ignoriert Nachricht von {message.UserName}: Twitch-Message-ID fehlt.");
+                return;
+            }
+
+            if (!_processedMessages.TryAdd(message.Id, 0))
+            {
+                Console.WriteLine(
+                    $"Minigame ignoriert doppelte Nachricht: MessageId={message.Id} User={message.UserName}.");
                 return;
             }
 
@@ -292,10 +399,10 @@ public sealed class ChatMinigameService : IDisposable
                 DataChanged?.Invoke();
             }
 
-            var parsedCommand = ChatCommandParser.Parse(message.Text);
+            var parsedCommand = ParseMinigameCommand(message.Text);
             if (parsedCommand.IsCommand)
             {
-                await HandleCommandAsync(message, cancellationToken);
+                await HandleCommandAsync(message, parsedCommand, cancellationToken);
             }
             else
             {
@@ -419,15 +526,16 @@ public sealed class ChatMinigameService : IDisposable
         }
     }
 
-    private async Task HandleCommandAsync(ChatMessage message,
+    private async Task HandleCommandAsync(
+        ChatMessage message,
+        MinigameCommandParseResult parsedCommand,
         CancellationToken cancellationToken)
     {
         try
         {
-            var parts = message.Text.Trim().Split(' ',
-                StringSplitOptions.RemoveEmptyEntries);
+            var parts = parsedCommand.Parts;
             if (parts.Length == 0) return;
-            var command = NormalizeIncomingCommand(parts[0]);
+            var command = parsedCommand.Command;
             parts[0] = command;
 
             if (_commandsConfig.Enabled &&
@@ -799,31 +907,97 @@ public sealed class ChatMinigameService : IDisposable
             }
 
             if (command != "!gamble" || !_config.GambleEnabled) return;
-            Console.WriteLine($"!gamble Command empfangen von {message.UserName}.");
-            if (!await TryEnterCooldownWithReplyAsync(message, message.UserId,
-                _gambleCooldowns, _config.GambleCooldownSeconds,
-                "!gamble", cancellationToken)) return;
-            if (parts.Length != 2)
+            await HandleGambleCommandAsync(
+                message,
+                parsedCommand,
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
+        catch (Exception exception)
+        {
+            _lastRuntimeError = exception.ToString();
+            TouchHeartbeat();
+            Console.WriteLine("Minigame-Command fehlgeschlagen: " + exception);
+            var failedCommand = ParseMinigameCommand(message.Text);
+            if (failedCommand.Command == "!gamble")
             {
                 await TrySendChatAsync(
-                    $"@{message.UserName}, nutze !gamble <einsatz|all>.",
+                    $"@{message.UserName}, Gamble ist gerade kurz nicht verfügbar. Bitte versuche es erneut.",
                     cancellationToken);
-                return;
+            }
+        }
+    }
+
+    private async Task<GambleCommandResult> HandleGambleCommandAsync(
+        ChatMessage message,
+        MinigameCommandParseResult parsedCommand,
+        CancellationToken cancellationToken)
+    {
+        if (SkipBlacklisted(message.UserName))
+        {
+            LogGambleCommand(
+                message,
+                parsedCommand,
+                "",
+                nameof(ChatMinigameService),
+                GambleCommandResult.NotHandled,
+                "blacklisted");
+            return GambleCommandResult.NotHandled;
+        }
+
+        if (!string.IsNullOrWhiteSpace(message.Id))
+        {
+            CleanupProcessedGambleMessages();
+            if (!_processedGambleMessages.TryAdd(
+                    message.Id,
+                    DateTimeOffset.UtcNow))
+            {
+                LogGambleCommand(
+                    message,
+                    parsedCommand,
+                    parsedCommand.Arguments,
+                    nameof(ChatMinigameService),
+                    GambleCommandResult.DuplicateMessage,
+                    "duplicate-message-id");
+                return GambleCommandResult.DuplicateMessage;
+            }
+        }
+
+        var userGate = _gambleUserLocks.GetOrAdd(
+            message.UserId,
+            _ => new SemaphoreSlim(1, 1));
+        await userGate.WaitAsync(cancellationToken);
+        try
+        {
+            var gambleArgument = ParseGambleArgument(parsedCommand.Arguments);
+            var argument = gambleArgument.NormalizedArgument;
+            if (!gambleArgument.IsValid)
+            {
+                await SendGambleUsageAsync(message, cancellationToken);
+                LogGambleCommand(
+                    message,
+                    parsedCommand,
+                    argument,
+                    nameof(ChatMinigameService),
+                    GambleCommandResult.InvalidArguments,
+                    "missing-or-too-many-arguments");
+                return GambleCommandResult.InvalidArguments;
             }
 
-            var isAllIn = parts[1].Equals(
-                "all", StringComparison.OrdinalIgnoreCase);
-            var availableForGamble = isAllIn
-                ? Math.Max(0L,
+            var isAllIn = gambleArgument.IsAllIn;
+            long gambleStake;
+            if (isAllIn)
+            {
+                var availableForGamble = Math.Max(0L,
                     await _points.GetPointsAsync(
                         message.UserId, cancellationToken) -
-                    Math.Max(0L, _config.MinimumPoints))
-                : 0L;
-            var gambleStake = isAllIn
-                ? CalculateAllInStake(availableForGamble)
-                : long.TryParse(parts[1], out var parsedStake)
-                    ? parsedStake
-                    : -1;
+                    Math.Max(0L, _config.MinimumPoints));
+                gambleStake = CalculateAllInStake(availableForGamble);
+            }
+            else
+            {
+                gambleStake = gambleArgument.Stake;
+            }
 
             if (gambleStake < _config.MinimumBet ||
                 (!isAllIn && gambleStake > _config.MaximumBet))
@@ -833,17 +1007,56 @@ public sealed class ChatMinigameService : IDisposable
                         ? $"@{message.UserName}, du hast nicht genug verfügbare {_config.CurrencyPlural} für All-in."
                         : $"@{message.UserName}, nutze !gamble <einsatz|all>.",
                     cancellationToken);
-                return;
+                LogGambleCommand(
+                    message,
+                    parsedCommand,
+                    argument,
+                    nameof(ChatMinigameService),
+                    GambleCommandResult.InvalidArguments,
+                    $"stake-out-of-range:{gambleStake}");
+                return GambleCommandResult.InvalidArguments;
             }
+
+            if (!await TryEnterCooldownWithReplyAsync(message, message.UserId,
+                    _gambleCooldowns, _config.GambleCooldownSeconds,
+                    "!gamble", cancellationToken))
+            {
+                LogGambleCommand(
+                    message,
+                    parsedCommand,
+                    argument,
+                    nameof(ChatMinigameService),
+                    GambleCommandResult.Cooldown,
+                    "cooldown");
+                return GambleCommandResult.Cooldown;
+            }
+
             var roll = Random.Shared.Next(1, 101);
-            var range = _config.GambleRanges.Single(x => roll >= x.From && roll <= x.To);
-            var payoutValue = Math.Floor(
-                gambleStake * range.Multiplier);
+            var range = _config.GambleRanges.Single(x =>
+                roll >= x.From && roll <= x.To);
+            var payoutValue = Math.Floor(gambleStake * range.Multiplier);
             var gamblePayout = ToNonNegativeLong(payoutValue);
-            var gambleResult = await ApplyCasinoAsync(message, "Gamble", gambleStake,
-                gamblePayout, cancellationToken, forceJackpot: roll == 100);
-            if (!gambleResult.Success) return;
-            Console.WriteLine($"!gamble erfolgreich verarbeitet für {message.UserName}; Stand {gambleResult.Balance}.");
+            var gambleResult = await ApplyCasinoAsync(
+                message,
+                "Gamble",
+                gambleStake,
+                gamblePayout,
+                cancellationToken,
+                forceJackpot: roll == 100);
+            if (!gambleResult.Success)
+            {
+                LogGambleCommand(
+                    message,
+                    parsedCommand,
+                    argument,
+                    nameof(ChatMinigameService),
+                    GambleCommandResult.InsufficientPoints,
+                    gambleResult.Error);
+                return GambleCommandResult.InsufficientPoints;
+            }
+
+            Console.WriteLine(
+                $"!gamble erfolgreich verarbeitet für {message.UserName}; Stand {gambleResult.Balance}.");
             if (roll == 100 && gambleResult.JackpotWon > 0)
             {
                 Console.WriteLine(
@@ -857,32 +1070,94 @@ public sealed class ChatMinigameService : IDisposable
                     $"auf {FormatCurrency(_config.JackpotStartValue)} zurückgesetzt. " +
                     $"Neuer Stand: {gambleResult.Balance:N0}.",
                     cancellationToken);
-                return;
+                LogGambleCommand(
+                    message,
+                    parsedCommand,
+                    argument,
+                    nameof(ChatMinigameService),
+                    GambleCommandResult.Handled,
+                    $"roll={roll};stake={gambleStake};payout={gamblePayout};jackpot={gambleResult.JackpotWon}");
+                return GambleCommandResult.Handled;
             }
 
             var resultText = LocalizeCurrencyText(range.ChatText)
                 .Replace("{name}", message.UserName)
-                .Replace("{roll}", roll.ToString()).Replace("{stake}", gambleStake.ToString())
+                .Replace("{roll}", roll.ToString())
+                .Replace("{stake}", gambleStake.ToString())
                 .Replace("{payout}", gamblePayout.ToString())
                 .Replace("{balance}", gambleResult.Balance.ToString());
-            await TrySendChatAsync(resultText + JackpotText(gambleResult), cancellationToken);
+            await TrySendChatAsync(
+                resultText + JackpotText(gambleResult),
+                cancellationToken);
+            LogGambleCommand(
+                message,
+                parsedCommand,
+                argument,
+                nameof(ChatMinigameService),
+                GambleCommandResult.Handled,
+                $"roll={roll};stake={gambleStake};payout={gamblePayout}");
+            return GambleCommandResult.Handled;
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
-        catch (Exception exception)
+        finally
         {
-            _lastRuntimeError = exception.ToString();
-            TouchHeartbeat();
-            Console.WriteLine("Minigame-Command fehlgeschlagen: " + exception);
-            var failedCommand = message.Text.Trim().Split(' ',
-                StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
-            if (NormalizeIncomingCommand(failedCommand) == "!gamble")
+            userGate.Release();
+        }
+    }
+
+    private Task SendGambleUsageAsync(
+        ChatMessage message,
+        CancellationToken cancellationToken) =>
+        TrySendChatAsync(
+            $"@{message.UserName}, nutze !gamble <einsatz|all>.",
+            cancellationToken);
+
+    private void CleanupProcessedGambleMessages()
+    {
+        if (_processedGambleMessages.Count < 1_000)
+        {
+            return;
+        }
+
+        var cutoff = DateTimeOffset.UtcNow.AddMinutes(-10);
+        foreach (var entry in _processedGambleMessages.ToArray())
+        {
+            if (entry.Value < cutoff)
             {
-                await TrySendChatAsync(
-                    $"@{message.UserName}, Gamble ist gerade kurz nicht verfügbar. Bitte versuche es erneut.",
-                    cancellationToken);
+                _processedGambleMessages.TryRemove(entry.Key, out _);
             }
         }
     }
+
+    private static void LogGambleCommand(
+        ChatMessage message,
+        MinigameCommandParseResult parsedCommand,
+        string argument,
+        string handler,
+        GambleCommandResult result,
+        string details = "")
+    {
+        Console.WriteLine(
+            "GambleCommand " +
+            $"MessageId={message.Id} " +
+            $"User={message.UserName} " +
+            $"UserId={message.UserId} " +
+            $"Raw=\"{EscapeForLog(message.Text)}\" " +
+            $"Normalized=\"{EscapeForLog(parsedCommand.NormalizedText)}\" " +
+            $"Command={parsedCommand.Command} " +
+            $"Argument=\"{EscapeForLog(argument)}\" " +
+            $"ArgumentCount={parsedCommand.ArgumentCount} " +
+            $"Handler={handler} " +
+            $"Result={result}" +
+            (details.Length == 0 ? "" : $" Details=\"{EscapeForLog(details)}\""));
+    }
+
+    private static string EscapeForLog(string? text) =>
+        (text ?? "")
+        .Replace("\\", "\\\\")
+        .Replace("\"", "\\\"")
+        .Replace("\r", "\\r")
+        .Replace("\n", "\\n")
+        .Replace("\t", "\\t");
 
     public async Task ProcessPassiveEventAsync(
         MinigamePassiveEvent passiveEvent,
@@ -1528,6 +1803,38 @@ public sealed class ChatMinigameService : IDisposable
             _duel.DisposeAsync().AsTask().GetAwaiter().GetResult();
         _isRunning = false;
         _cooldownLock.Dispose();
+        foreach (var gate in _gambleUserLocks.Values)
+        {
+            gate.Dispose();
+        }
         _disposed = true;
     }
+}
+
+public sealed record MinigameCommandParseResult(
+    bool IsCommand,
+    string Command,
+    string CommandName,
+    string Arguments,
+    string NormalizedText,
+    string[] Parts,
+    string IgnoreReason)
+{
+    public int ArgumentCount => Parts.Length == 0 ? 0 : Parts.Length - 1;
+}
+
+public sealed record GambleArgumentParseResult(
+    bool IsValid,
+    bool IsAllIn,
+    long Stake,
+    string NormalizedArgument);
+
+public enum GambleCommandResult
+{
+    NotHandled,
+    Handled,
+    InvalidArguments,
+    Cooldown,
+    InsufficientPoints,
+    DuplicateMessage
 }
