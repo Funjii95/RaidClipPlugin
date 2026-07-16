@@ -50,20 +50,20 @@ jobs:
       - name: Restore
         shell: pwsh
         run: |
-          dotnet restore RaidClipPlugin.sln
+          dotnet restore RaidClipPlugin/RaidClipPlugin.csproj
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build
         shell: pwsh
         run: |
-          dotnet build RaidClipPlugin.sln --configuration Release --no-restore
+          dotnet build RaidClipPlugin/RaidClipPlugin.csproj --configuration Release --no-restore
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Test
         shell: pwsh
         run: |
           if (Test-Path 'Tests/RaidClipPlugin.Tests.csproj') {
-            dotnet test Tests/RaidClipPlugin.Tests.csproj --configuration Release --no-build
+            dotnet test Tests/RaidClipPlugin.Tests.csproj --configuration Release
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } elseif (Test-Path 'Tests/RaidClipPlugin.Tests/RaidClipPlugin.Tests.csproj') {
             dotnet test Tests/RaidClipPlugin.Tests/RaidClipPlugin.Tests.csproj --configuration Release
