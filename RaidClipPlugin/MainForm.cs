@@ -1,4 +1,4 @@
-﻿using RaidClipPlugin.Config;
+using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 
@@ -735,7 +735,23 @@ public sealed partial class MainForm : Form
     private CancellationTokenSource? _minigameRunCts;
     private UpdateInfo? _availableUpdate;
     private bool _updateBusy;
-    private AppConfig? _activeConfig;
+private AppConfig? _activeConfig;
+private readonly NotifyIcon _trayIcon = new();
+private readonly ContextMenuStrip _trayMenu = new();
+private ToolStripMenuItem? _trayOpenItem;
+private ToolStripMenuItem? _trayStartItem;
+private ToolStripMenuItem? _trayStopItem;
+private ToolStripMenuItem? _trayStatusItem;
+private ToolStripMenuItem? _trayExitItem;
+private bool _explicitExitRequested;
+private bool _trayBalloonShown;
+
+private enum CloseChoice
+{
+    MinimizeToTray,
+    Exit,
+    Cancel
+}
 
     [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(
@@ -790,6 +806,7 @@ public sealed partial class MainForm : Form
         InitializeLiveChatEvents();
         InitializeChatDiagnosticsEvents();
         InitializeThemeEvents();
+        InitializeTrayIntegration();
 
         _startButton.Click += async (_, _) => await StartPluginAsync();
         _testButton.Click += async (_, _) => await PlayTestClipAsync();
@@ -4564,6 +4581,7 @@ public sealed partial class MainForm : Form
             UpdateService.StartUpdater(stagedUpdate);
             AppendLog(
                 "Updater gestartet. RaidClip wird beendet und danach neu gestartet.");
+            _explicitExitRequested = true;
             Application.Exit();
         }
         catch (Exception exception)
@@ -5153,10 +5171,334 @@ public sealed partial class MainForm : Form
 
         _overallStatusLabel.Text = text;
         _overallStatusLabel.ForeColor = color;
+        UpdateTrayState();
     }
 
-    protected override void OnFormClosing(FormClosingEventArgs e)
+    private void InitializeTrayIntegration()
     {
+        _trayOpenItem = new ToolStripMenuItem(
+            "RaidClipPlugin öffnen",
+            null,
+            (_, _) => RestoreFromTray());
+        _trayStartItem = new ToolStripMenuItem(
+            "Bot starten",
+            null,
+            async (_, _) => await RunTrayStartAsync());
+        _trayStopItem = new ToolStripMenuItem(
+            "Bot stoppen",
+            null,
+            async (_, _) => await RunTrayStopAsync());
+        _trayStatusItem = new ToolStripMenuItem(
+            "Status anzeigen",
+            null,
+            (_, _) => ShowTrayStatus());
+        _trayExitItem = new ToolStripMenuItem(
+            "RaidClipPlugin beenden",
+            null,
+            async (_, _) => await ExitFromTrayAsync());
+
+        _trayMenu.Items.AddRange(
+            new ToolStripItem[]
+            {
+                _trayOpenItem,
+                new ToolStripSeparator(),
+                _trayStartItem,
+                _trayStopItem,
+                new ToolStripSeparator(),
+                _trayStatusItem,
+                new ToolStripSeparator(),
+                _trayExitItem
+            });
+
+        _trayIcon.ContextMenuStrip = _trayMenu;
+        _trayIcon.Icon = Icon ?? SystemIcons.Application;
+        _trayIcon.Text = GetTrayTooltip();
+        _trayIcon.Visible = false;
+        _trayIcon.DoubleClick += (_, _) => RestoreFromTray();
+
+        UpdateTrayState();
+    }
+
+    private async Task RunTrayStartAsync()
+    {
+        if (_startButton.Enabled)
+        {
+            await StartPluginAsync();
+        }
+
+        UpdateTrayState();
+    }
+
+    private async Task RunTrayStopAsync()
+    {
+        if (_stopButton.Enabled)
+        {
+            await StopPluginAsync();
+        }
+
+        UpdateTrayState();
+    }
+
+    private async Task ExitFromTrayAsync()
+    {
+        if (_explicitExitRequested)
+        {
+            return;
+        }
+
+        _explicitExitRequested = true;
+        UpdateTrayState();
+        _trayIcon.Visible = false;
+
+        try
+        {
+            await StopPluginAsync();
+        }
+        catch (Exception exception)
+        {
+            AppendLog("Fehler beim Beenden über Tray: " + exception.Message);
+        }
+
+        if (!IsDisposed)
+        {
+            Close();
+        }
+    }
+
+    private void MinimizeToTray()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(MinimizeToTray));
+            return;
+        }
+
+        _trayIcon.Visible = true;
+        ShowInTaskbar = false;
+        WindowState = FormWindowState.Minimized;
+        Hide();
+        UpdateTrayState();
+
+        if (_trayBalloonShown)
+        {
+            return;
+        }
+
+        _trayBalloonShown = true;
+        _trayIcon.ShowBalloonTip(
+            4000,
+            "RaidClipPlugin läuft im Hintergrund weiter.",
+            "Doppelklicke auf das Tray-Symbol, um das Fenster wieder zu öffnen.",
+            ToolTipIcon.Info);
+    }
+
+    private void RestoreFromTray()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(RestoreFromTray));
+            return;
+        }
+
+        ShowInTaskbar = true;
+        Show();
+
+        if (WindowState == FormWindowState.Minimized)
+        {
+            WindowState = FormWindowState.Normal;
+        }
+
+        Activate();
+        BringToFront();
+        UpdateTrayState();
+    }
+
+    private void ShowTrayStatus()
+    {
+        var botStatus = _shutdown is { IsCancellationRequested: false }
+            ? "Bot: aktiv"
+            : "Bot: gestoppt";
+        var twitchStatus = _twitchSession is not null ? "Twitch: verbunden" : "Twitch: getrennt";
+        var obsStatus = _obs is not null ? "OBS: verbunden" : "OBS: getrennt";
+        var eventSubStatus = _eventSubTask is { IsCompleted: false } ? "EventSub: aktiv" : "EventSub: inaktiv";
+        var playerStatus = _playerTask is { IsCompleted: false } ? "LocalPlayer: läuft" : "LocalPlayer: gestoppt";
+        var healthStatus = _moduleHealthTask is { IsCompleted: false } ? "Healthcheck: aktiv" : "Healthcheck: inaktiv";
+        var channel = _broadcaster?.DisplayName ??
+                      _activeConfig?.Twitch.BroadcasterLogin ??
+                      _twitchChannelBox.Text.Trim();
+
+        var text = string.Join(
+            Environment.NewLine,
+            botStatus,
+            twitchStatus,
+            obsStatus,
+            eventSubStatus,
+            playerStatus,
+            healthStatus,
+            string.IsNullOrWhiteSpace(channel)
+                ? "Kanal: nicht gesetzt"
+                : $"Kanal: {channel}");
+
+        _trayIcon.Visible = true;
+        _trayIcon.ShowBalloonTip(
+            5000,
+            "RaidClipPlugin Status",
+            text,
+            GetTrayBalloonIcon());
+    }
+
+    private void UpdateTrayState()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(UpdateTrayState));
+            return;
+        }
+
+        if (_trayOpenItem is null ||
+            _trayStartItem is null ||
+            _trayStopItem is null ||
+            _trayStatusItem is null ||
+            _trayExitItem is null)
+        {
+            return;
+        }
+
+        _trayIcon.Text = GetTrayTooltip();
+        _trayStartItem.Enabled = _startButton.Enabled && !_explicitExitRequested;
+        _trayStopItem.Enabled = _stopButton.Enabled && !_explicitExitRequested;
+        _trayOpenItem.Enabled = !_explicitExitRequested;
+        _trayStatusItem.Enabled = !_explicitExitRequested;
+        _trayExitItem.Enabled = !_explicitExitRequested;
+    }
+
+    private string GetTrayTooltip()
+    {
+        var statusText = _overallStatusLabel.Text;
+        var isProblem =
+            _overallStatusLabel.ForeColor.ToArgb() == ErrorColor.ToArgb() ||
+            statusText.Contains("Fehler", StringComparison.OrdinalIgnoreCase) ||
+            statusText.Contains("fehlgeschlagen", StringComparison.OrdinalIgnoreCase);
+
+        if (isProblem)
+        {
+            return "RaidClipPlugin – Verbindungsproblem";
+        }
+
+        return _shutdown is { IsCancellationRequested: false }
+            ? "RaidClipPlugin – Bot aktiv"
+            : "RaidClipPlugin – Bot gestoppt";
+    }
+
+    private ToolTipIcon GetTrayBalloonIcon()
+    {
+        var tooltip = GetTrayTooltip();
+
+        if (tooltip.Contains("Verbindungsproblem", StringComparison.OrdinalIgnoreCase))
+        {
+            return ToolTipIcon.Warning;
+        }
+
+        return _shutdown is { IsCancellationRequested: false }
+            ? ToolTipIcon.Info
+            : ToolTipIcon.None;
+    }
+
+    private CloseChoice ShowCloseChoiceDialog()
+    {
+        using var dialog = new Form
+        {
+            Text = "RaidClipPlugin schließen",
+            StartPosition = FormStartPosition.CenterParent,
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MinimizeBox = false,
+            MaximizeBox = false,
+            ShowInTaskbar = false,
+            ClientSize = new Size(560, 170),
+            BackColor = SurfaceColor,
+            ForeColor = TextColor,
+            Font = Font
+        };
+
+        var message = new Label
+        {
+            Text = "Möchtest du das RaidClipPlugin in den System-Tray minimieren oder vollständig beenden?",
+            AutoSize = false,
+            Dock = DockStyle.Top,
+            Height = 72,
+            Padding = new Padding(18, 18, 18, 0),
+            ForeColor = TextColor
+        };
+
+        var buttons = new FlowLayoutPanel
+        {
+            FlowDirection = FlowDirection.RightToLeft,
+            Dock = DockStyle.Bottom,
+            Height = 64,
+            Padding = new Padding(12),
+            BackColor = SurfaceColor
+        };
+
+        var cancelButton = CreateTrayDialogButton("Abbrechen", DialogResult.Cancel);
+        var exitButton = CreateTrayDialogButton("RaidClipPlugin beenden", DialogResult.No);
+        var trayButton = CreateTrayDialogButton("In den Tray minimieren", DialogResult.Yes);
+
+        buttons.Controls.Add(cancelButton);
+        buttons.Controls.Add(exitButton);
+        buttons.Controls.Add(trayButton);
+        dialog.Controls.Add(message);
+        dialog.Controls.Add(buttons);
+        dialog.AcceptButton = trayButton;
+        dialog.CancelButton = cancelButton;
+
+        return dialog.ShowDialog(this) switch
+        {
+            DialogResult.Yes => CloseChoice.MinimizeToTray,
+            DialogResult.No => CloseChoice.Exit,
+            _ => CloseChoice.Cancel
+        };
+    }
+
+    private Button CreateTrayDialogButton(string text, DialogResult dialogResult)
+    {
+        return new Button
+        {
+            Text = text,
+            DialogResult = dialogResult,
+            AutoSize = true,
+            MinimumSize = new Size(120, 34),
+            Padding = new Padding(12, 6, 12, 6),
+            BackColor = text.Contains("beenden", StringComparison.OrdinalIgnoreCase)
+                ? AccentDarkColor
+                : SurfaceColor,
+            ForeColor = TextColor,
+            FlatStyle = FlatStyle.Flat,
+            Margin = new Padding(8, 4, 0, 4)
+        };
+    }
+
+    protected override async void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (!_explicitExitRequested &&
+            e.CloseReason == CloseReason.UserClosing)
+        {
+            e.Cancel = true;
+
+            switch (ShowCloseChoiceDialog())
+            {
+                case CloseChoice.MinimizeToTray:
+                    MinimizeToTray();
+                    return;
+                case CloseChoice.Exit:
+                    await ExitFromTrayAsync();
+                    return;
+                default:
+                    return;
+            }
+        }
+
+        _explicitExitRequested = true;
+        _trayIcon.Visible = false;
         _shutdown?.Cancel();
         _obs?.Dispose();
         _player?.Dispose();
@@ -5164,6 +5506,8 @@ public sealed partial class MainForm : Form
         _liveChatTimer.Stop();
         StopLiveChat();
         CloseOfficialLiveChat();
+        _trayIcon.Dispose();
+        _trayMenu.Dispose();
         base.OnFormClosing(e);
     }
 }
