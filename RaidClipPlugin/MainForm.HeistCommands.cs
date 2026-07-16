@@ -1,4 +1,4 @@
-﻿using RaidClipPlugin.Config;
+using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 
@@ -8,7 +8,7 @@ public sealed partial class MainForm
 {
     private readonly CommandRegistry _commandRegistry = new();
     private readonly Panel _commandsPage = new() { Dock = DockStyle.Fill, Visible = false };
-    private readonly Button _commandsNavButton = CreateNavigationTile("⌨  Commands", "Alle Chat-Befehle und Berechtigungen");
+    private readonly Button _commandsNavButton = CreateNavigationTile("◉  Punkte", "Commands und Berechtigungen");
     private readonly DataGridView _commandsGrid = new() { Dock = DockStyle.Fill, ReadOnly = false, AllowUserToAddRows = false,
         AllowUserToDeleteRows = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false,
         AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells, BackgroundColor = SurfaceColor };

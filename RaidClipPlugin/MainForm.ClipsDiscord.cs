@@ -8,7 +8,7 @@ namespace RaidClipPlugin;
 public partial class MainForm
 {
     private readonly Button _clipDiscordNavButton = CreateNavigationTile(
-        "🎬  Clips & Discord", "!clip und Discord-Veröffentlichung");
+        "◎  Clips", "!clip und Discord-Veröffentlichung");
     private readonly Panel _clipDiscordPage = new()
         { Dock = DockStyle.Fill, Visible = false };
     private readonly CheckBox _clipCommandEnabledCheck =

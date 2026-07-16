@@ -13,7 +13,7 @@ public sealed partial class MainForm
         _uiThemeBox.Items.Clear();
         _uiThemeBox.Items.AddRange(new object[]
         {
-            "Modern Rot", "Dark Purple", "Dark Blue", "Light Modern", "Giftgrün", "Twitch-Lila"
+            "Dark Purple", "Dark Blue", "Light Modern", "Modern Rot", "Giftgrün", "Twitch-Lila"
         });
         _uiThemeBox.SelectedIndexChanged += (_, _) =>
         {
@@ -24,21 +24,23 @@ public sealed partial class MainForm
 
     private string ThemeKeyFromSelection() => _uiThemeBox.SelectedIndex switch
     {
-        1 => "DarkPurple",
-        2 => "DarkBlue",
-        3 => "LightModern",
+        0 => "DarkPurple",
+        1 => "DarkBlue",
+        2 => "LightModern",
+        3 => "RaidRed",
         4 => "NeonGreen",
         5 => "TwitchPurple",
-        _ => "RaidRed"
+        _ => "DarkPurple"
     };
 
     private void SelectUiTheme(string? key)
     {
         _uiThemeBox.SelectedIndex = key?.Trim().ToLowerInvariant() switch
         {
-            "darkpurple" => 1,
-            "darkblue" => 2,
-            "lightmodern" => 3,
+            "darkpurple" => 0,
+            "darkblue" => 1,
+            "lightmodern" => 2,
+            "raidred" => 3,
             "neongreen" => 4,
             "twitchpurple" => 5,
             _ => 0
@@ -102,6 +104,7 @@ public sealed partial class MainForm
                 ActiveColor = Color.FromArgb(84, 255, 62);
                 break;
 
+            case "raidred":
             default:
                 BackgroundColor = Color.FromArgb(8, 8, 10);
                 SidebarColor = Color.FromArgb(13, 13, 16);

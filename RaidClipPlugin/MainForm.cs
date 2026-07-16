@@ -309,12 +309,12 @@ public sealed partial class MainForm : Form
     };
 
     private readonly Button _raidClipNavButton = CreateNavigationTile(
-        "🎬  Raid Clip",
-        "Raids, Clips und OBS");
+        "▦  Dashboard",
+        "Bot, Raids und Status");
 
     private readonly Button _moderationNavButton = CreateNavigationTile(
-        "🛡  Chat-Moderation",
-        "Chat, Filter und Aktionen");
+        "▣  Chatbot",
+        "Moderation und Aktionen");
 
     private readonly Panel _raidPage = new()
     {
@@ -633,11 +633,11 @@ public sealed partial class MainForm : Form
         CreateIntegerControl(30, 5, 3600);
 
     private readonly Button _minigameNavButton = CreateNavigationTile(
-        "🎲  Minigame",
+        "◇  Minigames",
         "Punkte, Commands und Gamble");
 
     private readonly Button _systemStatusNavButton = CreateNavigationTile(
-        "🩺  Systemstatus",
+        "◈  Healthcheck",
         "Watchdog und Auto-Recovery");
 
     private readonly Panel _minigamePage = new()
@@ -786,16 +786,20 @@ private enum CloseChoice
                    Application.ExecutablePath) ??
                SystemIcons.Application;
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(1280, 800);
-        Size = new Size(1600, 960);
+        MinimumSize = new Size(1120, 720);
+        Size = new Size(1480, 920);
         BackColor = BackgroundColor;
         ForeColor = TextColor;
         Font = new Font("Segoe UI", 10F);
         AutoScaleMode = AutoScaleMode.Dpi;
+        FormBorderStyle = FormBorderStyle.None;
+        RestoreModernWindowPlacement();
         DoubleBuffered = true;
 
         BuildLayout();
         ApplyVisibilitySafeguards(this);
+        Resize += (_, _) => ApplyResponsiveSidebar();
+        FormClosing += (_, _) => SaveModernWindowPlacement();
         InitializeMusicRequestEvents();
         InitializeStreamCheckEvents();
         InitializeClipDiscordEvents();
@@ -907,16 +911,17 @@ private enum CloseChoice
         {
             Text = $"{title}{Environment.NewLine}{subtitle}",
             Width = 228,
-            Height = 54,
+            Height = 58,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
             TextAlign = ContentAlignment.MiddleLeft,
             Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
             ForeColor = TextColor,
             BackColor = SidebarColor,
-            Padding = new Padding(15, 6, 12, 6),
+            Padding = new Padding(14, 7, 12, 7),
             Margin = new Padding(5, 4, 5, 2),
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            Tag = Tuple.Create(title, subtitle)
         };
     }
 
@@ -1467,7 +1472,7 @@ private enum CloseChoice
     {
         var title = new Label
         {
-            Text = "Raid Clip",
+            Text = "RaidClip",
             AutoSize = true,
             Font = new Font("Segoe UI", 20F, FontStyle.Bold),
             ForeColor = Color.White,
@@ -1493,7 +1498,7 @@ private enum CloseChoice
 
         var subtitle = new Label
         {
-            Text = "Twitch-Raids erkennen und Clips automatisch in OBS abspielen",
+            Text = "Dashboard für Raids, Clips, Chatbot, Minigames und Systemstatus",
             AutoSize = true,
             ForeColor = Color.DimGray,
             Margin = new Padding(2, 3, 0, 0)
@@ -1511,7 +1516,7 @@ private enum CloseChoice
         header.Controls.Add(subtitle);
 
         _versionLabel.Text =
-            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}🟢 Aktuell";
+            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}Aktuell";
 
         var updateActions = new FlowLayoutPanel
         {
@@ -2091,7 +2096,7 @@ private enum CloseChoice
             Image = LoadBrandImage(),
             SizeMode = PictureBoxSizeMode.Zoom,
             Width = 238,
-            Height = 150,
+            Height = 138,
             Margin = new Padding(0, 4, 0, 14),
             BackColor = SidebarColor
         };
@@ -2103,21 +2108,21 @@ private enum CloseChoice
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
             BackColor = SidebarColor,
-            Padding = new Padding(6),
+            Padding = new Padding(10, 8, 10, 8),
             AutoScroll = true
         };
         navigation.Controls.Add(brand);
         navigation.Controls.Add(_raidClipNavButton);
         navigation.Controls.Add(_moderationNavButton);
-        navigation.Controls.Add(_liveChatNavButton);
-        navigation.Controls.Add(_minigameNavButton);
-        navigation.Controls.Add(_systemStatusNavButton);
-        navigation.Controls.Add(_commandsNavButton);
-        navigation.Controls.Add(_musicNavButton);
         navigation.Controls.Add(_clipDiscordNavButton);
-        navigation.Controls.Add(_autoDiscordClipPosterNavButton);
+        navigation.Controls.Add(_minigameNavButton);
         navigation.Controls.Add(_giveawayNavButton);
+        navigation.Controls.Add(_musicNavButton);
+        navigation.Controls.Add(_commandsNavButton);
+        navigation.Controls.Add(_autoDiscordClipPosterNavButton);
         navigation.Controls.Add(_streamCheckNavButton);
+        navigation.Controls.Add(_liveChatNavButton);
+        navigation.Controls.Add(_systemStatusNavButton);
 
         var contentHost = new Panel
         {
@@ -2138,6 +2143,7 @@ private enum CloseChoice
 
         var rootLayout = new TableLayoutPanel
         {
+            Name = "ModernRootLayout",
             Dock = DockStyle.Fill,
             ColumnCount = 2,
             RowCount = 1,
@@ -2146,10 +2152,23 @@ private enum CloseChoice
         };
         rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 268));
         rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        rootLayout.Controls.Add(navigation, 0, 0);
+        rootLayout.Controls.Add(CreateSidebarShell(navigation), 0, 0);
         rootLayout.Controls.Add(contentHost, 1, 0);
 
-        Controls.Add(rootLayout);
+        var windowShell = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        windowShell.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        windowShell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        windowShell.Controls.Add(CreateModernTitleBar(), 0, 0);
+        windowShell.Controls.Add(rootLayout, 0, 1);
+
+        Controls.Add(windowShell);
         ApplyRaidClipTheme(this);
         StylePrimaryButton(_startButton);
         StylePrimaryButton(_createObsSourceButton);
@@ -4305,6 +4324,7 @@ private enum CloseChoice
 
         indicator.Text = $"● {service}{Environment.NewLine}{state}";
         indicator.ForeColor = color;
+        UpdateModernServiceStatus(service, state, color);
     }
 
     private static FlowLayoutPanel CreateMinigameFlow() => new()
@@ -4388,7 +4408,7 @@ private enum CloseChoice
         _updateBusy = true;
         SetUpdateControlsEnabled(false);
         _versionLabel.Text =
-            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}🔄 Suche …";
+            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}Suche …";
         _versionLabel.ForeColor = WaitingColor;
 
         try
@@ -4460,7 +4480,7 @@ private enum CloseChoice
     private void ShowCurrentVersion()
     {
         _versionLabel.Text =
-            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}🟢 Aktuell";
+            $"Version {_updateService.CurrentDisplayVersion}{Environment.NewLine}Aktuell";
         _versionLabel.ForeColor = ActiveColor;
         HideAvailableUpdateButtons();
         _updateButton.Text = "Nach Updates suchen";
@@ -5171,6 +5191,7 @@ private enum CloseChoice
 
         _overallStatusLabel.Text = text;
         _overallStatusLabel.ForeColor = color;
+        UpdateModernBotStatus(text, color);
         UpdateTrayState();
     }
 
