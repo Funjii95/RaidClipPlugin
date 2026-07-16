@@ -1577,7 +1577,8 @@ private enum CloseChoice
             WrapContents = true,
             Dock = DockStyle.Fill,
             AutoSize = true,
-            Padding = new Padding(8, 6, 8, 6),\n            AutoScroll = true
+            Padding = new Padding(8, 6, 8, 6),
+            AutoScroll = true
         };
         actions.Controls.Add(_startButton);
         actions.Controls.Add(_testConnectionsButton);
