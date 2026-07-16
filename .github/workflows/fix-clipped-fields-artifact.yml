@@ -1,0 +1,87 @@
+name: Fix clipped fields artifact
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Repair layout artifact
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $mainPath = 'RaidClipPlugin/MainForm.cs'
+          $main = Get-Content -Raw -Encoding UTF8 $mainPath
+          $before = $main
+          $main = $main.Replace('Padding = new Padding(8, 6, 8, 6),\n            AutoScroll = true', "Padding = new Padding(8, 6, 8, 6),`r`n            AutoScroll = true")
+          if ($main -ne $before) {
+            [System.IO.File]::WriteAllText($mainPath, $main, [System.Text.UTF8Encoding]::new($false))
+          }
+
+          $changedFiles = @(
+            'RaidClipPlugin/MainForm.cs',
+            'RaidClipPlugin/MainForm.ModernShell.cs',
+            'RaidClipPlugin/MainForm.DashboardModern.cs'
+          )
+          $bad = foreach ($file in $changedFiles) {
+            if (Test-Path $file) {
+              Select-String -Path $file -Pattern '\\n' -SimpleMatch
+            }
+          }
+          if ($bad) {
+            $bad | ForEach-Object { Write-Host "$($_.Path):$($_.LineNumber): $($_.Line)" }
+            throw 'Literal \n artifact remains in changed UI files.'
+          }
+
+      - name: Restore
+        shell: pwsh
+        run: |
+          dotnet restore RaidClipPlugin.sln
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build
+        shell: pwsh
+        run: |
+          dotnet build RaidClipPlugin.sln --configuration Release --no-restore
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Test
+        shell: pwsh
+        run: |
+          if (Test-Path 'Tests/RaidClipPlugin.Tests.csproj') {
+            dotnet test Tests/RaidClipPlugin.Tests.csproj --configuration Release --no-build
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } elseif (Test-Path 'Tests/RaidClipPlugin.Tests/RaidClipPlugin.Tests.csproj') {
+            dotnet test Tests/RaidClipPlugin.Tests/RaidClipPlugin.Tests.csproj --configuration Release
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } else {
+            Write-Host 'No test project found; build validation completed.'
+          }
+
+      - name: Commit fix
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git status --short
+          if (-not (git diff --quiet)) {
+            git add RaidClipPlugin/MainForm.cs RaidClipPlugin/MainForm.ModernShell.cs RaidClipPlugin/MainForm.DashboardModern.cs
+            git commit -m "Fix clipped dashboard field layout artifact"
+            git push
+          } else {
+            Write-Host 'No layout artifact changes to commit.'
+          }
