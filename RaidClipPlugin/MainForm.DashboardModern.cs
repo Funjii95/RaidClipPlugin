@@ -32,7 +32,10 @@ public sealed partial class MainForm
         updatePanel.MinimumSize = new Size(360, 90);
         updatePanel.BackColor = SurfaceColor;
         updatePanel.Padding = new Padding(18, 14, 16, 12);
-        updatePanel.AutoScroll = false;
+        if (updatePanel is ScrollableControl scrollableUpdatePanel)
+        {
+            scrollableUpdatePanel.AutoScroll = false;
+        }
         updatePanel.Controls.SetChildIndex(_versionLabel, 0);
 
         layout.Controls.Add(header, 0, 0);
