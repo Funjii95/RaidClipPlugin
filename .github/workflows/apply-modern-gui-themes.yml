@@ -71,7 +71,7 @@ jobs:
             'ICAgICAgICAgICAgICAgVGV4dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMjQ1LCAyNDUsIDI0OCk7CiAgICAgICAgICAgICAgICBNdXRlZFRleHRDb2xvciA9',
             'IENvbG9yLkZyb21BcmdiKDE4MCwgMTgwLCAxODgpOwogICAgICAgICAgICAgICAgQWN0aXZlQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig5MSwgMjMyLCAxMTIp',
             'OwogICAgICAgICAgICAgICAgYnJlYWs7CiAgICAgICAgfQoKICAgICAgICBCYWNrQ29sb3IgPSBCYWNrZ3JvdW5kQ29sb3I7CiAgICAgICAgRm9yZUNvbG9y',
-            'ID0gVGV4dENvbG9yOwogICAgICAgIEFwcGx5UmFpZENsaXBUaGVtZSh0aGlzKTsKICAgICAgICBJbnZhbGlkYXRlKHRydWUpOwogICAgfQp9Cicn'
+            'ID0gVGV4dENvbG9yOwogICAgICAgIEFwcGx5UmFpZENsaXBUaGVtZSh0aGlzKTsKICAgICAgICBJbnZhbGlkYXRlKHRydWUpOwogICAgfQp9Cg=='
           ) -join ''
           $themeText = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($themeB64))
           Set-Content -Path 'RaidClipPlugin/MainForm.Themes.cs' -Value $themeText -Encoding UTF8
