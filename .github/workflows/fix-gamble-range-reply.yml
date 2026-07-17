@@ -1,13 +1,17 @@
-﻿name: Fix gamble range reply
+name: Fix gamble range reply
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fix-gamble-range-reply.yml"
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -24,173 +28,8 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $script = @'
-          from pathlib import Path
-
-          def read(path):
-              return Path(path).read_text(encoding="utf-8-sig")
-
-          def write(path, text):
-              Path(path).write_text(text, encoding="utf-8")
-
-          def replace(path, old, new, label):
-              text = read(path)
-              if old not in text:
-                  raise SystemExit(f"Pattern not found: {label}")
-              write(path, text.replace(old, new, 1))
-
-          service = Path("RaidClipPlugin/Services/ChatMinigameService.cs")
-          text = read(service)
-
-          old_block = '''            if (gambleStake < _config.MinimumBet ||
-                (!isAllIn && gambleStake > _config.MaximumBet))
-            {
-                await TrySendChatAsync(
-                    isAllIn
-                        ? $"@{message.UserName}, du hast nicht genug verfügbare {_config.CurrencyPlural} für All-in."
-                        : $"@{message.UserName}, nutze !gamble <einsatz|all>.",
-                    cancellationToken);
-                LogGambleCommand(
-                    message,
-                    parsedCommand,
-                    argument,
-                    nameof(ChatMinigameService),
-                    GambleCommandResult.InvalidArguments,
-                    $"stake-out-of-range:{gambleStake}");
-                return GambleCommandResult.InvalidArguments;
-            }
-'''
-          new_block = '''            if (gambleStake < _config.MinimumBet ||
-                (!isAllIn && gambleStake > _config.MaximumBet))
-            {
-                await TrySendChatAsync(
-                    BuildGambleStakeRangeReply(
-                        message.UserName,
-                        gambleStake,
-                        _config.MinimumBet,
-                        _config.MaximumBet,
-                        isAllIn,
-                        _config.CurrencySingular,
-                        _config.CurrencyPlural),
-                    cancellationToken);
-                LogGambleCommand(
-                    message,
-                    parsedCommand,
-                    argument,
-                    nameof(ChatMinigameService),
-                    GambleCommandResult.InvalidArguments,
-                    $"stake-out-of-range:{gambleStake};min={_config.MinimumBet};max={_config.MaximumBet}");
-                return GambleCommandResult.InvalidArguments;
-            }
-'''
-          if old_block not in text:
-              raise SystemExit("Gamble range block not found")
-          text = text.replace(old_block, new_block, 1)
-
-          marker = '''    private Task SendGambleUsageAsync(
-        ChatMessage message,
-        CancellationToken cancellationToken) =>
-        TrySendChatAsync(
-            $"@{message.UserName}, nutze !gamble <einsatz|all>.",
-            cancellationToken);
-'''
-          addition = marker + '''
-    public static string BuildGambleStakeRangeReply(
-        string userName,
-        long stake,
-        long minimumBet,
-        long maximumBet,
-        bool isAllIn,
-        string currencySingular,
-        string currencyPlural)
-    {
-        static string FormatAmount(
-            long amount,
-            string singular,
-            string plural) =>
-            $"{amount:N0} {(Math.Abs(amount) == 1 ? singular : plural)}";
-
-        var name = (userName ?? "").Trim().TrimStart('@');
-        var mention = string.IsNullOrWhiteSpace(name) ? "@User" : $"@{name}";
-        var singularName = string.IsNullOrWhiteSpace(currencySingular)
-            ? "Punkt"
-            : currencySingular.Trim();
-        var pluralName = string.IsNullOrWhiteSpace(currencyPlural)
-            ? "Punkte"
-            : currencyPlural.Trim();
-
-        if (isAllIn)
-        {
-            return $"{mention}, du hast nicht genug verfügbare " +
-                   $"{pluralName} für All-in. Mindesteinsatz: " +
-                   $"{FormatAmount(minimumBet, singularName, pluralName)}.";
-        }
-
-        if (stake < minimumBet)
-        {
-            return $"{mention}, der Mindesteinsatz für !gamble ist " +
-                   $"{FormatAmount(minimumBet, singularName, pluralName)}.";
-        }
-
-        return $"{mention}, der Maximaleinsatz für !gamble ist " +
-               $"{FormatAmount(maximumBet, singularName, pluralName)}.";
-    }
-'''
-          if marker not in text:
-              raise SystemExit("SendGambleUsage marker not found")
-          text = text.replace(marker, addition, 1)
-          write(service, text)
-
-          test_path = Path("RaidClipPlugin/Tests/GambleStakeRangeReplyTests.cs")
-          test_path.write_text('''using RaidClipPlugin.Services;
-
-namespace RaidClipPlugin.Tests;
-
-public sealed class GambleStakeRangeReplyTests
-{
-    [Fact]
-    public void StakeBelowMinimumShowsMinimumInsteadOfUsage()
-    {
-        var reply = ChatMinigameService.BuildGambleStakeRangeReply(
-            "chrissy0711", 20, 50, 1000, false, "Punkt", "Punkte");
-
-        Assert.Contains("@chrissy0711", reply);
-        Assert.Contains("Mindesteinsatz", reply);
-        Assert.Contains("50 Punkte", reply);
-        Assert.DoesNotContain("<einsatz|all>", reply);
-    }
-
-    [Fact]
-    public void StakeAboveMaximumShowsMaximumInsteadOfUsage()
-    {
-        var reply = ChatMinigameService.BuildGambleStakeRangeReply(
-            "Funjii", 2000, 10, 1000, false, "Punkt", "Punkte");
-
-        var normalized = reply.Replace(".", "").Replace(",", "");
-        Assert.Contains("Maximaleinsatz", reply);
-        Assert.Contains("1000 Punkte", normalized);
-        Assert.DoesNotContain("<einsatz|all>", reply);
-    }
-
-    [Fact]
-    public void AllInBelowMinimumShowsAllInHint()
-    {
-        var reply = ChatMinigameService.BuildGambleStakeRangeReply(
-            "Funjii", 0, 10, 1000, true, "Punkt", "Punkte");
-
-        Assert.Contains("All-in", reply);
-        Assert.Contains("Mindesteinsatz", reply);
-        Assert.DoesNotContain("<einsatz|all>", reply);
-    }
-}
-''', encoding="utf-8")
-
-          project = Path("RaidClipPlugin/RaidClipPlugin.csproj")
-          csproj = read(project)
-          csproj = csproj.replace("<Version>1.8.5</Version>", "<Version>1.8.6</Version>")
-          csproj = csproj.replace("<FileVersion>1.8.5.0</FileVersion>", "<FileVersion>1.8.6.0</FileVersion>")
-          write(project, csproj)
-          '@
+          $scriptBase64 = "CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAoKZGVmIHJlYWQocGF0aCk6CiAgICByZXR1cm4gUGF0aChwYXRoKS5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04LXNpZyIpCgpkZWYgd3JpdGUocGF0aCwgdGV4dCk6CiAgICBQYXRoKHBhdGgpLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9InV0Zi04IikKCnNlcnZpY2UgPSBQYXRoKCJSYWlkQ2xpcFBsdWdpbi9TZXJ2aWNlcy9DaGF0TWluaWdhbWVTZXJ2aWNlLmNzIikKdGV4dCA9IHJlYWQoc2VydmljZSkKCm9sZF9ibG9jayA9ICcnJyAgICAgICAgICAgIGlmIChnYW1ibGVTdGFrZSA8IF9jb25maWcuTWluaW11bUJldCB8fAogICAgICAgICAgICAgICAgKCFpc0FsbEluICYmIGdhbWJsZVN0YWtlID4gX2NvbmZpZy5NYXhpbXVtQmV0KSkKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgYXdhaXQgVHJ5U2VuZENoYXRBc3luYygKICAgICAgICAgICAgICAgICAgICBpc0FsbEluCiAgICAgICAgICAgICAgICAgICAgICAgID8gJCJAe21lc3NhZ2UuVXNlck5hbWV9LCBkdSBoYXN0IG5pY2h0IGdlbnVnIHZlcmbDvGdiYXJlIHtfY29uZmlnLkN1cnJlbmN5UGx1cmFsfSBmw7xyIEFsbC1pbi4iCiAgICAgICAgICAgICAgICAgICAgICAgIDogJCJAe21lc3NhZ2UuVXNlck5hbWV9LCBudXR6ZSAhZ2FtYmxlIDxlaW5zYXR6fGFsbD4uIiwKICAgICAgICAgICAgICAgICAgICBjYW5jZWxsYXRpb25Ub2tlbik7CiAgICAgICAgICAgICAgICBMb2dHYW1ibGVDb21tYW5kKAogICAgICAgICAgICAgICAgICAgIG1lc3NhZ2UsCiAgICAgICAgICAgICAgICAgICAgcGFyc2VkQ29tbWFuZCwKICAgICAgICAgICAgICAgICAgICBhcmd1bWVudCwKICAgICAgICAgICAgICAgICAgICBuYW1lb2YoQ2hhdE1pbmlnYW1lU2VydmljZSksCiAgICAgICAgICAgICAgICAgICAgR2FtYmxlQ29tbWFuZFJlc3VsdC5JbnZhbGlkQXJndW1lbnRzLAogICAgICAgICAgICAgICAgICAgICQic3Rha2Utb3V0LW9mLXJhbmdlOntnYW1ibGVTdGFrZX0iKTsKICAgICAgICAgICAgICAgIHJldHVybiBHYW1ibGVDb21tYW5kUmVzdWx0LkludmFsaWRBcmd1bWVudHM7CiAgICAgICAgICAgIH0KJycnCm5ld19ibG9jayA9ICcnJyAgICAgICAgICAgIGlmIChnYW1ibGVTdGFrZSA8IF9jb25maWcuTWluaW11bUJldCB8fAogICAgICAgICAgICAgICAgKCFpc0FsbEluICYmIGdhbWJsZVN0YWtlID4gX2NvbmZpZy5NYXhpbXVtQmV0KSkKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgYXdhaXQgVHJ5U2VuZENoYXRBc3luYygKICAgICAgICAgICAgICAgICAgICBCdWlsZEdhbWJsZVN0YWtlUmFuZ2VSZXBseSgKICAgICAgICAgICAgICAgICAgICAgICAgbWVzc2FnZS5Vc2VyTmFtZSwKICAgICAgICAgICAgICAgICAgICAgICAgZ2FtYmxlU3Rha2UsCiAgICAgICAgICAgICAgICAgICAgICAgIF9jb25maWcuTWluaW11bUJldCwKICAgICAgICAgICAgICAgICAgICAgICAgX2NvbmZpZy5NYXhpbXVtQmV0LAogICAgICAgICAgICAgICAgICAgICAgICBpc0FsbEluLAogICAgICAgICAgICAgICAgICAgICAgICBfY29uZmlnLkN1cnJlbmN5U2luZ3VsYXIsCiAgICAgICAgICAgICAgICAgICAgICAgIF9jb25maWcuQ3VycmVuY3lQbHVyYWwpLAogICAgICAgICAgICAgICAgICAgIGNhbmNlbGxhdGlvblRva2VuKTsKICAgICAgICAgICAgICAgIExvZ0dhbWJsZUNvbW1hbmQoCiAgICAgICAgICAgICAgICAgICAgbWVzc2FnZSwKICAgICAgICAgICAgICAgICAgICBwYXJzZWRDb21tYW5kLAogICAgICAgICAgICAgICAgICAgIGFyZ3VtZW50LAogICAgICAgICAgICAgICAgICAgIG5hbWVvZihDaGF0TWluaWdhbWVTZXJ2aWNlKSwKICAgICAgICAgICAgICAgICAgICBHYW1ibGVDb21tYW5kUmVzdWx0LkludmFsaWRBcmd1bWVudHMsCiAgICAgICAgICAgICAgICAgICAgJCJzdGFrZS1vdXQtb2YtcmFuZ2U6e2dhbWJsZVN0YWtlfTttaW49e19jb25maWcuTWluaW11bUJldH07bWF4PXtfY29uZmlnLk1heGltdW1CZXR9Iik7CiAgICAgICAgICAgICAgICByZXR1cm4gR2FtYmxlQ29tbWFuZFJlc3VsdC5JbnZhbGlkQXJndW1lbnRzOwogICAgICAgICAgICB9CicnJwppZiBvbGRfYmxvY2sgbm90IGluIHRleHQ6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCJHYW1ibGUgcmFuZ2UgYmxvY2sgbm90IGZvdW5kIikKdGV4dCA9IHRleHQucmVwbGFjZShvbGRfYmxvY2ssIG5ld19ibG9jaywgMSkKCm1hcmtlciA9ICcnJyAgICBwcml2YXRlIFRhc2sgU2VuZEdhbWJsZVVzYWdlQXN5bmMoCiAgICAgICAgQ2hhdE1lc3NhZ2UgbWVzc2FnZSwKICAgICAgICBDYW5jZWxsYXRpb25Ub2tlbiBjYW5jZWxsYXRpb25Ub2tlbikgPT4KICAgICAgICBUcnlTZW5kQ2hhdEFzeW5jKAogICAgICAgICAgICAkIkB7bWVzc2FnZS5Vc2VyTmFtZX0sIG51dHplICFnYW1ibGUgPGVpbnNhdHp8YWxsPi4iLAogICAgICAgICAgICBjYW5jZWxsYXRpb25Ub2tlbik7CicnJwphZGRpdGlvbiA9IG1hcmtlciArICcnJwogICAgcHVibGljIHN0YXRpYyBzdHJpbmcgQnVpbGRHYW1ibGVTdGFrZVJhbmdlUmVwbHkoCiAgICAgICAgc3RyaW5nIHVzZXJOYW1lLAogICAgICAgIGxvbmcgc3Rha2UsCiAgICAgICAgbG9uZyBtaW5pbXVtQmV0LAogICAgICAgIGxvbmcgbWF4aW11bUJldCwKICAgICAgICBib29sIGlzQWxsSW4sCiAgICAgICAgc3RyaW5nIGN1cnJlbmN5U2luZ3VsYXIsCiAgICAgICAgc3RyaW5nIGN1cnJlbmN5UGx1cmFsKQogICAgewogICAgICAgIHN0YXRpYyBzdHJpbmcgRm9ybWF0QW1vdW50KAogICAgICAgICAgICBsb25nIGFtb3VudCwKICAgICAgICAgICAgc3RyaW5nIHNpbmd1bGFyLAogICAgICAgICAgICBzdHJpbmcgcGx1cmFsKSA9PgogICAgICAgICAgICAkInthbW91bnQ6TjB9IHsoTWF0aC5BYnMoYW1vdW50KSA9PSAxID8gc2luZ3VsYXIgOiBwbHVyYWwpfSI7CgogICAgICAgIHZhciBuYW1lID0gKHVzZXJOYW1lID8/ICIiKS5UcmltKCkuVHJpbVN0YXJ0KCdAJyk7CiAgICAgICAgdmFyIG1lbnRpb24gPSBzdHJpbmcuSXNOdWxsT3JXaGl0ZVNwYWNlKG5hbWUpID8gIkBVc2VyIiA6ICQiQHtuYW1lfSI7CiAgICAgICAgdmFyIHNpbmd1bGFyTmFtZSA9IHN0cmluZy5Jc051bGxPcldoaXRlU3BhY2UoY3VycmVuY3lTaW5ndWxhcikKICAgICAgICAgICAgPyAiUHVua3QiCiAgICAgICAgICAgIDogY3VycmVuY3lTaW5ndWxhci5UcmltKCk7CiAgICAgICAgdmFyIHBsdXJhbE5hbWUgPSBzdHJpbmcuSXNOdWxsT3JXaGl0ZVNwYWNlKGN1cnJlbmN5UGx1cmFsKQogICAgICAgICAgICA/ICJQdW5rdGUiCiAgICAgICAgICAgIDogY3VycmVuY3lQbHVyYWwuVHJpbSgpOwoKICAgICAgICBpZiAoaXNBbGxJbikKICAgICAgICB7CiAgICAgICAgICAgIHJldHVybiAkInttZW50aW9ufSwgZHUgaGFzdCBuaWNodCBnZW51ZyB2ZXJmw7xnYmFyZSAiICsKICAgICAgICAgICAgICAgICAgICQie3BsdXJhbE5hbWV9IGbDvHIgQWxsLWluLiBNaW5kZXN0ZWluc2F0ejogIiArCiAgICAgICAgICAgICAgICAgICAkIntGb3JtYXRBbW91bnQobWluaW11bUJldCwgc2luZ3VsYXJOYW1lLCBwbHVyYWxOYW1lKX0uIjsKICAgICAgICB9CgogICAgICAgIGlmIChzdGFrZSA8IG1pbmltdW1CZXQpCiAgICAgICAgewogICAgICAgICAgICByZXR1cm4gJCJ7bWVudGlvbn0sIGRlciBNaW5kZXN0ZWluc2F0eiBmw7xyICFnYW1ibGUgaXN0ICIgKwogICAgICAgICAgICAgICAgICAgJCJ7Rm9ybWF0QW1vdW50KG1pbmltdW1CZXQsIHNpbmd1bGFyTmFtZSwgcGx1cmFsTmFtZSl9LiI7CiAgICAgICAgfQoKICAgICAgICByZXR1cm4gJCJ7bWVudGlvbn0sIGRlciBNYXhpbWFsZWluc2F0eiBmw7xyICFnYW1ibGUgaXN0ICIgKwogICAgICAgICAgICAgICAkIntGb3JtYXRBbW91bnQobWF4aW11bUJldCwgc2luZ3VsYXJOYW1lLCBwbHVyYWxOYW1lKX0uIjsKICAgIH0KJycnCmlmIG1hcmtlciBub3QgaW4gdGV4dDoKICAgIHJhaXNlIFN5c3RlbUV4aXQoIlNlbmRHYW1ibGVVc2FnZSBtYXJrZXIgbm90IGZvdW5kIikKdGV4dCA9IHRleHQucmVwbGFjZShtYXJrZXIsIGFkZGl0aW9uLCAxKQp3cml0ZShzZXJ2aWNlLCB0ZXh0KQoKdGVzdF9wYXRoID0gUGF0aCgiUmFpZENsaXBQbHVnaW4vVGVzdHMvR2FtYmxlU3Rha2VSYW5nZVJlcGx5VGVzdHMuY3MiKQp0ZXN0X3BhdGgud3JpdGVfdGV4dCgnJyd1c2luZyBSYWlkQ2xpcFBsdWdpbi5TZXJ2aWNlczsKCm5hbWVzcGFjZSBSYWlkQ2xpcFBsdWdpbi5UZXN0czsKCnB1YmxpYyBzZWFsZWQgY2xhc3MgR2FtYmxlU3Rha2VSYW5nZVJlcGx5VGVzdHMKewogICAgW0ZhY3RdCiAgICBwdWJsaWMgdm9pZCBTdGFrZUJlbG93TWluaW11bVNob3dzTWluaW11bUluc3RlYWRPZlVzYWdlKCkKICAgIHsKICAgICAgICB2YXIgcmVwbHkgPSBDaGF0TWluaWdhbWVTZXJ2aWNlLkJ1aWxkR2FtYmxlU3Rha2VSYW5nZVJlcGx5KAogICAgICAgICAgICAiY2hyaXNzeTA3MTEiLCAyMCwgNTAsIDEwMDAsIGZhbHNlLCAiUHVua3QiLCAiUHVua3RlIik7CgogICAgICAgIEFzc2VydC5Db250YWlucygiQGNocmlzc3kwNzExIiwgcmVwbHkpOwogICAgICAgIEFzc2VydC5Db250YWlucygiTWluZGVzdGVpbnNhdHoiLCByZXBseSk7CiAgICAgICAgQXNzZXJ0LkNvbnRhaW5zKCI1MCBQdW5rdGUiLCByZXBseSk7CiAgICAgICAgQXNzZXJ0LkRvZXNOb3RDb250YWluKCI8ZWluc2F0enxhbGw+IiwgcmVwbHkpOwogICAgfQoKICAgIFtGYWN0XQogICAgcHVibGljIHZvaWQgU3Rha2VBYm92ZU1heGltdW1TaG93c01heGltdW1JbnN0ZWFkT2ZVc2FnZSgpCiAgICB7CiAgICAgICAgdmFyIHJlcGx5ID0gQ2hhdE1pbmlnYW1lU2VydmljZS5CdWlsZEdhbWJsZVN0YWtlUmFuZ2VSZXBseSgKICAgICAgICAgICAgIkZ1bmppaSIsIDIwMDAsIDEwLCAxMDAwLCBmYWxzZSwgIlB1bmt0IiwgIlB1bmt0ZSIpOwoKICAgICAgICB2YXIgbm9ybWFsaXplZCA9IHJlcGx5LlJlcGxhY2UoIi4iLCAiIikuUmVwbGFjZSgiLCIsICIiKTsKICAgICAgICBBc3NlcnQuQ29udGFpbnMoIk1heGltYWxlaW5zYXR6IiwgcmVwbHkpOwogICAgICAgIEFzc2VydC5Db250YWlucygiMTAwMCBQdW5rdGUiLCBub3JtYWxpemVkKTsKICAgICAgICBBc3NlcnQuRG9lc05vdENvbnRhaW4oIjxlaW5zYXR6fGFsbD4iLCByZXBseSk7CiAgICB9CgogICAgW0ZhY3RdCiAgICBwdWJsaWMgdm9pZCBBbGxJbkJlbG93TWluaW11bVNob3dzQWxsSW5IaW50KCkKICAgIHsKICAgICAgICB2YXIgcmVwbHkgPSBDaGF0TWluaWdhbWVTZXJ2aWNlLkJ1aWxkR2FtYmxlU3Rha2VSYW5nZVJlcGx5KAogICAgICAgICAgICAiRnVuamlpIiwgMCwgMTAsIDEwMDAsIHRydWUsICJQdW5rdCIsICJQdW5rdGUiKTsKCiAgICAgICAgQXNzZXJ0LkNvbnRhaW5zKCJBbGwtaW4iLCByZXBseSk7CiAgICAgICAgQXNzZXJ0LkNvbnRhaW5zKCJNaW5kZXN0ZWluc2F0eiIsIHJlcGx5KTsKICAgICAgICBBc3NlcnQuRG9lc05vdENvbnRhaW4oIjxlaW5zYXR6fGFsbD4iLCByZXBseSk7CiAgICB9Cn0KJycnLCBlbmNvZGluZz0idXRmLTgiKQoKcHJvamVjdCA9IFBhdGgoIlJhaWRDbGlwUGx1Z2luL1JhaWRDbGlwUGx1Z2luLmNzcHJvaiIpCmNzcHJvaiA9IHJlYWQocHJvamVjdCkKY3Nwcm9qID0gY3Nwcm9qLnJlcGxhY2UoIjxWZXJzaW9uPjEuOC41PC9WZXJzaW9uPiIsICI8VmVyc2lvbj4xLjguNjwvVmVyc2lvbj4iKQpjc3Byb2ogPSBjc3Byb2oucmVwbGFjZSgiPEZpbGVWZXJzaW9uPjEuOC41LjA8L0ZpbGVWZXJzaW9uPiIsICI8RmlsZVZlcnNpb24+MS44LjYuMDwvRmlsZVZlcnNpb24+IikKd3JpdGUocHJvamVjdCwgY3Nwcm9qKQo="
+          $script = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($scriptBase64))
           Set-Content -Path fix_gamble_range_reply.py -Value $script -Encoding UTF8
           python fix_gamble_range_reply.py
           Remove-Item fix_gamble_range_reply.py
