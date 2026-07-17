@@ -1,0 +1,397 @@
+name: Apply command enable overrides
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Patch command enable settings
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = @'
+          from pathlib import Path
+
+          def read(path):
+              return Path(path).read_text(encoding="utf-8-sig")
+
+          def write(path, text):
+              Path(path).write_text(text, encoding="utf-8")
+
+          def replace(path, old, new):
+              text = read(path)
+              if old not in text:
+                  raise SystemExit(f"Pattern not found in {path}: {old[:80]!r}")
+              write(path, text.replace(old, new, 1))
+
+          heist = "RaidClipPlugin/Config/HeistConfig.cs"
+          replace(heist,
+          '''    public Dictionary<string, string> CommandRoleOverrides { get; set; } =
+                  new(StringComparer.OrdinalIgnoreCase);
+              public bool CustomCommandsEnabled { get; set; } = true;
+              public List<CustomChatCommandConfig> CustomCommands { get; set; } =
+                  CustomChatCommandConfig.CreateExamples();
+          }''',
+          '''    public Dictionary<string, string> CommandRoleOverrides { get; set; } =
+                  new(StringComparer.OrdinalIgnoreCase);
+              public Dictionary<string, bool> CommandEnabledOverrides { get; set; } =
+                  new(StringComparer.OrdinalIgnoreCase);
+              public bool CustomCommandsEnabled { get; set; } = true;
+              public List<CustomChatCommandConfig> CustomCommands { get; set; } =
+                  CustomChatCommandConfig.CreateExamples();
+
+              public bool IsCommandEnabled(string commandId) =>
+                  string.IsNullOrWhiteSpace(commandId) ||
+                  !CommandEnabledOverrides.TryGetValue(commandId.Trim(), out var enabled) ||
+                  enabled;
+          }''')
+
+          config = "RaidClipPlugin/Services/ConfigurationService.cs"
+          replace(config,
+          '''        config.Commands.CommandRoleOverrides = (config.Commands.CommandRoleOverrides ??
+                      new Dictionary<string, string>())
+                      .Where(item => !string.IsNullOrWhiteSpace(item.Key))
+                      .ToDictionary(item => item.Key.Trim(), item =>
+                          CommandRegistry.ParseRole(item.Value).ToString(), StringComparer.OrdinalIgnoreCase);
+                  config.Commands.CustomCommands ??= new List<CustomChatCommandConfig>();''',
+          '''        config.Commands.CommandRoleOverrides = (config.Commands.CommandRoleOverrides ??
+                      new Dictionary<string, string>())
+                      .Where(item => !string.IsNullOrWhiteSpace(item.Key))
+                      .ToDictionary(item => item.Key.Trim(), item =>
+                          CommandRegistry.ParseRole(item.Value).ToString(), StringComparer.OrdinalIgnoreCase);
+                  config.Commands.CommandEnabledOverrides = (config.Commands.CommandEnabledOverrides ??
+                      new Dictionary<string, bool>())
+                      .Where(item => !string.IsNullOrWhiteSpace(item.Key))
+                      .ToDictionary(item => item.Key.Trim(), item => item.Value,
+                          StringComparer.OrdinalIgnoreCase);
+                  config.Commands.CustomCommands ??= new List<CustomChatCommandConfig>();''')
+
+          registry = "RaidClipPlugin/Services/CommandRegistry.cs"
+          replace(registry,
+          '''            if (config.Commands.CommandRoleOverrides.TryGetValue(id, out var roleOverride))
+                          role = ParseRole(roleOverride, role);
+                      list.Add(new ChatCommandDefinition(id, normalized,''',
+          '''            if (config.Commands.CommandRoleOverrides.TryGetValue(id, out var roleOverride))
+                          role = ParseRole(roleOverride, role);
+                      if (!config.Commands.IsCommandEnabled(id))
+                          enabled = false;
+                      list.Add(new ChatCommandDefinition(id, normalized,''')
+          replace(registry,
+          '''    public IReadOnlyList<CommandCollision> FindCollisions(bool includeDisabled = true)
+              {''',
+          '''    public bool IsCommandEnabledForMessage(string? text)
+              {
+                  var input = Normalize(text);
+                  if (input.Length == 0 || !input.StartsWith('!'))
+                      return true;
+
+                  var definition = Commands
+                      .SelectMany(item => new[] { item.CommandText }.Concat(item.Aliases)
+                          .Select(command => new
+                          {
+                              Definition = item,
+                              Text = Normalize(command)
+                          }))
+                      .Where(item =>
+                          input.Equals(item.Text, StringComparison.OrdinalIgnoreCase) ||
+                          input.StartsWith(item.Text + " ", StringComparison.OrdinalIgnoreCase))
+                      .OrderByDescending(item => item.Text.Length)
+                      .Select(item => item.Definition)
+                      .FirstOrDefault();
+
+                  return definition?.Enabled ?? true;
+              }
+
+              public IReadOnlyList<CommandCollision> FindCollisions(bool includeDisabled = true)
+              {''')
+
+          custom = "RaidClipPlugin/MainForm.CustomCommands.cs"
+          replace(custom,
+          '''    private readonly Dictionary<string, string> _pendingCommandRoleOverrides =
+                  new(StringComparer.OrdinalIgnoreCase);
+              private CommandPermissionService? _commandPermissions;''',
+          '''    private readonly Dictionary<string, string> _pendingCommandRoleOverrides =
+                  new(StringComparer.OrdinalIgnoreCase);
+              private readonly Dictionary<string, bool> _pendingCommandEnabledOverrides =
+                  new(StringComparer.OrdinalIgnoreCase);
+              private CommandPermissionService? _commandPermissions;''')
+          replace(custom,
+          '''        _commandsGrid.CellValueChanged += (_, args) =>
+                  {
+                      if (_refreshingCommandGrid || args.RowIndex < 0 ||
+                          _commandsGrid.Columns[args.ColumnIndex].Name != "Berechtigung") return;
+                      var row = _commandsGrid.Rows[args.RowIndex];
+                      if (row.Tag is ChatCommandDefinition definition)
+                          _pendingCommandRoleOverrides[definition.CommandId] =
+                              ParseRoleLabel(row.Cells["Berechtigung"].Value?.ToString()).ToString();
+                  };''',
+          '''        _commandsGrid.CellValueChanged += (_, args) =>
+                  {
+                      if (_refreshingCommandGrid || args.RowIndex < 0)
+                          return;
+
+                      var columnName = _commandsGrid.Columns[args.ColumnIndex].Name;
+                      if (columnName is not ("Berechtigung" or "Aktiv"))
+                          return;
+
+                      var row = _commandsGrid.Rows[args.RowIndex];
+                      if (row.Tag is not ChatCommandDefinition definition)
+                          return;
+
+                      if (columnName == "Berechtigung")
+                      {
+                          _pendingCommandRoleOverrides[definition.CommandId] =
+                              ParseRoleLabel(row.Cells["Berechtigung"].Value?.ToString()).ToString();
+                      }
+                      else
+                      {
+                          _pendingCommandEnabledOverrides[definition.CommandId] =
+                              row.Cells["Aktiv"].Value is true;
+                      }
+                  };''')
+          replace(custom,
+          '''        _pendingCommandRoleOverrides.Clear();
+                  foreach (var item in commands.CommandRoleOverrides)
+                      _pendingCommandRoleOverrides[item.Key] = item.Value;
+              }''',
+          '''        _pendingCommandRoleOverrides.Clear();
+                  foreach (var item in commands.CommandRoleOverrides)
+                      _pendingCommandRoleOverrides[item.Key] = item.Value;
+                  _pendingCommandEnabledOverrides.Clear();
+                  foreach (var item in commands.CommandEnabledOverrides)
+                      _pendingCommandEnabledOverrides[item.Key] = item.Value;
+              }''')
+          replace(custom,
+          '''        commands.CommandRoleOverrides = new Dictionary<string, string>(
+                      _pendingCommandRoleOverrides, StringComparer.OrdinalIgnoreCase);
+              }''',
+          '''        commands.CommandRoleOverrides = new Dictionary<string, string>(
+                      _pendingCommandRoleOverrides, StringComparer.OrdinalIgnoreCase);
+                  commands.CommandEnabledOverrides = new Dictionary<string, bool>(
+                      _pendingCommandEnabledOverrides, StringComparer.OrdinalIgnoreCase);
+              }''')
+          replace(custom,
+          '''        _chatModeration.MessageReceived += message =>
+                      _customCommandService.HandleMessageAsync(message, cancellationToken);''',
+          '''        _chatModeration.MessageReceived += message =>
+                  {
+                      if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                          return Task.CompletedTask;
+                      return _customCommandService.HandleMessageAsync(message, cancellationToken);
+                  };''')
+
+          heist_commands = "RaidClipPlugin/MainForm.HeistCommands.cs"
+          replace(heist_commands,
+          '''        _commandsGrid.Columns.Add(new DataGridViewCheckBoxColumn
+                  {
+                      Name = "Aktiv", HeaderText = "Aktiv", ReadOnly = true,
+                      SortMode = DataGridViewColumnSortMode.Automatic
+                  });''',
+          '''        _commandsGrid.Columns.Add(new DataGridViewCheckBoxColumn
+                  {
+                      Name = "Aktiv", HeaderText = "Aktiv", ReadOnly = false,
+                      SortMode = DataGridViewColumnSortMode.Automatic
+                  });''')
+
+          main = "RaidClipPlugin/MainForm.cs"
+          replace(main,
+          '''                    _chatModeration.MessageReceived += message =>
+                              _musicRequests.ProcessChatMessageAsync(
+                                  message, cancellationToken);''',
+          '''                    _chatModeration.MessageReceived += message =>
+                      {
+                          if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                              return Task.CompletedTask;
+                          return _musicRequests.ProcessChatMessageAsync(
+                              message, cancellationToken);
+                      };''')
+          replace(main,
+          '''                    _chatModeration.MessageReceived += message =>
+                              _clipCommandService.HandleMessageAsync(
+                                  message, cancellationToken);''',
+          '''                    _chatModeration.MessageReceived += message =>
+                      {
+                          if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                              return Task.CompletedTask;
+                          return _clipCommandService.HandleMessageAsync(
+                              message, cancellationToken);
+                      };''')
+          replace(main,
+          '''                    _chatModeration.MessageReceived += message =>
+                              _discordInviteService.ProcessMessageAsync(
+                                  message, cancellationToken);''',
+          '''                    _chatModeration.MessageReceived += message =>
+                      {
+                          if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                              return Task.CompletedTask;
+                          return _discordInviteService.ProcessMessageAsync(
+                              message, cancellationToken);
+                      };''')
+          replace(main,
+          '''                    _chatModeration.MessageReceived += message =>
+                              _giveawayService.ProcessMessageAsync(message, cancellationToken);''',
+          '''                    _chatModeration.MessageReceived += message =>
+                      {
+                          if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                              return Task.CompletedTask;
+                          return _giveawayService.ProcessMessageAsync(message, cancellationToken);
+                      };''')
+          replace(main,
+          '''                    _chatModeration.MessageReceived += message =>
+                              _minigame.ProcessMessageAsync(
+                                  message,
+                                  cancellationToken);''',
+          '''                    _chatModeration.MessageReceived += message =>
+                      {
+                          if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                              return Task.CompletedTask;
+                          return _minigame.ProcessMessageAsync(
+                              message,
+                              cancellationToken);
+                      };''')
+
+          minigame = "RaidClipPlugin/Services/ChatMinigameService.cs"
+          replace(minigame,
+          '''            var command = parsedCommand.Command;
+                      parts[0] = command;
+
+                      if (_commandsConfig.Enabled &&''',
+          '''            var command = parsedCommand.Command;
+                      parts[0] = command;
+
+                      if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                      {
+                          return;
+                      }
+
+                      if (_commandsConfig.Enabled &&''')
+
+          csproj = "RaidClipPlugin/RaidClipPlugin.csproj"
+          text = read(csproj)
+          text = text.replace("<Version>1.8.3</Version>", "<Version>1.8.4</Version>")
+          text = text.replace("<FileVersion>1.8.3.0</FileVersion>", "<FileVersion>1.8.4.0</FileVersion>")
+          write(csproj, text)
+
+          tests = Path("RaidClipPlugin/Tests/CommandEnablementTests.cs")
+          tests.write_text('''using RaidClipPlugin.Config;
+          using RaidClipPlugin.Services;
+
+          namespace RaidClipPlugin.Tests;
+
+          public sealed class CommandEnablementTests
+          {
+              [Fact]
+              public void Commands_are_enabled_by_default_when_no_override_exists()
+              {
+                  var config = new AppConfig();
+                  var registry = new CommandRegistry();
+
+                  registry.Update(config);
+
+                  Assert.True(registry.IsCommandEnabledForMessage("!punkte"));
+              }
+
+              [Fact]
+              public void Disabled_command_override_blocks_primary_command()
+              {
+                  var config = new AppConfig();
+                  config.Commands.CommandEnabledOverrides["points.de"] = false;
+                  var registry = new CommandRegistry();
+
+                  registry.Update(config);
+
+                  Assert.False(registry.IsCommandEnabledForMessage("!punkte"));
+              }
+
+              [Fact]
+              public void Disabled_command_override_blocks_alias()
+              {
+                  var config = new AppConfig();
+                  config.Minigame.Enabled = true;
+                  config.Minigame.GambleEnabled = true;
+                  config.Commands.CommandEnabledOverrides["casino.gamble"] = false;
+                  var registry = new CommandRegistry();
+
+                  registry.Update(config);
+
+                  Assert.False(registry.IsCommandEnabledForMessage("!gambel 100"));
+              }
+
+              [Fact]
+              public void Disabling_one_command_does_not_disable_other_commands()
+              {
+                  var config = new AppConfig();
+                  config.Commands.CommandEnabledOverrides["points.de"] = false;
+                  var registry = new CommandRegistry();
+
+                  registry.Update(config);
+
+                  Assert.False(registry.IsCommandEnabledForMessage("!punkte"));
+                  Assert.True(registry.IsCommandEnabledForMessage("!daily"));
+              }
+
+              [Fact]
+              public void Custom_commands_can_be_disabled_through_global_overview()
+              {
+                  var config = new AppConfig();
+                  var custom = new CustomChatCommandConfig
+                  {
+                      Id = "raid",
+                      Enabled = true,
+                      Command = "!raid",
+                      Response = "Raid!"
+                  };
+                  config.Commands.CustomCommands = new List<CustomChatCommandConfig> { custom };
+                  config.Commands.CommandEnabledOverrides["custom.raid"] = false;
+                  var registry = new CommandRegistry();
+
+                  registry.Update(config);
+
+                  Assert.False(registry.IsCommandEnabledForMessage("!raid"));
+              }
+          }
+          ''', encoding="utf-8")
+          '@
+          Set-Content -Path apply-command-enable-overrides.py -Value $script -Encoding UTF8
+          python apply-command-enable-overrides.py
+
+      - name: Restore
+        shell: pwsh
+        run: dotnet restore "RaidClipPlugin/RaidClipPlugin.csproj"
+
+      - name: Test
+        shell: pwsh
+        run: dotnet test "RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj" -c Release
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build "RaidClipPlugin/RaidClipPlugin.csproj" -c Release --no-restore
+
+      - name: Commit changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git status --short
+          if (-not (git diff --quiet)) {
+            git add RaidClipPlugin
+            git commit -m "Add per-command enable toggles"
+            git push
+          } else {
+            Write-Host "No changes to commit."
+          }
