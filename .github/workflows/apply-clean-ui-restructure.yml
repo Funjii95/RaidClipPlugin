@@ -1,0 +1,126 @@
+﻿name: Apply clean UI restructure
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restructure WinForms UI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = @'
+          from pathlib import Path
+          import re
+
+          def read(path):
+              return Path(path).read_text(encoding='utf-8-sig')
+
+          def write(path, text):
+              Path(path).write_text(text, encoding='utf-8')
+
+          def replace(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f'Pattern not found: {label}')
+              return text.replace(old, new, 1)
+
+          main_path = Path('RaidClipPlugin/MainForm.cs')
+          text = read(main_path)
+
+          text = text.replace('''    private readonly GroupBox _settingsGroup = new()\n    {\n        Text = "Einstellungen",\n        Dock = DockStyle.Fill,\n        Padding = new Padding(10)\n    };''', '''    private readonly GroupBox _settingsGroup = new()\n    {\n        Text = "Raidclip-Einstellungen",\n        Dock = DockStyle.Fill,\n        Padding = new Padding(10)\n    };''')
+
+          text = replace(text, '''    private readonly Button _raidClipNavButton = CreateNavigationTile(\n        "▦  Dashboard",\n        "Bot, Raids und Status");\n\n    private readonly Button _moderationNavButton = CreateNavigationTile(\n        "▣  Chatbot",\n        "Moderation und Aktionen");\n\n    private readonly Panel _raidPage = new()\n    {\n        Dock = DockStyle.Fill\n    };''', '''    private readonly Button _raidClipNavButton = CreateNavigationTile(\n        "▦  Dashboard",\n        "Status und Schnellaktionen");\n\n    private readonly Button _raidClipsNavButton = CreateNavigationTile(\n        "▣  Raidclips",\n        "Clips, OBS und Historie");\n\n    private readonly Button _moderationNavButton = CreateNavigationTile(\n        "◉  Chat",\n        "Livechat, Log und Moderation");\n\n    private readonly Button _settingsNavButton = CreateNavigationTile(\n        "⚙  Einstellungen",\n        "Allgemein und Verbindungen");\n\n    private readonly Panel _raidPage = new()\n    {\n        Dock = DockStyle.Fill\n    };\n\n    private readonly Panel _raidClipsPage = new()\n    {\n        Dock = DockStyle.Fill,\n        Visible = false\n    };\n\n    private readonly Panel _settingsPage = new()\n    {\n        Dock = DockStyle.Fill,\n        Visible = false\n    };''', 'navigation fields')
+
+          text = replace(text, '''    private readonly Button _minigameNavButton = CreateNavigationTile(\n        "◇  Minigames",\n        "Punkte, Commands und Gamble");''', '''    private readonly Button _minigameNavButton = CreateNavigationTile(\n        "◇  Punkte & Minigames",\n        "Punkte, Commands und Gamble");''', 'minigame nav text')
+
+          # ShowSection: add new pages and keep old section aliases.
+          text = replace(text, '''    private void ShowSection(string section)\n    {\n        var showRaid = section == "raid";\n        var showModeration = section == "moderation";\n        var showMinigame = section == "minigame";''', '''    private void ShowSection(string section)\n    {\n        var showRaid = section == "dashboard" || section == "raid";\n        var showRaidClips = section == "raidclips";\n        var showSettings = section == "settings";\n        var showModeration = section == "moderation" || section == "chat";\n        var showMinigame = section == "minigame";''', 'ShowSection booleans')
+
+          text = replace(text, '''        _raidPage.Visible = showRaid;\n        _moderationPage.Visible = showModeration;''', '''        _raidPage.Visible = showRaid;\n        _raidClipsPage.Visible = showRaidClips;\n        _settingsPage.Visible = showSettings;\n        _moderationPage.Visible = showModeration;''', 'ShowSection visibility')
+
+          text = replace(text, '''        if (showModeration)\n            _moderationPage.BringToFront();\n        else if (showSystemStatus)''', '''        if (showRaidClips)\n            _raidClipsPage.BringToFront();\n        else if (showSettings)\n            _settingsPage.BringToFront();\n        else if (showModeration)\n            _moderationPage.BringToFront();\n        else if (showSystemStatus)''', 'ShowSection bring')
+
+          text = replace(text, '''        SetNavigationTileState(_raidClipNavButton, showRaid);\n        SetNavigationTileState(_moderationNavButton, showModeration);''', '''        SetNavigationTileState(_raidClipNavButton, showRaid);\n        SetNavigationTileState(_raidClipsNavButton, showRaidClips);\n        SetNavigationTileState(_settingsNavButton, showSettings);\n        SetNavigationTileState(_moderationNavButton, showModeration);''', 'ShowSection nav state')
+
+          # Event wiring for new nav buttons.
+          text = replace(text, '''        _raidClipNavButton.Click += (_, _) => ShowSection("raid");\n        _moderationNavButton.Click += (_, _) => ShowSection("moderation");''', '''        _raidClipNavButton.Click += (_, _) => ShowSection("dashboard");\n        _raidClipsNavButton.Click += (_, _) => ShowSection("raidclips");\n        _settingsNavButton.Click += (_, _) => ShowSection("settings");\n        _moderationNavButton.Click += (_, _) => ShowSection("chat");''', 'nav click handlers')
+
+          # Move general settings out of Raidclip settings.
+          for label in [
+              '''        raidSettingsFlow.Controls.Add(\n            CreateSettingEditor("UI-Theme", _uiThemeBox));\n''',
+              '''        raidSettingsFlow.Controls.Add(\n            CreateSettingEditor("Twitch-Kanal", _twitchChannelBox));\n''',
+              '''        raidSettingsFlow.Controls.Add(\n            CreateSettingEditor("OBS Host", _obsHostBox));\n''',
+              '''        raidSettingsFlow.Controls.Add(\n            CreateSettingEditor("OBS Port", _obsPortControl));\n''',
+              '''        raidSettingsFlow.Controls.Add(\n            CreateSettingEditor("OBS Passwort", _obsPasswordBox));\n''',
+              '''        raidSettingsFlow.Controls.Add(_autoUpdateCheck);\n'''
+          ]:
+              text = text.replace(label, '')
+
+          text = replace(text, '''        raidSettingsFlow.Controls.Add(\n            CreateSettingEditor("Raid-Chatnachricht", _chatTemplateBox));\n        raidSettingsFlow.Controls.Add(_saveSettingsButton);''', '''        raidSettingsFlow.Controls.Add(\n            CreateSettingEditor("Raid-Chatnachricht", _chatTemplateBox));\n        var saveRaidSettingsButton = NewActionButton("Raidclip-Einstellungen speichern");\n        saveRaidSettingsButton.Click += (_, _) => SaveSettingsFromControls();\n        raidSettingsFlow.Controls.Add(saveRaidSettingsButton);''', 'raid save button')
+
+          text = replace(text, '''        _settingsGroup.Controls.Add(raidSettingsFlow);\n\n        var moderationSettingsFlow = new FlowLayoutPanel''', '''        _settingsGroup.Controls.Add(raidSettingsFlow);\n\n        var generalSettingsGroup = new GroupBox\n        {\n            Text = "Allgemeine Einstellungen",\n            Dock = DockStyle.Fill,\n            Padding = new Padding(10),\n            ForeColor = TextColor\n        };\n        var generalSettingsFlow = new FlowLayoutPanel\n        {\n            Dock = DockStyle.Fill,\n            AutoScroll = true,\n            WrapContents = true,\n            FlowDirection = FlowDirection.LeftToRight,\n            Padding = new Padding(4)\n        };\n        generalSettingsFlow.Controls.Add(CreateSettingEditor("UI-Theme", _uiThemeBox));\n        generalSettingsFlow.Controls.Add(CreateSettingEditor("Twitch-Kanal", _twitchChannelBox));\n        generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Host", _obsHostBox));\n        generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Port", _obsPortControl));\n        generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Passwort", _obsPasswordBox));\n        generalSettingsFlow.Controls.Add(_autoUpdateCheck);\n        generalSettingsFlow.Controls.Add(_saveSettingsButton);\n        generalSettingsGroup.Controls.Add(generalSettingsFlow);\n\n        var settingsTitle = new Label\n        {\n            Text = "Einstellungen",\n            AutoSize = true,\n            Font = new Font("Segoe UI", 20F, FontStyle.Bold),\n            ForeColor = TextColor\n        };\n        var settingsSubtitle = new Label\n        {\n            Text = "Allgemeine Programm-, Twitch-, OBS- und Update-Einstellungen",\n            AutoSize = true,\n            ForeColor = MutedTextColor,\n            Margin = new Padding(2, 3, 0, 0)\n        };\n        var settingsHeader = new FlowLayoutPanel\n        {\n            Dock = DockStyle.Fill,\n            FlowDirection = FlowDirection.TopDown,\n            WrapContents = false,\n            Padding = new Padding(4, 0, 0, 0)\n        };\n        settingsHeader.Controls.Add(settingsTitle);\n        settingsHeader.Controls.Add(settingsSubtitle);\n        var settingsLayout = new TableLayoutPanel\n        {\n            Dock = DockStyle.Fill,\n            ColumnCount = 1,\n            RowCount = 2,\n            Padding = new Padding(20),\n            BackColor = BackgroundColor\n        };\n        settingsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));\n        settingsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));\n        settingsLayout.Controls.Add(settingsHeader, 0, 0);\n        settingsLayout.Controls.Add(generalSettingsGroup, 0, 1);\n        _settingsPage.Controls.Add(settingsLayout);\n\n        var moderationSettingsFlow = new FlowLayoutPanel''', 'general settings page')
+
+          # Log moves to Chat; Raidclips keeps history only.
+          text = replace(text, '''        var logPage = new TabPage("Log");\n        logPage.Controls.Add(_logBox);\n        var historyPage = new TabPage("Clip-Historie");\n        historyPage.Controls.Add(_historyList);\n        var raidTabs = new TabControl\n        {\n            Dock = DockStyle.Fill\n        };\n        raidTabs.TabPages.Add(logPage);\n        raidTabs.TabPages.Add(historyPage);''', '''        var historyPage = new TabPage("Clip-Historie");\n        historyPage.Controls.Add(_historyList);\n        var raidTabs = new TabControl\n        {\n            Dock = DockStyle.Fill\n        };\n        raidTabs.TabPages.Add(historyPage);''', 'history tabs')
+
+          # Dashboard becomes compact and Raidclips gets settings/history.
+          old = '''        var dashboardHeader = CreateDashboardHeader(headerRow, updatePanel);\n        var dashboardIndicators = CreateDashboardIndicatorGrid(\n            _obsIndicator,\n            _twitchIndicator,\n            _eventSubIndicator,\n            _playerIndicator);\n        var dashboardActions = CreateDashboardActionBar(actions);\n        var dashboardSettings = CreateDashboardSection(_settingsGroup, new Padding(0));\n        var dashboardTabs = CreateDashboardSection(raidTabs, new Padding(0));\n\n        var raidLayout = new TableLayoutPanel\n        {\n            Dock = DockStyle.Fill,\n            ColumnCount = 1,\n            RowCount = 5,\n            Padding = new Padding(22, 18, 22, 22),\n            BackColor = BackgroundColor\n        };\n        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 128));\n        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));\n        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));\n        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 245));\n        raidLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));\n        raidLayout.Controls.Add(dashboardHeader, 0, 0);\n        raidLayout.Controls.Add(dashboardIndicators, 0, 1);\n        raidLayout.Controls.Add(dashboardActions, 0, 2);\n        raidLayout.Controls.Add(dashboardSettings, 0, 3);\n        raidLayout.Controls.Add(dashboardTabs, 0, 4);\n        _raidPage.Controls.Add(raidLayout);'''
+          new = '''        var dashboardHeader = CreateDashboardHeader(headerRow, updatePanel);\n        var dashboardIndicators = CreateDashboardIndicatorGrid(\n            _obsIndicator,\n            _twitchIndicator,\n            _eventSubIndicator,\n            _playerIndicator);\n        var dashboardActions = CreateDashboardActionBar(actions);\n\n        var dashboardHealthBox = new GroupBox\n        {\n            Text = "Systemstatus",\n            Dock = DockStyle.Fill,\n            Padding = new Padding(12),\n            ForeColor = TextColor\n        };\n        var dashboardHealthHeader = new TableLayoutPanel\n        {\n            Dock = DockStyle.Fill,\n            ColumnCount = 3,\n            RowCount = 1,\n            BackColor = BackgroundColor,\n            Padding = new Padding(4, 0, 4, 4)\n        };\n        dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));\n        dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));\n        dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));\n        var dashboardHealthSummary = new FlowLayoutPanel\n        {\n            Dock = DockStyle.Fill,\n            FlowDirection = FlowDirection.LeftToRight,\n            WrapContents = true,\n            BackColor = BackgroundColor,\n            Margin = new Padding(0)\n        };\n        dashboardHealthSummary.Controls.Add(_moduleHealthOverallDot);\n        dashboardHealthSummary.Controls.Add(_moduleHealthSummaryLabel);\n        dashboardHealthSummary.Controls.Add(_moduleHealthProgressLabel);\n        _checkModulesButton.Text = "Jetzt prüfen";\n        _restartModulesButton.Text = "Fehlerhafte neu starten";\n        dashboardHealthHeader.Controls.Add(dashboardHealthSummary, 0, 0);\n        dashboardHealthHeader.Controls.Add(_checkModulesButton, 1, 0);\n        dashboardHealthHeader.Controls.Add(_restartModulesButton, 2, 0);\n        var dashboardHealthFooter = new Panel\n        {\n            Dock = DockStyle.Fill,\n            BackColor = BackgroundColor,\n            Padding = new Padding(4, 0, 8, 0)\n        };\n        _moduleHealthLastCheckLabel.Dock = DockStyle.Right;\n        dashboardHealthFooter.Controls.Add(_moduleHealthLastCheckLabel);\n        var dashboardHealthLayout = new TableLayoutPanel\n        {\n            Dock = DockStyle.Fill,\n            ColumnCount = 1,\n            RowCount = 3,\n            BackColor = BackgroundColor\n        };\n        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));\n        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));\n        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));\n        dashboardHealthLayout.Controls.Add(dashboardHealthHeader, 0, 0);\n        dashboardHealthLayout.Controls.Add(_moduleHealthGrid, 0, 1);\n        dashboardHealthLayout.Controls.Add(dashboardHealthFooter, 0, 2);\n        _moduleHealthGrid.Resize += (_, _) => UpdateModuleHealthCardWidths();\n        dashboardHealthBox.Controls.Add(dashboardHealthLayout);\n        var dashboardHealth = CreateDashboardSection(dashboardHealthBox, new Padding(0));\n\n        var raidLayout = new TableLayoutPanel\n        {\n            Dock = DockStyle.Fill,\n            ColumnCount = 1,\n            RowCount = 4,\n            Padding = new Padding(22, 18, 22, 22),\n            BackColor = BackgroundColor\n        };\n        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 128));\n        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));\n        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));\n        raidLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));\n        raidLayout.Controls.Add(dashboardHeader, 0, 0);\n        raidLayout.Controls.Add(dashboardIndicators, 0, 1);\n        raidLayout.Controls.Add(dashboardActions, 0, 2);\n        raidLayout.Controls.Add(dashboardHealth, 0, 3);\n        _raidPage.Controls.Add(raidLayout);\n\n        var raidClipsTitle = new Label\n        {\n            Text = "Raidclips",\n            AutoSize = true,\n            Font = new Font("Segoe UI", 20F, FontStyle.Bold),\n            ForeColor = TextColor\n        };\n        var raidClipsSubtitle = new Label\n        {\n            Text = "Clip-Wiedergabe, Raid-Regeln, OBS-Ausgabe und Clip-Historie",\n            AutoSize = true,\n            ForeColor = MutedTextColor,\n            Margin = new Padding(2, 3, 0, 0)\n        };\n        var raidClipsHeader = new FlowLayoutPanel\n        {\n            Dock = DockStyle.Fill,\n            FlowDirection = FlowDirection.TopDown,\n            WrapContents = false,\n            Padding = new Padding(4, 0, 0, 0)\n        };\n        raidClipsHeader.Controls.Add(raidClipsTitle);\n        raidClipsHeader.Controls.Add(raidClipsSubtitle);\n        var raidClipsStatus = new GroupBox\n        {\n            Text = "Raidclip-Status",\n            Dock = DockStyle.Fill,\n            Padding = new Padding(12),\n            ForeColor = TextColor\n        };\n        var raidClipStatusText = new Label\n        {\n            Text = "Modulstatus, aktuell laufende Clips und letzte Raid-Aktivität werden im Log und in der Historie fortlaufend aktualisiert.",\n            Dock = DockStyle.Fill,\n            ForeColor = MutedTextColor,\n            TextAlign = ContentAlignment.MiddleLeft\n        };\n        raidClipsStatus.Controls.Add(raidClipStatusText);\n        var raidclipSettings = CreateDashboardSection(_settingsGroup, new Padding(0));\n        var raidclipHistory = CreateDashboardSection(raidTabs, new Padding(0));\n        var raidClipsLayout = new TableLayoutPanel\n        {\n            Dock = DockStyle.Fill,\n            ColumnCount = 1,\n            RowCount = 4,\n            Padding = new Padding(20),\n            BackColor = BackgroundColor\n        };\n        raidClipsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));\n        raidClipsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));\n        raidClipsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 245));\n        raidClipsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));\n        raidClipsLayout.Controls.Add(raidClipsHeader, 0, 0);\n        raidClipsLayout.Controls.Add(raidClipsStatus, 0, 1);\n        raidClipsLayout.Controls.Add(raidclipSettings, 0, 2);\n        raidClipsLayout.Controls.Add(raidclipHistory, 0, 3);\n        _raidClipsPage.Controls.Add(raidClipsLayout);'''
+          text = replace(text, old, new, 'dashboard/raidclips layout')
+
+          # Chat page includes log beside chat grid.
+          text = replace(text, '''        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 235));\n        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));\n        moderationLayout.Controls.Add(moderationHeader, 0, 0);\n        moderationLayout.Controls.Add(moderationHint, 0, 1);\n        moderationLayout.Controls.Add(_moderationSettingsGroup, 0, 2);\n        moderationLayout.Controls.Add(_chatDiagnosticsGroup, 0, 3);\n        moderationLayout.Controls.Add(_chatGrid, 0, 4);\n        _moderationPage.Controls.Add(moderationLayout);''', '''        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 235));\n        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));\n        var chatAndLogSplit = new SplitContainer\n        {\n            Dock = DockStyle.Fill,\n            Orientation = Orientation.Vertical,\n            SplitterWidth = 6,\n            BackColor = BackgroundColor,\n            Panel1MinSize = 360,\n            Panel2MinSize = 300\n        };\n        var liveChatBox = new GroupBox\n        {\n            Text = "Twitch-Livechat",\n            Dock = DockStyle.Fill,\n            Padding = new Padding(8),\n            ForeColor = TextColor\n        };\n        liveChatBox.Controls.Add(_chatGrid);\n        var botLogBox = new GroupBox\n        {\n            Text = "Bot-Log",\n            Dock = DockStyle.Fill,\n            Padding = new Padding(8),\n            ForeColor = TextColor\n        };\n        botLogBox.Controls.Add(_logBox);\n        chatAndLogSplit.Panel1.Controls.Add(liveChatBox);\n        chatAndLogSplit.Panel2.Controls.Add(botLogBox);\n        chatAndLogSplit.SplitterDistance = 620;\n        moderationLayout.Controls.Add(moderationHeader, 0, 0);\n        moderationLayout.Controls.Add(moderationHint, 0, 1);\n        moderationLayout.Controls.Add(_moderationSettingsGroup, 0, 2);\n        moderationLayout.Controls.Add(_chatDiagnosticsGroup, 0, 3);\n        moderationLayout.Controls.Add(chatAndLogSplit, 0, 4);\n        _moderationPage.Controls.Add(moderationLayout);''', 'chat log split')
+
+          # Avoid healthcheck as separate main nav page; keep method for compatibility but do not build/navigate to it.
+          text = text.replace('''        BuildSystemStatusPage();\n''', '')
+
+          text = replace(text, '''        navigation.Controls.Add(brand);\n        navigation.Controls.Add(_raidClipNavButton);\n        navigation.Controls.Add(_moderationNavButton);\n        navigation.Controls.Add(_clipDiscordNavButton);\n        navigation.Controls.Add(_minigameNavButton);\n        navigation.Controls.Add(_giveawayNavButton);\n        navigation.Controls.Add(_musicNavButton);\n        navigation.Controls.Add(_commandsNavButton);\n        navigation.Controls.Add(_autoDiscordClipPosterNavButton);\n        navigation.Controls.Add(_streamCheckNavButton);\n        navigation.Controls.Add(_liveChatNavButton);\n        navigation.Controls.Add(_systemStatusNavButton);''', '''        navigation.Controls.Add(brand);\n        navigation.Controls.Add(_raidClipNavButton);\n        navigation.Controls.Add(_raidClipsNavButton);\n        navigation.Controls.Add(_moderationNavButton);\n        navigation.Controls.Add(_commandsNavButton);\n        navigation.Controls.Add(_minigameNavButton);\n        navigation.Controls.Add(_musicNavButton);\n        navigation.Controls.Add(_giveawayNavButton);\n        navigation.Controls.Add(_clipDiscordNavButton);\n        navigation.Controls.Add(_autoDiscordClipPosterNavButton);\n        navigation.Controls.Add(_streamCheckNavButton);\n        navigation.Controls.Add(_liveChatNavButton);\n        navigation.Controls.Add(_settingsNavButton);''', 'sidebar navigation order')
+
+          text = replace(text, '''        contentHost.Controls.Add(_commandsPage);\n        contentHost.Controls.Add(_liveChatPage);\n        contentHost.Controls.Add(_systemStatusPage);''', '''        contentHost.Controls.Add(_settingsPage);\n        contentHost.Controls.Add(_raidClipsPage);\n        contentHost.Controls.Add(_commandsPage);\n        contentHost.Controls.Add(_liveChatPage);\n        contentHost.Controls.Add(_systemStatusPage);''', 'content host pages')
+
+          text = text.replace('''        ShowSection("raid");''', '''        ShowSection("dashboard");''')
+
+          write(main_path, text)
+
+          csproj = Path('RaidClipPlugin/RaidClipPlugin.csproj')
+          project = read(csproj)
+          project = project.replace('<Version>1.8.4</Version>', '<Version>1.8.5</Version>')
+          project = project.replace('<FileVersion>1.8.4.0</FileVersion>', '<FileVersion>1.8.5.0</FileVersion>')
+          write(csproj, project)
+          '@
+          Set-Content -Path apply_clean_ui_restructure.py -Value $script -Encoding UTF8
+          python apply_clean_ui_restructure.py
+          Remove-Item apply_clean_ui_restructure.py
+
+      - name: Format check
+        shell: pwsh
+        run: dotnet build "RaidClipPlugin\RaidClipPlugin.csproj" -c Release
+
+      - name: Tests
+        shell: pwsh
+        run: dotnet test "RaidClipPlugin\Tests\RaidClipPlugin.Tests.csproj" -c Release --no-build
+
+      - name: Commit changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) { Write-Host "No changes to commit"; exit 0 }
+          git commit -m "Restructure main UI into focused sections"
+          git push
