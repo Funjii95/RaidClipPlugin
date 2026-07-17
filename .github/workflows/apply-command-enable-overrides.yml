@@ -287,6 +287,7 @@ jobs:
           tests = Path("RaidClipPlugin/Tests/CommandEnablementTests.cs")
           tests.write_text('''using RaidClipPlugin.Config;
           using RaidClipPlugin.Services;
+          using Xunit;
 
           namespace RaidClipPlugin.Tests;
 
@@ -392,4 +393,5 @@ jobs:
           } else {
             Write-Host "No changes to commit."
           }
+
 
