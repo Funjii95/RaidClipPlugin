@@ -1,4 +1,4 @@
-name: Apply command enable overrides
+﻿name: Apply command enable overrides
 
 on:
   workflow_dispatch:
@@ -26,6 +26,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $script = @'
           from pathlib import Path
+          import re
 
           def read(path):
               return Path(path).read_text(encoding="utf-8-sig")
@@ -208,63 +209,59 @@ jobs:
                       SortMode = DataGridViewColumnSortMode.Automatic
                   });''')
 
-          main = "RaidClipPlugin/MainForm.cs"
-          replace(main,
-          '''                    _chatModeration.MessageReceived += message =>
-                              _musicRequests.ProcessChatMessageAsync(
-                                  message, cancellationToken);''',
-          '''                    _chatModeration.MessageReceived += message =>
-                      {
-                          if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
-                              return Task.CompletedTask;
-                          return _musicRequests.ProcessChatMessageAsync(
-                              message, cancellationToken);
-                      };''')
-          replace(main,
-          '''                    _chatModeration.MessageReceived += message =>
-                              _clipCommandService.HandleMessageAsync(
-                                  message, cancellationToken);''',
-          '''                    _chatModeration.MessageReceived += message =>
-                      {
-                          if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
-                              return Task.CompletedTask;
-                          return _clipCommandService.HandleMessageAsync(
-                              message, cancellationToken);
-                      };''')
-          replace(main,
-          '''                    _chatModeration.MessageReceived += message =>
-                              _discordInviteService.ProcessMessageAsync(
-                                  message, cancellationToken);''',
-          '''                    _chatModeration.MessageReceived += message =>
-                      {
-                          if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
-                              return Task.CompletedTask;
-                          return _discordInviteService.ProcessMessageAsync(
-                              message, cancellationToken);
-                      };''')
-          replace(main,
-          '''                    _chatModeration.MessageReceived += message =>
-                              _giveawayService.ProcessMessageAsync(message, cancellationToken);''',
-          '''                    _chatModeration.MessageReceived += message =>
-                      {
-                          if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
-                              return Task.CompletedTask;
-                          return _giveawayService.ProcessMessageAsync(message, cancellationToken);
-                      };''')
-          replace(main,
-          '''                    _chatModeration.MessageReceived += message =>
-                              _minigame.ProcessMessageAsync(
-                                  message,
-                                  cancellationToken);''',
-          '''                    _chatModeration.MessageReceived += message =>
-                      {
-                          if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
-                              return Task.CompletedTask;
-                          return _minigame.ProcessMessageAsync(
-                              message,
-                              cancellationToken);
-                      };''')
+          def regex_replace(path, pattern, replacement):
+              text = read(path)
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+              if count != 1:
+                  raise SystemExit(f"Regex pattern not found in {path}: {pattern[:80]!r}")
+              write(path, updated)
 
+          main = "RaidClipPlugin/MainForm.cs"
+          regex_replace(main,
+              r'_chatModeration\.MessageReceived \+= message =>\s*_musicRequests\.ProcessChatMessageAsync\(\s*message, cancellationToken\);',
+              """                    _chatModeration.MessageReceived += message =>
+                    {
+                        if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                            return Task.CompletedTask;
+                        return _musicRequests.ProcessChatMessageAsync(
+                            message, cancellationToken);
+                    };""")
+          regex_replace(main,
+              r'_chatModeration\.MessageReceived \+= message =>\s*_clipCommandService\.HandleMessageAsync\(\s*message, cancellationToken\);',
+              """                    _chatModeration.MessageReceived += message =>
+                    {
+                        if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                            return Task.CompletedTask;
+                        return _clipCommandService.HandleMessageAsync(
+                            message, cancellationToken);
+                    };""")
+          regex_replace(main,
+              r'_chatModeration\.MessageReceived \+= message =>\s*_discordInviteService\.ProcessMessageAsync\(\s*message, cancellationToken\);',
+              """                    _chatModeration.MessageReceived += message =>
+                    {
+                        if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                            return Task.CompletedTask;
+                        return _discordInviteService.ProcessMessageAsync(
+                            message, cancellationToken);
+                    };""")
+          regex_replace(main,
+              r'_chatModeration\.MessageReceived \+= message =>\s*_giveawayService\.ProcessMessageAsync\(message, cancellationToken\);',
+              """                    _chatModeration.MessageReceived += message =>
+                    {
+                        if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                            return Task.CompletedTask;
+                        return _giveawayService.ProcessMessageAsync(message, cancellationToken);
+                    };""")
+          regex_replace(main,
+              r'_chatModeration\.MessageReceived \+= message =>\s*_minigame\.ProcessMessageAsync\(\s*message,\s*cancellationToken\);',
+              """                    _chatModeration.MessageReceived += message =>
+                    {
+                        if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                            return Task.CompletedTask;
+                        return _minigame.ProcessMessageAsync(
+                            message,
+                            cancellationToken);
+                    };""")
           minigame = "RaidClipPlugin/Services/ChatMinigameService.cs"
           replace(minigame,
           '''            var command = parsedCommand.Command;
@@ -395,3 +392,4 @@ jobs:
           } else {
             Write-Host "No changes to commit."
           }
+
