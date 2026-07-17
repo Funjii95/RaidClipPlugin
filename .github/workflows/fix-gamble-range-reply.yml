@@ -1,0 +1,214 @@
+﻿name: Fix gamble range reply
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Patch gamble feedback
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = @'
+          from pathlib import Path
+
+          def read(path):
+              return Path(path).read_text(encoding="utf-8-sig")
+
+          def write(path, text):
+              Path(path).write_text(text, encoding="utf-8")
+
+          def replace(path, old, new, label):
+              text = read(path)
+              if old not in text:
+                  raise SystemExit(f"Pattern not found: {label}")
+              write(path, text.replace(old, new, 1))
+
+          service = Path("RaidClipPlugin/Services/ChatMinigameService.cs")
+          text = read(service)
+
+          old_block = '''            if (gambleStake < _config.MinimumBet ||
+                (!isAllIn && gambleStake > _config.MaximumBet))
+            {
+                await TrySendChatAsync(
+                    isAllIn
+                        ? $"@{message.UserName}, du hast nicht genug verfügbare {_config.CurrencyPlural} für All-in."
+                        : $"@{message.UserName}, nutze !gamble <einsatz|all>.",
+                    cancellationToken);
+                LogGambleCommand(
+                    message,
+                    parsedCommand,
+                    argument,
+                    nameof(ChatMinigameService),
+                    GambleCommandResult.InvalidArguments,
+                    $"stake-out-of-range:{gambleStake}");
+                return GambleCommandResult.InvalidArguments;
+            }
+'''
+          new_block = '''            if (gambleStake < _config.MinimumBet ||
+                (!isAllIn && gambleStake > _config.MaximumBet))
+            {
+                await TrySendChatAsync(
+                    BuildGambleStakeRangeReply(
+                        message.UserName,
+                        gambleStake,
+                        _config.MinimumBet,
+                        _config.MaximumBet,
+                        isAllIn,
+                        _config.CurrencySingular,
+                        _config.CurrencyPlural),
+                    cancellationToken);
+                LogGambleCommand(
+                    message,
+                    parsedCommand,
+                    argument,
+                    nameof(ChatMinigameService),
+                    GambleCommandResult.InvalidArguments,
+                    $"stake-out-of-range:{gambleStake};min={_config.MinimumBet};max={_config.MaximumBet}");
+                return GambleCommandResult.InvalidArguments;
+            }
+'''
+          if old_block not in text:
+              raise SystemExit("Gamble range block not found")
+          text = text.replace(old_block, new_block, 1)
+
+          marker = '''    private Task SendGambleUsageAsync(
+        ChatMessage message,
+        CancellationToken cancellationToken) =>
+        TrySendChatAsync(
+            $"@{message.UserName}, nutze !gamble <einsatz|all>.",
+            cancellationToken);
+'''
+          addition = marker + '''
+    public static string BuildGambleStakeRangeReply(
+        string userName,
+        long stake,
+        long minimumBet,
+        long maximumBet,
+        bool isAllIn,
+        string currencySingular,
+        string currencyPlural)
+    {
+        static string FormatAmount(
+            long amount,
+            string singular,
+            string plural) =>
+            $"{amount:N0} {(Math.Abs(amount) == 1 ? singular : plural)}";
+
+        var name = (userName ?? "").Trim().TrimStart('@');
+        var mention = string.IsNullOrWhiteSpace(name) ? "@User" : $"@{name}";
+        var singularName = string.IsNullOrWhiteSpace(currencySingular)
+            ? "Punkt"
+            : currencySingular.Trim();
+        var pluralName = string.IsNullOrWhiteSpace(currencyPlural)
+            ? "Punkte"
+            : currencyPlural.Trim();
+
+        if (isAllIn)
+        {
+            return $"{mention}, du hast nicht genug verfügbare " +
+                   $"{pluralName} für All-in. Mindesteinsatz: " +
+                   $"{FormatAmount(minimumBet, singularName, pluralName)}.";
+        }
+
+        if (stake < minimumBet)
+        {
+            return $"{mention}, der Mindesteinsatz für !gamble ist " +
+                   $"{FormatAmount(minimumBet, singularName, pluralName)}.";
+        }
+
+        return $"{mention}, der Maximaleinsatz für !gamble ist " +
+               $"{FormatAmount(maximumBet, singularName, pluralName)}.";
+    }
+'''
+          if marker not in text:
+              raise SystemExit("SendGambleUsage marker not found")
+          text = text.replace(marker, addition, 1)
+          write(service, text)
+
+          test_path = Path("RaidClipPlugin/Tests/GambleStakeRangeReplyTests.cs")
+          test_path.write_text('''using RaidClipPlugin.Services;
+
+namespace RaidClipPlugin.Tests;
+
+public sealed class GambleStakeRangeReplyTests
+{
+    [Fact]
+    public void StakeBelowMinimumShowsMinimumInsteadOfUsage()
+    {
+        var reply = ChatMinigameService.BuildGambleStakeRangeReply(
+            "chrissy0711", 20, 50, 1000, false, "Punkt", "Punkte");
+
+        Assert.Contains("@chrissy0711", reply);
+        Assert.Contains("Mindesteinsatz", reply);
+        Assert.Contains("50 Punkte", reply);
+        Assert.DoesNotContain("<einsatz|all>", reply);
+    }
+
+    [Fact]
+    public void StakeAboveMaximumShowsMaximumInsteadOfUsage()
+    {
+        var reply = ChatMinigameService.BuildGambleStakeRangeReply(
+            "Funjii", 2000, 10, 1000, false, "Punkt", "Punkte");
+
+        var normalized = reply.Replace(".", "").Replace(",", "");
+        Assert.Contains("Maximaleinsatz", reply);
+        Assert.Contains("1000 Punkte", normalized);
+        Assert.DoesNotContain("<einsatz|all>", reply);
+    }
+
+    [Fact]
+    public void AllInBelowMinimumShowsAllInHint()
+    {
+        var reply = ChatMinigameService.BuildGambleStakeRangeReply(
+            "Funjii", 0, 10, 1000, true, "Punkt", "Punkte");
+
+        Assert.Contains("All-in", reply);
+        Assert.Contains("Mindesteinsatz", reply);
+        Assert.DoesNotContain("<einsatz|all>", reply);
+    }
+}
+''', encoding="utf-8")
+
+          project = Path("RaidClipPlugin/RaidClipPlugin.csproj")
+          csproj = read(project)
+          csproj = csproj.replace("<Version>1.8.5</Version>", "<Version>1.8.6</Version>")
+          csproj = csproj.replace("<FileVersion>1.8.5.0</FileVersion>", "<FileVersion>1.8.6.0</FileVersion>")
+          write(project, csproj)
+          '@
+          Set-Content -Path fix_gamble_range_reply.py -Value $script -Encoding UTF8
+          python fix_gamble_range_reply.py
+          Remove-Item fix_gamble_range_reply.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build "RaidClipPlugin\RaidClipPlugin.csproj" -c Release
+
+      - name: Tests
+        shell: pwsh
+        run: dotnet test "RaidClipPlugin\Tests\RaidClipPlugin.Tests.csproj" -c Release
+
+      - name: Commit changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/Services/ChatMinigameService.cs RaidClipPlugin/Tests/GambleStakeRangeReplyTests.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) { Write-Host "No changes to commit"; exit 0 }
+          git commit -m "Fix gamble range feedback"
+          git push
