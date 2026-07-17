@@ -287,7 +287,7 @@ public sealed partial class MainForm : Form
 
     private readonly GroupBox _settingsGroup = new()
     {
-        Text = "Einstellungen",
+        Text = "Raidclip-Einstellungen",
         Dock = DockStyle.Fill,
         Padding = new Padding(10)
     };
@@ -310,15 +310,35 @@ public sealed partial class MainForm : Form
 
     private readonly Button _raidClipNavButton = CreateNavigationTile(
         "▦  Dashboard",
-        "Bot, Raids und Status");
+        "Status und Schnellaktionen");
+
+    private readonly Button _raidClipsNavButton = CreateNavigationTile(
+        "▣  Raidclips",
+        "Clips, OBS und Historie");
 
     private readonly Button _moderationNavButton = CreateNavigationTile(
-        "▣  Chatbot",
-        "Moderation und Aktionen");
+        "◉  Chat",
+        "Livechat, Log und Moderation");
+
+    private readonly Button _settingsNavButton = CreateNavigationTile(
+        "⚙  Einstellungen",
+        "Allgemein und Verbindungen");
 
     private readonly Panel _raidPage = new()
     {
         Dock = DockStyle.Fill
+    };
+
+    private readonly Panel _raidClipsPage = new()
+    {
+        Dock = DockStyle.Fill,
+        Visible = false
+    };
+
+    private readonly Panel _settingsPage = new()
+    {
+        Dock = DockStyle.Fill,
+        Visible = false
     };
 
     private readonly Panel _moderationPage = new()
@@ -633,7 +653,7 @@ public sealed partial class MainForm : Form
         CreateIntegerControl(30, 5, 3600);
 
     private readonly Button _minigameNavButton = CreateNavigationTile(
-        "◇  Minigames",
+        "◇  Punkte & Minigames",
         "Punkte, Commands und Gamble");
 
     private readonly Button _systemStatusNavButton = CreateNavigationTile(
@@ -842,8 +862,10 @@ private enum CloseChoice
             await ExportMinigameDataAsync();
         _importMinigameButton.Click += async (_, _) =>
             await ImportMinigameDataAsync();
-        _raidClipNavButton.Click += (_, _) => ShowSection("raid");
-        _moderationNavButton.Click += (_, _) => ShowSection("moderation");
+        _raidClipNavButton.Click += (_, _) => ShowSection("dashboard");
+        _raidClipsNavButton.Click += (_, _) => ShowSection("raidclips");
+        _settingsNavButton.Click += (_, _) => ShowSection("settings");
+        _moderationNavButton.Click += (_, _) => ShowSection("chat");
         _minigameNavButton.Click += (_, _) => ShowSection("minigame");
         _systemStatusNavButton.Click += (_, _) => ShowSection("system-status");
         _liveChatNavButton.Click += (_, _) => ShowSection("livechat");
@@ -1275,8 +1297,10 @@ private enum CloseChoice
 
     private void ShowSection(string section)
     {
-        var showRaid = section == "raid";
-        var showModeration = section == "moderation";
+        var showRaid = section == "dashboard" || section == "raid";
+        var showRaidClips = section == "raidclips";
+        var showSettings = section == "settings";
+        var showModeration = section == "moderation" || section == "chat";
         var showMinigame = section == "minigame";
         var showSystemStatus = section == "system-status";
         var showMusic = section == "music";
@@ -1288,6 +1312,8 @@ private enum CloseChoice
         var showLiveChat = section == "livechat";
 
         _raidPage.Visible = showRaid;
+        _raidClipsPage.Visible = showRaidClips;
+        _settingsPage.Visible = showSettings;
         _moderationPage.Visible = showModeration;
         _minigamePage.Visible = showMinigame;
         _systemStatusPage.Visible = showSystemStatus;
@@ -1299,7 +1325,11 @@ private enum CloseChoice
         _commandsPage.Visible = showCommands;
         _liveChatPage.Visible = showLiveChat;
 
-        if (showModeration)
+        if (showRaidClips)
+            _raidClipsPage.BringToFront();
+        else if (showSettings)
+            _settingsPage.BringToFront();
+        else if (showModeration)
             _moderationPage.BringToFront();
         else if (showSystemStatus)
             _systemStatusPage.BringToFront();
@@ -1323,6 +1353,8 @@ private enum CloseChoice
             _raidPage.BringToFront();
 
         SetNavigationTileState(_raidClipNavButton, showRaid);
+        SetNavigationTileState(_raidClipsNavButton, showRaidClips);
+        SetNavigationTileState(_settingsNavButton, showSettings);
         SetNavigationTileState(_moderationNavButton, showModeration);
         SetNavigationTileState(_minigameNavButton, showMinigame);
         SetNavigationTileState(_systemStatusNavButton, showSystemStatus);
@@ -1597,16 +1629,6 @@ private enum CloseChoice
             Padding = new Padding(4)
         };
         raidSettingsFlow.Controls.Add(
-            CreateSettingEditor("UI-Theme", _uiThemeBox));
-        raidSettingsFlow.Controls.Add(
-            CreateSettingEditor("Twitch-Kanal", _twitchChannelBox));
-        raidSettingsFlow.Controls.Add(
-            CreateSettingEditor("OBS Host", _obsHostBox));
-        raidSettingsFlow.Controls.Add(
-            CreateSettingEditor("OBS Port", _obsPortControl));
-        raidSettingsFlow.Controls.Add(
-            CreateSettingEditor("OBS Passwort", _obsPasswordBox));
-        raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Clip-Lookback (Tage)", _lookbackControl));
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Max. Retries", _retryControl));
@@ -1622,10 +1644,11 @@ private enum CloseChoice
             CreateSettingEditor("Clip-Blacklist", _blacklistBox));
         raidSettingsFlow.Controls.Add(_sendRaidMessageCheck);
         raidSettingsFlow.Controls.Add(_sendShoutoutCheck);
-        raidSettingsFlow.Controls.Add(_autoUpdateCheck);
         raidSettingsFlow.Controls.Add(
             CreateSettingEditor("Raid-Chatnachricht", _chatTemplateBox));
-        raidSettingsFlow.Controls.Add(_saveSettingsButton);
+        var saveRaidSettingsButton = NewActionButton("Raidclip-Einstellungen speichern");
+        saveRaidSettingsButton.Click += (_, _) => SaveSettingsFromControls();
+        raidSettingsFlow.Controls.Add(saveRaidSettingsButton);
         raidSettingsFlow.Resize += (_, _) =>
         {
             foreach (Control child in raidSettingsFlow.Controls)
@@ -1639,6 +1662,67 @@ private enum CloseChoice
             }
         };
         _settingsGroup.Controls.Add(raidSettingsFlow);
+
+        var generalSettingsGroup = new GroupBox
+        {
+            Text = "Allgemeine Einstellungen",
+            Dock = DockStyle.Fill,
+            Padding = new Padding(10),
+            ForeColor = TextColor
+        };
+        var generalSettingsFlow = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            WrapContents = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            Padding = new Padding(4)
+        };
+        generalSettingsFlow.Controls.Add(CreateSettingEditor("UI-Theme", _uiThemeBox));
+        generalSettingsFlow.Controls.Add(CreateSettingEditor("Twitch-Kanal", _twitchChannelBox));
+        generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Host", _obsHostBox));
+        generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Port", _obsPortControl));
+        generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Passwort", _obsPasswordBox));
+        generalSettingsFlow.Controls.Add(_autoUpdateCheck);
+        generalSettingsFlow.Controls.Add(_saveSettingsButton);
+        generalSettingsGroup.Controls.Add(generalSettingsFlow);
+
+        var settingsTitle = new Label
+        {
+            Text = "Einstellungen",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 20F, FontStyle.Bold),
+            ForeColor = TextColor
+        };
+        var settingsSubtitle = new Label
+        {
+            Text = "Allgemeine Programm-, Twitch-, OBS- und Update-Einstellungen",
+            AutoSize = true,
+            ForeColor = MutedTextColor,
+            Margin = new Padding(2, 3, 0, 0)
+        };
+        var settingsHeader = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            Padding = new Padding(4, 0, 0, 0)
+        };
+        settingsHeader.Controls.Add(settingsTitle);
+        settingsHeader.Controls.Add(settingsSubtitle);
+        var settingsLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Padding = new Padding(20),
+            BackColor = BackgroundColor
+        };
+        settingsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
+        settingsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        settingsLayout.Controls.Add(settingsHeader, 0, 0);
+        settingsLayout.Controls.Add(generalSettingsGroup, 0, 1);
+        _settingsPage.Controls.Add(settingsLayout);
 
         var moderationSettingsFlow = new FlowLayoutPanel
         {
@@ -1716,15 +1800,12 @@ private enum CloseChoice
             Width = 75
         });
 
-        var logPage = new TabPage("Log");
-        logPage.Controls.Add(_logBox);
         var historyPage = new TabPage("Clip-Historie");
         historyPage.Controls.Add(_historyList);
         var raidTabs = new TabControl
         {
             Dock = DockStyle.Fill
         };
-        raidTabs.TabPages.Add(logPage);
         raidTabs.TabPages.Add(historyPage);
 
         var dashboardHeader = CreateDashboardHeader(headerRow, updatePanel);
@@ -1734,28 +1815,141 @@ private enum CloseChoice
             _eventSubIndicator,
             _playerIndicator);
         var dashboardActions = CreateDashboardActionBar(actions);
-        var dashboardSettings = CreateDashboardSection(_settingsGroup, new Padding(0));
-        var dashboardTabs = CreateDashboardSection(raidTabs, new Padding(0));
+
+        var dashboardHealthBox = new GroupBox
+        {
+            Text = "Systemstatus",
+            Dock = DockStyle.Fill,
+            Padding = new Padding(12),
+            ForeColor = TextColor
+        };
+        var dashboardHealthHeader = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 3,
+            RowCount = 1,
+            BackColor = BackgroundColor,
+            Padding = new Padding(4, 0, 4, 4)
+        };
+        dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        var dashboardHealthSummary = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = true,
+            BackColor = BackgroundColor,
+            Margin = new Padding(0)
+        };
+        dashboardHealthSummary.Controls.Add(_moduleHealthOverallDot);
+        dashboardHealthSummary.Controls.Add(_moduleHealthSummaryLabel);
+        dashboardHealthSummary.Controls.Add(_moduleHealthProgressLabel);
+        _checkModulesButton.Text = "Jetzt prüfen";
+        _restartModulesButton.Text = "Fehlerhafte neu starten";
+        dashboardHealthHeader.Controls.Add(dashboardHealthSummary, 0, 0);
+        dashboardHealthHeader.Controls.Add(_checkModulesButton, 1, 0);
+        dashboardHealthHeader.Controls.Add(_restartModulesButton, 2, 0);
+        var dashboardHealthFooter = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = BackgroundColor,
+            Padding = new Padding(4, 0, 8, 0)
+        };
+        _moduleHealthLastCheckLabel.Dock = DockStyle.Right;
+        dashboardHealthFooter.Controls.Add(_moduleHealthLastCheckLabel);
+        var dashboardHealthLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            BackColor = BackgroundColor
+        };
+        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        dashboardHealthLayout.Controls.Add(dashboardHealthHeader, 0, 0);
+        dashboardHealthLayout.Controls.Add(_moduleHealthGrid, 0, 1);
+        dashboardHealthLayout.Controls.Add(dashboardHealthFooter, 0, 2);
+        _moduleHealthGrid.Resize += (_, _) => UpdateModuleHealthCardWidths();
+        dashboardHealthBox.Controls.Add(dashboardHealthLayout);
+        var dashboardHealth = CreateDashboardSection(dashboardHealthBox, new Padding(0));
 
         var raidLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 5,
+            RowCount = 4,
             Padding = new Padding(22, 18, 22, 22),
             BackColor = BackgroundColor
         };
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 128));
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 245));
         raidLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         raidLayout.Controls.Add(dashboardHeader, 0, 0);
         raidLayout.Controls.Add(dashboardIndicators, 0, 1);
         raidLayout.Controls.Add(dashboardActions, 0, 2);
-        raidLayout.Controls.Add(dashboardSettings, 0, 3);
-        raidLayout.Controls.Add(dashboardTabs, 0, 4);
+        raidLayout.Controls.Add(dashboardHealth, 0, 3);
         _raidPage.Controls.Add(raidLayout);
+
+        var raidClipsTitle = new Label
+        {
+            Text = "Raidclips",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 20F, FontStyle.Bold),
+            ForeColor = TextColor
+        };
+        var raidClipsSubtitle = new Label
+        {
+            Text = "Clip-Wiedergabe, Raid-Regeln, OBS-Ausgabe und Clip-Historie",
+            AutoSize = true,
+            ForeColor = MutedTextColor,
+            Margin = new Padding(2, 3, 0, 0)
+        };
+        var raidClipsHeader = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            Padding = new Padding(4, 0, 0, 0)
+        };
+        raidClipsHeader.Controls.Add(raidClipsTitle);
+        raidClipsHeader.Controls.Add(raidClipsSubtitle);
+        var raidClipsStatus = new GroupBox
+        {
+            Text = "Raidclip-Status",
+            Dock = DockStyle.Fill,
+            Padding = new Padding(12),
+            ForeColor = TextColor
+        };
+        var raidClipStatusText = new Label
+        {
+            Text = "Modulstatus, aktuell laufende Clips und letzte Raid-Aktivität werden im Log und in der Historie fortlaufend aktualisiert.",
+            Dock = DockStyle.Fill,
+            ForeColor = MutedTextColor,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+        raidClipsStatus.Controls.Add(raidClipStatusText);
+        var raidclipSettings = CreateDashboardSection(_settingsGroup, new Padding(0));
+        var raidclipHistory = CreateDashboardSection(raidTabs, new Padding(0));
+        var raidClipsLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 4,
+            Padding = new Padding(20),
+            BackColor = BackgroundColor
+        };
+        raidClipsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
+        raidClipsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
+        raidClipsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 245));
+        raidClipsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        raidClipsLayout.Controls.Add(raidClipsHeader, 0, 0);
+        raidClipsLayout.Controls.Add(raidClipsStatus, 0, 1);
+        raidClipsLayout.Controls.Add(raidclipSettings, 0, 2);
+        raidClipsLayout.Controls.Add(raidclipHistory, 0, 3);
+        _raidClipsPage.Controls.Add(raidClipsLayout);
 
         var moderationTitle = new Label
         {
@@ -1818,11 +2012,47 @@ private enum CloseChoice
         moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 190));
         moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 235));
         moderationLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        var chatAndLogSplit = new SplitContainer
+        {
+            Dock = DockStyle.Fill,
+            Orientation = Orientation.Vertical,
+            SplitterWidth = 6,
+            BackColor = BackgroundColor,
+            Panel1MinSize = 120,
+            Panel2MinSize = 120
+        };
+        var liveChatBox = new GroupBox
+        {
+            Text = "Twitch-Livechat",
+            Dock = DockStyle.Fill,
+            Padding = new Padding(8),
+            ForeColor = TextColor
+        };
+        liveChatBox.Controls.Add(_chatGrid);
+        var botLogBox = new GroupBox
+        {
+            Text = "Bot-Log",
+            Dock = DockStyle.Fill,
+            Padding = new Padding(8),
+            ForeColor = TextColor
+        };
+        botLogBox.Controls.Add(_logBox);
+        chatAndLogSplit.Panel1.Controls.Add(liveChatBox);
+        chatAndLogSplit.Panel2.Controls.Add(botLogBox);
+        chatAndLogSplit.SizeChanged += (_, _) =>
+        {
+            if (chatAndLogSplit.Width <= 360)
+                return;
+            var maximumDistance = chatAndLogSplit.Width -
+                chatAndLogSplit.Panel2MinSize - chatAndLogSplit.SplitterWidth;
+            if (maximumDistance > chatAndLogSplit.Panel1MinSize)
+                chatAndLogSplit.SplitterDistance = Math.Min(620, maximumDistance);
+        };
         moderationLayout.Controls.Add(moderationHeader, 0, 0);
         moderationLayout.Controls.Add(moderationHint, 0, 1);
         moderationLayout.Controls.Add(_moderationSettingsGroup, 0, 2);
         moderationLayout.Controls.Add(_chatDiagnosticsGroup, 0, 3);
-        moderationLayout.Controls.Add(_chatGrid, 0, 4);
+        moderationLayout.Controls.Add(chatAndLogSplit, 0, 4);
         _moderationPage.Controls.Add(moderationLayout);
 
         var minigameTitle = new Label
@@ -2104,7 +2334,6 @@ private enum CloseChoice
         minigameLayout.Controls.Add(minigameHint, 0, 1);
         minigameLayout.Controls.Add(_minigameSettingsGroup, 0, 2);
         _minigamePage.Controls.Add(minigameLayout);
-        BuildSystemStatusPage();
         BuildMusicRequestPage();
         BuildStreamCheckPage();
         BuildClipDiscordPage();
@@ -2135,22 +2364,25 @@ private enum CloseChoice
         };
         navigation.Controls.Add(brand);
         navigation.Controls.Add(_raidClipNavButton);
+        navigation.Controls.Add(_raidClipsNavButton);
         navigation.Controls.Add(_moderationNavButton);
-        navigation.Controls.Add(_clipDiscordNavButton);
-        navigation.Controls.Add(_minigameNavButton);
-        navigation.Controls.Add(_giveawayNavButton);
-        navigation.Controls.Add(_musicNavButton);
         navigation.Controls.Add(_commandsNavButton);
+        navigation.Controls.Add(_minigameNavButton);
+        navigation.Controls.Add(_musicNavButton);
+        navigation.Controls.Add(_giveawayNavButton);
+        navigation.Controls.Add(_clipDiscordNavButton);
         navigation.Controls.Add(_autoDiscordClipPosterNavButton);
         navigation.Controls.Add(_streamCheckNavButton);
         navigation.Controls.Add(_liveChatNavButton);
-        navigation.Controls.Add(_systemStatusNavButton);
+        navigation.Controls.Add(_settingsNavButton);
 
         var contentHost = new Panel
         {
             Dock = DockStyle.Fill,
             BackColor = BackgroundColor
         };
+        contentHost.Controls.Add(_settingsPage);
+        contentHost.Controls.Add(_raidClipsPage);
         contentHost.Controls.Add(_commandsPage);
         contentHost.Controls.Add(_liveChatPage);
         contentHost.Controls.Add(_systemStatusPage);
@@ -2207,7 +2439,7 @@ private enum CloseChoice
         StylePrimaryButton(_updateButton);
         _resetPointsButton.BackColor = Color.FromArgb(72, 14, 17);
         _resetPointsButton.FlatAppearance.BorderColor = AccentColor;
-        ShowSection("raid");
+        ShowSection("dashboard");
     }
 
     private async Task CreateObsSourceAsync()
