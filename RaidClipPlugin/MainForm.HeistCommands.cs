@@ -124,7 +124,7 @@ public sealed partial class MainForm
             _commandRoleFilter, _copyCommandButton, _copyAllCommandsButton, _exportCommandsButton });
         _commandsGrid.Columns.Add(new DataGridViewCheckBoxColumn
         {
-            Name = "Aktiv", HeaderText = "Aktiv", ReadOnly = true,
+            Name = "Aktiv", HeaderText = "Aktiv", ReadOnly = false,
             SortMode = DataGridViewColumnSortMode.Automatic
         });
         foreach (var column in new[] { "Command", "Aliase", "Modul", "Beschreibung", "Verwendung" })

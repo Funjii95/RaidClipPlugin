@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
@@ -30,6 +30,8 @@ public sealed class CommandRegistry
             if (normalized.Length == 0) return;
             if (config.Commands.CommandRoleOverrides.TryGetValue(id, out var roleOverride))
                 role = ParseRole(roleOverride, role);
+            if (!config.Commands.IsCommandEnabled(id))
+                enabled = false;
             list.Add(new ChatCommandDefinition(id, normalized,
                 (aliases ?? Array.Empty<string>()).Select(Normalize)
                     .Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
@@ -162,6 +164,29 @@ public sealed class CommandRegistry
 
         lock (_sync) _commands=list.OrderBy(x=>x.SortOrder).ThenBy(x=>x.CommandText).ToArray();
         Changed?.Invoke();
+    }
+
+    public bool IsCommandEnabledForMessage(string? text)
+    {
+        var input = Normalize(text);
+        if (input.Length == 0 || !input.StartsWith('!'))
+            return true;
+
+        var definition = Commands
+            .SelectMany(item => new[] { item.CommandText }.Concat(item.Aliases)
+                .Select(command => new
+                {
+                    Definition = item,
+                    Text = Normalize(command)
+                }))
+            .Where(item =>
+                input.Equals(item.Text, StringComparison.OrdinalIgnoreCase) ||
+                input.StartsWith(item.Text + " ", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(item => item.Text.Length)
+            .Select(item => item.Definition)
+            .FirstOrDefault();
+
+        return definition?.Enabled ?? true;
     }
 
     public IReadOnlyList<CommandCollision> FindCollisions(bool includeDisabled = true)

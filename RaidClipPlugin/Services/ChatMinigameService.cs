@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Text;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
@@ -537,6 +537,11 @@ public sealed class ChatMinigameService : IDisposable
             if (parts.Length == 0) return;
             var command = parsedCommand.Command;
             parts[0] = command;
+
+            if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+            {
+                return;
+            }
 
             if (_commandsConfig.Enabled &&
                 command == CommandRegistry.Normalize(_commandsConfig.Command))

@@ -2492,29 +2492,45 @@ private enum CloseChoice
 
                 if (config.MusicRequests.Enabled && _musicRequests is not null)
                 {
-                    _chatModeration.MessageReceived += message =>
-                        _musicRequests.ProcessChatMessageAsync(
-                            message, cancellationToken);
+                                        _chatModeration.MessageReceived += message =>
+          {
+              if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                  return Task.CompletedTask;
+              return _musicRequests.ProcessChatMessageAsync(
+                  message, cancellationToken);
+          };
                 }
 
                 if (config.ClipCommand.Enabled && _clipCommandService is not null)
                 {
-                    _chatModeration.MessageReceived += message =>
-                        _clipCommandService.HandleMessageAsync(
-                            message, cancellationToken);
+                                        _chatModeration.MessageReceived += message =>
+          {
+              if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                  return Task.CompletedTask;
+              return _clipCommandService.HandleMessageAsync(
+                  message, cancellationToken);
+          };
                 }
 
                 if (_discordInviteService is not null)
                 {
-                    _chatModeration.MessageReceived += message =>
-                        _discordInviteService.ProcessMessageAsync(
-                            message, cancellationToken);
+                                        _chatModeration.MessageReceived += message =>
+          {
+              if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                  return Task.CompletedTask;
+              return _discordInviteService.ProcessMessageAsync(
+                  message, cancellationToken);
+          };
                 }
 
                 if (config.Giveaways.Enabled && _giveawayService is not null)
                 {
-                    _chatModeration.MessageReceived += message =>
-                        _giveawayService.ProcessMessageAsync(message, cancellationToken);
+                                        _chatModeration.MessageReceived += message =>
+          {
+              if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                  return Task.CompletedTask;
+              return _giveawayService.ProcessMessageAsync(message, cancellationToken);
+          };
                 }
 
                 if (ChatMinigameService.ShouldRun(config.Minigame) || config.Heist.Enabled || config.Duel.Enabled || config.Commands.Enabled)
@@ -2546,10 +2562,14 @@ private enum CloseChoice
                         _ = RefreshMinigameDashboardAsync();
                     _minigame.HeistStatusChanged += OnHeistStatusChanged;
                     _minigame.DuelStatusChanged += OnDuelStatusChanged;
-                    _chatModeration.MessageReceived += message =>
-                        _minigame.ProcessMessageAsync(
-                            message,
-                            cancellationToken);
+                                        _chatModeration.MessageReceived += message =>
+          {
+              if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                  return Task.CompletedTask;
+              return _minigame.ProcessMessageAsync(
+                  message,
+                  cancellationToken);
+          };
                     _minigameRunCts = CancellationTokenSource
                         .CreateLinkedTokenSource(cancellationToken);
                     _minigameTask = _minigame.RunAsync(

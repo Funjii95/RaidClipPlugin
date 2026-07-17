@@ -50,9 +50,16 @@ public sealed class CommandsConfig
     public string ExportDirectory { get; set; } = "exports";
     public Dictionary<string, string> CommandRoleOverrides { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, bool> CommandEnabledOverrides { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
     public bool CustomCommandsEnabled { get; set; } = true;
     public List<CustomChatCommandConfig> CustomCommands { get; set; } =
         CustomChatCommandConfig.CreateExamples();
+
+    public bool IsCommandEnabled(string commandId) =>
+        string.IsNullOrWhiteSpace(commandId) ||
+        !CommandEnabledOverrides.TryGetValue(commandId.Trim(), out var enabled) ||
+        enabled;
 }
 
 

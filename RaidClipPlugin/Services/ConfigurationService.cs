@@ -521,6 +521,11 @@ public sealed class ConfigurationService
             .Where(item => !string.IsNullOrWhiteSpace(item.Key))
             .ToDictionary(item => item.Key.Trim(), item =>
                 CommandRegistry.ParseRole(item.Value).ToString(), StringComparer.OrdinalIgnoreCase);
+        config.Commands.CommandEnabledOverrides = (config.Commands.CommandEnabledOverrides ??
+            new Dictionary<string, bool>())
+            .Where(item => !string.IsNullOrWhiteSpace(item.Key))
+            .ToDictionary(item => item.Key.Trim(), item => item.Value,
+                StringComparer.OrdinalIgnoreCase);
         config.Commands.CustomCommands ??= new List<CustomChatCommandConfig>();
         foreach (var custom in config.Commands.CustomCommands)
         {

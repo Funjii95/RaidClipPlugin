@@ -41,6 +41,8 @@ public sealed partial class MainForm
         NewHeistActionButton("Berechtigung zurücksetzen", 220);
     private readonly Dictionary<string, string> _pendingCommandRoleOverrides =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, bool> _pendingCommandEnabledOverrides =
+        new(StringComparer.OrdinalIgnoreCase);
     private CommandPermissionService? _commandPermissions;
     private CustomCommandService? _customCommandService;
 
@@ -145,12 +147,27 @@ public sealed partial class MainForm
         };
         _commandsGrid.CellValueChanged += (_, args) =>
         {
-            if (_refreshingCommandGrid || args.RowIndex < 0 ||
-                _commandsGrid.Columns[args.ColumnIndex].Name != "Berechtigung") return;
+            if (_refreshingCommandGrid || args.RowIndex < 0)
+                return;
+
+            var columnName = _commandsGrid.Columns[args.ColumnIndex].Name;
+            if (columnName is not ("Berechtigung" or "Aktiv"))
+                return;
+
             var row = _commandsGrid.Rows[args.RowIndex];
-            if (row.Tag is ChatCommandDefinition definition)
+            if (row.Tag is not ChatCommandDefinition definition)
+                return;
+
+            if (columnName == "Berechtigung")
+            {
                 _pendingCommandRoleOverrides[definition.CommandId] =
                     ParseRoleLabel(row.Cells["Berechtigung"].Value?.ToString()).ToString();
+            }
+            else
+            {
+                _pendingCommandEnabledOverrides[definition.CommandId] =
+                    row.Cells["Aktiv"].Value is true;
+            }
         };
     }
 
@@ -180,6 +197,9 @@ public sealed partial class MainForm
         _pendingCommandRoleOverrides.Clear();
         foreach (var item in commands.CommandRoleOverrides)
             _pendingCommandRoleOverrides[item.Key] = item.Value;
+        _pendingCommandEnabledOverrides.Clear();
+        foreach (var item in commands.CommandEnabledOverrides)
+            _pendingCommandEnabledOverrides[item.Key] = item.Value;
     }
 
 
@@ -202,6 +222,8 @@ public sealed partial class MainForm
             }).ToList();
         commands.CommandRoleOverrides = new Dictionary<string, string>(
             _pendingCommandRoleOverrides, StringComparer.OrdinalIgnoreCase);
+        commands.CommandEnabledOverrides = new Dictionary<string, bool>(
+            _pendingCommandEnabledOverrides, StringComparer.OrdinalIgnoreCase);
     }
 
 
@@ -260,7 +282,11 @@ public sealed partial class MainForm
         _chatModeration!.MessageAuthorizing += message =>
             _commandPermissions.AuthorizeAsync(message, cancellationToken);
         _chatModeration.MessageReceived += message =>
-            _customCommandService.HandleMessageAsync(message, cancellationToken);
+        {
+            if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                return Task.CompletedTask;
+            return _customCommandService.HandleMessageAsync(message, cancellationToken);
+        };
     }
 
 
