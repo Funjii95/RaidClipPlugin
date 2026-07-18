@@ -23,13 +23,13 @@ public sealed partial class MainForm
             BackColor = BackgroundColor
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 460));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
 
         header.Dock = DockStyle.Fill;
         header.Margin = new Padding(0, 0, 14, 10);
         updatePanel.Dock = DockStyle.Fill;
         updatePanel.Margin = new Padding(0, 0, 0, 10);
-        updatePanel.MinimumSize = new Size(360, 90);
+        updatePanel.MinimumSize = new Size(280, 72);
         updatePanel.BackColor = SurfaceColor;
         updatePanel.Padding = new Padding(18, 14, 16, 12);
         if (updatePanel is ScrollableControl scrollableUpdatePanel)
@@ -92,8 +92,8 @@ public sealed partial class MainForm
         actions.Margin = Padding.Empty;
         if (actions is FlowLayoutPanel flow)
         {
-            flow.AutoScroll = true;
-            flow.Padding = new Padding(8, 7, 8, 7);
+            flow.AutoScroll = false;
+            flow.Padding = new Padding(6, 5, 6, 5);
             flow.WrapContents = true;
         }
 
@@ -135,8 +135,8 @@ public sealed partial class MainForm
   Padding = new Padding(20, 18, 20, 18),
   BackColor = BackgroundColor
         };
-        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
-        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
+        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68));
+        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
 
         var left = new TableLayoutPanel
         {
@@ -144,13 +144,13 @@ public sealed partial class MainForm
   ColumnCount = 1,
   RowCount = 5,
   BackColor = BackgroundColor,
-  Margin = new Padding(0, 0, 12, 0)
+  Margin = new Padding(0, 0, 8, 0)
         };
-        left.RowStyles.Add(new RowStyle(SizeType.Absolute, 126));
-        left.RowStyles.Add(new RowStyle(SizeType.Absolute, 154));
-        left.RowStyles.Add(new RowStyle(SizeType.Absolute, 136));
-        left.RowStyles.Add(new RowStyle(SizeType.Absolute, 116));
-        left.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        left.RowStyles.Add(new RowStyle(SizeType.Percent, 22));
+        left.RowStyles.Add(new RowStyle(SizeType.Percent, 24));
+        left.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
+        left.RowStyles.Add(new RowStyle(SizeType.Percent, 16));
+        left.RowStyles.Add(new RowStyle(SizeType.Percent, 18));
 
         left.Controls.Add(dashboardHeader, 0, 0);
         left.Controls.Add(CreateDashboardSection("Module & Verbindungen", dashboardIndicators), 0, 1);
@@ -166,8 +166,8 @@ public sealed partial class MainForm
   BackColor = BackgroundColor,
   Margin = new Padding(0)
         };
-        right.RowStyles.Add(new RowStyle(SizeType.Percent, 62));
-        right.RowStyles.Add(new RowStyle(SizeType.Percent, 38));
+        right.RowStyles.Add(new RowStyle(SizeType.Percent, 68));
+        right.RowStyles.Add(new RowStyle(SizeType.Percent, 32));
         right.Controls.Add(dashboardHealth, 0, 0);
         right.Controls.Add(CreateDashboardSection("Letzte Aktivitäten", CreateRecentActivityList()), 0, 1);
 
@@ -183,8 +183,8 @@ public sealed partial class MainForm
   Name = "SurfacePanel",
   Dock = DockStyle.Fill,
   BackColor = SurfaceColor,
-  Padding = new Padding(14, 12, 14, 14),
-  Margin = new Padding(0, 0, 0, 12)
+  Padding = new Padding(12, 10, 12, 12),
+  Margin = new Padding(0, 0, 0, 8)
         };
 
         var layout = new TableLayoutPanel
@@ -261,7 +261,7 @@ public sealed partial class MainForm
   Text = value,
   AutoSize = false,
   Location = new Point(52, 12),
-  Size = new Size(100, 26),
+  Size = new Size(90, 24), 
   Font = new Font("Segoe UI", 14F, FontStyle.Bold),
   ForeColor = TextColor
         });
@@ -270,7 +270,7 @@ public sealed partial class MainForm
   Text = label,
   AutoSize = false,
   Location = new Point(52, 42),
-  Size = new Size(130, 36),
+  Size = new Size(110, 32),
   Font = new Font("Segoe UI", 8F),
   ForeColor = MutedTextColor
         });

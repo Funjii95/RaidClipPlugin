@@ -5,8 +5,8 @@ namespace RaidClipPlugin;
 
 public sealed partial class MainForm
 {
-    private const int SidebarExpandedWidth = 292;
-    private const int SidebarCompactWidth = 78;
+    private const int SidebarExpandedWidth = 272;
+    private const int SidebarCompactWidth = 72;
 
     private readonly Label _modernSidebarBotStateLabel = new()
     {
@@ -247,23 +247,56 @@ public sealed partial class MainForm
     {
         _modernRootLayout ??= Controls.Find("ModernRootLayout", true).OfType<TableLayoutPanel>().FirstOrDefault();
         if (_modernRootLayout is null || _modernRootLayout.ColumnStyles.Count == 0) return;
-        var compact = ClientSize.Width < 1240;
+        var compact = ClientSize.Width < 1360;
         if (_modernCompactSidebar == compact) return;
         _modernCompactSidebar = compact;
         _modernRootLayout.ColumnStyles[0].Width = compact ? SidebarCompactWidth : SidebarExpandedWidth;
         if (_modernSidebarNavigation is null) return;
         foreach (Control control in _modernSidebarNavigation.Controls)
         {
-            if (control is PictureBox picture) { picture.Visible = !compact; continue; }
+            if (control is PictureBox picture) { picture.Visible = !compact && ClientSize.Height >= 740; continue; }
             if (control is Button button && button.Tag is Tuple<string, string> meta)
             {
-                button.Width = compact ? 48 : 266;
-                button.Height = compact ? 48 : 64;
+                button.Width = compact ? 46 : 240;
+                button.Height = compact ? 46 : 62;
                 button.TextAlign = compact ? ContentAlignment.MiddleCenter : ContentAlignment.MiddleLeft;
                 button.Padding = compact ? Padding.Empty : new Padding(14, 8, 12, 8);
                 button.Text = compact ? meta.Item1.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? meta.Item1 : $"{meta.Item1}{Environment.NewLine}{meta.Item2}";
                 _moduleHealthToolTip.SetToolTip(button, meta.Item1.Trim());
             }
+        }
+    }
+
+
+    private void FitModernWindowToWorkingArea()
+    {
+        try
+        {
+            var area = Screen.FromControl(this).WorkingArea;
+            var targetWidth = Math.Min(Size.Width, area.Width - 32);
+            var targetHeight = Math.Min(Size.Height, area.Height - 32);
+            targetWidth = Math.Max(960, targetWidth);
+            targetHeight = Math.Max(620, targetHeight);
+
+            MinimumSize = new Size(
+                Math.Min(MinimumSize.Width, targetWidth),
+                Math.Min(MinimumSize.Height, targetHeight));
+
+            Size = new Size(targetWidth, targetHeight);
+            if (WindowState == FormWindowState.Normal)
+            {
+                Left = area.Left + Math.Max(0, (area.Width - Width) / 2);
+                Top = area.Top + Math.Max(0, (area.Height - Height) / 2);
+            }
+
+            if (area.Width < 1200 || area.Height < 720)
+            {
+                WindowState = FormWindowState.Maximized;
+            }
+        }
+        catch
+        {
+            // Best-effort only: layout still uses the minimum size above.
         }
     }
 

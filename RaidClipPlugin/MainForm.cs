@@ -808,7 +808,7 @@ private enum CloseChoice
                    Application.ExecutablePath) ??
                SystemIcons.Application;
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(1280, 780);
+        MinimumSize = new Size(1080, 680);
         Size = new Size(1560, 940);
         BackColor = BackgroundColor;
         ForeColor = TextColor;
@@ -816,6 +816,7 @@ private enum CloseChoice
         AutoScaleMode = AutoScaleMode.Dpi;
         FormBorderStyle = FormBorderStyle.None;
         RestoreModernWindowPlacement();
+        FitModernWindowToWorkingArea();
         DoubleBuffered = true;
 
         BuildLayout();
