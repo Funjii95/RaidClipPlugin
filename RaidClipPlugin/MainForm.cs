@@ -309,16 +309,16 @@ public sealed partial class MainForm : Form
     };
 
     private readonly Button _raidClipNavButton = CreateNavigationTile(
-        "▦  Dashboard",
-        "Status und Schnellaktionen");
+        "⌂  Dashboard",
+        "Übersicht und Systemstatus");
 
     private readonly Button _raidClipsNavButton = CreateNavigationTile(
         "▣  Raidclips",
-        "Clips, OBS und Historie");
+        "Raids, Clips und OBS");
 
     private readonly Button _moderationNavButton = CreateNavigationTile(
         "◉  Chat",
-        "Livechat, Log und Moderation");
+        "Livechat und Bot-Log");
 
     private readonly Button _settingsNavButton = CreateNavigationTile(
         "⚙  Einstellungen",
@@ -653,12 +653,12 @@ public sealed partial class MainForm : Form
         CreateIntegerControl(30, 5, 3600);
 
     private readonly Button _minigameNavButton = CreateNavigationTile(
-        "◇  Punkte & Minigames",
-        "Punkte, Commands und Gamble");
+        "♕  Punkte & Minigames",
+        "Punkte, Spiele und Jackpot");
 
     private readonly Button _systemStatusNavButton = CreateNavigationTile(
-        "◈  Healthcheck",
-        "Watchdog und Auto-Recovery");
+        "◈  Systemprüfung",
+        "Dienste und Recovery");
 
     private readonly Panel _minigamePage = new()
     {
@@ -702,7 +702,9 @@ public sealed partial class MainForm : Form
         FullRowSelect = true,
         GridLines = true,
         Dock = DockStyle.Fill,
-        BackColor = Color.White
+        BackColor = InputColor,
+        ForeColor = TextColor,
+        BorderStyle = BorderStyle.FixedSingle
     };
 
 
@@ -806,8 +808,8 @@ private enum CloseChoice
                    Application.ExecutablePath) ??
                SystemIcons.Application;
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(1120, 720);
-        Size = new Size(1480, 920);
+        MinimumSize = new Size(1280, 780);
+        Size = new Size(1560, 940);
         BackColor = BackgroundColor;
         ForeColor = TextColor;
         Font = new Font("Segoe UI", 10F);
@@ -956,7 +958,7 @@ private enum CloseChoice
     private static ListView NewDetailsList() => new()
     {
         View = View.Details, FullRowSelect = true, GridLines = true,
-        Dock = DockStyle.Fill, BackColor = Color.White
+        Dock = DockStyle.Fill, BackColor = InputColor, ForeColor = TextColor, BorderStyle = BorderStyle.FixedSingle
     };
 
     private static Button NewActionButton(string text) => new()
@@ -1875,23 +1877,11 @@ private enum CloseChoice
         dashboardHealthBox.Controls.Add(dashboardHealthLayout);
         var dashboardHealth = CreateDashboardSection(dashboardHealthBox, new Padding(0));
 
-        var raidLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 4,
-            Padding = new Padding(22, 18, 22, 22),
-            BackColor = BackgroundColor
-        };
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 128));
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
-        raidLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        raidLayout.Controls.Add(dashboardHeader, 0, 0);
-        raidLayout.Controls.Add(dashboardIndicators, 0, 1);
-        raidLayout.Controls.Add(dashboardActions, 0, 2);
-        raidLayout.Controls.Add(dashboardHealth, 0, 3);
-        _raidPage.Controls.Add(raidLayout);
+        _raidPage.Controls.Add(CreateModernDashboardLayout(
+  dashboardHeader,
+  dashboardIndicators,
+  dashboardActions,
+  dashboardHealth));
 
         var raidClipsTitle = new Label
         {
@@ -2370,10 +2360,13 @@ private enum CloseChoice
         navigation.Controls.Add(_minigameNavButton);
         navigation.Controls.Add(_musicNavButton);
         navigation.Controls.Add(_giveawayNavButton);
-        navigation.Controls.Add(_clipDiscordNavButton);
+        navigation.Controls.Add(CreateSidebarDivider("Weitere Module"));
         navigation.Controls.Add(_autoDiscordClipPosterNavButton);
+        navigation.Controls.Add(_clipDiscordNavButton);
         navigation.Controls.Add(_streamCheckNavButton);
         navigation.Controls.Add(_liveChatNavButton);
+        navigation.Controls.Add(_systemStatusNavButton);
+        navigation.Controls.Add(CreateSidebarDivider("Programm"));
         navigation.Controls.Add(_settingsNavButton);
 
         var contentHost = new Panel
@@ -2404,7 +2397,7 @@ private enum CloseChoice
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
-        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 268));
+        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 292));
         rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         rootLayout.Controls.Add(CreateSidebarShell(navigation), 0, 0);
         rootLayout.Controls.Add(contentHost, 1, 0);

@@ -5,8 +5,8 @@ namespace RaidClipPlugin;
 
 public sealed partial class MainForm
 {
-    private const int SidebarExpandedWidth = 308;
-    private const int SidebarCompactWidth = 82;
+    private const int SidebarExpandedWidth = 292;
+    private const int SidebarCompactWidth = 78;
 
     private readonly Label _modernSidebarBotStateLabel = new()
     {
@@ -56,32 +56,112 @@ public sealed partial class MainForm
 
     private Panel CreateModernTitleBar()
     {
-        var bar = new Panel { Dock = DockStyle.Fill, BackColor = BackgroundColor, Padding = new Padding(12, 0, 6, 0) };
+        var bar = new Panel
+        {
+  Dock = DockStyle.Fill,
+  BackColor = Color.FromArgb(6, 10, 14),
+  Padding = new Padding(16, 0, 6, 0)
+        };
         bar.MouseDown += DragModernWindow;
 
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = BackgroundColor, Margin = Padding.Empty, Padding = Padding.Empty };
+        var layout = new TableLayoutPanel
+        {
+  Dock = DockStyle.Fill,
+  ColumnCount = 2,
+  RowCount = 1,
+  BackColor = bar.BackColor,
+  Margin = Padding.Empty,
+  Padding = Padding.Empty
+        };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         layout.MouseDown += DragModernWindow;
 
-        var titleFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = BackgroundColor, Padding = new Padding(0, 7, 0, 0), Margin = Padding.Empty };
+        var titleFlow = new FlowLayoutPanel
+        {
+  Dock = DockStyle.Fill,
+  FlowDirection = FlowDirection.LeftToRight,
+  WrapContents = false,
+  BackColor = bar.BackColor,
+  Padding = new Padding(0, 8, 0, 0),
+  Margin = Padding.Empty
+        };
         titleFlow.MouseDown += DragModernWindow;
-        var icon = new PictureBox { Image = Icon?.ToBitmap(), Width = 22, Height = 22, SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(0, 2, 8, 0), BackColor = BackgroundColor };
-        icon.MouseDown += DragModernWindow;
-        var title = new Label { Text = "RaidClip Plugin", AutoSize = true, Font = new Font("Segoe UI", 9.5F, FontStyle.Bold), ForeColor = TextColor, Margin = new Padding(0, 4, 0, 0) };
-        title.MouseDown += DragModernWindow;
-        titleFlow.Controls.Add(icon);
-        titleFlow.Controls.Add(title);
 
-        var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = BackgroundColor, Margin = Padding.Empty, Padding = Padding.Empty };
-        buttons.Controls.Add(CreateWindowButton("–", () => WindowState = FormWindowState.Minimized));
-        buttons.Controls.Add(CreateWindowButton("□", ToggleModernMaximize));
-        buttons.Controls.Add(CreateWindowButton("×", Close));
+        var logo = new Label
+        {
+  Text = "R",
+  AutoSize = false,
+  Width = 30,
+  Height = 28,
+  Font = new Font("Segoe UI", 18F, FontStyle.Bold),
+  ForeColor = AccentColor,
+  TextAlign = ContentAlignment.MiddleCenter,
+  Margin = new Padding(0, 0, 8, 0)
+        };
+        logo.MouseDown += DragModernWindow;
+
+        var title = new Label
+        {
+  Text = "RaidClipPlugin",
+  AutoSize = true,
+  Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+  ForeColor = TextColor,
+  Margin = new Padding(0, 4, 8, 0)
+        };
+        title.MouseDown += DragModernWindow;
+
+        var version = new Label
+        {
+  Text = _updateService.CurrentDisplayVersion,
+  AutoSize = true,
+  Font = new Font("Segoe UI", 9F),
+  ForeColor = MutedTextColor,
+  Margin = new Padding(0, 6, 0, 0)
+        };
+        version.MouseDown += DragModernWindow;
+
+        titleFlow.Controls.Add(logo);
+        titleFlow.Controls.Add(title);
+        titleFlow.Controls.Add(version);
+
+        var right = new FlowLayoutPanel
+        {
+  AutoSize = true,
+  FlowDirection = FlowDirection.LeftToRight,
+  WrapContents = false,
+  BackColor = bar.BackColor,
+  Margin = Padding.Empty,
+  Padding = Padding.Empty
+        };
+        right.Controls.Add(CreateTopbarChip("▣  Funjii", AccentColor));
+        right.Controls.Add(CreateTopbarChip("●  Aktiv", HealthyStatusColor));
+        right.Controls.Add(CreateTopbarChip("🔔", AccentColor));
+        right.Controls.Add(CreateWindowButton("–", () => WindowState = FormWindowState.Minimized));
+        right.Controls.Add(CreateWindowButton("□", ToggleModernMaximize));
+        right.Controls.Add(CreateWindowButton("×", Close));
 
         layout.Controls.Add(titleFlow, 0, 0);
-        layout.Controls.Add(buttons, 1, 0);
+        layout.Controls.Add(right, 1, 0);
         bar.Controls.Add(layout);
         return bar;
+    }
+
+    private Label CreateTopbarChip(string text, Color iconColor)
+    {
+        return new Label
+        {
+  Text = text,
+  AutoSize = false,
+  Height = 34,
+  Width = text.Length <= 3 ? 52 : 92,
+  TextAlign = ContentAlignment.MiddleCenter,
+  Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+  ForeColor = text.Contains("●") ? HealthyStatusColor : TextColor,
+  BackColor = SurfaceColor,
+  Margin = new Padding(4, 4, 4, 0),
+  Padding = new Padding(6, 0, 6, 0)
+        };
     }
 
     private Button CreateWindowButton(string text, Action action)
@@ -116,6 +196,23 @@ public sealed partial class MainForm
         shell.Controls.Add(navigation, 0, 0);
         shell.Controls.Add(CreateSidebarStatusCard(), 0, 1);
         return shell;
+    }
+
+    private static Label CreateSidebarDivider(string text)
+    {
+        return new Label
+        {
+  Text = text.ToUpperInvariant(),
+  AutoSize = false,
+  Width = 236,
+  Height = 30,
+  ForeColor = MutedTextColor,
+  BackColor = SidebarColor,
+  Font = new Font("Segoe UI", 7.8F, FontStyle.Bold),
+  TextAlign = ContentAlignment.BottomLeft,
+  Padding = new Padding(18, 0, 0, 4),
+  Margin = new Padding(6, 12, 6, 2)
+        };
     }
 
     private Control CreateSidebarStatusCard()
