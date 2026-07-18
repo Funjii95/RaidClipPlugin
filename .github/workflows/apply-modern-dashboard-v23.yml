@@ -1,0 +1,588 @@
+name: Apply modern dashboard v2.3 shell
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/apply-modern-dashboard-v23.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: windows-latest
+    steps:
+      - name: Quellcode laden
+        uses: actions/checkout@v4
+
+      - name: .NET 10 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: GUI-Patch anwenden
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = @'
+          from pathlib import Path
+          import re
+
+          root = Path("RaidClipPlugin")
+
+          def read(path):
+              return Path(path).read_text(encoding="utf-8-sig")
+
+          def write(path, text):
+              Path(path).write_text(text, encoding="utf-8")
+
+          main_path = root / "MainForm.cs"
+          modern_path = root / "MainForm.ModernShell.cs"
+          dashboard_path = root / "MainForm.DashboardModern.cs"
+          csproj_path = root / "RaidClipPlugin.csproj"
+
+          main = read(main_path)
+          modern = read(modern_path)
+          dashboard = read(dashboard_path)
+          csproj = read(csproj_path)
+
+          replacements = {
+              '"▦  Dashboard",\n        "Status und Schnellaktionen"': '"⌂  Dashboard",\n        "Übersicht und Systemstatus"',
+              '"▣  Raidclips",\n        "Clips, OBS und Historie"': '"▣  Raidclips",\n        "Raids, Clips und OBS"',
+              '"◉  Chat",\n        "Livechat, Log und Moderation"': '"◉  Chat",\n        "Livechat und Bot-Log"',
+              '"◇  Punkte & Minigames",\n        "Punkte, Commands und Gamble"': '"♕  Punkte & Minigames",\n        "Punkte, Spiele und Jackpot"',
+              '"◈  Healthcheck",\n        "Watchdog und Auto-Recovery"': '"◈  Systemprüfung",\n        "Dienste und Recovery"',
+          }
+          for old, new in replacements.items():
+              main = main.replace(old, new)
+
+          # Make generic detail lists dark by default.
+          main = main.replace(
+              'View = View.Details, FullRowSelect = true, GridLines = true,\n        Dock = DockStyle.Fill, BackColor = Color.White',
+              'View = View.Details, FullRowSelect = true, GridLines = true,\n        Dock = DockStyle.Fill, BackColor = InputColor, ForeColor = TextColor, BorderStyle = BorderStyle.FixedSingle'
+          )
+          main = main.replace(
+              'BackColor = Color.White\n    };',
+              'BackColor = InputColor,\n        ForeColor = TextColor,\n        BorderStyle = BorderStyle.FixedSingle\n    };',
+              1
+          )
+
+          # Improve navigation tile sizing and wrapping.
+          main = main.replace(
+              '''private static Button CreateNavigationTile(string title, string subtitle)
+    {
+        return new Button
+        {
+            Text = $"{title}{Environment.NewLine}{subtitle}",
+            Width = 228,
+            Height = 58,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0 },
+            TextAlign = ContentAlignment.MiddleLeft,
+            Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
+            ForeColor = TextColor,
+            BackColor = SidebarColor,
+            Padding = new Padding(14, 7, 12, 7),
+            Margin = new Padding(5, 4, 5, 2),
+            Cursor = Cursors.Hand,
+            Tag = Tuple.Create(title, subtitle)
+        };
+    }''',
+              '''private static Button CreateNavigationTile(string title, string subtitle)
+    {
+        return new Button
+        {
+            Text = $"{title}{Environment.NewLine}{subtitle}",
+            Width = 236,
+            Height = 62,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0 },
+            TextAlign = ContentAlignment.MiddleLeft,
+            Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
+            ForeColor = TextColor,
+            BackColor = SidebarColor,
+            Padding = new Padding(16, 7, 12, 7),
+            Margin = new Padding(6, 4, 6, 2),
+            Cursor = Cursors.Hand,
+            AutoEllipsis = true,
+            Tag = Tuple.Create(title, subtitle)
+        };
+    }'''
+          )
+
+          main = main.replace(
+              'MinimumSize = new Size(1120, 720);\n        Size = new Size(1480, 920);',
+              'MinimumSize = new Size(1280, 780);\n        Size = new Size(1560, 940);'
+          )
+
+          # Replace dashboard layout construction with the new composed dashboard.
+          old_dashboard = re.search(
+              r'''        var raidLayout = new TableLayoutPanel
+\s*        \{
+[\s\S]*?        _raidPage\.Controls\.Add\(raidLayout\);
+''',
+              main
+          )
+          if not old_dashboard:
+              raise SystemExit("Dashboard layout block not found")
+          main = main[:old_dashboard.start()] + '''        _raidPage.Controls.Add(CreateModernDashboardLayout(
+            dashboardHeader,
+            dashboardIndicators,
+            dashboardActions,
+            dashboardHealth));
+''' + main[old_dashboard.end():]
+
+          # Refine nav order: keep core sections first, advanced pages below.
+          main = main.replace(
+              '''        navigation.Controls.Add(_raidClipNavButton);
+        navigation.Controls.Add(_raidClipsNavButton);
+        navigation.Controls.Add(_moderationNavButton);
+        navigation.Controls.Add(_commandsNavButton);
+        navigation.Controls.Add(_minigameNavButton);
+        navigation.Controls.Add(_musicNavButton);
+        navigation.Controls.Add(_giveawayNavButton);
+        navigation.Controls.Add(_clipDiscordNavButton);
+        navigation.Controls.Add(_autoDiscordClipPosterNavButton);
+        navigation.Controls.Add(_streamCheckNavButton);
+        navigation.Controls.Add(_liveChatNavButton);
+        navigation.Controls.Add(_settingsNavButton);''',
+              '''        navigation.Controls.Add(_raidClipNavButton);
+        navigation.Controls.Add(_raidClipsNavButton);
+        navigation.Controls.Add(_moderationNavButton);
+        navigation.Controls.Add(_commandsNavButton);
+        navigation.Controls.Add(_minigameNavButton);
+        navigation.Controls.Add(_musicNavButton);
+        navigation.Controls.Add(_giveawayNavButton);
+        navigation.Controls.Add(CreateSidebarDivider("Weitere Module"));
+        navigation.Controls.Add(_autoDiscordClipPosterNavButton);
+        navigation.Controls.Add(_clipDiscordNavButton);
+        navigation.Controls.Add(_streamCheckNavButton);
+        navigation.Controls.Add(_liveChatNavButton);
+        navigation.Controls.Add(_systemStatusNavButton);
+        navigation.Controls.Add(CreateSidebarDivider("Programm"));
+        navigation.Controls.Add(_settingsNavButton);'''
+          )
+
+          # Ensure root sidebar is wide enough for the requested labels.
+          main = main.replace('rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 268));',
+                              'rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 292));')
+
+          # Replace title bar with reference-inspired topbar.
+          title_method = re.search(
+              r'''    private Panel CreateModernTitleBar\(\)
+    \{
+[\s\S]*?    private Button CreateWindowButton''',
+              modern
+          )
+          if not title_method:
+              raise SystemExit("CreateModernTitleBar block not found")
+          new_title = '''    private Panel CreateModernTitleBar()
+    {
+        var bar = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.FromArgb(6, 10, 14),
+            Padding = new Padding(16, 0, 6, 0)
+        };
+        bar.MouseDown += DragModernWindow;
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            BackColor = bar.BackColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        layout.MouseDown += DragModernWindow;
+
+        var titleFlow = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            BackColor = bar.BackColor,
+            Padding = new Padding(0, 8, 0, 0),
+            Margin = Padding.Empty
+        };
+        titleFlow.MouseDown += DragModernWindow;
+
+        var logo = new Label
+        {
+            Text = "R",
+            AutoSize = false,
+            Width = 30,
+            Height = 28,
+            Font = new Font("Segoe UI", 18F, FontStyle.Bold),
+            ForeColor = AccentColor,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Margin = new Padding(0, 0, 8, 0)
+        };
+        logo.MouseDown += DragModernWindow;
+
+        var title = new Label
+        {
+            Text = "RaidClipPlugin",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+            ForeColor = TextColor,
+            Margin = new Padding(0, 4, 8, 0)
+        };
+        title.MouseDown += DragModernWindow;
+
+        var version = new Label
+        {
+            Text = _updateService.CurrentDisplayVersion,
+            AutoSize = true,
+            Font = new Font("Segoe UI", 9F),
+            ForeColor = MutedTextColor,
+            Margin = new Padding(0, 6, 0, 0)
+        };
+        version.MouseDown += DragModernWindow;
+
+        titleFlow.Controls.Add(logo);
+        titleFlow.Controls.Add(title);
+        titleFlow.Controls.Add(version);
+
+        var right = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            BackColor = bar.BackColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        right.Controls.Add(CreateTopbarChip("▣  Funjii", AccentColor));
+        right.Controls.Add(CreateTopbarChip("●  Aktiv", HealthyStatusColor));
+        right.Controls.Add(CreateTopbarChip("🔔", AccentColor));
+        right.Controls.Add(CreateWindowButton("–", () => WindowState = FormWindowState.Minimized));
+        right.Controls.Add(CreateWindowButton("□", ToggleModernMaximize));
+        right.Controls.Add(CreateWindowButton("×", Close));
+
+        layout.Controls.Add(titleFlow, 0, 0);
+        layout.Controls.Add(right, 1, 0);
+        bar.Controls.Add(layout);
+        return bar;
+    }
+
+    private Label CreateTopbarChip(string text, Color iconColor)
+    {
+        return new Label
+        {
+            Text = text,
+            AutoSize = false,
+            Height = 34,
+            Width = text.Length <= 3 ? 52 : 92,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+            ForeColor = text.Contains("●") ? HealthyStatusColor : TextColor,
+            BackColor = SurfaceColor,
+            Margin = new Padding(4, 4, 4, 0),
+            Padding = new Padding(6, 0, 6, 0)
+        };
+    }
+
+    private Button CreateWindowButton'''
+          modern = modern[:title_method.start()] + new_title + modern[title_method.end():]
+
+          modern = modern.replace('private const int SidebarExpandedWidth = 308;',
+                                  'private const int SidebarExpandedWidth = 292;')
+          modern = modern.replace('private const int SidebarCompactWidth = 82;',
+                                  'private const int SidebarCompactWidth = 78;')
+
+          # Add sidebar divider helper before CreateSidebarStatusCard.
+          if "CreateSidebarDivider" not in modern:
+              modern = modern.replace(
+                  '    private Control CreateSidebarStatusCard()\n    {',
+                  '''    private static Label CreateSidebarDivider(string text)
+    {
+        return new Label
+        {
+            Text = text.ToUpperInvariant(),
+            AutoSize = false,
+            Width = 236,
+            Height = 30,
+            ForeColor = MutedTextColor,
+            BackColor = SidebarColor,
+            Font = new Font("Segoe UI", 7.8F, FontStyle.Bold),
+            TextAlign = ContentAlignment.BottomLeft,
+            Padding = new Padding(18, 0, 0, 4),
+            Margin = new Padding(6, 12, 6, 2)
+        };
+    }
+
+    private Control CreateSidebarStatusCard()
+    {'''
+              )
+
+          # Replace dashboard helper file with richer dashboard implementation while retaining existing helpers.
+          addition = r'''
+
+    private Control CreateModernDashboardLayout(
+        Control dashboardHeader,
+        Control dashboardIndicators,
+        Control dashboardActions,
+        Control dashboardHealth)
+    {
+        var page = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            Padding = new Padding(20, 18, 20, 18),
+            BackColor = BackgroundColor
+        };
+        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
+        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
+
+        var left = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 5,
+            BackColor = BackgroundColor,
+            Margin = new Padding(0, 0, 12, 0)
+        };
+        left.RowStyles.Add(new RowStyle(SizeType.Absolute, 126));
+        left.RowStyles.Add(new RowStyle(SizeType.Absolute, 154));
+        left.RowStyles.Add(new RowStyle(SizeType.Absolute, 136));
+        left.RowStyles.Add(new RowStyle(SizeType.Absolute, 116));
+        left.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        left.Controls.Add(dashboardHeader, 0, 0);
+        left.Controls.Add(CreateDashboardSection("Module & Verbindungen", dashboardIndicators), 0, 1);
+        left.Controls.Add(CreateDashboardSection("Heutige Statistiken", CreateDashboardStatsGrid()), 0, 2);
+        left.Controls.Add(CreateDashboardSection("Schnellaktionen", dashboardActions), 0, 3);
+        left.Controls.Add(CreateDashboardSection("Aktive Module", CreateActiveModulesGrid()), 0, 4);
+
+        var right = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            BackColor = BackgroundColor,
+            Margin = new Padding(0)
+        };
+        right.RowStyles.Add(new RowStyle(SizeType.Percent, 62));
+        right.RowStyles.Add(new RowStyle(SizeType.Percent, 38));
+        right.Controls.Add(dashboardHealth, 0, 0);
+        right.Controls.Add(CreateDashboardSection("Letzte Aktivitäten", CreateRecentActivityList()), 0, 1);
+
+        page.Controls.Add(left, 0, 0);
+        page.Controls.Add(right, 1, 0);
+        return page;
+    }
+
+    private Control CreateDashboardSection(string title, Control content)
+    {
+        var card = new Panel
+        {
+            Name = "SurfacePanel",
+            Dock = DockStyle.Fill,
+            BackColor = SurfaceColor,
+            Padding = new Padding(14, 12, 14, 14),
+            Margin = new Padding(0, 0, 0, 12)
+        };
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        layout.Controls.Add(new Label
+        {
+            Text = title,
+            Dock = DockStyle.Fill,
+            ForeColor = TextColor,
+            Font = new Font("Segoe UI", 9.4F, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft
+        }, 0, 0);
+        content.Dock = DockStyle.Fill;
+        content.Margin = Padding.Empty;
+        layout.Controls.Add(content, 0, 1);
+        card.Controls.Add(layout);
+        return card;
+    }
+
+    private Control CreateDashboardStatsGrid()
+    {
+        var grid = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 6,
+            RowCount = 1,
+            BackColor = SurfaceColor,
+            Padding = Padding.Empty
+        };
+        for (var i = 0; i < 6; i++)
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 6F));
+
+        grid.Controls.Add(CreateStatisticCard("💬", "Chatnachrichten", "—"), 0, 0);
+        grid.Controls.Add(CreateStatisticCard("</>", "Commands", "—"), 1, 0);
+        grid.Controls.Add(CreateStatisticCard("🎬", "Raidclips", _historyList.Items.Count.ToString("N0")), 2, 0);
+        grid.Controls.Add(CreateStatisticCard("👥", "Raids heute", "—"), 3, 0);
+        grid.Controls.Add(CreateStatisticCard("⏱", "Letzte Aktivität", "—"), 4, 0);
+        grid.Controls.Add(CreateStatisticCard("⚠", "Fehler", "Keine"), 5, 0);
+        return grid;
+    }
+
+    private Control CreateStatisticCard(string icon, string label, string value)
+    {
+        var panel = new Panel
+        {
+            Name = "SurfacePanel",
+            Dock = DockStyle.Fill,
+            BackColor = Color.FromArgb(16, 20, 24),
+            Padding = new Padding(10),
+            Margin = new Padding(4)
+        };
+        panel.Controls.Add(new Label
+        {
+            Text = icon,
+            AutoSize = false,
+            Location = new Point(10, 10),
+            Size = new Size(38, 34),
+            Font = new Font("Segoe UI", 15F, FontStyle.Bold),
+            ForeColor = AccentColor,
+            TextAlign = ContentAlignment.MiddleCenter
+        });
+        panel.Controls.Add(new Label
+        {
+            Text = value,
+            AutoSize = false,
+            Location = new Point(52, 12),
+            Size = new Size(100, 26),
+            Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+            ForeColor = TextColor
+        });
+        panel.Controls.Add(new Label
+        {
+            Text = label,
+            AutoSize = false,
+            Location = new Point(52, 42),
+            Size = new Size(130, 36),
+            Font = new Font("Segoe UI", 8F),
+            ForeColor = MutedTextColor
+        });
+        return panel;
+    }
+
+    private Control CreateActiveModulesGrid()
+    {
+        var grid = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = 4,
+            BackColor = SurfaceColor,
+            AutoSize = true
+        };
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        var items = new[]
+        {
+            "● Twitch Chat", "● Musik System",
+            "● EventSub", "● Giveaway System",
+            "● Raidclip System", "● Command System",
+            "● Punkte System", "● Auto-Updater"
+        };
+        for (var i = 0; i < items.Length; i++)
+        {
+            grid.Controls.Add(new Label
+            {
+                Text = items[i],
+                Dock = DockStyle.Fill,
+                Height = 26,
+                ForeColor = items[i].StartsWith("●") ? HealthyStatusColor : MutedTextColor,
+                Font = new Font("Segoe UI", 8.8F),
+                Padding = new Padding(4, 4, 4, 0)
+            }, i % 2, i / 2);
+        }
+        return grid;
+    }
+
+    private Control CreateRecentActivityList()
+    {
+        var box = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            AutoScroll = true,
+            BackColor = SurfaceColor,
+            Padding = new Padding(0, 2, 0, 0)
+        };
+        foreach (var text in new[]
+        {
+            "Healthcheck bereit",
+            "Twitch Chat wartet auf Verbindung",
+            "Raidclip-System bereit",
+            "Updater aktuell"
+        })
+        {
+            box.Controls.Add(new Label
+            {
+                Text = "●  " + text,
+                AutoSize = false,
+                Width = 320,
+                Height = 28,
+                ForeColor = MutedTextColor,
+                Font = new Font("Segoe UI", 8.5F),
+                Margin = new Padding(0, 2, 0, 2)
+            });
+        }
+        return box;
+    }
+'''
+          if "CreateModernDashboardLayout" not in dashboard:
+              dashboard = dashboard.replace("\n}\n", addition + "\n}\n")
+
+          # Better default red/silver theme.
+          theme_path = root / "MainForm.Themes.cs"
+          theme = read(theme_path)
+          theme = theme.replace(
+              'BackgroundColor = Color.FromArgb(8, 8, 9);\n                SidebarColor = Color.FromArgb(12, 12, 13);\n                SurfaceColor = Color.FromArgb(19, 19, 21);\n                InputColor = Color.FromArgb(13, 13, 14);\n                BorderColor = Color.FromArgb(86, 86, 90);\n                AccentColor = Color.FromArgb(222, 24, 30);\n                AccentDarkColor = Color.FromArgb(92, 12, 15);\n                TextColor = Color.FromArgb(235, 235, 238);\n                MutedTextColor = Color.FromArgb(174, 174, 180);\n                ActiveColor = Color.FromArgb(239, 36, 42);',
+              'BackgroundColor = Color.FromArgb(7, 11, 15);\n                SidebarColor = Color.FromArgb(9, 13, 18);\n                SurfaceColor = Color.FromArgb(16, 21, 27);\n                InputColor = Color.FromArgb(10, 14, 19);\n                BorderColor = Color.FromArgb(42, 50, 60);\n                AccentColor = Color.FromArgb(242, 44, 48);\n                AccentDarkColor = Color.FromArgb(116, 18, 22);\n                TextColor = Color.FromArgb(245, 247, 250);\n                MutedTextColor = Color.FromArgb(166, 174, 184);\n                ActiveColor = Color.FromArgb(64, 214, 126);'
+          )
+
+          # Bump version.
+          csproj = csproj.replace("<Version>1.8.6</Version>", "<Version>1.9.0</Version>")
+          csproj = csproj.replace("<FileVersion>1.8.6.0</FileVersion>", "<FileVersion>1.9.0.0</FileVersion>")
+
+          write(main_path, main)
+          write(modern_path, modern)
+          write(dashboard_path, dashboard)
+          write(theme_path, theme)
+          write(csproj_path, csproj)
+          '@
+          Set-Content -Path apply_modern_dashboard_v23.py -Value $script -Encoding UTF8
+          python apply_modern_dashboard_v23.py
+          Remove-Item apply_modern_dashboard_v23.py
+
+      - name: Build
+        run: dotnet build "RaidClipPlugin\RaidClipPlugin.csproj" -c Release
+
+      - name: Tests
+        run: dotnet test "RaidClipPlugin\Tests\RaidClipPlugin.Tests.csproj" -c Release
+
+      - name: Änderungen committen
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/MainForm.ModernShell.cs RaidClipPlugin/MainForm.DashboardModern.cs RaidClipPlugin/MainForm.Themes.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) { Write-Host "No changes to commit"; exit 0 }
+          git commit -m "Modernize dashboard shell UI"
+          git push
