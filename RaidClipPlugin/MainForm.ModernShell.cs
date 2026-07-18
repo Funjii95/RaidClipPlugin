@@ -192,7 +192,7 @@ public sealed partial class MainForm
         navigation.BackColor = SidebarColor;
         var shell = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = SidebarColor, Padding = Padding.Empty, Margin = Padding.Empty };
         shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        shell.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
+        shell.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
         shell.Controls.Add(navigation, 0, 0);
         shell.Controls.Add(CreateSidebarStatusCard(), 0, 1);
         return shell;
@@ -205,13 +205,13 @@ public sealed partial class MainForm
   Text = text.ToUpperInvariant(),
   AutoSize = false,
   Width = 236,
-  Height = 30,
+  Height = 22,
   ForeColor = MutedTextColor,
   BackColor = SidebarColor,
   Font = new Font("Segoe UI", 7.8F, FontStyle.Bold),
   TextAlign = ContentAlignment.BottomLeft,
   Padding = new Padding(18, 0, 0, 4),
-  Margin = new Padding(6, 12, 6, 2)
+  Margin = new Padding(6, 6, 6, 0)
         };
     }
 
@@ -247,7 +247,7 @@ public sealed partial class MainForm
     {
         _modernRootLayout ??= Controls.Find("ModernRootLayout", true).OfType<TableLayoutPanel>().FirstOrDefault();
         if (_modernRootLayout is null || _modernRootLayout.ColumnStyles.Count == 0) return;
-        var compact = ClientSize.Width < 1360;
+        var compact = ClientSize.Width < 1360 || ClientSize.Height < 820;
         if (_modernCompactSidebar == compact) return;
         _modernCompactSidebar = compact;
         _modernRootLayout.ColumnStyles[0].Width = compact ? SidebarCompactWidth : SidebarExpandedWidth;
@@ -258,7 +258,7 @@ public sealed partial class MainForm
             if (control is Button button && button.Tag is Tuple<string, string> meta)
             {
                 button.Width = compact ? 46 : 240;
-                button.Height = compact ? 46 : 62;
+                button.Height = compact ? 44 : 54;
                 button.TextAlign = compact ? ContentAlignment.MiddleCenter : ContentAlignment.MiddleLeft;
                 button.Padding = compact ? Padding.Empty : new Padding(14, 8, 12, 8);
                 button.Text = compact ? meta.Item1.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? meta.Item1 : $"{meta.Item1}{Environment.NewLine}{meta.Item2}";

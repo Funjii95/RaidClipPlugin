@@ -22,25 +22,84 @@ public sealed partial class MainForm
             Padding = Padding.Empty,
             BackColor = BackgroundColor
         };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
 
         header.Dock = DockStyle.Fill;
-        header.Margin = new Padding(0, 0, 14, 10);
-        updatePanel.Dock = DockStyle.Fill;
-        updatePanel.Margin = new Padding(0, 0, 0, 10);
-        updatePanel.MinimumSize = new Size(280, 72);
-        updatePanel.BackColor = SurfaceColor;
-        updatePanel.Padding = new Padding(18, 14, 16, 12);
+        header.Margin = new Padding(0, 0, 16, 0);
         if (updatePanel is ScrollableControl scrollableUpdatePanel)
         {
             scrollableUpdatePanel.AutoScroll = false;
         }
-        updatePanel.Controls.SetChildIndex(_versionLabel, 0);
 
+        var updateCard = CreateUpdateStatusCard();
         layout.Controls.Add(header, 0, 0);
-        layout.Controls.Add(CreateDashboardCard(updatePanel, new Padding(0)), 1, 0);
+        layout.Controls.Add(updateCard, 1, 0);
         return layout;
+    }
+
+    private Control CreateUpdateStatusCard()
+    {
+        var card = new Panel
+        {
+            Name = "SurfacePanel",
+            Dock = DockStyle.Fill,
+            BackColor = SurfaceColor,
+            Padding = new Padding(18, 14, 18, 14),
+            Margin = Padding.Empty,
+            MinimumSize = new Size(260, 82)
+        };
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 44));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 56));
+
+        _versionLabel.Dock = DockStyle.Fill;
+        _versionLabel.AutoSize = false;
+        _versionLabel.TextAlign = ContentAlignment.MiddleLeft;
+        _versionLabel.Margin = Padding.Empty;
+
+        var updateButtons = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = true,
+            AutoScroll = false,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        CompactDashboardButton(_updateButton, 150);
+        CompactDashboardButton(_changelogButton, 132);
+        CompactDashboardButton(_installUpdateButton, 132);
+        CompactDashboardButton(_skipUpdateButton, 112);
+        updateButtons.Controls.Add(_updateButton);
+        updateButtons.Controls.Add(_changelogButton);
+        updateButtons.Controls.Add(_installUpdateButton);
+        updateButtons.Controls.Add(_skipUpdateButton);
+
+        layout.Controls.Add(_versionLabel, 0, 0);
+        layout.Controls.Add(updateButtons, 1, 0);
+        card.Controls.Add(layout);
+        return card;
+    }
+
+    private static void CompactDashboardButton(Button button, int width)
+    {
+        button.AutoSize = false;
+        button.Width = width;
+        button.Height = 36;
+        button.Margin = new Padding(4, 5, 0, 0);
+        button.Padding = new Padding(8, 0, 8, 0);
+        button.TextAlign = ContentAlignment.MiddleCenter;
     }
 
     private Control CreateDashboardIndicatorGrid(params Label[] indicators)
@@ -51,7 +110,7 @@ public sealed partial class MainForm
             ColumnCount = indicators.Length,
             RowCount = 1,
             Margin = Padding.Empty,
-            Padding = new Padding(0, 0, 0, 10),
+            Padding = Padding.Empty,
             BackColor = BackgroundColor
         };
 
@@ -66,23 +125,51 @@ public sealed partial class MainForm
 
     private Control CreateDashboardStatusCard(Label indicator)
     {
-        indicator.BorderStyle = BorderStyle.None;
-        indicator.BackColor = SurfaceColor;
-        indicator.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-        indicator.TextAlign = ContentAlignment.MiddleCenter;
-        indicator.Padding = new Padding(10);
-        indicator.Margin = Padding.Empty;
+        var raw = indicator.Text.Replace("\r", " ").Replace("\n", " ");
+        var icon = GetServiceIcon(raw.Contains("OBS", StringComparison.OrdinalIgnoreCase) ? "OBS" :
+            raw.Contains("Twitch", StringComparison.OrdinalIgnoreCase) ? "Twitch" :
+            raw.Contains("EventSub", StringComparison.OrdinalIgnoreCase) ? "EventSub" :
+            raw.Contains("Player", StringComparison.OrdinalIgnoreCase) ? "Player" : string.Empty);
+        var title = raw.Contains("OBS", StringComparison.OrdinalIgnoreCase) ? "OBS" :
+            raw.Contains("Twitch", StringComparison.OrdinalIgnoreCase) ? "Twitch" :
+            raw.Contains("EventSub", StringComparison.OrdinalIgnoreCase) ? "EventSub" :
+            raw.Contains("Player", StringComparison.OrdinalIgnoreCase) ? "Player" : raw;
+        var state = raw.Contains("VERBUNDEN", StringComparison.OrdinalIgnoreCase) ? "Verbunden" :
+            raw.Contains("AKTIV", StringComparison.OrdinalIgnoreCase) ? "Aktiv" :
+            raw.Contains("LÄUFT", StringComparison.OrdinalIgnoreCase) || raw.Contains("LAEUFT", StringComparison.OrdinalIgnoreCase) ? "Läuft" :
+            raw.Contains("BEREIT", StringComparison.OrdinalIgnoreCase) ? "Bereit" : "Bereit";
 
         var card = new Panel
         {
             Name = "SurfacePanel",
             Dock = DockStyle.Fill,
             BackColor = SurfaceColor,
-            Padding = new Padding(12),
-            Margin = new Padding(5, 0, 5, 0),
-            MinimumSize = new Size(160, 82)
+            Padding = new Padding(14, 12, 14, 12),
+            Margin = new Padding(6, 0, 6, 0),
+            MinimumSize = new Size(150, 80)
         };
-        card.Controls.Add(indicator);
+
+        var iconLabel = new Label
+        {
+            Text = icon,
+            Dock = DockStyle.Left,
+            Width = 42,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Font = new Font("Segoe UI", 18F, FontStyle.Bold),
+            ForeColor = AccentColor
+        };
+        var text = new Label
+        {
+            Text = $"{title}\n{state}",
+            Dock = DockStyle.Fill,
+            AutoSize = false,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Font = new Font("Segoe UI", 10.2F, FontStyle.Bold),
+            ForeColor = HealthyStatusColor,
+            Padding = new Padding(8, 4, 0, 0)
+        };
+        card.Controls.Add(text);
+        card.Controls.Add(iconLabel);
         return card;
     }
 
@@ -93,11 +180,11 @@ public sealed partial class MainForm
         if (actions is FlowLayoutPanel flow)
         {
             flow.AutoScroll = false;
-            flow.Padding = new Padding(6, 5, 6, 5);
+            flow.Padding = new Padding(0);
             flow.WrapContents = true;
         }
 
-        return CreateDashboardCard(actions, new Padding(0, 0, 0, 10));
+        return CreateDashboardCard(actions, new Padding(0, 0, 0, 8));
     }
 
     private Control CreateDashboardSection(Control content, Padding margin)
@@ -129,28 +216,28 @@ public sealed partial class MainForm
     {
         var page = new TableLayoutPanel
         {
-  Dock = DockStyle.Fill,
-  ColumnCount = 2,
-  RowCount = 1,
-  Padding = new Padding(20, 18, 20, 18),
-  BackColor = BackgroundColor
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            Padding = new Padding(18, 16, 18, 16),
+            BackColor = BackgroundColor
         };
-        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68));
-        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
+        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
+        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
 
         var left = new TableLayoutPanel
         {
-  Dock = DockStyle.Fill,
-  ColumnCount = 1,
-  RowCount = 5,
-  BackColor = BackgroundColor,
-  Margin = new Padding(0, 0, 8, 0)
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 5,
+            BackColor = BackgroundColor,
+            Margin = new Padding(0, 0, 12, 0)
         };
-        left.RowStyles.Add(new RowStyle(SizeType.Percent, 22));
         left.RowStyles.Add(new RowStyle(SizeType.Percent, 24));
         left.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
-        left.RowStyles.Add(new RowStyle(SizeType.Percent, 16));
         left.RowStyles.Add(new RowStyle(SizeType.Percent, 18));
+        left.RowStyles.Add(new RowStyle(SizeType.Percent, 15));
+        left.RowStyles.Add(new RowStyle(SizeType.Percent, 23));
 
         left.Controls.Add(dashboardHeader, 0, 0);
         left.Controls.Add(CreateDashboardSection("Module & Verbindungen", dashboardIndicators), 0, 1);
@@ -160,14 +247,14 @@ public sealed partial class MainForm
 
         var right = new TableLayoutPanel
         {
-  Dock = DockStyle.Fill,
-  ColumnCount = 1,
-  RowCount = 2,
-  BackColor = BackgroundColor,
-  Margin = new Padding(0)
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            BackColor = BackgroundColor,
+            Margin = Padding.Empty
         };
-        right.RowStyles.Add(new RowStyle(SizeType.Percent, 68));
-        right.RowStyles.Add(new RowStyle(SizeType.Percent, 32));
+        right.RowStyles.Add(new RowStyle(SizeType.Percent, 70));
+        right.RowStyles.Add(new RowStyle(SizeType.Percent, 30));
         right.Controls.Add(dashboardHealth, 0, 0);
         right.Controls.Add(CreateDashboardSection("Letzte Aktivitäten", CreateRecentActivityList()), 0, 1);
 
@@ -180,32 +267,32 @@ public sealed partial class MainForm
     {
         var card = new Panel
         {
-  Name = "SurfacePanel",
-  Dock = DockStyle.Fill,
-  BackColor = SurfaceColor,
-  Padding = new Padding(12, 10, 12, 12),
-  Margin = new Padding(0, 0, 0, 8)
+            Name = "SurfacePanel",
+            Dock = DockStyle.Fill,
+            BackColor = SurfaceColor,
+            Padding = new Padding(14, 12, 14, 14),
+            Margin = new Padding(0, 0, 0, 10)
         };
 
         var layout = new TableLayoutPanel
         {
-  Dock = DockStyle.Fill,
-  ColumnCount = 1,
-  RowCount = 2,
-  BackColor = SurfaceColor,
-  Margin = Padding.Empty,
-  Padding = Padding.Empty
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
         };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         layout.Controls.Add(new Label
         {
-  Text = title,
-  Dock = DockStyle.Fill,
-  ForeColor = TextColor,
-  Font = new Font("Segoe UI", 9.4F, FontStyle.Bold),
-  TextAlign = ContentAlignment.MiddleLeft
+            Text = title,
+            Dock = DockStyle.Fill,
+            ForeColor = TextColor,
+            Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft
         }, 0, 0);
         content.Dock = DockStyle.Fill;
         content.Margin = Padding.Empty;
@@ -218,62 +305,65 @@ public sealed partial class MainForm
     {
         var grid = new TableLayoutPanel
         {
-  Dock = DockStyle.Fill,
-  ColumnCount = 6,
-  RowCount = 1,
-  BackColor = SurfaceColor,
-  Padding = Padding.Empty
+            Dock = DockStyle.Fill,
+            ColumnCount = 6,
+            RowCount = 1,
+            BackColor = SurfaceColor,
+            Padding = Padding.Empty
         };
         for (var i = 0; i < 6; i++)
-  grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 6F));
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 6F));
 
-        grid.Controls.Add(CreateStatisticCard("💬", "Chatnachrichten", "—"), 0, 0);
+        grid.Controls.Add(CreateStatisticCard("💬", "Chat", "—"), 0, 0);
         grid.Controls.Add(CreateStatisticCard("</>", "Commands", "—"), 1, 0);
         grid.Controls.Add(CreateStatisticCard("🎬", "Raidclips", _historyList.Items.Count.ToString("N0")), 2, 0);
-        grid.Controls.Add(CreateStatisticCard("👥", "Raids heute", "—"), 3, 0);
-        grid.Controls.Add(CreateStatisticCard("⏱", "Letzte Aktivität", "—"), 4, 0);
+        grid.Controls.Add(CreateStatisticCard("👥", "Raids", "—"), 3, 0);
+        grid.Controls.Add(CreateStatisticCard("⏱", "Aktivität", "—"), 4, 0);
         grid.Controls.Add(CreateStatisticCard("⚠", "Fehler", "Keine"), 5, 0);
         return grid;
     }
 
     private Control CreateStatisticCard(string icon, string label, string value)
     {
-        var panel = new Panel
+        var panel = new TableLayoutPanel
         {
-  Name = "SurfacePanel",
-  Dock = DockStyle.Fill,
-  BackColor = Color.FromArgb(16, 20, 24),
-  Padding = new Padding(10),
-  Margin = new Padding(4)
+            Name = "SurfacePanel",
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            BackColor = Color.FromArgb(16, 20, 24),
+            Padding = new Padding(8),
+            Margin = new Padding(4)
         };
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 36));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 32));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 32));
         panel.Controls.Add(new Label
         {
-  Text = icon,
-  AutoSize = false,
-  Location = new Point(10, 10),
-  Size = new Size(38, 34),
-  Font = new Font("Segoe UI", 15F, FontStyle.Bold),
-  ForeColor = AccentColor,
-  TextAlign = ContentAlignment.MiddleCenter
-        });
+            Text = icon,
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+            ForeColor = AccentColor,
+            TextAlign = ContentAlignment.MiddleCenter
+        }, 0, 0);
         panel.Controls.Add(new Label
         {
-  Text = value,
-  AutoSize = false,
-  Location = new Point(52, 12),
-  Size = new Size(90, 24), 
-  Font = new Font("Segoe UI", 14F, FontStyle.Bold),
-  ForeColor = TextColor
-        });
+            Text = value,
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+            ForeColor = TextColor,
+            TextAlign = ContentAlignment.MiddleCenter,
+            AutoEllipsis = true
+        }, 0, 1);
         panel.Controls.Add(new Label
         {
-  Text = label,
-  AutoSize = false,
-  Location = new Point(52, 42),
-  Size = new Size(110, 32),
-  Font = new Font("Segoe UI", 8F),
-  ForeColor = MutedTextColor
-        });
+            Text = label,
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 7.8F),
+            ForeColor = MutedTextColor,
+            TextAlign = ContentAlignment.TopCenter,
+            AutoEllipsis = true
+        }, 0, 2);
         return panel;
     }
 
@@ -281,68 +371,69 @@ public sealed partial class MainForm
     {
         var grid = new TableLayoutPanel
         {
-  Dock = DockStyle.Top,
-  ColumnCount = 2,
-  RowCount = 4,
-  BackColor = SurfaceColor,
-  AutoSize = true
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 4,
+            BackColor = SurfaceColor,
+            Padding = new Padding(4, 2, 4, 0)
         };
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        for (var i = 0; i < 4; i++)
+            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
         var items = new[]
         {
-  "● Twitch Chat", "● Musik System",
-  "● EventSub", "● Giveaway System",
-  "● Raidclip System", "● Command System",
-  "● Punkte System", "● Auto-Updater"
+            "● Twitch Chat", "● Musik System",
+            "● EventSub", "● Giveaway System",
+            "● Raidclip System", "● Command System",
+            "● Punkte System", "● Auto-Updater"
         };
         for (var i = 0; i < items.Length; i++)
         {
-  grid.Controls.Add(new Label
-  {
-      Text = items[i],
-      Dock = DockStyle.Fill,
-      Height = 26,
-      ForeColor = items[i].StartsWith("●") ? HealthyStatusColor : MutedTextColor,
-      Font = new Font("Segoe UI", 8.8F),
-      Padding = new Padding(4, 4, 4, 0)
-  }, i % 2, i / 2);
+            grid.Controls.Add(new Label
+            {
+                Text = items[i],
+                Dock = DockStyle.Fill,
+                ForeColor = HealthyStatusColor,
+                Font = new Font("Segoe UI", 8.4F),
+                Padding = new Padding(4, 2, 4, 0),
+                AutoEllipsis = true
+            }, i % 2, i / 2);
         }
         return grid;
     }
 
     private Control CreateRecentActivityList()
     {
-        var box = new FlowLayoutPanel
+        var box = new TableLayoutPanel
         {
-  Dock = DockStyle.Fill,
-  FlowDirection = FlowDirection.TopDown,
-  WrapContents = false,
-  AutoScroll = true,
-  BackColor = SurfaceColor,
-  Padding = new Padding(0, 2, 0, 0)
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 4,
+            BackColor = SurfaceColor,
+            Padding = new Padding(0, 2, 0, 0)
         };
-        foreach (var text in new[]
+        for (var i = 0; i < 4; i++)
+            box.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
+        var rows = new[]
         {
-  "Healthcheck bereit",
-  "Twitch Chat wartet auf Verbindung",
-  "Raidclip-System bereit",
-  "Updater aktuell"
-        })
+            "● Healthcheck bereit",
+            "● Twitch Chat wartet auf Verbindung",
+            "● Raidclip-System bereit",
+            "● Updater aktuell"
+        };
+        foreach (var text in rows)
         {
-  box.Controls.Add(new Label
-  {
-      Text = "●  " + text,
-      AutoSize = false,
-      Width = 320,
-      Height = 28,
-      ForeColor = MutedTextColor,
-      Font = new Font("Segoe UI", 8.5F),
-      Margin = new Padding(0, 2, 0, 2)
-  });
+            box.Controls.Add(new Label
+            {
+                Text = text,
+                Dock = DockStyle.Fill,
+                ForeColor = MutedTextColor,
+                Font = new Font("Segoe UI", 8.2F),
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoEllipsis = true
+            });
         }
         return box;
     }
-
 }
-

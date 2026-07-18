@@ -625,9 +625,9 @@ public sealed partial class MainForm : Form
         Dock = DockStyle.Fill,
         FlowDirection = FlowDirection.LeftToRight,
         WrapContents = true,
-        AutoScroll = true,
-        Padding = new Padding(2, 10, 8, 10),
-        BackColor = BackgroundColor
+        AutoScroll = false,
+        Padding = new Padding(0, 4, 0, 4),
+        BackColor = SurfaceColor
     };
     private readonly ToolTip _moduleHealthToolTip = new()
     {
@@ -1432,8 +1432,8 @@ private enum CloseChoice
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 1,
-            BackColor = BackgroundColor,
-            Padding = new Padding(4, 0, 4, 4)
+            BackColor = SurfaceColor,
+            Padding = Padding.Empty
         };
         statusHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         statusHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -1460,8 +1460,8 @@ private enum CloseChoice
         var statusFooter = new Panel
         {
             Dock = DockStyle.Fill,
-            BackColor = BackgroundColor,
-            Padding = new Padding(4, 0, 8, 0)
+            BackColor = SurfaceColor,
+            Padding = new Padding(0, 0, 0, 0)
         };
         _moduleHealthLastCheckLabel.Dock = DockStyle.Right;
         statusFooter.Controls.Add(_moduleHealthLastCheckLabel);
@@ -1819,20 +1819,20 @@ private enum CloseChoice
             _playerIndicator);
         var dashboardActions = CreateDashboardActionBar(actions);
 
-        var dashboardHealthBox = new GroupBox
+        var dashboardHealthBox = new Panel
         {
-            Text = "Systemstatus",
+            Name = "SurfacePanel",
             Dock = DockStyle.Fill,
-            Padding = new Padding(12),
-            ForeColor = TextColor
+            Padding = Padding.Empty,
+            BackColor = SurfaceColor
         };
         var dashboardHealthHeader = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 1,
-            BackColor = BackgroundColor,
-            Padding = new Padding(4, 0, 4, 4)
+            BackColor = SurfaceColor,
+            Padding = Padding.Empty
         };
         dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -1856,8 +1856,8 @@ private enum CloseChoice
         var dashboardHealthFooter = new Panel
         {
             Dock = DockStyle.Fill,
-            BackColor = BackgroundColor,
-            Padding = new Padding(4, 0, 8, 0)
+            BackColor = SurfaceColor,
+            Padding = new Padding(0, 0, 0, 0)
         };
         _moduleHealthLastCheckLabel.Dock = DockStyle.Right;
         dashboardHealthFooter.Controls.Add(_moduleHealthLastCheckLabel);
@@ -1866,11 +1866,11 @@ private enum CloseChoice
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 3,
-            BackColor = BackgroundColor
+            BackColor = SurfaceColor
         };
-        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         dashboardHealthLayout.Controls.Add(dashboardHealthHeader, 0, 0);
         dashboardHealthLayout.Controls.Add(_moduleHealthGrid, 0, 1);
         dashboardHealthLayout.Controls.Add(dashboardHealthFooter, 0, 2);
@@ -3781,30 +3781,30 @@ private enum CloseChoice
         AutoEllipsis = true,
         Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
         ForeColor = MutedTextColor,
-        Width = Math.Max(240, _moduleHealthGrid.ClientSize.Width -
-            _moduleHealthGrid.Padding.Horizontal - 20),
-        Height = 28,
+        Width = Math.Max(180, _moduleHealthGrid.ClientSize.Width -
+            _moduleHealthGrid.Padding.Horizontal - 8),
+        Height = 20,
         TextAlign = ContentAlignment.BottomLeft,
-        Margin = new Padding(6, 10, 6, 2)
+        Margin = new Padding(4, 2, 4, 0)
     };
 
     private ModuleHealthCard CreateModuleHealthCard(string moduleName)
     {
         var container = new Panel
         {
-            Width = 260,
-            Height = 104,
-            BackColor = SurfaceColor,
-            BorderStyle = BorderStyle.FixedSingle,
-            Padding = new Padding(12),
-            Margin = new Padding(6)
+            Width = 220,
+            Height = 86,
+            BackColor = Color.FromArgb(16, 20, 24),
+            BorderStyle = BorderStyle.None,
+            Padding = new Padding(10),
+            Margin = new Padding(4)
         };
 
         var title = new Label
         {
             Text = moduleName,
             Dock = DockStyle.Top,
-            Height = 24,
+            Height = 21,
             AutoEllipsis = true,
             ForeColor = TextColor,
             Font = new Font("Segoe UI", 10F, FontStyle.Bold)
@@ -3922,10 +3922,10 @@ private enum CloseChoice
         var available = Math.Max(220,
             _moduleHealthGrid.ClientSize.Width -
             _moduleHealthGrid.Padding.Horizontal -
-            SystemInformation.VerticalScrollBarWidth - 10);
-        const int minimumCardWidth = 220;
-        const int maximumCardWidth = 340;
-        const int horizontalGap = 14;
+            4);
+        const int minimumCardWidth = 184;
+        const int maximumCardWidth = 300;
+        const int horizontalGap = 8;
 
         var columns = Math.Max(1,
             (available + horizontalGap) / (minimumCardWidth + horizontalGap));
