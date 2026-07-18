@@ -34,7 +34,7 @@ jobs:
 
       - name: Tests
         shell: pwsh
-        run: dotnet test "RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj" -c Release --no-build
+        run: dotnet test "RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj" -c Release
 
       - name: Änderungen committen
         shell: pwsh
@@ -49,3 +49,4 @@ jobs:
           }
           git commit -m "Clean dashboard layout"
           git push
+
