@@ -1008,9 +1008,14 @@ public sealed class ChatMinigameService : IDisposable
                 (!isAllIn && gambleStake > _config.MaximumBet))
             {
                 await TrySendChatAsync(
-                    isAllIn
-                        ? $"@{message.UserName}, du hast nicht genug verfügbare {_config.CurrencyPlural} für All-in."
-                        : $"@{message.UserName}, nutze !gamble <einsatz|all>.",
+                    BuildGambleStakeRangeReply(
+                        message.UserName,
+                        gambleStake,
+                        _config.MinimumBet,
+                        _config.MaximumBet,
+                        isAllIn,
+                        _config.CurrencySingular,
+                        _config.CurrencyPlural),
                     cancellationToken);
                 LogGambleCommand(
                     message,
@@ -1018,7 +1023,7 @@ public sealed class ChatMinigameService : IDisposable
                     argument,
                     nameof(ChatMinigameService),
                     GambleCommandResult.InvalidArguments,
-                    $"stake-out-of-range:{gambleStake}");
+                    $"stake-out-of-range:{gambleStake};min={_config.MinimumBet};max={_config.MaximumBet}");
                 return GambleCommandResult.InvalidArguments;
             }
 
@@ -1115,6 +1120,47 @@ public sealed class ChatMinigameService : IDisposable
         TrySendChatAsync(
             $"@{message.UserName}, nutze !gamble <einsatz|all>.",
             cancellationToken);
+
+    public static string BuildGambleStakeRangeReply(
+        string userName,
+        long stake,
+        long minimumBet,
+        long maximumBet,
+        bool isAllIn,
+        string currencySingular,
+        string currencyPlural)
+    {
+        static string FormatAmount(
+            long amount,
+            string singular,
+            string plural) =>
+            $"{amount:N0} {(Math.Abs(amount) == 1 ? singular : plural)}";
+
+        var name = (userName ?? "").Trim().TrimStart('@');
+        var mention = string.IsNullOrWhiteSpace(name) ? "@User" : $"@{name}";
+        var singularName = string.IsNullOrWhiteSpace(currencySingular)
+            ? "Punkt"
+            : currencySingular.Trim();
+        var pluralName = string.IsNullOrWhiteSpace(currencyPlural)
+            ? "Punkte"
+            : currencyPlural.Trim();
+
+        if (isAllIn)
+        {
+            return $"{mention}, du hast nicht genug verfügbare " +
+                   $"{pluralName} für All-in. Mindesteinsatz: " +
+                   $"{FormatAmount(minimumBet, singularName, pluralName)}.";
+        }
+
+        if (stake < minimumBet)
+        {
+            return $"{mention}, der Mindesteinsatz für !gamble ist " +
+                   $"{FormatAmount(minimumBet, singularName, pluralName)}.";
+        }
+
+        return $"{mention}, der Maximaleinsatz für !gamble ist " +
+               $"{FormatAmount(maximumBet, singularName, pluralName)}.";
+    }
 
     private void CleanupProcessedGambleMessages()
     {
