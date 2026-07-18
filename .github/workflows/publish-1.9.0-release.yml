@@ -1,0 +1,84 @@
+name: Publish 1.9.0 Release
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/publish-1.9.0-release.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: RaidClipPlugin
+
+    steps:
+      - name: Quellcode laden
+        uses: actions/checkout@v4
+
+      - name: .NET 10 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Version prüfen
+        shell: pwsh
+        run: |
+          [xml]$project = Get-Content "RaidClipPlugin.csproj"
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ($version -ne "1.9.0") { throw "Projektversion $version ist nicht 1.9.0." }
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Unit-Tests ausführen
+        shell: pwsh
+        run: dotnet test "Tests\RaidClipPlugin.Tests.csproj" -c Release
+
+      - name: Windows-App erstellen
+        shell: pwsh
+        run: dotnet publish "RaidClipPlugin.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o "publish"
+
+      - name: Update-ZIP erstellen
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force "installer-output" | Out-Null
+          Compress-Archive -Path "publish\*" -DestinationPath "installer-output\RaidClipPlugin-Update-$env:APP_VERSION.zip" -Force
+
+      - name: Inno Setup installieren
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Windows-Installer erstellen
+        shell: pwsh
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$env:APP_VERSION" "Installer\RaidClipPlugin.iss"'
+
+      - name: update.json erzeugen
+        shell: pwsh
+        run: |
+          $zipName = "RaidClipPlugin-Update-$env:APP_VERSION.zip"
+          $zipPath = Join-Path "installer-output" $zipName
+          $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash
+          $releaseTag = "v$env:APP_VERSION"
+          $downloadUrl = "https://github.com/${{ github.repository }}/releases/download/$releaseTag/$zipName"
+          $manifest = [ordered]@{
+            latestVersion = $env:APP_VERSION
+            downloadUrl = $downloadUrl
+            changelog = "Modernisierte RaidClipPlugin-Oberfläche mit neuer Dashboard-Shell, Topbar und Sidebar."
+            sha256 = $hash
+          }
+          $manifest | ConvertTo-Json | Set-Content "installer-output\update.json" -Encoding UTF8
+
+      - name: GitHub Release veröffentlichen
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v$env:APP_VERSION"
+          gh release view $tag --json tagName 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --title "RaidClipPlugin $env:APP_VERSION" --notes "Modernisierte RaidClipPlugin-Oberfläche mit neuer Dashboard-Shell, Topbar und Sidebar."
+          }
+          gh release upload $tag "installer-output\RaidClipPlugin-Setup-$env:APP_VERSION.exe" "installer-output\RaidClipPlugin-Update-$env:APP_VERSION.zip" "installer-output\update.json" --clobber
