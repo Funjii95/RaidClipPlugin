@@ -1,0 +1,330 @@
+name: Publish 1.9.9 Settings Music Defaults Hotfix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.9-settings-music-defaults.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: 1.9.9
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply settings and music isolation hotfix
+        shell: pwsh
+        run: |
+          @'
+          from pathlib import Path
+          import re
+
+          root = Path("RaidClipPlugin")
+
+          def read(path: Path) -> str:
+              return path.read_text(encoding="utf-8-sig")
+
+          def write(path: Path, text: str) -> None:
+              path.write_text(text, encoding="utf-8")
+
+          config_path = root / "Services" / "ConfigurationService.cs"
+          config = read(config_path)
+
+          config = config.replace(
+              """        config.ModeratorCommands.Resume = NormalizeCommand(config.ModeratorCommands.Resume);
+    }
+""",
+              """        config.ModeratorCommands.Resume = NormalizeCommand(config.ModeratorCommands.Resume);
+        NormalizeMusicRequestMessages(config.ChatMessages);
+    }
+
+
+    private static void NormalizeMusicRequestMessages(MusicRequestChatMessages messages)
+    {
+        var defaults = new MusicRequestChatMessages();
+        messages.Queued = NormalizeOptionalText(messages.Queued, defaults.Queued);
+        messages.Playing = NormalizeOptionalText(messages.Playing, defaults.Playing);
+        messages.NotFound = NormalizeOptionalText(messages.NotFound, defaults.NotFound);
+        messages.NoDevice = NormalizeOptionalText(messages.NoDevice, defaults.NoDevice);
+        messages.TooLong = NormalizeOptionalText(messages.TooLong, defaults.TooLong);
+        messages.ExplicitBlocked = NormalizeOptionalText(messages.ExplicitBlocked, defaults.ExplicitBlocked);
+        messages.Cooldown = NormalizeOptionalText(messages.Cooldown, defaults.Cooldown);
+        messages.QueueFull = NormalizeOptionalText(messages.QueueFull, defaults.QueueFull);
+        messages.Blacklisted = NormalizeOptionalText(messages.Blacklisted, defaults.Blacklisted);
+        messages.InvalidInput = NormalizeOptionalText(messages.InvalidInput, defaults.InvalidInput);
+    }
+
+
+    private static string NormalizeOptionalText(string? value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+""")
+
+          old_music_commands = """        var musicCommands = new[]
+        {
+            (config.MusicRequests.ModeratorCommands.SongEnabled,
+                config.MusicRequests.ModeratorCommands.Song),
+            (config.MusicRequests.ModeratorCommands.SkipEnabled,
+                config.MusicRequests.ModeratorCommands.Skip),
+            (config.MusicRequests.ModeratorCommands.QueueEnabled,
+                config.MusicRequests.ModeratorCommands.Queue),
+            (config.MusicRequests.ModeratorCommands.RemoveEnabled,
+                config.MusicRequests.ModeratorCommands.Remove),
+            (config.MusicRequests.ModeratorCommands.PauseEnabled,
+                config.MusicRequests.ModeratorCommands.Pause),
+            (config.MusicRequests.ModeratorCommands.ResumeEnabled,
+                config.MusicRequests.ModeratorCommands.Resume)
+        }.Where(item => item.Item1).Select(item => item.Item2);
+"""
+          new_music_commands = """        IEnumerable<string> musicCommands = Enumerable.Empty<string>();
+        if (config.MusicRequests.Enabled)
+        {
+            musicCommands = new[]
+            {
+                (config.MusicRequests.ModeratorCommands.SongEnabled,
+                    config.MusicRequests.ModeratorCommands.Song),
+                (config.MusicRequests.ModeratorCommands.SkipEnabled,
+                    config.MusicRequests.ModeratorCommands.Skip),
+                (config.MusicRequests.ModeratorCommands.QueueEnabled,
+                    config.MusicRequests.ModeratorCommands.Queue),
+                (config.MusicRequests.ModeratorCommands.RemoveEnabled,
+                    config.MusicRequests.ModeratorCommands.Remove),
+                (config.MusicRequests.ModeratorCommands.PauseEnabled,
+                    config.MusicRequests.ModeratorCommands.Pause),
+                (config.MusicRequests.ModeratorCommands.ResumeEnabled,
+                    config.MusicRequests.ModeratorCommands.Resume)
+            }.Where(item => item.Item1).Select(item => item.Item2);
+        }
+"""
+          if old_music_commands not in config:
+              raise RuntimeError("music command collision block not found")
+          config = config.replace(old_music_commands, new_music_commands)
+
+          old_validate_start = """    public static void ValidateMusicRequestSettings(MusicRequestConfig config)
+    {
+        if (config.MaximumTrackDurationMinutes is < 1 or > 180)
+"""
+          new_validate_start = """    public static void ValidateMusicRequestSettings(MusicRequestConfig config)
+    {
+        NormalizeMusicRequests(config);
+        if (!config.Enabled)
+        {
+            return;
+        }
+
+        if (config.MaximumTrackDurationMinutes is < 1 or > 180)
+"""
+          if old_validate_start not in config:
+              raise RuntimeError("ValidateMusicRequestSettings start not found")
+          config = config.replace(old_validate_start, new_validate_start)
+
+          messages_throw = """        if (messages.Any(string.IsNullOrWhiteSpace))
+            throw new InvalidOperationException(
+                "Musikwunsch-Chattexte dürfen nicht leer sein.");
+"""
+          config = config.replace(
+              messages_throw,
+              """        if (messages.Any(string.IsNullOrWhiteSpace))
+            NormalizeMusicRequestMessages(config.ChatMessages);
+""")
+
+          write(config_path, config)
+
+          music_path = root / "MainForm.MusicRequests.cs"
+          music = read(music_path)
+
+          music = music.replace(
+              """    private void LoadMusicRequestSettings(MusicRequestConfig config)
+    {
+        _musicEnabledCheck.Checked = config.Enabled;
+""",
+              """    private void LoadMusicRequestSettings(MusicRequestConfig config)
+    {
+        ApplyMusicMessageDefaults(config.ChatMessages);
+        _musicEnabledCheck.Checked = config.Enabled;
+""")
+
+          music = music.replace(
+              """    private void ReadMusicRequestSettings(AppConfig config)
+    {
+        var music = config.MusicRequests;
+        music.Enabled = _musicEnabledCheck.Checked;
+""",
+              """    private void ReadMusicRequestSettings(AppConfig config)
+    {
+        var music = config.MusicRequests;
+        ApplyMusicMessageDefaults(music.ChatMessages);
+        music.Enabled = _musicEnabledCheck.Checked;
+""")
+
+          replacements = {
+              "music.ChatMessages.Queued = _musicQueuedMessageBox.Text.Trim();": "music.ChatMessages.Queued = ReadMusicMessage(_musicQueuedMessageBox, music.ChatMessages.Queued);",
+              "music.ChatMessages.Playing = _musicPlayingMessageBox.Text.Trim();": "music.ChatMessages.Playing = ReadMusicMessage(_musicPlayingMessageBox, music.ChatMessages.Playing);",
+              "music.ChatMessages.NotFound = _musicNotFoundMessageBox.Text.Trim();": "music.ChatMessages.NotFound = ReadMusicMessage(_musicNotFoundMessageBox, music.ChatMessages.NotFound);",
+              "music.ChatMessages.NoDevice = _musicNoDeviceMessageBox.Text.Trim();": "music.ChatMessages.NoDevice = ReadMusicMessage(_musicNoDeviceMessageBox, music.ChatMessages.NoDevice);",
+              "music.ChatMessages.TooLong = _musicTooLongMessageBox.Text.Trim();": "music.ChatMessages.TooLong = ReadMusicMessage(_musicTooLongMessageBox, music.ChatMessages.TooLong);",
+              "music.ChatMessages.ExplicitBlocked = _musicExplicitMessageBox.Text.Trim();": "music.ChatMessages.ExplicitBlocked = ReadMusicMessage(_musicExplicitMessageBox, music.ChatMessages.ExplicitBlocked);",
+              "music.ChatMessages.Cooldown = _musicCooldownMessageBox.Text.Trim();": "music.ChatMessages.Cooldown = ReadMusicMessage(_musicCooldownMessageBox, music.ChatMessages.Cooldown);",
+              "music.ChatMessages.QueueFull = _musicQueueFullMessageBox.Text.Trim();": "music.ChatMessages.QueueFull = ReadMusicMessage(_musicQueueFullMessageBox, music.ChatMessages.QueueFull);",
+              "music.ChatMessages.Blacklisted = _musicBlacklistMessageBox.Text.Trim();": "music.ChatMessages.Blacklisted = ReadMusicMessage(_musicBlacklistMessageBox, music.ChatMessages.Blacklisted);",
+          }
+          for old, new in replacements.items():
+              if old not in music:
+                  raise RuntimeError(f"music message assignment not found: {old}")
+              music = music.replace(old, new)
+
+          insert_before = """    private static void SetMusicList(TextBox box, IEnumerable<string> values) =>
+        box.Text = string.Join(Environment.NewLine, values);
+"""
+          helper = """    private static void ApplyMusicMessageDefaults(MusicRequestChatMessages messages)
+    {
+        var defaults = new MusicRequestChatMessages();
+        messages.Queued = string.IsNullOrWhiteSpace(messages.Queued) ? defaults.Queued : messages.Queued.Trim();
+        messages.Playing = string.IsNullOrWhiteSpace(messages.Playing) ? defaults.Playing : messages.Playing.Trim();
+        messages.NotFound = string.IsNullOrWhiteSpace(messages.NotFound) ? defaults.NotFound : messages.NotFound.Trim();
+        messages.NoDevice = string.IsNullOrWhiteSpace(messages.NoDevice) ? defaults.NoDevice : messages.NoDevice.Trim();
+        messages.TooLong = string.IsNullOrWhiteSpace(messages.TooLong) ? defaults.TooLong : messages.TooLong.Trim();
+        messages.ExplicitBlocked = string.IsNullOrWhiteSpace(messages.ExplicitBlocked) ? defaults.ExplicitBlocked : messages.ExplicitBlocked.Trim();
+        messages.Cooldown = string.IsNullOrWhiteSpace(messages.Cooldown) ? defaults.Cooldown : messages.Cooldown.Trim();
+        messages.QueueFull = string.IsNullOrWhiteSpace(messages.QueueFull) ? defaults.QueueFull : messages.QueueFull.Trim();
+        messages.Blacklisted = string.IsNullOrWhiteSpace(messages.Blacklisted) ? defaults.Blacklisted : messages.Blacklisted.Trim();
+        messages.InvalidInput = string.IsNullOrWhiteSpace(messages.InvalidInput) ? defaults.InvalidInput : messages.InvalidInput.Trim();
+    }
+
+    private static string ReadMusicMessage(TextBox box, string fallback) =>
+        string.IsNullOrWhiteSpace(box.Text) ? fallback : box.Text.Trim();
+
+"""
+          if insert_before not in music:
+              raise RuntimeError("SetMusicList block not found")
+          music = music.replace(insert_before, helper + insert_before)
+          write(music_path, music)
+
+          main_path = root / "MainForm.cs"
+          main = read(main_path)
+
+          main = re.sub(
+              r"    private static NumericUpDown CreateIntegerControl\(\s*long value,\s*long minimum,\s*long maximum,\s*int width = 90\)\s*{\s*return new NumericUpDown\s*{\s*Minimum = minimum,\s*Maximum = maximum,\s*Value = Math\.Clamp\(value, minimum, maximum\),\s*Width = width,\s*ThousandsSeparator = true\s*};\s*}",
+              """    private static NumericUpDown CreateIntegerControl(
+        long value,
+        long minimum,
+        long maximum,
+        int width = 90)
+    {
+        if (maximum < minimum)
+        {
+            maximum = minimum;
+        }
+
+        var safeValue = Math.Min(Math.Max(value, minimum), maximum);
+        return new NumericUpDown
+        {
+            Minimum = minimum,
+            Maximum = maximum,
+            Value = safeValue,
+            Width = width,
+            ThousandsSeparator = true
+        };
+    }""",
+              main,
+              count=1,
+              flags=re.S)
+
+          main = re.sub(
+              r"    private static void SetNumericValue\(\s*NumericUpDown control,\s*long value\)\s*{\s*control\.Value = Math\.Clamp\(value, control\.Minimum, control\.Maximum\);\s*}",
+              """    private static void SetNumericValue(
+        NumericUpDown control,
+        long value)
+    {
+        if (control.Maximum < control.Minimum)
+        {
+            control.Maximum = control.Minimum;
+        }
+
+        var safeValue = Math.Min(
+            Math.Max((decimal)value, control.Minimum),
+            control.Maximum);
+        control.Value = safeValue;
+    }""",
+              main,
+              count=1,
+              flags=re.S)
+
+          if "private static void SetNumericValue" in main and "control.Maximum = control.Minimum;" not in main:
+              raise RuntimeError("SetNumericValue was not hardened")
+
+          csproj_path = root / "RaidClipPlugin.csproj"
+          csproj = read(csproj_path)
+          csproj = re.sub(r"<Version>[^<]+</Version>", "<Version>1.9.9</Version>", csproj)
+          csproj = re.sub(r"<FileVersion>[^<]+</FileVersion>", "<FileVersion>1.9.9.0</FileVersion>", csproj)
+          write(csproj_path, csproj)
+
+          print("Hotfix 1.9.9 angewendet.")
+          '@ | Set-Content -Path apply_hotfix_199.py -Encoding UTF8
+          python apply_hotfix_199.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit patched source
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/MainForm.MusicRequests.cs RaidClipPlugin/MainForm.cs RaidClipPlugin/RaidClipPlugin.csproj
+          git commit -m "Fix settings validation startup for 1.9.9" || echo "No source changes to commit"
+          git push
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force RaidClipPlugin/publish -ErrorAction SilentlyContinue
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin\Installer\RaidClipPlugin.iss"
+          $installer = Get-ChildItem -Path RaidClipPlugin/installer-output -Filter *.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $installer) { throw "Installer wurde nicht erzeugt." }
+          Copy-Item $installer.FullName "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Generate update metadata
+        shell: pwsh
+        run: |
+          $zip = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $repo = "${{ github.repository }}"
+          $download = "https://github.com/$repo/releases/download/v$env:VERSION/$zip"
+          $meta = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = $download
+            changelog = "Hotfix: Leere Musikwunsch-Chattexte werden automatisch mit Standardtexten repariert. Deaktivierte Musikwünsche blockieren Pluginstart und Verbindungstest nicht mehr. Numeric-Einstellungen werden beim Laden robust begrenzt."
+            sha256 = $hash
+          }
+          $meta | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = "Hotfix 1.9.9 - Leere Musikwunsch-Chattexte werden automatisch mit Standardwerten repariert. Deaktivierte Musikwünsche blockieren den Pluginstart und Verbindungstests nicht mehr. Zusätzlich werden ungültige Numeric-Einstellungswerte beim Laden sicher abgefangen."
+          gh release create "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --title "RaidClipPlugin v$env:VERSION" --notes $notes || gh release upload "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --clobber
