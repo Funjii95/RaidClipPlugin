@@ -162,9 +162,5 @@ jobs:
             "RaidClipPluginSetup-$env:VERSION.exe" `
             "update.json" `
             --title "RaidClipPlugin $env:VERSION" `
-            --notes "Hotfix 1.9.21
+            --notes "Hotfix 1.9.21``n``n- Heist/globaler Einstellungs-Speicherpfad läuft nicht mehr synchron blockierend.``n- Discord-Credentials werden asynchron gespeichert.``n- Mehrfachklicks während des Speicherns werden abgefangen.``n- Build geprüft und ZIP, Installer, update.json veröffentlicht."
 
-- Heist/globaler Einstellungs-Speicherpfad läuft nicht mehr synchron blockierend.
-- Discord-Credentials werden asynchron gespeichert.
-- Mehrfachklicks während des Speicherns werden abgefangen.
-- Build geprüft und ZIP, Installer, update.json veröffentlicht."
