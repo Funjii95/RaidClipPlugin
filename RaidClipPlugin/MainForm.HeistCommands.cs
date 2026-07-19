@@ -151,12 +151,21 @@ public sealed partial class MainForm
         layout.Controls.Add(header, 0, 0); layout.Controls.Add(subtitle, 0, 1);
         layout.Controls.Add(tabs, 0, 2);
         _commandsPage.Controls.Add(layout);
+        try
+        {
+            _commandRegistry.Update(new AppConfig());
+            RefreshCommandGrid();
+        }
+        catch (Exception exception)
+        {
+            AppendLog("Command-Liste konnte nicht mit Standardwerten vorbereitet werden: " + exception.Message);
+        }
     }
 
     private void InitializeHeistCommandEvents()
     {
         _commandsNavButton.Click += (_, _) => ShowSection("commands");
-        _heistSaveButton.Click += (_, _) => SaveSettingsFromControls();
+        _heistSaveButton.Click += (_, _) => SaveMinigameSettingsFromControls();
         _heistDefaultsButton.Click += (_, _) => LoadHeistSettings(new HeistConfig());
         _heistTestButton.Click += async (_, _) => { if (_minigame is null) AppendLog("Test-Heist benötigt eine aktive Plugin-Verbindung."); else await _minigame.RunTestHeistAsync(_shutdown?.Token ?? CancellationToken.None); };
         _heistCancelButton.Click += async (_, _) => { if (_minigame is not null) await _minigame.CancelHeistAsync(_shutdown?.Token ?? CancellationToken.None); };

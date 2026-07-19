@@ -854,7 +854,7 @@ private enum CloseChoice
             await CreateObsSourceAsync();
         _saveSettingsButton.Click += (_, _) => SaveSettingsFromControls();
         _saveModerationSettingsButton.Click += (_, _) => SaveSettingsFromControls();
-        _saveMinigameSettingsButton.Click += (_, _) => SaveSettingsFromControls();
+        _saveMinigameSettingsButton.Click += (_, _) => SaveMinigameSettingsFromControls();
         _checkModulesButton.Click += async (_, _) => await CheckModulesNowAsync();
         _restartModulesButton.Click += async (_, _) => await RestartModulesNowAsync();
         _addPointsBlacklistButton.Click += (_, _) => AddPointsBlacklistEntry();
@@ -2135,7 +2135,7 @@ private enum CloseChoice
         pointsFlow.Controls.Add(_pointsBlacklistList);
         pointsFlow.Controls.Add(_removePointsBlacklistButton);
         var savePointsButton = NewActionButton("Einstellungen speichern");
-        savePointsButton.Click += (_, _) => SaveSettingsFromControls();
+        savePointsButton.Click += (_, _) => SaveMinigameSettingsFromControls();
         pointsFlow.Controls.Add(savePointsButton);
 
         var commandsFlow = CreateMinigameFlow();
@@ -2166,7 +2166,7 @@ private enum CloseChoice
         commandsFlow.Controls.Add(CreateSettingEditor(
             "Globaler Cooldown", _globalCommandCooldownControl));
         var saveCommandsButton = NewActionButton("Einstellungen speichern");
-        saveCommandsButton.Click += (_, _) => SaveSettingsFromControls();
+        saveCommandsButton.Click += (_, _) => SaveMinigameSettingsFromControls();
         commandsFlow.Controls.Add(saveCommandsButton);
 
         var rangeTable = new TableLayoutPanel
@@ -5197,6 +5197,21 @@ private enum CloseChoice
         config.ModuleHealth.IntervalSeconds = decimal.ToInt32(_healthIntervalControl.Value);
         config.ModuleHealth.MaxRestartAttempts = decimal.ToInt32(_healthMaxRestartsControl.Value);
         config.ModuleHealth.RestartCooldownSeconds = decimal.ToInt32(_healthRestartCooldownControl.Value);
+        ReadMinigameSettings(config);
+        config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
+        ReadMusicRequestSettings(config);
+        ReadClipDiscordSettings(config);
+        ReadAutoDiscordClipPosterSettings(config);
+        config.Giveaways = ReadGiveawaySettings();
+        ReadHeistCommandsSettings(config);
+        ReadDuelSettings(config);
+        ReadLiveChatSettings(config);
+        return config;
+    }
+
+
+    private void ReadMinigameSettings(AppConfig config)
+    {
         config.Minigame.Enabled = _minigameEnabledCheck.Checked;
         config.Minigame.PointsEnabled = _pointsEnabledCheck.Checked;
         config.Minigame.GambleEnabled = _gambleEnabledCheck.Checked;
@@ -5292,18 +5307,46 @@ private enum CloseChoice
         config.Minigame.DailyLossLimit = decimal.ToInt64(_dailyLossControl.Value);
         config.Minigame.DailyWinLimitEnabled = _dailyWinCheck.Checked;
         config.Minigame.DailyWinLimit = decimal.ToInt64(_dailyWinControl.Value);
-        config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
-        ReadMusicRequestSettings(config);
-        ReadClipDiscordSettings(config);
-        ReadAutoDiscordClipPosterSettings(config);
-        config.Giveaways = ReadGiveawaySettings();
-        ReadHeistCommandsSettings(config);
-        ReadDuelSettings(config);
-        ReadLiveChatSettings(config);
-        return config;
     }
 
-    private async void SaveSettingsFromControls()
+    private async void SaveMinigameSettingsFromControls()
+    {
+        if (_settingsSaveBusy)
+        {
+            AppendLog("Speichern läuft bereits. Bitte kurz warten …");
+            return;
+        }
+
+        _settingsSaveBusy = true;
+        SetSettingsControlsEnabled(false);
+
+        try
+        {
+            var config = _configurationService.Load();
+            ReadMinigameSettings(config);
+            ReadHeistCommandsSettings(config);
+            ReadDuelSettings(config);
+            _configurationService.SaveGuiSettings(config);
+            ApplyRuntimeSettings(config);
+            AppendLog("Minigame-Einstellungen wurden gespeichert.");
+            SetMinigameStatus("Einstellungen gespeichert", ActiveColor);
+            SetOverallStatus("Einstellungen gespeichert", ActiveColor);
+            _commandRegistry.Update(config);
+            RefreshCommandGrid();
+        }
+        catch (Exception exception)
+        {
+            AppendLog("Minigame-Einstellungen konnten nicht gespeichert werden: " + exception.Message);
+            SetOverallStatus("Einstellungsfehler", ErrorColor);
+            SetMinigameStatus("Einstellungen ungültig", ErrorColor);
+            ShowSection("minigame");
+        }
+        finally
+        {
+            SetSettingsControlsEnabled(true);
+            _settingsSaveBusy = false;
+        }
+    }    private async void SaveSettingsFromControls()
     {
         if (_settingsSaveBusy)
         {
@@ -5358,12 +5401,24 @@ private enum CloseChoice
 
     private void SetSettingsControlsEnabled(bool enabled)
     {
-        _saveSettingsButton.Enabled = enabled;
-        _saveModerationSettingsButton.Enabled = enabled;
-        _saveMinigameSettingsButton.Enabled = enabled;
-        _heistSaveButton.Enabled = enabled;
-        _duelSaveButton.Enabled = enabled;
-        _autoPosterSaveButton.Enabled = enabled;
+        SetSaveButtonsEnabled(this, enabled);
+    }
+
+    private static void SetSaveButtonsEnabled(Control root, bool enabled)
+    {
+        foreach (Control child in root.Controls)
+        {
+            if (child is Button button &&
+                button.Text.Contains("speichern", StringComparison.OrdinalIgnoreCase))
+            {
+                button.Enabled = enabled;
+            }
+
+            if (child.HasChildren)
+            {
+                SetSaveButtonsEnabled(child, enabled);
+            }
+        }
     }
 
     private void ApplyRuntimeSettings(AppConfig updated)

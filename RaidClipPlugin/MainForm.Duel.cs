@@ -1,4 +1,4 @@
-﻿using RaidClipPlugin.Config;
+using RaidClipPlugin.Config;
 using RaidClipPlugin.Services;
 
 
@@ -107,7 +107,7 @@ public sealed partial class MainForm
 
     private void InitializeDuelEvents()
     {
-        _duelSaveButton.Click += (_, _) => SaveSettingsFromControls();
+        _duelSaveButton.Click += (_, _) => SaveMinigameSettingsFromControls();
         _duelDefaultsButton.Click += (_, _) => LoadDuelSettings(new DuelConfig());
         _duelCancelButton.Click += async (_, _) =>
         {
