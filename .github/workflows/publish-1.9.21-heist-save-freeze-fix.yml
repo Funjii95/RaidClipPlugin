@@ -1,0 +1,170 @@
+﻿name: Publish 1.9.21 Heist Save Freeze Fix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.21-heist-save-freeze-fix.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: '1.9.21'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply heist settings save freeze fix
+        shell: pwsh
+        run: |
+          $patchBase64 = @'
+          ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKbWFpbiA9IHJv
+          b3QgLyAnTWFpbkZvcm0uY3MnCmNzcHJvaiA9IHJvb3QgLyAnUmFpZENsaXBQbHVnaW4uY3Nwcm9qJwoKdGV4dCA9IG1haW4ucmVh
+          ZF90ZXh0KGVuY29kaW5nPSd1dGYtOC1zaWcnKQoKZmllbGRfYW5jaG9yID0gJyAgICBwcml2YXRlIHN0YXRpYyByZWFkb25seSBD
+          b2xvciBVbmtub3duU3RhdHVzQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig5NSwgMTQ2LCAyMTIpO1xuXG4nCmlmICdwcml2YXRlIGJv
+          b2wgX3NldHRpbmdzU2F2ZUJ1c3k7JyBub3QgaW4gdGV4dDoKICAgIGlmIGZpZWxkX2FuY2hvciBub3QgaW4gdGV4dDoKICAgICAg
+          ICByYWlzZSBTeXN0ZW1FeGl0KCdTdGF0dXMgY29sb3IgZmllbGQgYW5jaG9yIG5vdCBmb3VuZCcpCiAgICB0ZXh0ID0gdGV4dC5y
+          ZXBsYWNlKAogICAgICAgIGZpZWxkX2FuY2hvciwKICAgICAgICBmaWVsZF9hbmNob3IgKyAnICAgIHByaXZhdGUgYm9vbCBfc2V0
+          dGluZ3NTYXZlQnVzeTtcblxuJywKICAgICAgICAxKQoKb2xkID0gJycnICAgIHByaXZhdGUgdm9pZCBTYXZlU2V0dGluZ3NGcm9t
+          Q29udHJvbHMoKQogICAgewogICAgICAgIHRyeQogICAgICAgIHsKICAgICAgICAgICAgdmFyIGNvbmZpZyA9IFJlYWRTZXR0aW5n
+          c0Zyb21Db250cm9scygpOwogICAgICAgICAgICBfY29uZmlndXJhdGlvblNlcnZpY2UuU2F2ZUd1aVNldHRpbmdzKGNvbmZpZyk7
+          CiAgICAgICAgICAgIF9kaXNjb3JkQ3JlZGVudGlhbFN0b3JlLlNhdmVBc3luYyhfZGlzY29yZENyZWRlbnRpYWxzKQogICAgICAg
+          ICAgICAgICAgLkdldEF3YWl0ZXIoKQogICAgICAgICAgICAgICAgLkdldFJlc3VsdCgpOwogICAgICAgICAgICBBcHBseVJ1bnRp
+          bWVTZXR0aW5ncyhjb25maWcpOwogICAgICAgICAgICBBcHBlbmRMb2coIkVpbnN0ZWxsdW5nZW4gd3VyZGVuIGdlc3BlaWNoZXJ0
+          LiIpOwogICAgICAgICAgICBTZXRPdmVyYWxsU3RhdHVzKCJFaW5zdGVsbHVuZ2VuIGdlc3BlaWNoZXJ0IiwgQWN0aXZlQ29sb3Ip
+          OwogICAgICAgIH0KICAgICAgICBjYXRjaCAoRXhjZXB0aW9uIGV4Y2VwdGlvbikKICAgICAgICB7CiAgICAgICAgICAgIEFwcGVu
+          ZExvZygKICAgICAgICAgICAgICAgICJFaW5zdGVsbHVuZ2VuIGtvbm50ZW4gbmljaHQgZ2VzcGVpY2hlcnQgd2VyZGVuOiAiICsK
+          ICAgICAgICAgICAgICAgIGV4Y2VwdGlvbi5NZXNzYWdlKTsKICAgICAgICAgICAgU2V0T3ZlcmFsbFN0YXR1cygiRWluc3RlbGx1
+          bmdzZmVobGVyIiwgRXJyb3JDb2xvcik7CiAgICAgICAgICAgIGlmIChJc01pbmlnYW1lQ29uZmlndXJhdGlvbkVycm9yKGV4Y2Vw
+          dGlvbi5NZXNzYWdlKSkKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgU2V0TWluaWdhbWVTdGF0dXMoIkVpbnN0ZWxsdW5n
+          ZW4gdW5nw7xsdGlnIiwgRXJyb3JDb2xvcik7CiAgICAgICAgICAgICAgICBTaG93U2VjdGlvbigibWluaWdhbWUiKTsKICAgICAg
+          ICAgICAgfQogICAgICAgICAgICBlbHNlIGlmIChJc011c2ljQ29uZmlndXJhdGlvbkVycm9yKGV4Y2VwdGlvbi5NZXNzYWdlKSkK
+          ICAgICAgICAgICAgewogICAgICAgICAgICAgICAgU2V0U3BvdGlmeVN0YXR1cygiRWluc3RlbGx1bmdlbiB1bmfDvGx0aWciLCBF
+          cnJvckNvbG9yKTsKICAgICAgICAgICAgICAgIGlmIChfbXVzaWNQYWdlLlZpc2libGUpCiAgICAgICAgICAgICAgICB7CiAgICAg
+          ICAgICAgICAgICAgICAgU2hvd1NlY3Rpb24oIm11c2ljIik7CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KICAgICAg
+          ICAgICAgZWxzZSBpZiAoSXNDbGlwQ29uZmlndXJhdGlvbkVycm9yKGV4Y2VwdGlvbi5NZXNzYWdlKSkKICAgICAgICAgICAgewog
+          ICAgICAgICAgICAgICAgX2NsaXBMYXN0RXJyb3JTdGF0dXMuVGV4dCA9ICJMZXR6dGVyIEZlaGxlcjogIiArIGV4Y2VwdGlvbi5N
+          ZXNzYWdlOwogICAgICAgICAgICAgICAgX2NsaXBMYXN0RXJyb3JTdGF0dXMuRm9yZUNvbG9yID0gRXJyb3JDb2xvcjsKICAgICAg
+          ICAgICAgICAgIFNob3dTZWN0aW9uKCJjbGlwLWRpc2NvcmQiKTsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KJycnCgpu
+          ZXcgPSAnJycgICAgcHJpdmF0ZSBhc3luYyB2b2lkIFNhdmVTZXR0aW5nc0Zyb21Db250cm9scygpCiAgICB7CiAgICAgICAgaWYg
+          KF9zZXR0aW5nc1NhdmVCdXN5KQogICAgICAgIHsKICAgICAgICAgICAgQXBwZW5kTG9nKCJTcGVpY2hlcm4gbMOkdWZ0IGJlcmVp
+          dHMuIEJpdHRlIGt1cnogd2FydGVuIOKApiIpOwogICAgICAgICAgICByZXR1cm47CiAgICAgICAgfQoKICAgICAgICBfc2V0dGlu
+          Z3NTYXZlQnVzeSA9IHRydWU7CiAgICAgICAgU2V0U2V0dGluZ3NDb250cm9sc0VuYWJsZWQoZmFsc2UpOwoKICAgICAgICB0cnkK
+          ICAgICAgICB7CiAgICAgICAgICAgIHZhciBjb25maWcgPSBSZWFkU2V0dGluZ3NGcm9tQ29udHJvbHMoKTsKICAgICAgICAgICAg
+          X2NvbmZpZ3VyYXRpb25TZXJ2aWNlLlNhdmVHdWlTZXR0aW5ncyhjb25maWcpOwogICAgICAgICAgICBhd2FpdCBfZGlzY29yZENy
+          ZWRlbnRpYWxTdG9yZS5TYXZlQXN5bmMoX2Rpc2NvcmRDcmVkZW50aWFscyk7CiAgICAgICAgICAgIEFwcGx5UnVudGltZVNldHRp
+          bmdzKGNvbmZpZyk7CiAgICAgICAgICAgIEFwcGVuZExvZygiRWluc3RlbGx1bmdlbiB3dXJkZW4gZ2VzcGVpY2hlcnQuIik7CiAg
+          ICAgICAgICAgIFNldE92ZXJhbGxTdGF0dXMoIkVpbnN0ZWxsdW5nZW4gZ2VzcGVpY2hlcnQiLCBBY3RpdmVDb2xvcik7CiAgICAg
+          ICAgfQogICAgICAgIGNhdGNoIChFeGNlcHRpb24gZXhjZXB0aW9uKQogICAgICAgIHsKICAgICAgICAgICAgQXBwZW5kTG9nKAog
+          ICAgICAgICAgICAgICAgIkVpbnN0ZWxsdW5nZW4ga29ubnRlbiBuaWNodCBnZXNwZWljaGVydCB3ZXJkZW46ICIgKwogICAgICAg
+          ICAgICAgICAgZXhjZXB0aW9uLk1lc3NhZ2UpOwogICAgICAgICAgICBTZXRPdmVyYWxsU3RhdHVzKCJFaW5zdGVsbHVuZ3NmZWhs
+          ZXIiLCBFcnJvckNvbG9yKTsKICAgICAgICAgICAgaWYgKElzTWluaWdhbWVDb25maWd1cmF0aW9uRXJyb3IoZXhjZXB0aW9uLk1l
+          c3NhZ2UpKQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICBTZXRNaW5pZ2FtZVN0YXR1cygiRWluc3RlbGx1bmdlbiB1bmfD
+          vGx0aWciLCBFcnJvckNvbG9yKTsKICAgICAgICAgICAgICAgIFNob3dTZWN0aW9uKCJtaW5pZ2FtZSIpOwogICAgICAgICAgICB9
+          CiAgICAgICAgICAgIGVsc2UgaWYgKElzTXVzaWNDb25maWd1cmF0aW9uRXJyb3IoZXhjZXB0aW9uLk1lc3NhZ2UpKQogICAgICAg
+          ICAgICB7CiAgICAgICAgICAgICAgICBTZXRTcG90aWZ5U3RhdHVzKCJFaW5zdGVsbHVuZ2VuIHVuZ8O8bHRpZyIsIEVycm9yQ29s
+          b3IpOwogICAgICAgICAgICAgICAgaWYgKF9tdXNpY1BhZ2UuVmlzaWJsZSkKICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAg
+          ICAgICAgICBTaG93U2VjdGlvbigibXVzaWMiKTsKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQogICAgICAgICAgICBl
+          bHNlIGlmIChJc0NsaXBDb25maWd1cmF0aW9uRXJyb3IoZXhjZXB0aW9uLk1lc3NhZ2UpKQogICAgICAgICAgICB7CiAgICAgICAg
+          ICAgICAgICBfY2xpcExhc3RFcnJvclN0YXR1cy5UZXh0ID0gIkxldHp0ZXIgRmVobGVyOiAiICsgZXhjZXB0aW9uLk1lc3NhZ2U7
+          CiAgICAgICAgICAgICAgICBfY2xpcExhc3RFcnJvclN0YXR1cy5Gb3JlQ29sb3IgPSBFcnJvckNvbG9yOwogICAgICAgICAgICAg
+          ICAgU2hvd1NlY3Rpb24oImNsaXAtZGlzY29yZCIpOwogICAgICAgICAgICB9CiAgICAgICAgfQogICAgICAgIGZpbmFsbHkKICAg
+          ICAgICB7CiAgICAgICAgICAgIFNldFNldHRpbmdzQ29udHJvbHNFbmFibGVkKHRydWUpOwogICAgICAgICAgICBfc2V0dGluZ3NT
+          YXZlQnVzeSA9IGZhbHNlOwogICAgICAgIH0KICAgIH0KCiAgICBwcml2YXRlIHZvaWQgU2V0U2V0dGluZ3NDb250cm9sc0VuYWJs
+          ZWQoYm9vbCBlbmFibGVkKQogICAgewogICAgICAgIF9zYXZlU2V0dGluZ3NCdXR0b24uRW5hYmxlZCA9IGVuYWJsZWQ7CiAgICAg
+          ICAgX3NhdmVNb2RlcmF0aW9uU2V0dGluZ3NCdXR0b24uRW5hYmxlZCA9IGVuYWJsZWQ7CiAgICAgICAgX3NhdmVNaW5pZ2FtZVNl
+          dHRpbmdzQnV0dG9uLkVuYWJsZWQgPSBlbmFibGVkOwogICAgICAgIF9oZWlzdFNhdmVCdXR0b24uRW5hYmxlZCA9IGVuYWJsZWQ7
+          CiAgICAgICAgX2R1ZWxTYXZlQnV0dG9uLkVuYWJsZWQgPSBlbmFibGVkOwogICAgICAgIF9hdXRvUG9zdGVyU2F2ZUJ1dHRvbi5F
+          bmFibGVkID0gZW5hYmxlZDsKICAgIH0KJycnCgppZiBvbGQgaW4gdGV4dDoKICAgIHRleHQgPSB0ZXh0LnJlcGxhY2Uob2xkLCBu
+          ZXcsIDEpCmVsaWYgJ3ByaXZhdGUgYXN5bmMgdm9pZCBTYXZlU2V0dGluZ3NGcm9tQ29udHJvbHMoKScgbm90IGluIHRleHQ6CiAg
+          ICByYWlzZSBTeXN0ZW1FeGl0KCdTYXZlU2V0dGluZ3NGcm9tQ29udHJvbHMgYmxvY2sgbm90IGZvdW5kIG9yIGhhcyB1bmV4cGVj
+          dGVkIGNvbnRlbnQnKQoKbWFpbi53cml0ZV90ZXh0KHRleHQsIGVuY29kaW5nPSd1dGYtOCcpCgpwcm9qZWN0ID0gY3Nwcm9qLnJl
+          YWRfdGV4dChlbmNvZGluZz0ndXRmLTgtc2lnJykKcHJvamVjdCA9IHJlLnN1YihyJzxWZXJzaW9uPltePF0rPC9WZXJzaW9uPics
+          ICc8VmVyc2lvbj4xLjkuMjE8L1ZlcnNpb24+JywgcHJvamVjdCkKcHJvamVjdCA9IHJlLnN1YihyJzxGaWxlVmVyc2lvbj5bXjxd
+          KzwvRmlsZVZlcnNpb24+JywgJzxGaWxlVmVyc2lvbj4xLjkuMjEuMDwvRmlsZVZlcnNpb24+JywgcHJvamVjdCkKaWYgJzxBc3Nl
+          bWJseVZlcnNpb24+JyBpbiBwcm9qZWN0OgogICAgcHJvamVjdCA9IHJlLnN1YihyJzxBc3NlbWJseVZlcnNpb24+W148XSs8L0Fz
+          c2VtYmx5VmVyc2lvbj4nLCAnPEFzc2VtYmx5VmVyc2lvbj4xLjkuMjEuMDwvQXNzZW1ibHlWZXJzaW9uPicsIHByb2plY3QpCmNz
+          cHJvai53cml0ZV90ZXh0KHByb2plY3QsIGVuY29kaW5nPSd1dGYtOCcpCgpwcmludCgnSGVpc3QvZ2xvYmFsIHNldHRpbmdzIHNh
+          dmUgbWFkZSBhc3luYyBhbmQgZ3VhcmRlZCBmb3IgMS45LjIxLicp
+          '@
+          $patchBytes = [Convert]::FromBase64String(($patchBase64 -replace '\s', ''))
+          [IO.File]::WriteAllBytes('apply_heist_save_freeze_fix_1921.py', $patchBytes)
+          python apply_heist_save_freeze_fix_1921.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit source changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            echo "No source changes to commit."
+          } else {
+            git commit -m "Fix settings save freeze for 1.9.21"
+            git push
+          }
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
+          $iscc = Join-Path (Join-Path $programFilesX86 'Inno Setup 6') 'ISCC.exe'
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin/Installer/RaidClipPlugin.iss"
+          Copy-Item "RaidClipPlugin/installer-output/RaidClipPlugin-Setup-$env:VERSION.exe" "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Create update manifest
+        shell: pwsh
+        run: |
+          $zip = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
+            changelog = "Hotfix 1.9.21: Speichern der Einstellungen blockiert die Oberfläche nicht mehr. Heist-Speichern ist gegen doppelte Klicks geschützt."
+            sha256 = $sha
+          }
+          $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "v$env:VERSION"
+          git tag -f $tag
+          git push origin $tag --force
+          gh release delete $tag -y --cleanup-tag 2>$null || $true
+          gh release create $tag `
+            "RaidClipPlugin-$env:VERSION-win-x64.zip" `
+            "RaidClipPluginSetup-$env:VERSION.exe" `
+            "update.json" `
+            --title "RaidClipPlugin $env:VERSION" `
+            --notes "Hotfix 1.9.21
+
+- Heist/globaler Einstellungs-Speicherpfad läuft nicht mehr synchron blockierend.
+- Discord-Credentials werden asynchron gespeichert.
+- Mehrfachklicks während des Speicherns werden abgefangen.
+- Build geprüft und ZIP, Installer, update.json veröffentlicht."
