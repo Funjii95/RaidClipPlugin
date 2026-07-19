@@ -5292,7 +5292,9 @@ private enum CloseChoice
         config.Minigame.DailyWinLimit = decimal.ToInt64(_dailyWinControl.Value);
         config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
         ReadMusicRequestSettings(config);
+        ReadClipDiscordSettings(config);
         ReadAutoDiscordClipPosterSettings(config);
+        config.Giveaways = ReadGiveawaySettings();
         ReadHeistCommandsSettings(config);
         ReadDuelSettings(config);
         ReadLiveChatSettings(config);
@@ -5305,6 +5307,9 @@ private enum CloseChoice
         {
             var config = ReadSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
+            _discordCredentialStore.SaveAsync(_discordCredentials)
+                .GetAwaiter()
+                .GetResult();
             ApplyRuntimeSettings(config);
             AppendLog("Einstellungen wurden gespeichert.");
             SetOverallStatus("Einstellungen gespeichert", ActiveColor);
