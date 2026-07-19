@@ -5534,10 +5534,10 @@ private enum CloseChoice
             _logBox.SelectionStart = _logBox.TextLength;
             _logBox.ScrollToCaret();
         }
-        catch (InvalidOperationException)
+        catch (ObjectDisposedException)
         {
         }
-        catch (ObjectDisposedException)
+        catch (InvalidOperationException)
         {
         }
     }
