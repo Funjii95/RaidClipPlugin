@@ -60,7 +60,7 @@ jobs:
                       AppendLog($"[Chat] {message.UserName}: {message.Text}");
                   }
           
-                  var handledByModerationCenter = await ProcessModerationCenterAsync(
+                  await ProcessModerationCenterAsync(
                       message,
                       config,
                       twitch,
@@ -68,8 +68,7 @@ jobs:
                       broadcasterLogin,
                       moderatorId,
                       cancellationToken);
-                  if (handledByModerationCenter ||
-                      message.CommandAuthorization == CommandAuthorization.Denied)
+                  if (message.CommandAuthorization == CommandAuthorization.Denied)
                   {
                       return;
                   }
