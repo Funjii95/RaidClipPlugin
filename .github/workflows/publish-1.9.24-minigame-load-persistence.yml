@@ -1,4 +1,4 @@
-﻿name: Publish 1.9.24 Minigame Load Persistence Hotfix
+name: Publish 1.9.24 Settings Persistence Hotfix
 
 on:
   workflow_dispatch:
@@ -24,11 +24,11 @@ jobs:
           dotnet-version: 10.0.x
           dotnet-quality: preview
 
-      - name: Patch minigame load persistence
+      - name: Patch settings load precedence
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $patchBase64 = 'JEVycm9yQWN0aW9uUHJlZmVyZW5jZSA9ICdTdG9wJwokY29uZmlnUGF0aCA9ICdSYWlkQ2xpcFBsdWdpbi9TZXJ2aWNlcy9Db25maWd1cmF0aW9uU2VydmljZS5jcycKJHByb2plY3RQYXRoID0gJ1JhaWRDbGlwUGx1Z2luL1JhaWRDbGlwUGx1Z2luLmNzcHJvaicKCiRjb25maWcgPSBHZXQtQ29udGVudCAkY29uZmlnUGF0aCAtUmF3IC1FbmNvZGluZyBVVEY4CiRwcm9qZWN0ID0gR2V0LUNvbnRlbnQgJHByb2plY3RQYXRoIC1SYXcgLUVuY29kaW5nIFVURjgKCiRvbGRPcmRlciA9IEAnCiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5CbG9ja2VkV29yZHMgaXMgbm90IG51bGwpCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGNvbmZpZy5Nb2RlcmF0aW9uLkJsb2NrZWRXb3JkcyA9IHNldHRpbmdzLkJsb2NrZWRXb3JkczsKICAgICAgICAgICAgfQoKCiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5NaW5pZ2FtZUVuYWJsZWQgaXMgbm90IG51bGwpCidACiRuZXdPcmRlciA9IEAnCiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5CbG9ja2VkV29yZHMgaXMgbm90IG51bGwpCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGNvbmZpZy5Nb2RlcmF0aW9uLkJsb2NrZWRXb3JkcyA9IHNldHRpbmdzLkJsb2NrZWRXb3JkczsKICAgICAgICAgICAgfQoKCiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5NaW5pZ2FtZSBpcyBub3QgbnVsbCkKICAgICAgICAgICAgICAgIGNvbmZpZy5NaW5pZ2FtZSA9IHNldHRpbmdzLk1pbmlnYW1lOwoKICAgICAgICAgICAgaWYgKHNldHRpbmdzLk1pbmlnYW1lRW5hYmxlZCBpcyBub3QgbnVsbCkKJ0AKaWYgKCRjb25maWcuQ29udGFpbnMoJG9sZE9yZGVyKSAtYW5kIC1ub3QgJGNvbmZpZy5Db250YWlucygiaWYgKHNldHRpbmdzLk1pbmlnYW1lIGlzIG5vdCBudWxsKWByYG4gICAgICAgICAgICAgICAgY29uZmlnLk1pbmlnYW1lID0gc2V0dGluZ3MuTWluaWdhbWU7YHJgbmByYG4gICAgICAgICAgICBpZiAoc2V0dGluZ3MuTWluaWdhbWVFbmFibGVkIGlzIG5vdCBudWxsKSIpKQp7CiAgICAkY29uZmlnID0gJGNvbmZpZy5SZXBsYWNlKCRvbGRPcmRlciwgJG5ld09yZGVyKQp9CgokbGF0ZU1pbmlnYW1lID0gQCcKICAgICAgICAgICAgaWYgKHNldHRpbmdzLkxpdmVDaGF0IGlzIG5vdCBudWxsKQogICAgICAgICAgICAgICAgY29uZmlnLkxpdmVDaGF0ID0gc2V0dGluZ3MuTGl2ZUNoYXQ7CiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5NaW5pZ2FtZSBpcyBub3QgbnVsbCkKICAgICAgICAgICAgICAgIGNvbmZpZy5NaW5pZ2FtZSA9IHNldHRpbmdzLk1pbmlnYW1lOwogICAgICAgICAgICBpZiAoc2V0dGluZ3MuSGVpc3QgaXMgbm90IG51bGwpCidACiRsYXRlTWluaWdhbWVSZXBsYWNlbWVudCA9IEAnCiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5MaXZlQ2hhdCBpcyBub3QgbnVsbCkKICAgICAgICAgICAgICAgIGNvbmZpZy5MaXZlQ2hhdCA9IHNldHRpbmdzLkxpdmVDaGF0OwogICAgICAgICAgICBpZiAoc2V0dGluZ3MuSGVpc3QgaXMgbm90IG51bGwpCidACmlmICgkY29uZmlnLkNvbnRhaW5zKCRsYXRlTWluaWdhbWUpKQp7CiAgICAkY29uZmlnID0gJGNvbmZpZy5SZXBsYWNlKCRsYXRlTWluaWdhbWUsICRsYXRlTWluaWdhbWVSZXBsYWNlbWVudCkKfQplbHNlaWYgKCRjb25maWcuQ29udGFpbnMoJ2lmIChzZXR0aW5ncy5NaW5pZ2FtZSBpcyBub3QgbnVsbCknKSAtYW5kCiAgICAgICAgLW5vdCAkY29uZmlnLkNvbnRhaW5zKCJpZiAoc2V0dGluZ3MuTWluaWdhbWUgaXMgbm90IG51bGwpYHJgbiAgICAgICAgICAgICAgICBjb25maWcuTWluaWdhbWUgPSBzZXR0aW5ncy5NaW5pZ2FtZTtgcmBuYHJgbiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5NaW5pZ2FtZUVuYWJsZWQgaXMgbm90IG51bGwpIikpCnsKICAgIHRocm93ICdDb3VsZCBub3Qgc2FmZWx5IG1vdmUgTWluaWdhbWUgc2V0dGluZ3MgbG9hZCBvcmRlci4nCn0KCiRzYXZlTmVlZGxlID0gQCcKICAgICAgICAgICAgTWluaWdhbWUgPSBjb25maWcuTWluaWdhbWUsCiAgICAgICAgICAgIEhlaXN0ID0gY29uZmlnLkhlaXN0LAonQAokc2F2ZVJlcGxhY2VtZW50ID0gQCcKICAgICAgICAgICAgTWluaWdhbWUgPSBjb25maWcuTWluaWdhbWUsCiAgICAgICAgICAgIEhlaXN0ID0gY29uZmlnLkhlaXN0LAonQAppZiAoLW5vdCAkY29uZmlnLkNvbnRhaW5zKCRzYXZlTmVlZGxlKSkKewogICAgdGhyb3cgJ0NvdWxkIG5vdCB2ZXJpZnkgTWluaWdhbWUgc2F2ZSBibG9jay4nCn0KCiRwcm9qZWN0ID0gW3JlZ2V4XTo6UmVwbGFjZSgkcHJvamVjdCwgJzxWZXJzaW9uPltePF0rPC9WZXJzaW9uPicsICc8VmVyc2lvbj4xLjkuMjQ8L1ZlcnNpb24+JywgMSkKJHByb2plY3QgPSBbcmVnZXhdOjpSZXBsYWNlKCRwcm9qZWN0LCAnPEZpbGVWZXJzaW9uPltePF0rPC9GaWxlVmVyc2lvbj4nLCAnPEZpbGVWZXJzaW9uPjEuOS4yNC4wPC9GaWxlVmVyc2lvbj4nLCAxKQoKW1N5c3RlbS5JTy5GaWxlXTo6V3JpdGVBbGxUZXh0KCRjb25maWdQYXRoLCAkY29uZmlnLCBbU3lzdGVtLlRleHQuVVRGOEVuY29kaW5nXTo6bmV3KCRmYWxzZSkpCltTeXN0ZW0uSU8uRmlsZV06OldyaXRlQWxsVGV4dCgkcHJvamVjdFBhdGgsICRwcm9qZWN0LCBbU3lzdGVtLlRleHQuVVRGOEVuY29kaW5nXTo6bmV3KCRmYWxzZSkpCgpnaXQgZGlmZiAtLSBSYWlkQ2xpcFBsdWdpbi9TZXJ2aWNlcy9Db25maWd1cmF0aW9uU2VydmljZS5jcyBSYWlkQ2xpcFBsdWdpbi9SYWlkQ2xpcFBsdWdpbi5jc3Byb2oK'
+          $patchBase64 = 'JEVycm9yQWN0aW9uUHJlZmVyZW5jZSA9ICdTdG9wJwokY29uZmlnUGF0aCA9ICdSYWlkQ2xpcFBsdWdpbi9TZXJ2aWNlcy9Db25maWd1cmF0aW9uU2VydmljZS5jcycKJHByb2plY3RQYXRoID0gJ1JhaWRDbGlwUGx1Z2luL1JhaWRDbGlwUGx1Z2luLmNzcHJvaicKCiRjb25maWcgPSBHZXQtQ29udGVudCAkY29uZmlnUGF0aCAtUmF3IC1FbmNvZGluZyBVVEY4CiRwcm9qZWN0ID0gR2V0LUNvbnRlbnQgJHByb2plY3RQYXRoIC1SYXcgLUVuY29kaW5nIFVURjgKCiMgQWVsdGVyZSBzZXR0aW5ncy5qc29uLURhdGVpZW4gZW50aGFsdGVuIHNvd29obCBrb21wbGV0dGUgTW9kdWxibG9lY2tlCiMgKHouIEIuICJNaW5pZ2FtZSIpIGFscyBhdWNoIGVpbnplbG5lIEdVSS1GZWxkZXIgKHouIEIuCiMgIk1pbmlnYW1lRW5hYmxlZCIpLiBXZW5uIGRlciBrb21wbGV0dGUgTW9kdWxibG9jayBuYWNoIGRlbiBlaW56ZWxuZW4KIyBGZWxkZXJuIGdlbGFkZW4gd2lyZCwgdWViZXJzY2hyZWlidCBlciBIYWtlbi9aYWhsZW4gYXVzIGRlciBHVUkgd2llZGVyLgojIERhcnVtIHdpcmQgZGVyIGtvbXBsZXR0ZSBNaW5pZ2FtZS1CbG9jayB6dWVyc3QgZ2VsYWRlbiB1bmQgZGFuYWNoIHdlcmRlbgojIGRpZSBlaW56ZWxuZW4gR1VJLUZlbGRlciBhbHMgTWlncmF0aW9uL092ZXJyaWRlIGFuZ2V3ZW5kZXQuCiRtaW5pZ2FtZUxvYWRQYXR0ZXJuID0KICAgICdccj9cblxzKmlmIFwoc2V0dGluZ3NcLk1pbmlnYW1lIGlzIG5vdCBudWxsXClccypccj9cblxzKmNvbmZpZ1wuTWluaWdhbWUgPSBzZXR0aW5nc1wuTWluaWdhbWU7JwokY29uZmlnID0gW3JlZ2V4XTo6UmVwbGFjZSgkY29uZmlnLCAkbWluaWdhbWVMb2FkUGF0dGVybiwgJycsIDEpCgokbGVnYWN5TWFya2VyID0gJyAgICAgICAgICAgIGlmIChzZXR0aW5ncy5NaW5pZ2FtZUVuYWJsZWQgaXMgbm90IG51bGwpJwppZiAoLW5vdCAkY29uZmlnLkNvbnRhaW5zKCRsZWdhY3lNYXJrZXIpKQp7CiAgICB0aHJvdyAnQ291bGQgbm90IGxvY2F0ZSBsZWdhY3kgTWluaWdhbWUgc2V0dGluZ3MgbWFya2VyLicKfQoKJGluc2VydEJsb2NrID0gIiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5NaW5pZ2FtZSBpcyBub3QgbnVsbClgbiAgICAgICAgICAgICAgICBjb25maWcuTWluaWdhbWUgPSBzZXR0aW5ncy5NaW5pZ2FtZTtgbmBuIgokY29uZmlnID0gJGNvbmZpZy5JbnNlcnQoJGNvbmZpZy5JbmRleE9mKCRsZWdhY3lNYXJrZXIpLCAkaW5zZXJ0QmxvY2spCgokZXhwZWN0ZWRPcmRlclBhdHRlcm4gPQogICAgJ2lmIFwoc2V0dGluZ3NcLk1pbmlnYW1lIGlzIG5vdCBudWxsXClccypjb25maWdcLk1pbmlnYW1lID0gc2V0dGluZ3NcLk1pbmlnYW1lO1xzKmlmIFwoc2V0dGluZ3NcLk1pbmlnYW1lRW5hYmxlZCBpcyBub3QgbnVsbFwpJwppZiAoLW5vdCBbcmVnZXhdOjpJc01hdGNoKCRjb25maWcsICRleHBlY3RlZE9yZGVyUGF0dGVybikpCnsKICAgIHRocm93ICdNaW5pZ2FtZSBzZXR0aW5ncyBsb2FkIG9yZGVyIHdhcyBub3QgcmVwYWlyZWQuJwp9CgokbGF0ZU92ZXJyaWRlUGF0dGVybiA9CiAgICAnaWYgXChzZXR0aW5nc1wuTGl2ZUNoYXQgaXMgbm90IG51bGxcKVxzKmNvbmZpZ1wuTGl2ZUNoYXQgPSBzZXR0aW5nc1wuTGl2ZUNoYXQ7XHMqaWYgXChzZXR0aW5nc1wuTWluaWdhbWUgaXMgbm90IG51bGxcKVxzKmNvbmZpZ1wuTWluaWdhbWUgPSBzZXR0aW5nc1wuTWluaWdhbWU7XHMqaWYgXChzZXR0aW5nc1wuSGVpc3QgaXMgbm90IG51bGxcKScKaWYgKFtyZWdleF06OklzTWF0Y2goJGNvbmZpZywgJGxhdGVPdmVycmlkZVBhdHRlcm4pKQp7CiAgICB0aHJvdyAnQSBsYXRlIE1pbmlnYW1lIG92ZXJyaWRlIHN0aWxsIGV4aXN0cyBhZnRlciBMaXZlQ2hhdC4nCn0KCmlmICgtbm90ICRjb25maWcuQ29udGFpbnMoJyAgICAgICAgICAgIE1pbmlnYW1lID0gY29uZmlnLk1pbmlnYW1lLCcpKQp7CiAgICB0aHJvdyAnQ291bGQgbm90IHZlcmlmeSBNaW5pZ2FtZSBzYXZlIGJsb2NrLicKfQoKJHByb2plY3QgPSBbcmVnZXhdOjpSZXBsYWNlKCRwcm9qZWN0LCAnPFZlcnNpb24+W148XSs8L1ZlcnNpb24+JywgJzxWZXJzaW9uPjEuOS4yNDwvVmVyc2lvbj4nLCAxKQokcHJvamVjdCA9IFtyZWdleF06OlJlcGxhY2UoJHByb2plY3QsICc8QXNzZW1ibHlWZXJzaW9uPltePF0rPC9Bc3NlbWJseVZlcnNpb24+JywgJzxBc3NlbWJseVZlcnNpb24+MS45LjI0LjA8L0Fzc2VtYmx5VmVyc2lvbj4nLCAxKQokcHJvamVjdCA9IFtyZWdleF06OlJlcGxhY2UoJHByb2plY3QsICc8RmlsZVZlcnNpb24+W148XSs8L0ZpbGVWZXJzaW9uPicsICc8RmlsZVZlcnNpb24+MS45LjI0LjA8L0ZpbGVWZXJzaW9uPicsIDEpCgpbU3lzdGVtLklPLkZpbGVdOjpXcml0ZUFsbFRleHQoJGNvbmZpZ1BhdGgsICRjb25maWcsIFtTeXN0ZW0uVGV4dC5VVEY4RW5jb2RpbmddOjpuZXcoJGZhbHNlKSkKW1N5c3RlbS5JTy5GaWxlXTo6V3JpdGVBbGxUZXh0KCRwcm9qZWN0UGF0aCwgJHByb2plY3QsIFtTeXN0ZW0uVGV4dC5VVEY4RW5jb2RpbmddOjpuZXcoJGZhbHNlKSkKCmdpdCBkaWZmIC0tIFJhaWRDbGlwUGx1Z2luL1NlcnZpY2VzL0NvbmZpZ3VyYXRpb25TZXJ2aWNlLmNzIFJhaWRDbGlwUGx1Z2luL1JhaWRDbGlwUGx1Z2luLmNzcHJvago='
           $patchText = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($patchBase64))
           [System.IO.File]::WriteAllText('patch-1924.ps1', $patchText, [System.Text.UTF8Encoding]::new($false))
           ./patch-1924.ps1
@@ -47,7 +47,7 @@ jobs:
           if (git diff --cached --quiet) {
             Write-Host "No source changes to commit."
           } else {
-            git commit -m "Fix minigame settings load precedence"
+            git commit -m "Fix saved settings load precedence"
             git push
           }
 
@@ -66,7 +66,7 @@ jobs:
           $manifest = [ordered]@{
             latestVersion = "1.9.24"
             downloadUrl = $downloadUrl
-            changelog = "Hotfix: Minigame-Haken bleiben nach Neustart erhalten. Alte settings.json Werte überschreiben neue GUI-Werte nicht mehr."
+            changelog = "Hotfix: gespeicherte GUI-Einstellungen bleiben nach Neustart erhalten. Alte Modulbloecke ueberschreiben neue GUI-Werte nicht mehr."
             sha256 = $hash
           }
           $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path update.json -Encoding UTF8
@@ -81,9 +81,9 @@ jobs:
           @(
             'Hotfix 1.9.24'
             ''
-            '- Minigame-Ladereihenfolge korrigiert.'
-            '- Alte eingebettete Minigame-Werte können den gespeicherten GUI-Haken nicht mehr zurücksetzen.'
-            '- Fix für „Spiele aktivieren“ bleibt nach Neustart nicht erhalten.'
+            '- Gespeicherte GUI-Einstellungen werden wieder korrekt geladen.'
+            '- Minigame-Haken und einzelne Minigame-Werte bleiben nach Neustart erhalten.'
+            '- Alte settings.json-Modulbloecke ueberschreiben neue GUI-Felder nicht mehr.'
           ) | Set-Content -Path $notesPath -Encoding UTF8
           gh release delete v1.9.24 --yes --cleanup-tag 2>$null || $true
           gh release create v1.9.24 RaidClipPlugin-1.9.24-win-x64.zip update.json --title "RaidClipPlugin 1.9.24" --notes-file $notesPath
