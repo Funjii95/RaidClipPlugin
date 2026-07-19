@@ -5328,7 +5328,10 @@ private enum CloseChoice
             else if (IsMusicConfigurationError(exception.Message))
             {
                 SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
-                ShowSection("music");
+                if (_musicPage.Visible)
+                {
+                    ShowSection("music");
+                }
             }
             else if (IsClipConfigurationError(exception.Message))
             {
