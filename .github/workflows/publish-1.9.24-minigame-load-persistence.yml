@@ -1,4 +1,4 @@
-﻿name: Publish 1.9.26 Settings Persistence Hotfix
+name: Publish 1.9.27 Default Chat Text Repair
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
   actions: read
 
 jobs:
-  build-release:
+  patch-build-release:
     runs-on: windows-latest
 
     steps:
@@ -24,26 +24,48 @@ jobs:
           dotnet-version: 10.0.x
           dotnet-quality: preview
 
+      - name: Repair default chat text normalization
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $patchBase64 = 'JEVycm9yQWN0aW9uUHJlZmVyZW5jZSA9ICdTdG9wJwokY29uZmlnUGF0aCA9ICdSYWlkQ2xpcFBsdWdpbi9TZXJ2aWNlcy9Db25maWd1cmF0aW9uU2VydmljZS5jcycKJHByb2plY3RQYXRoID0gJ1JhaWRDbGlwUGx1Z2luL1JhaWRDbGlwUGx1Z2luLmNzcHJvaicKJGNvbmZpZyA9IEdldC1Db250ZW50ICRjb25maWdQYXRoIC1SYXcgLUVuY29kaW5nIFVURjgKJHByb2plY3QgPSBHZXQtQ29udGVudCAkcHJvamVjdFBhdGggLVJhdyAtRW5jb2RpbmcgVVRGOAoKJGNvbmZpZyA9ICRjb25maWcuUmVwbGFjZShAJwogICAgICAgIGNvbmZpZy5DaGF0LlJhaWRNZXNzYWdlVGVtcGxhdGUgPQogICAgICAgICAgICAoY29uZmlnLkNoYXQuUmFpZE1lc3NhZ2VUZW1wbGF0ZSA/PyAiIikuVHJpbSgpOwonQCwgQCcKICAgICAgICB2YXIgZGVmYXVsdENoYXQgPSBuZXcgQ2hhdENvbmZpZygpOwogICAgICAgIGNvbmZpZy5DaGF0LlJhaWRNZXNzYWdlVGVtcGxhdGUgPSBOb3JtYWxpemVUZXh0T3JEZWZhdWx0KAogICAgICAgICAgICBjb25maWcuQ2hhdC5SYWlkTWVzc2FnZVRlbXBsYXRlLAogICAgICAgICAgICBkZWZhdWx0Q2hhdC5SYWlkTWVzc2FnZVRlbXBsYXRlKTsKJ0ApCgokY29uZmlnID0gJGNvbmZpZy5SZXBsYWNlKEAnCiAgICAgICAgY29uZmlnLkxpdmVDaGF0ID0gTGl2ZUNoYXRTZXJ2aWNlLk5vcm1hbGl6ZUNvbmZpZyhjb25maWcuTGl2ZUNoYXQpOwogICAgICAgIGNvbmZpZy5EdWVsID8/PSBuZXcgRHVlbENvbmZpZygpOwogICAgICAgIE5vcm1hbGl6ZUNsaXBTZXR0aW5ncyhjb25maWcuQ2xpcENvbW1hbmQsIGNvbmZpZy5EaXNjb3JkQ2xpcHMpOwonQCwgQCcKICAgICAgICBjb25maWcuTGl2ZUNoYXQgPSBMaXZlQ2hhdFNlcnZpY2UuTm9ybWFsaXplQ29uZmlnKGNvbmZpZy5MaXZlQ2hhdCk7CiAgICAgICAgY29uZmlnLkhlaXN0ID8/PSBuZXcgSGVpc3RDb25maWcoKTsKICAgICAgICBjb25maWcuRHVlbCA/Pz0gbmV3IER1ZWxDb25maWcoKTsKICAgICAgICBOb3JtYWxpemVIZWlzdFRleHREZWZhdWx0cyhjb25maWcuSGVpc3QpOwogICAgICAgIE5vcm1hbGl6ZUR1ZWxUZXh0RGVmYXVsdHMoY29uZmlnLkR1ZWwpOwogICAgICAgIE5vcm1hbGl6ZUNsaXBTZXR0aW5ncyhjb25maWcuQ2xpcENvbW1hbmQsIGNvbmZpZy5EaXNjb3JkQ2xpcHMpOwonQCkKCiRjb25maWcgPSAkY29uZmlnLlJlcGxhY2UoQCcKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5TdGFydGluZyA/Pz0gZGVmYXVsdE1lc3NhZ2VzLlN0YXJ0aW5nOwogICAgICAgIGNsaXAuQ2hhdE1lc3NhZ2VzLlN1Y2Nlc3MgPz89IGRlZmF1bHRNZXNzYWdlcy5TdWNjZXNzOwogICAgICAgIGNsaXAuQ2hhdE1lc3NhZ2VzLlN1Y2Nlc3NEaXNjb3JkID8/PSBkZWZhdWx0TWVzc2FnZXMuU3VjY2Vzc0Rpc2NvcmQ7CiAgICAgICAgY2xpcC5DaGF0TWVzc2FnZXMuQ29vbGRvd24gPz89IGRlZmF1bHRNZXNzYWdlcy5Db29sZG93bjsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5PZmZsaW5lID8/PSBkZWZhdWx0TWVzc2FnZXMuT2ZmbGluZTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5Gb3JiaWRkZW4gPz89IGRlZmF1bHRNZXNzYWdlcy5Gb3JiaWRkZW47CiAgICAgICAgY2xpcC5DaGF0TWVzc2FnZXMuVHdpdGNoRXJyb3IgPz89IGRlZmF1bHRNZXNzYWdlcy5Ud2l0Y2hFcnJvcjsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5QYXJ0aWFsRGlzY29yZCA/Pz0gZGVmYXVsdE1lc3NhZ2VzLlBhcnRpYWxEaXNjb3JkOwogICAgICAgIGNsaXAuQ2hhdE1lc3NhZ2VzLlF1ZXVlRnVsbCA/Pz0gZGVmYXVsdE1lc3NhZ2VzLlF1ZXVlRnVsbDsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5CdXN5ID8/PSBkZWZhdWx0TWVzc2FnZXMuQnVzeTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5MaW1pdFJlYWNoZWQgPz89IGRlZmF1bHRNZXNzYWdlcy5MaW1pdFJlYWNoZWQ7CiAgICAgICAgY2xpcC5DaGF0TWVzc2FnZXMuTWlzc2luZ1Njb3BlID8/PSBkZWZhdWx0TWVzc2FnZXMuTWlzc2luZ1Njb3BlOwonQCwgQCcKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5TdGFydGluZyA9IE5vcm1hbGl6ZUNsaXBDaGF0TWVzc2FnZShjbGlwLkNoYXRNZXNzYWdlcy5TdGFydGluZywgZGVmYXVsdE1lc3NhZ2VzLlN0YXJ0aW5nKTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5TdWNjZXNzID0gTm9ybWFsaXplQ2xpcENoYXRNZXNzYWdlKGNsaXAuQ2hhdE1lc3NhZ2VzLlN1Y2Nlc3MsIGRlZmF1bHRNZXNzYWdlcy5TdWNjZXNzKTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5TdWNjZXNzRGlzY29yZCA9IE5vcm1hbGl6ZUNsaXBDaGF0TWVzc2FnZShjbGlwLkNoYXRNZXNzYWdlcy5TdWNjZXNzRGlzY29yZCwgZGVmYXVsdE1lc3NhZ2VzLlN1Y2Nlc3NEaXNjb3JkKTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5Db29sZG93biA9IE5vcm1hbGl6ZUNsaXBDaGF0TWVzc2FnZShjbGlwLkNoYXRNZXNzYWdlcy5Db29sZG93biwgZGVmYXVsdE1lc3NhZ2VzLkNvb2xkb3duKTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5PZmZsaW5lID0gTm9ybWFsaXplQ2xpcENoYXRNZXNzYWdlKGNsaXAuQ2hhdE1lc3NhZ2VzLk9mZmxpbmUsIGRlZmF1bHRNZXNzYWdlcy5PZmZsaW5lKTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5Gb3JiaWRkZW4gPSBOb3JtYWxpemVDbGlwQ2hhdE1lc3NhZ2UoY2xpcC5DaGF0TWVzc2FnZXMuRm9yYmlkZGVuLCBkZWZhdWx0TWVzc2FnZXMuRm9yYmlkZGVuKTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5Ud2l0Y2hFcnJvciA9IE5vcm1hbGl6ZUNsaXBDaGF0TWVzc2FnZShjbGlwLkNoYXRNZXNzYWdlcy5Ud2l0Y2hFcnJvciwgZGVmYXVsdE1lc3NhZ2VzLlR3aXRjaEVycm9yKTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5QYXJ0aWFsRGlzY29yZCA9IE5vcm1hbGl6ZUNsaXBDaGF0TWVzc2FnZShjbGlwLkNoYXRNZXNzYWdlcy5QYXJ0aWFsRGlzY29yZCwgZGVmYXVsdE1lc3NhZ2VzLlBhcnRpYWxEaXNjb3JkKTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5RdWV1ZUZ1bGwgPSBOb3JtYWxpemVDbGlwQ2hhdE1lc3NhZ2UoY2xpcC5DaGF0TWVzc2FnZXMuUXVldWVGdWxsLCBkZWZhdWx0TWVzc2FnZXMuUXVldWVGdWxsKTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5CdXN5ID0gTm9ybWFsaXplQ2xpcENoYXRNZXNzYWdlKGNsaXAuQ2hhdE1lc3NhZ2VzLkJ1c3ksIGRlZmF1bHRNZXNzYWdlcy5CdXN5KTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5MaW1pdFJlYWNoZWQgPSBOb3JtYWxpemVDbGlwQ2hhdE1lc3NhZ2UoY2xpcC5DaGF0TWVzc2FnZXMuTGltaXRSZWFjaGVkLCBkZWZhdWx0TWVzc2FnZXMuTGltaXRSZWFjaGVkKTsKICAgICAgICBjbGlwLkNoYXRNZXNzYWdlcy5NaXNzaW5nU2NvcGUgPSBOb3JtYWxpemVDbGlwQ2hhdE1lc3NhZ2UoY2xpcC5DaGF0TWVzc2FnZXMuTWlzc2luZ1Njb3BlLCBkZWZhdWx0TWVzc2FnZXMuTWlzc2luZ1Njb3BlKTsKJ0ApCgokaGVscGVyTWFya2VyID0gQCcKICAgIHByaXZhdGUgc3RhdGljIHZvaWQgTm9ybWFsaXplTXVzaWNSZXF1ZXN0cyhNdXNpY1JlcXVlc3RDb25maWcgY29uZmlnKQonQAokaGVscGVycyA9IEAnCiAgICBwcml2YXRlIHN0YXRpYyBzdHJpbmcgTm9ybWFsaXplVGV4dE9yRGVmYXVsdChzdHJpbmc/IHZhbHVlLCBzdHJpbmcgZmFsbGJhY2spID0+CiAgICAgICAgc3RyaW5nLklzTnVsbE9yV2hpdGVTcGFjZSh2YWx1ZSkgPyBmYWxsYmFjayA6IHZhbHVlLlRyaW0oKTsKCgogICAgcHJpdmF0ZSBzdGF0aWMgQ2xpcENoYXRNZXNzYWdlIE5vcm1hbGl6ZUNsaXBDaGF0TWVzc2FnZSgKICAgICAgICBDbGlwQ2hhdE1lc3NhZ2U/IG1lc3NhZ2UsCiAgICAgICAgQ2xpcENoYXRNZXNzYWdlIGZhbGxiYWNrKQogICAgewogICAgICAgIHZhciBub3JtYWxpemVkID0gbWVzc2FnZSA/PyBuZXcgQ2xpcENoYXRNZXNzYWdlKGZhbGxiYWNrLkVuYWJsZWQsIGZhbGxiYWNrLlRleHQpOwogICAgICAgIG5vcm1hbGl6ZWQuVGV4dCA9IE5vcm1hbGl6ZVRleHRPckRlZmF1bHQobm9ybWFsaXplZC5UZXh0LCBmYWxsYmFjay5UZXh0KTsKICAgICAgICByZXR1cm4gbm9ybWFsaXplZDsKICAgIH0KCgogICAgcHJpdmF0ZSBzdGF0aWMgdm9pZCBOb3JtYWxpemVEdWVsVGV4dERlZmF1bHRzKER1ZWxDb25maWcgZHVlbCkKICAgIHsKICAgICAgICB2YXIgZGVmYXVsdHMgPSBuZXcgRHVlbENvbmZpZygpOwogICAgICAgIGR1ZWwuRHVlbENvbW1hbmQgPSBOb3JtYWxpemVDb21tYW5kKGR1ZWwuRHVlbENvbW1hbmQsIGRlZmF1bHRzLkR1ZWxDb21tYW5kKTsKICAgICAgICBkdWVsLkFjY2VwdENvbW1hbmQgPSBOb3JtYWxpemVDb21tYW5kKGR1ZWwuQWNjZXB0Q29tbWFuZCwgZGVmYXVsdHMuQWNjZXB0Q29tbWFuZCk7CiAgICAgICAgZHVlbC5EZW55Q29tbWFuZCA9IE5vcm1hbGl6ZUNvbW1hbmQoZHVlbC5EZW55Q29tbWFuZCwgZGVmYXVsdHMuRGVueUNvbW1hbmQpOwogICAgICAgIGR1ZWwuTG9zZXJUaW1lb3V0UmVhc29uID0gTm9ybWFsaXplVGV4dE9yRGVmYXVsdChkdWVsLkxvc2VyVGltZW91dFJlYXNvbiwgZGVmYXVsdHMuTG9zZXJUaW1lb3V0UmVhc29uKTsKICAgICAgICBkdWVsLkR1ZWxSZXF1ZXN0TWVzc2FnZSA9IE5vcm1hbGl6ZVRleHRPckRlZmF1bHQoZHVlbC5EdWVsUmVxdWVzdE1lc3NhZ2UsIGRlZmF1bHRzLkR1ZWxSZXF1ZXN0TWVzc2FnZSk7CiAgICAgICAgZHVlbC5EdWVsQWNjZXB0ZWRNZXNzYWdlID0gTm9ybWFsaXplVGV4dE9yRGVmYXVsdChkdWVsLkR1ZWxBY2NlcHRlZE1lc3NhZ2UsIGRlZmF1bHRzLkR1ZWxBY2NlcHRlZE1lc3NhZ2UpOwogICAgICAgIGR1ZWwuRHVlbFdpbk1lc3NhZ2UgPSBOb3JtYWxpemVUZXh0T3JEZWZhdWx0KGR1ZWwuRHVlbFdpbk1lc3NhZ2UsIGRlZmF1bHRzLkR1ZWxXaW5NZXNzYWdlKTsKICAgICAgICBkdWVsLkR1ZWxEZW5pZWRNZXNzYWdlID0gTm9ybWFsaXplVGV4dE9yRGVmYXVsdChkdWVsLkR1ZWxEZW5pZWRNZXNzYWdlLCBkZWZhdWx0cy5EdWVsRGVuaWVkTWVzc2FnZSk7CiAgICAgICAgZHVlbC5EdWVsVGltZW91dE1lc3NhZ2UgPSBOb3JtYWxpemVUZXh0T3JEZWZhdWx0KGR1ZWwuRHVlbFRpbWVvdXRNZXNzYWdlLCBkZWZhdWx0cy5EdWVsVGltZW91dE1lc3NhZ2UpOwogICAgICAgIGR1ZWwuTm90RW5vdWdoUG9pbnRzQ2hhbGxlbmdlck1lc3NhZ2UgPSBOb3JtYWxpemVUZXh0T3JEZWZhdWx0KGR1ZWwuTm90RW5vdWdoUG9pbnRzQ2hhbGxlbmdlck1lc3NhZ2UsIGRlZmF1bHRzLk5vdEVub3VnaFBvaW50c0NoYWxsZW5nZXJNZXNzYWdlKTsKICAgICAgICBkdWVsLk5vdEVub3VnaFBvaW50c1RhcmdldE1lc3NhZ2UgPSBOb3JtYWxpemVUZXh0T3JEZWZhdWx0KGR1ZWwuTm90RW5vdWdoUG9pbnRzVGFyZ2V0TWVzc2FnZSwgZGVmYXVsdHMuTm90RW5vdWdoUG9pbnRzVGFyZ2V0TWVzc2FnZSk7CiAgICAgICAgZHVlbC5TZWxmRHVlbE1lc3NhZ2UgPSBOb3JtYWxpemVUZXh0T3JEZWZhdWx0KGR1ZWwuU2VsZkR1ZWxNZXNzYWdlLCBkZWZhdWx0cy5TZWxmRHVlbE1lc3NhZ2UpOwogICAgICAgIGR1ZWwuTm9QZW5kaW5nRHVlbE1lc3NhZ2UgPSBOb3JtYWxpemVUZXh0T3JEZWZhdWx0KGR1ZWwuTm9QZW5kaW5nRHVlbE1lc3NhZ2UsIGRlZmF1bHRzLk5vUGVuZGluZ0R1ZWxNZXNzYWdlKTsKICAgICAgICBkdWVsLldyb25nVGFyZ2V0TWVzc2FnZSA9IE5vcm1hbGl6ZVRleHRPckRlZmF1bHQoZHVlbC5Xcm9uZ1RhcmdldE1lc3NhZ2UsIGRlZmF1bHRzLldyb25nVGFyZ2V0TWVzc2FnZSk7CiAgICAgICAgZHVlbC5BbHJlYWR5UGVuZGluZ0R1ZWxNZXNzYWdlID0gTm9ybWFsaXplVGV4dE9yRGVmYXVsdChkdWVsLkFscmVhZHlQZW5kaW5nRHVlbE1lc3NhZ2UsIGRlZmF1bHRzLkFscmVhZHlQZW5kaW5nRHVlbE1lc3NhZ2UpOwogICAgICAgIGR1ZWwuSW52YWxpZEJldE1lc3NhZ2UgPSBOb3JtYWxpemVUZXh0T3JEZWZhdWx0KGR1ZWwuSW52YWxpZEJldE1lc3NhZ2UsIGRlZmF1bHRzLkludmFsaWRCZXRNZXNzYWdlKTsKICAgIH0KCgogICAgcHJpdmF0ZSBzdGF0aWMgdm9pZCBOb3JtYWxpemVIZWlzdFRleHREZWZhdWx0cyhIZWlzdENvbmZpZyBoZWlzdCkKICAgIHsKICAgICAgICB2YXIgZGVmYXVsdHMgPSBuZXcgSGVpc3RDb25maWcoKTsKICAgICAgICBoZWlzdC5TdGFydENvbW1hbmQgPSBOb3JtYWxpemVDb21tYW5kKGhlaXN0LlN0YXJ0Q29tbWFuZCwgZGVmYXVsdHMuU3RhcnRDb21tYW5kKTsKICAgICAgICBoZWlzdC5Kb2luQ29tbWFuZCA9IE5vcm1hbGl6ZUNvbW1hbmQoaGVpc3QuSm9pbkNvbW1hbmQsIGRlZmF1bHRzLkpvaW5Db21tYW5kKTsKICAgICAgICBoZWlzdC5TdGFydE1lc3NhZ2UgPSBOb3JtYWxpemVUZXh0T3JEZWZhdWx0KGhlaXN0LlN0YXJ0TWVzc2FnZSwgZGVmYXVsdHMuU3RhcnRNZXNzYWdlKTsKICAgICAgICBoZWlzdC5Kb2luTWVzc2FnZSA9IE5vcm1hbGl6ZVRleHRPckRlZmF1bHQoaGVpc3QuSm9pbk1lc3NhZ2UsIGRlZmF1bHRzLkpvaW5NZXNzYWdlKTsKICAgICAgICBoZWlzdC5BbHJlYWR5Sm9pbmVkTWVzc2FnZSA9IE5vcm1hbGl6ZVRleHRPckRlZmF1bHQoaGVpc3QuQWxyZWFkeUpvaW5lZE1lc3NhZ2UsIGRlZmF1bHRzLkFscmVhZHlKb2luZWRNZXNzYWdlKTsKICAgICAgICBoZWlzdC5Ob0FjdGl2ZUhlaXN0TWVzc2FnZSA9IE5vcm1hbGl6ZVRleHRPckRlZmF1bHQoaGVpc3QuTm9BY3RpdmVIZWlzdE1lc3NhZ2UsIGRlZmF1bHRzLk5vQWN0aXZlSGVpc3RNZXNzYWdlKTsKICAgICAgICBoZWlzdC5NYXhpbXVtUGFydGljaXBhbnRzTWVzc2FnZSA9IE5vcm1hbGl6ZVRleHRPckRlZmF1bHQoaGVpc3QuTWF4aW11bVBhcnRpY2lwYW50c01lc3NhZ2UsIGRlZmF1bHRzLk1heGltdW1QYXJ0aWNpcGFudHNNZXNzYWdlKTsKICAgICAgICBoZWlzdC5Ob3RFbm91Z2hQYXJ0aWNpcGFudHNNZXNzYWdlID0gTm9ybWFsaXplVGV4dE9yRGVmYXVsdChoZWlzdC5Ob3RFbm91Z2hQYXJ0aWNpcGFudHNNZXNzYWdlLCBkZWZhdWx0cy5Ob3RFbm91Z2hQYXJ0aWNpcGFudHNNZXNzYWdlKTsKICAgICAgICBoZWlzdC5FdmFsdWF0aW9uTWVzc2FnZSA9IE5vcm1hbGl6ZVRleHRPckRlZmF1bHQoaGVpc3QuRXZhbHVhdGlvbk1lc3NhZ2UsIGRlZmF1bHRzLkV2YWx1YXRpb25NZXNzYWdlKTsKICAgICAgICBoZWlzdC5TdWNjZXNzTWVzc2FnZSA9IE5vcm1hbGl6ZVRleHRPckRlZmF1bHQoaGVpc3QuU3VjY2Vzc01lc3NhZ2UsIGRlZmF1bHRzLlN1Y2Nlc3NNZXNzYWdlKTsKICAgICAgICBoZWlzdC5GYWlsdXJlTWVzc2FnZSA9IE5vcm1hbGl6ZVRleHRPckRlZmF1bHQoaGVpc3QuRmFpbHVyZU1lc3NhZ2UsIGRlZmF1bHRzLkZhaWx1cmVNZXNzYWdlKTsKICAgIH0KCgonQAppZiAoLW5vdCAkY29uZmlnLkNvbnRhaW5zKCdwcml2YXRlIHN0YXRpYyB2b2lkIE5vcm1hbGl6ZUR1ZWxUZXh0RGVmYXVsdHMnKSkgewogICAgaWYgKC1ub3QgJGNvbmZpZy5Db250YWlucygkaGVscGVyTWFya2VyKSkgeyB0aHJvdyAnSGVscGVyIG1hcmtlciBub3QgZm91bmQuJyB9CiAgICAkY29uZmlnID0gJGNvbmZpZy5SZXBsYWNlKCRoZWxwZXJNYXJrZXIsICRoZWxwZXJzICsgJGhlbHBlck1hcmtlcikKfQoKJHByb2plY3QgPSBbcmVnZXhdOjpSZXBsYWNlKCRwcm9qZWN0LCAnPFZlcnNpb24+W148XSs8L1ZlcnNpb24+JywgJzxWZXJzaW9uPjEuOS4yNzwvVmVyc2lvbj4nLCAxKQokcHJvamVjdCA9IFtyZWdleF06OlJlcGxhY2UoJHByb2plY3QsICc8RmlsZVZlcnNpb24+W148XSs8L0ZpbGVWZXJzaW9uPicsICc8RmlsZVZlcnNpb24+MS45LjI3LjA8L0ZpbGVWZXJzaW9uPicsIDEpCgpbU3lzdGVtLklPLkZpbGVdOjpXcml0ZUFsbFRleHQoJGNvbmZpZ1BhdGgsICRjb25maWcsIFtTeXN0ZW0uVGV4dC5VVEY4RW5jb2RpbmddOjpuZXcoJGZhbHNlKSkKW1N5c3RlbS5JTy5GaWxlXTo6V3JpdGVBbGxUZXh0KCRwcm9qZWN0UGF0aCwgJHByb2plY3QsIFtTeXN0ZW0uVGV4dC5VVEY4RW5jb2RpbmddOjpuZXcoJGZhbHNlKSkK'
+          $patchText = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($patchBase64))
+          [System.IO.File]::WriteAllText('patch-1927-default-texts.ps1', $patchText, [System.Text.UTF8Encoding]::new($false))
+          ./patch-1927-default-texts.ps1
+
       - name: Build
         shell: pwsh
         run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
 
-      - name: Publish app
+      - name: Commit patch
         shell: pwsh
         run: |
-          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/RaidClipPlugin
+          $ErrorActionPreference = 'Stop'
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            Write-Host "No source changes to commit."
+          } else {
+            git commit -m "Repair default chat text restoration"
+            git push
+          }
+
+      - name: Publish app
+        shell: pwsh
+        run: dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/RaidClipPlugin
 
       - name: Build installer package
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          Compress-Archive -Path publish/RaidClipPlugin/* -DestinationPath RaidClipPlugin-1.9.26-win-x64.zip -Force
-          $hash = (Get-FileHash RaidClipPlugin-1.9.26-win-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          $downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v1.9.26/RaidClipPlugin-1.9.26-win-x64.zip"
+          Compress-Archive -Path publish/RaidClipPlugin/* -DestinationPath RaidClipPlugin-1.9.27-win-x64.zip -Force
+          $hash = (Get-FileHash RaidClipPlugin-1.9.27-win-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v1.9.27/RaidClipPlugin-1.9.27-win-x64.zip"
           $manifest = [ordered]@{
-            latestVersion = "1.9.26"
+            latestVersion = "1.9.27"
             downloadUrl = $downloadUrl
-            changelog = "Hotfix: Einstellungen werden wieder zuverlässig gespeichert. Spotify-Connect speichert die komplette Musikwunsch-Konfiguration, Belohnungen aktualisieren liest keine fremden Modul-Einstellungen mehr ein."
+            changelog = "Hotfix: Leere gespeicherte Standardantworten werden automatisch repariert. Betrifft Raid-Nachricht, !clip/Raidclips, Duel und Heist-Chattexte."
             sha256 = $hash
           }
           $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path update.json -Encoding UTF8
@@ -54,14 +76,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $notesPath = 'release-notes-1.9.26.md'
+          $notesPath = 'release-notes-1.9.27.md'
           @(
-            'Hotfix 1.9.26'
+            'Hotfix 1.9.27'
             ''
-            '- Einstellungen bleiben nach Neustart wieder erhalten.'
-            '- Spotify-Verbindung speichert nicht mehr nur Client-ID/Redirect, sondern die komplette Musikwunsch-Konfiguration.'
-            '- Belohnungen aktualisieren nutzt nicht mehr den globalen Einstellungsleser und wird dadurch nicht mehr von anderen Modulen blockiert.'
-            '- Projektversion auf 1.9.26 angehoben.'
+            '- Leere gespeicherte Raid-Nachrichten werden wieder mit dem Standardtext gefüllt.'
+            '- Leere !clip/Raidclip-Antworten werden wieder mit Standardantworten gefüllt.'
+            '- Leere Duel- und Heist-Chattexte werden automatisch repariert.'
+            '- Projektversion auf 1.9.27 angehoben.'
           ) | Set-Content -Path $notesPath -Encoding UTF8
-          gh release delete v1.9.26 --yes --cleanup-tag 2>$null || $true
-          gh release create v1.9.26 RaidClipPlugin-1.9.26-win-x64.zip update.json --title "RaidClipPlugin 1.9.26" --notes-file $notesPath
+          gh release delete v1.9.27 --yes --cleanup-tag 2>$null || $true
+          gh release create v1.9.27 RaidClipPlugin-1.9.27-win-x64.zip update.json --title "RaidClipPlugin 1.9.27" --notes-file $notesPath
