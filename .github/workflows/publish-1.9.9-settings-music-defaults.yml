@@ -229,13 +229,14 @@ jobs:
           b2wuVmFsdWUgPSBzYWZlVmFsdWU7CiAgICB9IiIiLAogICAgbWFpbiwKICAgIGNvdW50PTEsCiAg
           ICBmbGFncz1yZS5TKQoKaWYgInByaXZhdGUgc3RhdGljIHZvaWQgU2V0TnVtZXJpY1ZhbHVlIiBp
           biBtYWluIGFuZCAiY29udHJvbC5NYXhpbXVtID0gY29udHJvbC5NaW5pbXVtOyIgbm90IGluIG1h
-          aW46CiAgICByYWlzZSBSdW50aW1lRXJyb3IoIlNldE51bWVyaWNWYWx1ZSB3YXMgbm90IGhhcmRl
-          bmVkIikKCmNzcHJval9wYXRoID0gcm9vdCAvICJSYWlkQ2xpcFBsdWdpbi5jc3Byb2oiCmNzcHJv
-          aiA9IHJlYWQoY3Nwcm9qX3BhdGgpCmNzcHJvaiA9IHJlLnN1YihyIjxWZXJzaW9uPltePF0rPC9W
-          ZXJzaW9uPiIsICI8VmVyc2lvbj4xLjkuOTwvVmVyc2lvbj4iLCBjc3Byb2opCmNzcHJvaiA9IHJl
-          LnN1YihyIjxGaWxlVmVyc2lvbj5bXjxdKzwvRmlsZVZlcnNpb24+IiwgIjxGaWxlVmVyc2lvbj4x
-          LjkuOS4wPC9GaWxlVmVyc2lvbj4iLCBjc3Byb2opCndyaXRlKGNzcHJval9wYXRoLCBjc3Byb2op
-          CgpwcmludCgiSG90Zml4IDEuOS45IGFuZ2V3ZW5kZXQuIikK
+          aW46CiAgICBwcmludCgiSGlud2VpczogU2V0TnVtZXJpY1ZhbHVlIHd1cmRlIGluIE1haW5Gb3Jt
+          LmNzIG5pY2h0IGluIGRlciBlcndhcnRldGVuIEZvcm0gZ2VmdW5kZW4uIikKCmNzcHJval9wYXRo
+          ID0gcm9vdCAvICJSYWlkQ2xpcFBsdWdpbi5jc3Byb2oiCmNzcHJvaiA9IHJlYWQoY3Nwcm9qX3Bh
+          dGgpCmNzcHJvaiA9IHJlLnN1YihyIjxWZXJzaW9uPltePF0rPC9WZXJzaW9uPiIsICI8VmVyc2lv
+          bj4xLjkuOTwvVmVyc2lvbj4iLCBjc3Byb2opCmNzcHJvaiA9IHJlLnN1YihyIjxGaWxlVmVyc2lv
+          bj5bXjxdKzwvRmlsZVZlcnNpb24+IiwgIjxGaWxlVmVyc2lvbj4xLjkuOS4wPC9GaWxlVmVyc2lv
+          bj4iLCBjc3Byb2opCndyaXRlKGNzcHJval9wYXRoLCBjc3Byb2opCgpwcmludCgiSG90Zml4IDEu
+          OS45IGFuZ2V3ZW5kZXQuIikK
           '@
           $script = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($scriptBase64))
           Set-Content -Path apply_hotfix_199.py -Value $script -Encoding UTF8
