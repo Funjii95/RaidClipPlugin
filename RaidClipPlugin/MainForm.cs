@@ -5505,10 +5505,10 @@ private enum CloseChoice
                     BeginInvoke(new Action(() => AppendLog(message)));
                 }
             }
-            catch (InvalidOperationException)
+            catch (ObjectDisposedException)
             {
             }
-            catch (ObjectDisposedException)
+            catch (InvalidOperationException)
             {
             }
             return;
