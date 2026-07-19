@@ -823,32 +823,48 @@ public sealed partial class MainForm
                 _spotify?.IsConnected == true ? ActiveColor : InactiveColor);
             return;
         }
-        EnsureSpotify(config.MusicRequests);
-        var rewards = await twitch.GetCustomRewardsAsync(
-            broadcaster.Id, cancellationToken);
-        var selectedReward = rewards.FirstOrDefault(reward => reward.Id.Equals(
-            config.MusicRequests.SelectedRewardId, StringComparison.Ordinal));
-        if (selectedReward is null)
-            throw new InvalidOperationException(
-                "Die ausgewählte Twitch-Musikwunsch-Belohnung wurde nicht gefunden.");
-        if (!selectedReward.IsEnabled)
-            throw new InvalidOperationException(
-                "Die Twitch-Musikwunsch-Belohnung ist deaktiviert.");
-        if (!selectedReward.RequiresInput)
-            throw new InvalidOperationException(
-                "Die Twitch-Musikwunsch-Belohnung muss Texteingaben erlauben.");
-        config.MusicRequests.SelectedRewardName = selectedReward.Title;
-        _musicRequests = new MusicRequestService(
-            broadcaster.Id, session.UserId, config.MusicRequests,
-            twitch, _spotify!, _musicStore);
-        _musicRequests.RequestUpdated += entry => _ = RefreshMusicGridAsync();
-        _musicRequestTask = _musicRequests.RunAsync(cancellationToken);
-        ObserveMinigameTask(_musicRequestTask!);
-        SetSpotifyStatus(_spotify!.IsConnected
-            ? "Verbunden · EventSub wird gemeinsam gestartet"
-            : "EventSub wird gemeinsam gestartet · Spotify fehlt",
-            _spotify.IsConnected ? ActiveColor : WaitingColor);
+
+        try
+        {
+            EnsureSpotify(config.MusicRequests);
+            var rewards = await twitch.GetCustomRewardsAsync(
+                broadcaster.Id, cancellationToken);
+            var selectedReward = rewards.FirstOrDefault(reward => reward.Id.Equals(
+                config.MusicRequests.SelectedRewardId, StringComparison.Ordinal));
+            if (selectedReward is null)
+                throw new InvalidOperationException(
+                    "Die ausgewählte Twitch-Musikwunsch-Belohnung wurde nicht gefunden.");
+            if (!selectedReward.IsEnabled)
+                throw new InvalidOperationException(
+                    "Die Twitch-Musikwunsch-Belohnung ist deaktiviert.");
+            if (!selectedReward.RequiresInput)
+                throw new InvalidOperationException(
+                    "Die Twitch-Musikwunsch-Belohnung muss Texteingaben erlauben.");
+            config.MusicRequests.SelectedRewardName = selectedReward.Title;
+            _musicRequests = new MusicRequestService(
+                broadcaster.Id, session.UserId, config.MusicRequests,
+                twitch, _spotify!, _musicStore);
+            _musicRequests.RequestUpdated += entry => _ = RefreshMusicGridAsync();
+            _musicRequestTask = _musicRequests.RunAsync(cancellationToken);
+            ObserveMinigameTask(_musicRequestTask!);
+            SetSpotifyStatus(_spotify!.IsConnected
+                ? "Verbunden · EventSub wird gemeinsam gestartet"
+                : "EventSub wird gemeinsam gestartet · Spotify fehlt",
+                _spotify.IsConnected ? ActiveColor : WaitingColor);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _musicRequests = null;
+            SetSpotifyFailureStatus(exception);
+            AppendLog("Musikwünsche wurden für diese Sitzung deaktiviert: " + exception.Message);
+            AppendLog("RaidClip, Chat, Punkte, Minigames und Clips starten trotzdem weiter.");
+        }
     }
+
 
     private void StopMusicRequests()
     {
