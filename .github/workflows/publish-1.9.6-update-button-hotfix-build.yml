@@ -1,0 +1,103 @@
+name: Publish 1.9.6 Update Button Hotfix Build Only
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.6-update-button-hotfix-build.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Quellcode laden
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: .NET 10 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Hotfix anwenden
+        shell: pwsh
+        run: |
+          $scriptBase64 = "ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKCmRlZiByZWFkKHBhdGgpOgogICAgcmV0dXJuIHBhdGgucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOC1zaWcnKQoKZGVmIHdyaXRlKHBhdGgsIHRleHQpOgogICAgcGF0aC53cml0ZV90ZXh0KHRleHQsIGVuY29kaW5nPSd1dGYtOCcpCgpkYXNoX3BhdGggPSByb290IC8gJ01haW5Gb3JtLkRhc2hib2FyZE1vZGVybi5jcycKZGFzaCA9IHJlYWQoZGFzaF9wYXRoKQpzdGFydF9tYXJrZXIgPSAnICAgIHByaXZhdGUgQ29udHJvbCBDcmVhdGVVcGRhdGVTdGF0dXNDYXJkKClcbicKZW5kX21hcmtlciA9ICdcblxuICAgIHByaXZhdGUgc3RhdGljIHZvaWQgQ29tcGFjdERhc2hib2FyZEJ1dHRvbicKc3RhcnQgPSBkYXNoLmluZGV4KHN0YXJ0X21hcmtlcikKZW5kID0gZGFzaC5pbmRleChlbmRfbWFya2VyLCBzdGFydCkKbmV3X21ldGhvZCA9ICcnJyAgICBwcml2YXRlIENvbnRyb2wgQ3JlYXRlVXBkYXRlU3RhdHVzQ2FyZCgpCiAgICB7CiAgICAgICAgdmFyIGNhcmQgPSBuZXcgUGFuZWwKICAgICAgICB7CiAgICAgICAgICAgIE5hbWUgPSAiU3VyZmFjZVBhbmVsIiwKICAgICAgICAgICAgRG9jayA9IERvY2tTdHlsZS5GaWxsLAogICAgICAgICAgICBCYWNrQ29sb3IgPSBTdXJmYWNlQ29sb3IsCiAgICAgICAgICAgIFBhZGRpbmcgPSBuZXcgUGFkZGluZygxNCwgMTAsIDE0LCAxMCksCiAgICAgICAgICAgIE1hcmdpbiA9IFBhZGRpbmcuRW1wdHksCiAgICAgICAgICAgIE1pbmltdW1TaXplID0gbmV3IFNpemUoMzYwLCA5MikKICAgICAgICB9OwoKICAgICAgICB2YXIgbGF5b3V0ID0gbmV3IFRhYmxlTGF5b3V0UGFuZWwKICAgICAgICB7CiAgICAgICAgICAgIERvY2sgPSBEb2NrU3R5bGUuRmlsbCwKICAgICAgICAgICAgQ29sdW1uQ291bnQgPSAyLAogICAgICAgICAgICBSb3dDb3VudCA9IDEsCiAgICAgICAgICAgIEJhY2tDb2xvciA9IFN1cmZhY2VDb2xvciwKICAgICAgICAgICAgTWFyZ2luID0gUGFkZGluZy5FbXB0eSwKICAgICAgICAgICAgUGFkZGluZyA9IFBhZGRpbmcuRW1wdHkKICAgICAgICB9OwogICAgICAgIGxheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5QZXJjZW50LCAzNCkpOwogICAgICAgIGxheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5QZXJjZW50LCA2NikpOwoKICAgICAgICBfdmVyc2lvbkxhYmVsLkRvY2sgPSBEb2NrU3R5bGUuRmlsbDsKICAgICAgICBfdmVyc2lvbkxhYmVsLkF1dG9TaXplID0gZmFsc2U7CiAgICAgICAgX3ZlcnNpb25MYWJlbC5UZXh0QWxpZ24gPSBDb250ZW50QWxpZ25tZW50Lk1pZGRsZUxlZnQ7CiAgICAgICAgX3ZlcnNpb25MYWJlbC5NYXJnaW4gPSBuZXcgUGFkZGluZygwLCAwLCA4LCAwKTsKICAgICAgICBfdmVyc2lvbkxhYmVsLk1heGltdW1TaXplID0gU2l6ZS5FbXB0eTsKCiAgICAgICAgdmFyIGJ1dHRvbnMgPSBuZXcgRmxvd0xheW91dFBhbmVsCiAgICAgICAgewogICAgICAgICAgICBEb2NrID0gRG9ja1N0eWxlLkZpbGwsCiAgICAgICAgICAgIEZsb3dEaXJlY3Rpb24gPSBGbG93RGlyZWN0aW9uLkxlZnRUb1JpZ2h0LAogICAgICAgICAgICBXcmFwQ29udGVudHMgPSB0cnVlLAogICAgICAgICAgICBBdXRvU2Nyb2xsID0gZmFsc2UsCiAgICAgICAgICAgIEJhY2tDb2xvciA9IFN1cmZhY2VDb2xvciwKICAgICAgICAgICAgTWFyZ2luID0gUGFkZGluZy5FbXB0eSwKICAgICAgICAgICAgUGFkZGluZyA9IFBhZGRpbmcuRW1wdHkKICAgICAgICB9OwoKICAgICAgICBDb21wYWN0RGFzaGJvYXJkQnV0dG9uKF91cGRhdGVCdXR0b24sIDE3MCk7CiAgICAgICAgQ29tcGFjdERhc2hib2FyZEJ1dHRvbihfY2hhbmdlbG9nQnV0dG9uLCAxNDIpOwogICAgICAgIENvbXBhY3REYXNoYm9hcmRCdXR0b24oX2luc3RhbGxVcGRhdGVCdXR0b24sIDE1MCk7CiAgICAgICAgQ29tcGFjdERhc2hib2FyZEJ1dHRvbihfc2tpcFVwZGF0ZUJ1dHRvbiwgMTEyKTsKICAgICAgICBfdXBkYXRlQnV0dG9uLk1hcmdpbiA9IG5ldyBQYWRkaW5nKDMsIDMsIDMsIDMpOwogICAgICAgIF9jaGFuZ2Vsb2dCdXR0b24uTWFyZ2luID0gbmV3IFBhZGRpbmcoMywgMywgMywgMyk7CiAgICAgICAgX2luc3RhbGxVcGRhdGVCdXR0b24uTWFyZ2luID0gbmV3IFBhZGRpbmcoMywgMywgMywgMyk7CiAgICAgICAgX3NraXBVcGRhdGVCdXR0b24uTWFyZ2luID0gbmV3IFBhZGRpbmcoMywgMywgMywgMyk7CgogICAgICAgIGJ1dHRvbnMuQ29udHJvbHMuQWRkKF91cGRhdGVCdXR0b24pOwogICAgICAgIGJ1dHRvbnMuQ29udHJvbHMuQWRkKF9jaGFuZ2Vsb2dCdXR0b24pOwogICAgICAgIGJ1dHRvbnMuQ29udHJvbHMuQWRkKF9pbnN0YWxsVXBkYXRlQnV0dG9uKTsKICAgICAgICBidXR0b25zLkNvbnRyb2xzLkFkZChfc2tpcFVwZGF0ZUJ1dHRvbik7CgogICAgICAgIGxheW91dC5Db250cm9scy5BZGQoX3ZlcnNpb25MYWJlbCwgMCwgMCk7CiAgICAgICAgbGF5b3V0LkNvbnRyb2xzLkFkZChidXR0b25zLCAxLCAwKTsKICAgICAgICBjYXJkLkNvbnRyb2xzLkFkZChsYXlvdXQpOwogICAgICAgIHJldHVybiBjYXJkOwogICAgfQonJycKZGFzaCA9IGRhc2hbOnN0YXJ0XSArIG5ld19tZXRob2QgKyBkYXNoW2VuZDpdCmRhc2ggPSBkYXNoLnJlcGxhY2UoJ3BhZ2UuUm93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDg4KSk7JywgJ3BhZ2UuUm93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDEwNCkpOycpCmRhc2ggPSBkYXNoLnJlcGxhY2UoJ2xheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5QZXJjZW50LCA2OCkpO1xuICAgICAgICBsYXlvdXQuQ29sdW1uU3R5bGVzLkFkZChuZXcgQ29sdW1uU3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgMzIpKTsnLCAnbGF5b3V0LkNvbHVtblN0eWxlcy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDY0KSk7XG4gICAgICAgIGxheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5QZXJjZW50LCAzNikpOycpCndyaXRlKGRhc2hfcGF0aCwgZGFzaCkKCmNzcHJval9wYXRoID0gcm9vdCAvICdSYWlkQ2xpcFBsdWdpbi5jc3Byb2onCmNzcHJvaiA9IHJlYWQoY3Nwcm9qX3BhdGgpCmNzcHJvaiA9IHJlLnN1YihyJzxWZXJzaW9uPltePF0rPC9WZXJzaW9uPicsICc8VmVyc2lvbj4xLjkuNjwvVmVyc2lvbj4nLCBjc3Byb2opCmNzcHJvaiA9IHJlLnN1YihyJzxGaWxlVmVyc2lvbj5bXjxdKzwvRmlsZVZlcnNpb24+JywgJzxGaWxlVmVyc2lvbj4xLjkuNi4wPC9GaWxlVmVyc2lvbj4nLCBjc3Byb2opCndyaXRlKGNzcHJval9wYXRoLCBjc3Byb2opCgpwcmludCgnVXBkYXRlLUJ1dHRvbi1Ib3RmaXggMS45LjYgYW5nZXdlbmRldC4nKQo="
+          [IO.File]::WriteAllBytes("patch-196.py", [Convert]::FromBase64String($scriptBase64))
+          python patch-196.py
+
+      - name: Build prüfen
+        shell: pwsh
+        run: dotnet build "RaidClipPlugin/RaidClipPlugin.csproj" -c Release
+
+      - name: Änderungen committen
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Keine Änderungen zu committen."
+          } else {
+            git commit -m "Restore dashboard update buttons"
+            git push
+          }
+
+      - name: Windows-App erstellen
+        shell: pwsh
+        working-directory: RaidClipPlugin
+        run: dotnet publish "RaidClipPlugin.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o "publish"
+
+      - name: Update-ZIP erstellen
+        shell: pwsh
+        working-directory: RaidClipPlugin
+        run: |
+          $version = "1.9.6"
+          New-Item -ItemType Directory -Force "installer-output" | Out-Null
+          Compress-Archive -Path "publish\*" -DestinationPath "installer-output\RaidClipPlugin-Update-$version.zip" -Force
+
+      - name: Inno Setup installieren
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Windows-Installer erstellen
+        shell: pwsh
+        working-directory: RaidClipPlugin
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=1.9.6" "Installer\RaidClipPlugin.iss"'
+
+      - name: update.json erzeugen
+        shell: pwsh
+        working-directory: RaidClipPlugin
+        run: |
+          $version = "1.9.6"
+          $zipName = "RaidClipPlugin-Update-$version.zip"
+          $zipPath = Join-Path "installer-output" $zipName
+          $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash
+          $releaseTag = "v$version"
+          $downloadUrl = "https://github.com/${{ github.repository }}/releases/download/$releaseTag/$zipName"
+          $manifest = [ordered]@{
+            latestVersion = $version
+            downloadUrl = $downloadUrl
+            changelog = "Hotfix: Update-Karte im Dashboard zeigt wieder alle Aktionen an: Nach Updates suchen, Changelog, Update installieren und Überspringen."
+            sha256 = $hash
+          }
+          $manifest | ConvertTo-Json | Set-Content "installer-output\update.json" -Encoding UTF8
+
+      - name: GitHub Release veröffentlichen
+        shell: pwsh
+        working-directory: RaidClipPlugin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = "1.9.6"
+          $tag = "v$version"
+          gh release view $tag --json tagName 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --title "RaidClipPlugin $version" --notes "Hotfix: Update-Karte im Dashboard zeigt wieder alle Aktionen an: Nach Updates suchen, Changelog, Update installieren und Überspringen."
+          }
+          gh release upload $tag "installer-output\RaidClipPlugin-Setup-$version.exe" "installer-output\RaidClipPlugin-Update-$version.zip" "installer-output\update.json" --clobber
