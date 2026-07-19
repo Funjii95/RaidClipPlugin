@@ -1,0 +1,651 @@
+name: Apply standard resolution dashboard layout 1.9.3
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/apply-standard-resolution-layout-193.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: windows-latest
+    steps:
+      - name: Quellcode laden
+        uses: actions/checkout@v4
+
+      - name: .NET 10 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Standardgroessen-Layout anwenden
+        shell: pwsh
+        run: |
+          $script = @'
+          from pathlib import Path
+          import re
+
+          root = Path("RaidClipPlugin")
+
+          def read(path: Path) -> str:
+              return path.read_text(encoding="utf-8-sig")
+
+          def write(path: Path, text: str) -> None:
+              path.write_text(text, encoding="utf-8")
+
+          dashboard = r'''namespace RaidClipPlugin;
+
+public sealed partial class MainForm
+{
+    private static string GetServiceIcon(string service) => service switch
+    {
+        "OBS" => "◉",
+        "Twitch" => "▣",
+        "EventSub" => "☆",
+        "Player" => "▶",
+        _ => "●"
+    };
+
+    private Control CreateDashboardHeader(Control header, Control updatePanel)
+    {
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            BackColor = BackgroundColor
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
+
+        header.Dock = DockStyle.Fill;
+        header.Margin = new Padding(0, 0, 14, 0);
+
+        if (updatePanel is ScrollableControl scrollableUpdatePanel)
+        {
+            scrollableUpdatePanel.AutoScroll = false;
+        }
+
+        layout.Controls.Add(header, 0, 0);
+        layout.Controls.Add(CreateUpdateStatusCard(), 1, 0);
+        return layout;
+    }
+
+    private Control CreateUpdateStatusCard()
+    {
+        var card = new Panel
+        {
+            Name = "SurfacePanel",
+            Dock = DockStyle.Fill,
+            BackColor = SurfaceColor,
+            Padding = new Padding(16, 12, 16, 12),
+            Margin = Padding.Empty,
+            MinimumSize = new Size(240, 72)
+        };
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 54));
+
+        _versionLabel.Dock = DockStyle.Fill;
+        _versionLabel.AutoSize = false;
+        _versionLabel.TextAlign = ContentAlignment.MiddleLeft;
+        _versionLabel.Margin = Padding.Empty;
+        _versionLabel.MaximumSize = new Size(0, 0);
+
+        var buttonHost = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        buttonHost.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        buttonHost.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+
+        CompactDashboardButton(_updateButton, 168);
+        CompactDashboardButton(_changelogButton, 168);
+        CompactDashboardButton(_installUpdateButton, 168);
+        CompactDashboardButton(_skipUpdateButton, 168);
+
+        _updateButton.Dock = DockStyle.Fill;
+        _updateButton.Margin = new Padding(0, 0, 0, 6);
+        buttonHost.Controls.Add(_updateButton, 0, 0);
+
+        var optionalButtons = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoScroll = false,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        optionalButtons.Controls.Add(_changelogButton);
+        optionalButtons.Controls.Add(_installUpdateButton);
+        optionalButtons.Controls.Add(_skipUpdateButton);
+        buttonHost.Controls.Add(optionalButtons, 0, 1);
+
+        layout.Controls.Add(_versionLabel, 0, 0);
+        layout.Controls.Add(buttonHost, 1, 0);
+        card.Controls.Add(layout);
+        return card;
+    }
+
+    private static void CompactDashboardButton(Button button, int width)
+    {
+        button.AutoSize = false;
+        button.Width = width;
+        button.Height = 32;
+        button.Margin = new Padding(3, 0, 3, 0);
+        button.Padding = new Padding(8, 0, 8, 0);
+        button.TextAlign = ContentAlignment.MiddleCenter;
+    }
+
+    private Control CreateDashboardIndicatorGrid(params Label[] indicators)
+    {
+        var grid = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = indicators.Length,
+            RowCount = 1,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            BackColor = SurfaceColor
+        };
+
+        for (var index = 0; index < indicators.Length; index++)
+        {
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / indicators.Length));
+            grid.Controls.Add(CreateDashboardStatusCard(indicators[index]), index, 0);
+        }
+
+        return grid;
+    }
+
+    private Control CreateDashboardStatusCard(Label indicator)
+    {
+        var raw = indicator.Text.Replace("\r", " ").Replace("\n", " ");
+        var icon = GetServiceIcon(raw.Contains("OBS", StringComparison.OrdinalIgnoreCase) ? "OBS" :
+            raw.Contains("Twitch", StringComparison.OrdinalIgnoreCase) ? "Twitch" :
+            raw.Contains("EventSub", StringComparison.OrdinalIgnoreCase) ? "EventSub" :
+            raw.Contains("Player", StringComparison.OrdinalIgnoreCase) ? "Player" : string.Empty);
+        var title = raw.Contains("OBS", StringComparison.OrdinalIgnoreCase) ? "OBS" :
+            raw.Contains("Twitch", StringComparison.OrdinalIgnoreCase) ? "Twitch" :
+            raw.Contains("EventSub", StringComparison.OrdinalIgnoreCase) ? "EventSub" :
+            raw.Contains("Player", StringComparison.OrdinalIgnoreCase) ? "Player" : raw;
+        var state = raw.Contains("VERBUNDEN", StringComparison.OrdinalIgnoreCase) ? "Verbunden" :
+            raw.Contains("AKTIV", StringComparison.OrdinalIgnoreCase) ? "Aktiv" :
+            raw.Contains("LÄUFT", StringComparison.OrdinalIgnoreCase) || raw.Contains("LAEUFT", StringComparison.OrdinalIgnoreCase) ? "Läuft" :
+            raw.Contains("BEREIT", StringComparison.OrdinalIgnoreCase) ? "Bereit" : "Bereit";
+
+        var card = new Panel
+        {
+            Name = "SurfacePanel",
+            Dock = DockStyle.Fill,
+            BackColor = Color.FromArgb(16, 20, 24),
+            Padding = new Padding(12, 10, 12, 10),
+            Margin = new Padding(4, 0, 4, 0),
+            MinimumSize = new Size(120, 68)
+        };
+
+        var text = new Label
+        {
+            Text = $"{icon}  {title}\n{state}",
+            Dock = DockStyle.Fill,
+            AutoSize = false,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Font = new Font("Segoe UI", 9.8F, FontStyle.Bold),
+            ForeColor = HealthyStatusColor,
+            Padding = new Padding(2),
+            AutoEllipsis = true
+        };
+        card.Controls.Add(text);
+        return card;
+    }
+
+    private Control CreateDashboardActionBar(Control actions)
+    {
+        actions.Dock = DockStyle.Fill;
+        actions.Margin = Padding.Empty;
+
+        if (actions is FlowLayoutPanel flow)
+        {
+            flow.AutoScroll = false;
+            flow.WrapContents = false;
+            flow.Padding = new Padding(0);
+            flow.Margin = Padding.Empty;
+
+            foreach (Control child in flow.Controls)
+            {
+                child.Margin = new Padding(4, 2, 4, 2);
+                if (child is Button button)
+                {
+                    button.AutoSize = false;
+                    button.Width = Math.Min(Math.Max(button.Width, 132), 170);
+                    button.Height = 34;
+                    button.Padding = new Padding(6, 0, 6, 0);
+                }
+                else if (child is TextBox textBox)
+                {
+                    textBox.Width = Math.Min(Math.Max(textBox.Width, 160), 240);
+                    textBox.Height = 30;
+                }
+            }
+        }
+
+        return CreateDashboardSection("Schnellaktionen", actions);
+    }
+
+    private Control CreateModernDashboardLayout(
+        Control dashboardHeader,
+        Control dashboardIndicators,
+        Control dashboardActions,
+        Control dashboardHealth)
+    {
+        var page = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 5,
+            Padding = new Padding(16, 14, 16, 14),
+            BackColor = BackgroundColor,
+            Margin = Padding.Empty
+        };
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 86));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 102));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
+        page.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        page.Controls.Add(dashboardHeader, 0, 0);
+        page.Controls.Add(CreateDashboardSection("Module & Verbindungen", dashboardIndicators), 0, 1);
+        page.Controls.Add(CreateDashboardSection("Heutige Statistiken", CreateDashboardStatsGrid()), 0, 2);
+        page.Controls.Add(dashboardActions, 0, 3);
+
+        var bottom = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 3,
+            RowCount = 1,
+            BackColor = BackgroundColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        bottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
+        bottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 36));
+        bottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
+        bottom.Controls.Add(CreateDashboardSection("Aktive Module", CreateActiveModulesGrid()), 0, 0);
+        bottom.Controls.Add(CreateDashboardSection("Systemstatus", dashboardHealth), 1, 0);
+        bottom.Controls.Add(CreateDashboardSection("Letzte Aktivitäten", CreateRecentActivityList()), 2, 0);
+        page.Controls.Add(bottom, 0, 4);
+
+        return page;
+    }
+
+    private Control CreateDashboardSection(string title, Control content)
+    {
+        var card = new Panel
+        {
+            Name = "SurfacePanel",
+            Dock = DockStyle.Fill,
+            BackColor = SurfaceColor,
+            Padding = new Padding(12, 10, 12, 12),
+            Margin = new Padding(0, 0, 0, 8)
+        };
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.Controls.Add(new Label
+        {
+            Text = title,
+            Dock = DockStyle.Fill,
+            ForeColor = TextColor,
+            Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft,
+            AutoEllipsis = true
+        }, 0, 0);
+        content.Dock = DockStyle.Fill;
+        content.Margin = Padding.Empty;
+        layout.Controls.Add(content, 0, 1);
+        card.Controls.Add(layout);
+        return card;
+    }
+
+    private Control CreateDashboardStatsGrid()
+    {
+        var grid = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 6,
+            RowCount = 1,
+            BackColor = SurfaceColor,
+            Padding = Padding.Empty,
+            Margin = Padding.Empty
+        };
+        for (var i = 0; i < 6; i++)
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 6F));
+
+        grid.Controls.Add(CreateStatisticCard("💬", "Chat", "—"), 0, 0);
+        grid.Controls.Add(CreateStatisticCard("</>", "Commands", "—"), 1, 0);
+        grid.Controls.Add(CreateStatisticCard("🎬", "Raidclips", _historyList.Items.Count.ToString("N0")), 2, 0);
+        grid.Controls.Add(CreateStatisticCard("👥", "Raids", "—"), 3, 0);
+        grid.Controls.Add(CreateStatisticCard("⏱", "Aktivität", "—"), 4, 0);
+        grid.Controls.Add(CreateStatisticCard("⚠", "Fehler", "Keine"), 5, 0);
+        return grid;
+    }
+
+    private Control CreateStatisticCard(string icon, string label, string value)
+    {
+        var panel = new TableLayoutPanel
+        {
+            Name = "SurfacePanel",
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            BackColor = Color.FromArgb(16, 20, 24),
+            Padding = new Padding(6),
+            Margin = new Padding(4, 0, 4, 0)
+        };
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 35));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 32));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 33));
+        panel.Controls.Add(new Label
+        {
+            Text = icon,
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+            ForeColor = AccentColor,
+            TextAlign = ContentAlignment.MiddleCenter
+        }, 0, 0);
+        panel.Controls.Add(new Label
+        {
+            Text = value,
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+            ForeColor = TextColor,
+            TextAlign = ContentAlignment.MiddleCenter,
+            AutoEllipsis = true
+        }, 0, 1);
+        panel.Controls.Add(new Label
+        {
+            Text = label,
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 7.6F),
+            ForeColor = MutedTextColor,
+            TextAlign = ContentAlignment.TopCenter,
+            AutoEllipsis = true
+        }, 0, 2);
+        return panel;
+    }
+
+    private Control CreateDashboardHealthSummary()
+    {
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 4,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = new Padding(0, 2, 0, 0)
+        };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
+
+        var summary = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoScroll = false,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        _moduleHealthOverallDot.Margin = new Padding(0, 5, 6, 0);
+        _moduleHealthSummaryLabel.AutoSize = true;
+        _moduleHealthSummaryLabel.Margin = new Padding(0, 3, 6, 0);
+        _moduleHealthProgressLabel.AutoSize = true;
+        _moduleHealthProgressLabel.Margin = new Padding(0, 3, 0, 0);
+        summary.Controls.Add(_moduleHealthOverallDot);
+        summary.Controls.Add(_moduleHealthSummaryLabel);
+        summary.Controls.Add(_moduleHealthProgressLabel);
+        layout.Controls.Add(summary, 0, 0);
+
+        var buttons = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        buttons.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        buttons.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        CompactDashboardButton(_checkModulesButton, 120);
+        CompactDashboardButton(_restartModulesButton, 150);
+        _checkModulesButton.Dock = DockStyle.Fill;
+        _restartModulesButton.Dock = DockStyle.Fill;
+        _checkModulesButton.Margin = new Padding(0, 0, 6, 0);
+        _restartModulesButton.Margin = new Padding(6, 0, 0, 0);
+        buttons.Controls.Add(_checkModulesButton, 0, 0);
+        buttons.Controls.Add(_restartModulesButton, 1, 0);
+        layout.Controls.Add(buttons, 0, 1);
+
+        var states = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 3,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = new Padding(0, 4, 0, 0)
+        };
+        states.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        states.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        for (var i = 0; i < 3; i++)
+            states.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3F));
+        var stateRows = new[] { "● OBS", "● Twitch Chat", "● EventSub", "● LocalPlayer", "● Commands", "● Punkte" };
+        for (var i = 0; i < stateRows.Length; i++)
+        {
+            states.Controls.Add(new Label
+            {
+                Text = stateRows[i],
+                Dock = DockStyle.Fill,
+                ForeColor = HealthyStatusColor,
+                Font = new Font("Segoe UI", 8.2F, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoEllipsis = true,
+                Padding = new Padding(2, 0, 2, 0)
+            }, i % 2, i / 2);
+        }
+        layout.Controls.Add(states, 0, 2);
+
+        _moduleHealthLastCheckLabel.Dock = DockStyle.Fill;
+        _moduleHealthLastCheckLabel.AutoSize = false;
+        _moduleHealthLastCheckLabel.TextAlign = ContentAlignment.MiddleRight;
+        _moduleHealthLastCheckLabel.Margin = Padding.Empty;
+        layout.Controls.Add(_moduleHealthLastCheckLabel, 0, 3);
+        return layout;
+    }
+
+    private Control CreateActiveModulesGrid()
+    {
+        var grid = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 4,
+            BackColor = SurfaceColor,
+            Padding = new Padding(4, 2, 4, 0),
+            Margin = Padding.Empty
+        };
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        for (var i = 0; i < 4; i++)
+            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
+        var items = new[]
+        {
+            "● Twitch Chat", "● Musik System",
+            "● EventSub", "● Giveaway System",
+            "● Raidclip System", "● Command System",
+            "● Punkte System", "● Auto-Updater"
+        };
+        for (var i = 0; i < items.Length; i++)
+        {
+            grid.Controls.Add(new Label
+            {
+                Text = items[i],
+                Dock = DockStyle.Fill,
+                ForeColor = HealthyStatusColor,
+                Font = new Font("Segoe UI", 8.1F),
+                Padding = new Padding(2, 1, 2, 0),
+                AutoEllipsis = true
+            }, i % 2, i / 2);
+        }
+        return grid;
+    }
+
+    private Control CreateRecentActivityList()
+    {
+        var box = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 4,
+            BackColor = SurfaceColor,
+            Padding = new Padding(0, 2, 0, 0),
+            Margin = Padding.Empty
+        };
+        for (var i = 0; i < 4; i++)
+            box.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
+        var rows = new[]
+        {
+            "● Healthcheck bereit",
+            "● Twitch Chat bereit",
+            "● Raidclip-System bereit",
+            "● Updater aktuell"
+        };
+        foreach (var text in rows)
+        {
+            box.Controls.Add(new Label
+            {
+                Text = text,
+                Dock = DockStyle.Fill,
+                ForeColor = MutedTextColor,
+                Font = new Font("Segoe UI", 8.0F),
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoEllipsis = true
+            });
+        }
+        return box;
+    }
+}
+'''
+
+          write(root / "MainForm.DashboardModern.cs", dashboard)
+
+          main_path = root / "MainForm.cs"
+          main = read(main_path)
+          old = '''        var dashboardLayout = CreateModernDashboardLayout(
+            CreateDashboardHeader(header, updatePanel),
+            CreateDashboardIndicatorGrid(_obsIndicator, _twitchIndicator, _eventSubIndicator, _playerIndicator),
+            CreateDashboardActionBar(actions),
+            dashboardHealth);
+'''
+          new = '''        var dashboardLayout = CreateModernDashboardLayout(
+            CreateDashboardHeader(header, updatePanel),
+            CreateDashboardIndicatorGrid(_obsIndicator, _twitchIndicator, _eventSubIndicator, _playerIndicator),
+            CreateDashboardActionBar(actions),
+            CreateDashboardHealthSummary());
+'''
+          if old not in main:
+              raise SystemExit("Dashboard layout call not found")
+          main = main.replace(old, new)
+
+          # Dashboard should never show the large health grid or nested scroll bars.
+          main = main.replace("_moduleHealthGrid.AutoScroll = false;", "_moduleHealthGrid.AutoScroll = true;")
+          main = main.replace("AutoScroll = false,\n        Padding = new Padding(0, 4, 0, 4),", "AutoScroll = false,\n        Padding = new Padding(0, 0, 0, 0),")
+
+          write(main_path, main)
+
+          shell_path = root / "MainForm.ModernShell.cs"
+          shell = read(shell_path)
+          if "private TableLayoutPanel? _modernSidebarShell;" not in shell:
+              shell = shell.replace("private TableLayoutPanel? _modernRootLayout;", "private TableLayoutPanel? _modernRootLayout;\n    private TableLayoutPanel? _modernSidebarShell;")
+          shell = shell.replace("var shell = new TableLayoutPanel", "_modernSidebarShell = new TableLayoutPanel")
+          shell = shell.replace("shell.Dock = DockStyle.Fill;", "_modernSidebarShell.Dock = DockStyle.Fill;")
+          shell = shell.replace("shell.BackColor = SidebarColor;", "_modernSidebarShell.BackColor = SidebarColor;")
+          shell = shell.replace("shell.ColumnCount = 1;", "_modernSidebarShell.ColumnCount = 1;")
+          shell = shell.replace("shell.RowCount = 2;", "_modernSidebarShell.RowCount = 2;")
+          shell = shell.replace("shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));", "_modernSidebarShell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));")
+          shell = shell.replace("shell.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));", "_modernSidebarShell.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));")
+          shell = shell.replace("shell.Controls.Add(navigation, 0, 0);", "_modernSidebarShell.Controls.Add(navigation, 0, 0);")
+          shell = shell.replace("shell.Controls.Add(statusCard, 0, 1);", "_modernSidebarShell.Controls.Add(statusCard, 0, 1);")
+          shell = shell.replace("return shell;", "return _modernSidebarShell;")
+          shell = shell.replace("var compact = ClientSize.Width < 1360 || ClientSize.Height < 820;", "var compact = ClientSize.Width < 1500 || ClientSize.Height < 900;")
+          shell = shell.replace("button.Width = compact ? 50 : 236;\n                button.Height = compact ? 44 : 54;", "button.Width = compact ? 42 : 236;\n                button.Height = compact ? 34 : 50;")
+          shell = shell.replace("control.Visible = !compact || ClientSize.Height >= 740;", "control.Visible = !compact && ClientSize.Height >= 740;")
+          if "_modernSidebarShell.RowStyles[1].Height = compact ? 0 : 88;" not in shell:
+              shell = shell.replace("foreach (Control control in _modernSidebarFlow.Controls)", "if (_modernSidebarShell?.RowStyles.Count > 1)\n        {\n            _modernSidebarShell.RowStyles[1].Height = compact ? 0 : 88;\n        }\n\n        foreach (Control control in _modernSidebarFlow.Controls)")
+          write(shell_path, shell)
+
+          csproj_path = root / "RaidClipPlugin.csproj"
+          csproj = read(csproj_path)
+          csproj = csproj.replace("<Version>1.9.2</Version>", "<Version>1.9.3</Version>")
+          csproj = csproj.replace("<FileVersion>1.9.2.0</FileVersion>", "<FileVersion>1.9.3.0</FileVersion>")
+          write(csproj_path, csproj)
+          '@
+          Set-Content -Path patch-standard-layout.py -Value $script -Encoding UTF8
+          python patch-standard-layout.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build "RaidClipPlugin/RaidClipPlugin.csproj" -c Release
+
+      - name: Tests
+        shell: pwsh
+        run: dotnet test "RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj" -c Release
+
+      - name: Änderungen committen
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.DashboardModern.cs RaidClipPlugin/MainForm.cs RaidClipPlugin/MainForm.ModernShell.cs RaidClipPlugin/RaidClipPlugin.csproj
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Keine Änderungen zu committen."
+            exit 0
+          }
+          git commit -m "Fix dashboard clipping at standard resolution"
+          git push
