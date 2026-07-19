@@ -58,15 +58,28 @@ public sealed partial class MainForm
         _versionLabel.MaximumSize = Size.Empty;
         _versionLabel.Font = new Font("Segoe UI", 9.4F, FontStyle.Bold);
         _versionLabel.ForeColor = HealthyStatusColor;
-        var buttonHost = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(4) };
+
+        var buttonHost = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoScroll = false,
+            BackColor = Color.Transparent,
+            Margin = Padding.Empty,
+            Padding = new Padding(4, 6, 4, 4)
+        };
+
         foreach (var button in new[] { _updateButton, _changelogButton, _installUpdateButton, _skipUpdateButton })
         {
-  CompactDashboardButton(button, 0);
-  button.Dock = DockStyle.Fill;
-  button.Margin = Padding.Empty;
-  buttonHost.Controls.Add(button);
-  button.BringToFront();
+            CompactDashboardButton(button, button == _updateButton ? 176 : 150);
+            button.Dock = DockStyle.None;
+            button.Height = 34;
+            button.MaximumSize = new Size(button.Width, 34);
+            button.Margin = new Padding(0, 0, 8, 0);
+            buttonHost.Controls.Add(button);
         }
+
         layout.Controls.Add(_versionLabel, 0, 0);
         layout.Controls.Add(buttonHost, 1, 0);
         card.Controls.Add(layout);
