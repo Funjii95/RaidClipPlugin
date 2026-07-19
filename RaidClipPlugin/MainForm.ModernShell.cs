@@ -36,6 +36,7 @@ public sealed partial class MainForm
 
     private FlowLayoutPanel? _modernSidebarNavigation;
     private TableLayoutPanel? _modernRootLayout;
+    private TableLayoutPanel? _modernSidebarShell;
     private bool _modernCompactSidebar;
 
     [DllImport("user32.dll")]
@@ -190,12 +191,12 @@ public sealed partial class MainForm
     {
         _modernSidebarNavigation = navigation;
         navigation.BackColor = SidebarColor;
-        var shell = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = SidebarColor, Padding = Padding.Empty, Margin = Padding.Empty };
-        shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        shell.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
-        shell.Controls.Add(navigation, 0, 0);
-        shell.Controls.Add(CreateSidebarStatusCard(), 0, 1);
-        return shell;
+        _modernSidebarShell = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = SidebarColor, Padding = Padding.Empty, Margin = Padding.Empty };
+        _modernSidebarShell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        _modernSidebarShell.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
+        _modernSidebarShell.Controls.Add(navigation, 0, 0);
+        _modernSidebarShell.Controls.Add(CreateSidebarStatusCard(), 0, 1);
+        return _modernSidebarShell;
     }
 
     private static Label CreateSidebarDivider(string text)
@@ -247,18 +248,23 @@ public sealed partial class MainForm
     {
         _modernRootLayout ??= Controls.Find("ModernRootLayout", true).OfType<TableLayoutPanel>().FirstOrDefault();
         if (_modernRootLayout is null || _modernRootLayout.ColumnStyles.Count == 0) return;
-        var compact = ClientSize.Width < 1360 || ClientSize.Height < 820;
+        var compact = ClientSize.Width < 1500 || ClientSize.Height < 900;
         if (_modernCompactSidebar == compact) return;
         _modernCompactSidebar = compact;
         _modernRootLayout.ColumnStyles[0].Width = compact ? SidebarCompactWidth : SidebarExpandedWidth;
         if (_modernSidebarNavigation is null) return;
+        if (_modernSidebarShell?.RowStyles.Count > 1)
+        {
+            _modernSidebarShell.RowStyles[1].Height = compact ? 0 : 88;
+        }
+
         foreach (Control control in _modernSidebarNavigation.Controls)
         {
             if (control is PictureBox picture) { picture.Visible = !compact && ClientSize.Height >= 740; continue; }
             if (control is Button button && button.Tag is Tuple<string, string> meta)
             {
-                button.Width = compact ? 46 : 240;
-                button.Height = compact ? 44 : 54;
+                button.Width = compact ? 42 : 240;
+                button.Height = compact ? 34 : 50;
                 button.TextAlign = compact ? ContentAlignment.MiddleCenter : ContentAlignment.MiddleLeft;
                 button.Padding = compact ? Padding.Empty : new Padding(14, 8, 12, 8);
                 button.Text = compact ? meta.Item1.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? meta.Item1 : $"{meta.Item1}{Environment.NewLine}{meta.Item2}";

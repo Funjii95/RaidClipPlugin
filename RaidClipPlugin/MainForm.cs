@@ -1879,10 +1879,10 @@ private enum CloseChoice
         var dashboardHealth = CreateDashboardSection(dashboardHealthBox, new Padding(0));
 
         _raidPage.Controls.Add(CreateModernDashboardLayout(
-  dashboardHeader,
-  dashboardIndicators,
-  dashboardActions,
-  dashboardHealth));
+            dashboardHeader,
+            dashboardIndicators,
+            dashboardActions,
+            CreateDashboardHealthSummary()));
 
         var raidClipsTitle = new Label
         {
