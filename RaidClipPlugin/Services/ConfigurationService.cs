@@ -983,6 +983,58 @@ public sealed class ConfigurationService
     }
 
 
+    private static string NormalizeTextOrDefault(string? value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+
+
+    private static ClipChatMessage NormalizeClipChatMessage(
+        ClipChatMessage? message,
+        ClipChatMessage fallback)
+    {
+        var normalized = message ?? new ClipChatMessage(fallback.Enabled, fallback.Text);
+        normalized.Text = NormalizeTextOrDefault(normalized.Text, fallback.Text);
+        return normalized;
+    }
+
+
+    private static void NormalizeDuelTextDefaults(DuelConfig duel)
+    {
+        var defaults = new DuelConfig();
+        duel.DuelCommand = NormalizeCommand(duel.DuelCommand, defaults.DuelCommand);
+        duel.AcceptCommand = NormalizeCommand(duel.AcceptCommand, defaults.AcceptCommand);
+        duel.DenyCommand = NormalizeCommand(duel.DenyCommand, defaults.DenyCommand);
+        duel.LoserTimeoutReason = NormalizeTextOrDefault(duel.LoserTimeoutReason, defaults.LoserTimeoutReason);
+        duel.DuelRequestMessage = NormalizeTextOrDefault(duel.DuelRequestMessage, defaults.DuelRequestMessage);
+        duel.DuelAcceptedMessage = NormalizeTextOrDefault(duel.DuelAcceptedMessage, defaults.DuelAcceptedMessage);
+        duel.DuelWinMessage = NormalizeTextOrDefault(duel.DuelWinMessage, defaults.DuelWinMessage);
+        duel.DuelDeniedMessage = NormalizeTextOrDefault(duel.DuelDeniedMessage, defaults.DuelDeniedMessage);
+        duel.DuelTimeoutMessage = NormalizeTextOrDefault(duel.DuelTimeoutMessage, defaults.DuelTimeoutMessage);
+        duel.NotEnoughPointsChallengerMessage = NormalizeTextOrDefault(duel.NotEnoughPointsChallengerMessage, defaults.NotEnoughPointsChallengerMessage);
+        duel.NotEnoughPointsTargetMessage = NormalizeTextOrDefault(duel.NotEnoughPointsTargetMessage, defaults.NotEnoughPointsTargetMessage);
+        duel.SelfDuelMessage = NormalizeTextOrDefault(duel.SelfDuelMessage, defaults.SelfDuelMessage);
+        duel.NoPendingDuelMessage = NormalizeTextOrDefault(duel.NoPendingDuelMessage, defaults.NoPendingDuelMessage);
+        duel.WrongTargetMessage = NormalizeTextOrDefault(duel.WrongTargetMessage, defaults.WrongTargetMessage);
+        duel.AlreadyPendingDuelMessage = NormalizeTextOrDefault(duel.AlreadyPendingDuelMessage, defaults.AlreadyPendingDuelMessage);
+        duel.InvalidBetMessage = NormalizeTextOrDefault(duel.InvalidBetMessage, defaults.InvalidBetMessage);
+    }
+
+
+    private static void NormalizeHeistTextDefaults(HeistConfig heist)
+    {
+        var defaults = new HeistConfig();
+        heist.StartCommand = NormalizeCommand(heist.StartCommand, defaults.StartCommand);
+        heist.JoinCommand = NormalizeCommand(heist.JoinCommand, defaults.JoinCommand);
+        heist.StartMessage = NormalizeTextOrDefault(heist.StartMessage, defaults.StartMessage);
+        heist.JoinMessage = NormalizeTextOrDefault(heist.JoinMessage, defaults.JoinMessage);
+        heist.AlreadyJoinedMessage = NormalizeTextOrDefault(heist.AlreadyJoinedMessage, defaults.AlreadyJoinedMessage);
+        heist.NoActiveHeistMessage = NormalizeTextOrDefault(heist.NoActiveHeistMessage, defaults.NoActiveHeistMessage);
+        heist.MaximumParticipantsMessage = NormalizeTextOrDefault(heist.MaximumParticipantsMessage, defaults.MaximumParticipantsMessage);
+        heist.NotEnoughParticipantsMessage = NormalizeTextOrDefault(heist.NotEnoughParticipantsMessage, defaults.NotEnoughParticipantsMessage);
+        heist.EvaluationMessage = NormalizeTextOrDefault(heist.EvaluationMessage, defaults.EvaluationMessage);
+        heist.SuccessMessage = NormalizeTextOrDefault(heist.SuccessMessage, defaults.SuccessMessage);
+        heist.FailureMessage = NormalizeTextOrDefault(heist.FailureMessage, defaults.FailureMessage);
+    }
+
     private static void NormalizeMusicRequests(MusicRequestConfig config)
     {
         config.ChatMessages ??= new MusicRequestChatMessages();
