@@ -5,7 +5,7 @@ namespace RaidClipPlugin;
 
 public sealed partial class MainForm
 {
-    private const int SidebarExpandedWidth = 272;
+    private const int SidebarExpandedWidth = 284;
     private const int SidebarCompactWidth = 72;
 
     private readonly Label _modernSidebarBotStateLabel = new()
@@ -248,7 +248,7 @@ public sealed partial class MainForm
     {
         _modernRootLayout ??= Controls.Find("ModernRootLayout", true).OfType<TableLayoutPanel>().FirstOrDefault();
         if (_modernRootLayout is null || _modernRootLayout.ColumnStyles.Count == 0) return;
-        var compact = ClientSize.Width < 1500 || ClientSize.Height < 900;
+        var compact = ClientSize.Width < 1220 || ClientSize.Height < 720;
         if (_modernCompactSidebar == compact) return;
         _modernCompactSidebar = compact;
         _modernRootLayout.ColumnStyles[0].Width = compact ? SidebarCompactWidth : SidebarExpandedWidth;
@@ -260,13 +260,13 @@ public sealed partial class MainForm
 
         foreach (Control control in _modernSidebarNavigation.Controls)
         {
-            if (control is PictureBox picture) { picture.Visible = !compact && ClientSize.Height >= 740; continue; }
+            if (control is PictureBox picture) { picture.Visible = !compact && ClientSize.Height >= 700; continue; }
             if (control is Button button && button.Tag is Tuple<string, string> meta)
             {
                 button.Width = compact ? 42 : 240;
                 button.Height = compact ? 34 : 50;
                 button.TextAlign = compact ? ContentAlignment.MiddleCenter : ContentAlignment.MiddleLeft;
-                button.Padding = compact ? Padding.Empty : new Padding(14, 8, 12, 8);
+                button.Padding = compact ? Padding.Empty : new Padding(14, 5, 12, 5);
                 button.Text = compact ? meta.Item1.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? meta.Item1 : $"{meta.Item1}{Environment.NewLine}{meta.Item2}";
                 _moduleHealthToolTip.SetToolTip(button, meta.Item1.Trim());
             }

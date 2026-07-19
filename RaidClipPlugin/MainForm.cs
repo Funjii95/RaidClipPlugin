@@ -6,16 +6,16 @@ namespace RaidClipPlugin;
 
 public sealed partial class MainForm : Form
 {
-    private static Color BackgroundColor = Color.FromArgb(8, 8, 9);
-    private static Color SidebarColor = Color.FromArgb(12, 12, 13);
-    private static Color SurfaceColor = Color.FromArgb(19, 19, 21);
-    private static Color InputColor = Color.FromArgb(13, 13, 14);
-    private static Color BorderColor = Color.FromArgb(86, 86, 90);
-    private static Color AccentColor = Color.FromArgb(222, 24, 30);
-    private static Color AccentDarkColor = Color.FromArgb(92, 12, 15);
-    private static Color TextColor = Color.FromArgb(235, 235, 238);
-    private static Color MutedTextColor = Color.FromArgb(174, 174, 180);
-    private static Color ActiveColor = Color.FromArgb(239, 36, 42);
+    private static Color BackgroundColor = Color.FromArgb(5, 8, 12);
+    private static Color SidebarColor = Color.FromArgb(8, 11, 16);
+    private static Color SurfaceColor = Color.FromArgb(15, 20, 27);
+    private static Color InputColor = Color.FromArgb(10, 14, 20);
+    private static Color BorderColor = Color.FromArgb(48, 57, 72);
+    private static Color AccentColor = Color.FromArgb(255, 47, 56);
+    private static Color AccentDarkColor = Color.FromArgb(108, 21, 28);
+    private static Color TextColor = Color.FromArgb(245, 247, 250);
+    private static Color MutedTextColor = Color.FromArgb(154, 163, 175);
+    private static Color ActiveColor = Color.FromArgb(64, 214, 126);
     private static readonly Color WaitingColor = Color.DarkOrange;
     private static readonly Color ErrorColor = Color.OrangeRed;
     private static readonly Color InactiveColor = Color.FromArgb(145, 145, 150);
@@ -808,8 +808,8 @@ private enum CloseChoice
                    Application.ExecutablePath) ??
                SystemIcons.Application;
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(1080, 680);
-        Size = new Size(1560, 940);
+        MinimumSize = new Size(1280, 760);
+        Size = new Size(1440, 860);
         BackColor = BackgroundColor;
         ForeColor = TextColor;
         Font = new Font("Segoe UI", 10F);
@@ -935,8 +935,8 @@ private enum CloseChoice
         return new Button
         {
             Text = $"{title}{Environment.NewLine}{subtitle}",
-            Width = 228,
-            Height = 58,
+            Width = 248,
+  Height = 48,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
             TextAlign = ContentAlignment.MiddleLeft,
@@ -2343,8 +2343,8 @@ private enum CloseChoice
         {
             Image = LoadBrandImage(),
             SizeMode = PictureBoxSizeMode.Zoom,
-            Width = 238,
-            Height = 138,
+            Width = 252,
+  Height = 116,
             Margin = new Padding(0, 4, 0, 14),
             BackColor = SidebarColor
         };
@@ -2404,7 +2404,7 @@ private enum CloseChoice
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
-        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 292));
+        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 284));
         rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         rootLayout.Controls.Add(CreateSidebarShell(navigation), 0, 0);
         rootLayout.Controls.Add(contentHost, 1, 0);
