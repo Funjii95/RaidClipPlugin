@@ -1,0 +1,335 @@
+name: Publish 1.9.23 Minigame Save and Commands Hotfix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  patch-build-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          dotnet-quality: preview
+
+      - name: Patch minigame saving and command fallback
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $mainPath = 'RaidClipPlugin/MainForm.cs'
+          $heistPath = 'RaidClipPlugin/MainForm.HeistCommands.cs'
+          $duelPath = 'RaidClipPlugin/MainForm.Duel.cs'
+          $projectPath = 'RaidClipPlugin/RaidClipPlugin.csproj'
+
+          $main = Get-Content $mainPath -Raw -Encoding UTF8
+          $heist = Get-Content $heistPath -Raw -Encoding UTF8
+          $duel = Get-Content $duelPath -Raw -Encoding UTF8
+          $project = Get-Content $projectPath -Raw -Encoding UTF8
+
+          $main = $main.Replace('_saveMinigameSettingsButton.Click += (_, _) => SaveSettingsFromControls();', '_saveMinigameSettingsButton.Click += (_, _) => SaveMinigameSettingsFromControls();')
+          $main = $main.Replace('savePointsButton.Click += (_, _) => SaveSettingsFromControls();', 'savePointsButton.Click += (_, _) => SaveMinigameSettingsFromControls();')
+          $main = $main.Replace('saveCommandsButton.Click += (_, _) => SaveSettingsFromControls();', 'saveCommandsButton.Click += (_, _) => SaveMinigameSettingsFromControls();')
+
+          $casinoNeedle = @'
+        casinoFlow.Controls.Add(CreateSettingEditor(
+            "Anteil Verluste (%)", _jackpotContributionControl));
+
+        var casinoLayout = new TableLayoutPanel
+'@
+          $casinoReplacement = @'
+        casinoFlow.Controls.Add(CreateSettingEditor(
+            "Anteil Verluste (%)", _jackpotContributionControl));
+        var saveCasinoButton = NewActionButton("Einstellungen speichern");
+        saveCasinoButton.Click += (_, _) => SaveMinigameSettingsFromControls();
+        casinoFlow.Controls.Add(saveCasinoButton);
+
+        var casinoLayout = new TableLayoutPanel
+'@
+          if ($main.Contains($casinoNeedle) -and -not $main.Contains('saveCasinoButton.Click'))
+          {
+            $main = $main.Replace($casinoNeedle, $casinoReplacement)
+          }
+
+          $historyNeedle = @'
+        historyOptions.Controls.Add(_exportMinigameButton);
+        historyOptions.Controls.Add(_importMinigameButton);
+        historyOptions.Controls.Add(_resetPointsButton);
+        historyLayout.Controls.Add(historyOptions, 0, 0);
+'@
+          $historyReplacement = @'
+        historyOptions.Controls.Add(_exportMinigameButton);
+        historyOptions.Controls.Add(_importMinigameButton);
+        historyOptions.Controls.Add(_resetPointsButton);
+        var saveHistoryButton = NewActionButton("Einstellungen speichern");
+        saveHistoryButton.Click += (_, _) => SaveMinigameSettingsFromControls();
+        historyOptions.Controls.Add(saveHistoryButton);
+        historyLayout.Controls.Add(historyOptions, 0, 0);
+'@
+          if ($main.Contains($historyNeedle) -and -not $main.Contains('saveHistoryButton.Click'))
+          {
+            $main = $main.Replace($historyNeedle, $historyReplacement)
+          }
+
+          $limitsNeedle = @'
+        limitsFlow.Controls.Add(_dailyWinCheck);
+        limitsFlow.Controls.Add(CreateSettingEditor(
+            "Gewinn pro Tag", _dailyWinControl));
+
+        var tabs = new TabControl { Dock = DockStyle.Fill };
+'@
+          $limitsReplacement = @'
+        limitsFlow.Controls.Add(_dailyWinCheck);
+        limitsFlow.Controls.Add(CreateSettingEditor(
+            "Gewinn pro Tag", _dailyWinControl));
+        var saveLimitsButton = NewActionButton("Einstellungen speichern");
+        saveLimitsButton.Click += (_, _) => SaveMinigameSettingsFromControls();
+        limitsFlow.Controls.Add(saveLimitsButton);
+
+        var tabs = new TabControl { Dock = DockStyle.Fill };
+'@
+          if ($main.Contains($limitsNeedle) -and -not $main.Contains('saveLimitsButton.Click'))
+          {
+            $main = $main.Replace($limitsNeedle, $limitsReplacement)
+          }
+
+          $minigameBlockStart = '        config.Minigame.Enabled = _minigameEnabledCheck.Checked;'
+          $minigameBlockEnd = '        config.Minigame.DailyWinLimit = decimal.ToInt64(_dailyWinControl.Value);'
+          $startIndex = $main.IndexOf($minigameBlockStart)
+          if ($startIndex -lt 0) { throw 'Minigame settings read block start not found.' }
+          $endIndex = $main.IndexOf($minigameBlockEnd, $startIndex)
+          if ($endIndex -lt 0) { throw 'Minigame settings read block end not found.' }
+          $endIndex += $minigameBlockEnd.Length
+          $minigameReadBlock = $main.Substring($startIndex, $endIndex - $startIndex)
+          if ($main.Substring($startIndex, [Math]::Min(1200, $main.Length - $startIndex)).Contains('ReadMinigameSettings(config);') -eq $false)
+          {
+            $main = $main.Remove($startIndex, $endIndex - $startIndex).Insert($startIndex, '        ReadMinigameSettings(config);')
+          }
+
+          if (-not $main.Contains('private void ReadMinigameSettings(AppConfig config)'))
+          {
+            $saveNeedle = '    private async void SaveSettingsFromControls()'
+            $saveIndex = $main.IndexOf($saveNeedle)
+            if ($saveIndex -lt 0) { throw 'SaveSettingsFromControls insertion point not found.' }
+            $helper = @"
+
+    private void ReadMinigameSettings(AppConfig config)
+    {
+$minigameReadBlock
+    }
+
+    private async void SaveMinigameSettingsFromControls()
+    {
+        if (_settingsSaveBusy)
+        {
+            AppendLog("Speichern läuft bereits. Bitte kurz warten …");
+            return;
+        }
+
+        _settingsSaveBusy = true;
+        SetSettingsControlsEnabled(false);
+
+        try
+        {
+            var config = _configurationService.Load();
+            ReadMinigameSettings(config);
+            ReadHeistCommandsSettings(config);
+            ReadDuelSettings(config);
+            _configurationService.SaveGuiSettings(config);
+            ApplyRuntimeSettings(config);
+            AppendLog("Minigame-Einstellungen wurden gespeichert.");
+            SetMinigameStatus("Einstellungen gespeichert", ActiveColor);
+            SetOverallStatus("Einstellungen gespeichert", ActiveColor);
+            _commandRegistry.Update(config);
+            RefreshCommandGrid();
+        }
+        catch (Exception exception)
+        {
+            AppendLog("Minigame-Einstellungen konnten nicht gespeichert werden: " + exception.Message);
+            SetOverallStatus("Einstellungsfehler", ErrorColor);
+            SetMinigameStatus("Einstellungen ungültig", ErrorColor);
+            ShowSection("minigame");
+        }
+        finally
+        {
+            SetSettingsControlsEnabled(true);
+            _settingsSaveBusy = false;
+        }
+    }
+"@
+            $main = $main.Insert($saveIndex, $helper)
+          }
+
+          $settingsEnabledOld = @'
+    private void SetSettingsControlsEnabled(bool enabled)
+    {
+        _saveSettingsButton.Enabled = enabled;
+        _saveModerationSettingsButton.Enabled = enabled;
+        _saveMinigameSettingsButton.Enabled = enabled;
+        _heistSaveButton.Enabled = enabled;
+        _duelSaveButton.Enabled = enabled;
+        _autoPosterSaveButton.Enabled = enabled;
+    }
+'@
+          $settingsEnabledNew = @'
+    private void SetSettingsControlsEnabled(bool enabled)
+    {
+        SetSaveButtonsEnabled(this, enabled);
+    }
+
+    private static void SetSaveButtonsEnabled(Control root, bool enabled)
+    {
+        foreach (Control child in root.Controls)
+        {
+            if (child is Button button &&
+                button.Text.Contains("speichern", StringComparison.OrdinalIgnoreCase))
+            {
+                button.Enabled = enabled;
+            }
+
+            if (child.HasChildren)
+            {
+                SetSaveButtonsEnabled(child, enabled);
+            }
+        }
+    }
+'@
+          if ($main.Contains($settingsEnabledOld))
+          {
+            $main = $main.Replace($settingsEnabledOld, $settingsEnabledNew)
+          }
+          elseif (-not $main.Contains('private static void SetSaveButtonsEnabled(Control root, bool enabled)'))
+          {
+            throw 'SetSettingsControlsEnabled block not found.'
+          }
+
+          $heist = $heist.Replace('_heistSaveButton.Click += (_, _) => SaveSettingsFromControls();', '_heistSaveButton.Click += (_, _) => SaveMinigameSettingsFromControls();')
+          $duel = $duel.Replace('_duelSaveButton.Click += (_, _) => SaveSettingsFromControls();', '_duelSaveButton.Click += (_, _) => SaveMinigameSettingsFromControls();')
+
+          $commandFallbackNeedle = '        _commandsPage.Controls.Add(layout);'
+          $commandFallbackReplacement = @'
+        _commandsPage.Controls.Add(layout);
+        try
+        {
+            _commandRegistry.Update(new AppConfig());
+            RefreshCommandGrid();
+        }
+        catch (Exception exception)
+        {
+            AppendLog("Command-Liste konnte nicht mit Standardwerten vorbereitet werden: " + exception.Message);
+        }
+'@
+          if ($heist.Contains($commandFallbackNeedle) -and -not $heist.Contains('Command-Liste konnte nicht mit Standardwerten vorbereitet werden'))
+          {
+            $heist = $heist.Replace($commandFallbackNeedle, $commandFallbackReplacement)
+          }
+
+          $loadCatchNeedle = @'
+        catch (Exception exception)
+        {
+            AppendLog(
+                "Einstellungen konnten nicht geladen werden: " +
+                exception.Message);
+        }
+'@
+          $loadCatchReplacement = @'
+        catch (Exception exception)
+        {
+            AppendLog(
+                "Einstellungen konnten nicht geladen werden: " +
+                exception.Message);
+            try
+            {
+                var fallbackConfig = new AppConfig();
+                _commandRegistry.Update(fallbackConfig);
+                RefreshCommandGrid();
+                AppendLog("Command-Liste wurde mit Standardwerten geladen, damit sie nicht leer bleibt.");
+            }
+            catch (Exception fallbackException)
+            {
+                AppendLog("Command-Liste konnte nach Ladefehler nicht vorbereitet werden: " + fallbackException.Message);
+            }
+        }
+'@
+          if ($main.Contains($loadCatchNeedle) -and -not $main.Contains('damit sie nicht leer bleibt'))
+          {
+            $main = $main.Replace($loadCatchNeedle, $loadCatchReplacement)
+          }
+
+          $project = $project.Replace('<Version>1.9.22</Version>', '<Version>1.9.23</Version>')
+          $project = $project.Replace('<FileVersion>1.9.22.0</FileVersion>', '<FileVersion>1.9.23.0</FileVersion>')
+          $project = $project.Replace('<Version>1.9.21</Version>', '<Version>1.9.23</Version>')
+          $project = $project.Replace('<FileVersion>1.9.21.0</FileVersion>', '<FileVersion>1.9.23.0</FileVersion>')
+
+          [System.IO.File]::WriteAllText($mainPath, $main, [System.Text.UTF8Encoding]::new($false))
+          [System.IO.File]::WriteAllText($heistPath, $heist, [System.Text.UTF8Encoding]::new($false))
+          [System.IO.File]::WriteAllText($duelPath, $duel, [System.Text.UTF8Encoding]::new($false))
+          [System.IO.File]::WriteAllText($projectPath, $project, [System.Text.UTF8Encoding]::new($false))
+
+          git diff -- RaidClipPlugin/MainForm.cs RaidClipPlugin/MainForm.HeistCommands.cs RaidClipPlugin/MainForm.Duel.cs RaidClipPlugin/RaidClipPlugin.csproj
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/MainForm.HeistCommands.cs RaidClipPlugin/MainForm.Duel.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            Write-Host "No source changes to commit."
+          } else {
+            git commit -m "Fix minigame settings persistence and command overview fallback"
+            git push
+          }
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/RaidClipPlugin
+
+      - name: Build installer package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Compress-Archive -Path publish/RaidClipPlugin/* -DestinationPath RaidClipPlugin-1.9.23-win-x64.zip -Force
+          $hash = (Get-FileHash RaidClipPlugin-1.9.23-win-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v1.9.23/RaidClipPlugin-1.9.23-win-x64.zip"
+          $manifest = [ordered]@{
+            latestVersion = "1.9.23"
+            downloadUrl = $downloadUrl
+            changelog = "Hotfix: Minigame-Einstellungen speichern separat und bleiben nach Neustart erhalten. Commands-Seite bleibt nicht mehr leer, wenn Settings-Laden vorher fehlschlägt."
+            sha256 = $hash
+          }
+          $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $notes = @'
+Hotfix 1.9.23
+
+- Minigame-Einstellungen speichern jetzt unabhängig von anderen Einstellungsbereichen.
+- „Spiele aktivieren“, Gamble, Casino, Limits und Historie bleiben nach Neustart erhalten.
+- Casino-Spiele, Limits & Fairness und Historie & Daten haben eigene Speicherbuttons.
+- Die Commands-Seite wird mit Standard-Commands befüllt, auch wenn ein anderer Settings-Bereich beim Laden fehlschlägt.
+'@
+          gh release delete v1.9.23 --yes --cleanup-tag 2>$null || $true
+          gh release create v1.9.23 RaidClipPlugin-1.9.23-win-x64.zip update.json --title "RaidClipPlugin 1.9.23" --notes "$notes"
