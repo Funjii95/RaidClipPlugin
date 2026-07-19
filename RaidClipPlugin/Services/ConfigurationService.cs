@@ -194,6 +194,35 @@ public sealed class ConfigurationService
     }
 
 
+    public void SaveMusicRequestSettings(MusicRequestConfig musicRequests)
+    {
+        ArgumentNullException.ThrowIfNull(musicRequests);
+
+        NormalizeMusicRequests(musicRequests);
+        ValidateMusicRequestSettings(musicRequests);
+
+        GuiSettings settings;
+        try
+        {
+            settings = File.Exists(UserSettingsPath)
+                ? JsonSerializer.Deserialize<GuiSettings>(
+                      File.ReadAllText(UserSettingsPath),
+                      JsonOptions) ??
+                  new GuiSettings()
+                : new GuiSettings();
+        }
+        catch (JsonException)
+        {
+            settings = new GuiSettings();
+        }
+
+        settings.MusicRequests = musicRequests;
+
+        File.WriteAllText(
+            UserSettingsPath,
+            JsonSerializer.Serialize(settings, JsonOptions));
+    }
+
     private static void ApplySavedGuiSettings(AppConfig config)
     {
         if (!File.Exists(UserSettingsPath))

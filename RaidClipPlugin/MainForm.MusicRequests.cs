@@ -147,7 +147,7 @@ public sealed partial class MainForm
     private void InitializeMusicRequestEvents()
     {
         _musicNavButton.Click += (_, _) => ShowSection("music");
-        _saveMusicSettingsButton.Click += (_, _) => SaveSettingsFromControls();
+        _saveMusicSettingsButton.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         _spotifyConnectButton.Click += async (_, _) =>
             await ConnectSpotifyAsync();
         _spotifyDisconnectButton.Click += (_, _) => DisconnectSpotify();
@@ -249,7 +249,7 @@ public sealed partial class MainForm
         filters.Controls.Add(_autoFulfillCheck);
         filters.Controls.Add(_autoCancelCheck);
         var filterSave = NewActionButton("Einstellungen speichern");
-        filterSave.Click += (_, _) => SaveSettingsFromControls();
+        filterSave.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         filters.Controls.Add(filterSave);
 
         var blacklists = CreateMinigameFlow();
@@ -264,7 +264,7 @@ public sealed partial class MainForm
         blacklists.Controls.Add(CreateSettingEditor(
             "Begriffe im Songtitel", _musicBlockedTermsBox));
         var blacklistSave = NewActionButton("Einstellungen speichern");
-        blacklistSave.Click += (_, _) => SaveSettingsFromControls();
+        blacklistSave.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         blacklists.Controls.Add(blacklistSave);
 
         ConfigureMusicGrid();
@@ -300,7 +300,7 @@ public sealed partial class MainForm
         messages.Controls.Add(CreateSettingEditor("Warteschlange voll", _musicQueueFullMessageBox));
         messages.Controls.Add(CreateSettingEditor("Blacklist", _musicBlacklistMessageBox));
         var messageSave = NewActionButton("Einstellungen speichern");
-        messageSave.Click += (_, _) => SaveSettingsFromControls();
+        messageSave.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         messages.Controls.Add(messageSave);
 
         var commands = CreateMinigameFlow();
@@ -318,7 +318,7 @@ public sealed partial class MainForm
             commands.Controls.Add(CreateSettingEditor("Command", pair.Command));
         }
         var commandSave = NewActionButton("Einstellungen speichern");
-        commandSave.Click += (_, _) => SaveSettingsFromControls();
+        commandSave.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         commands.Controls.Add(commandSave);
 
         var tabs = new TabControl { Dock = DockStyle.Fill };
@@ -472,6 +472,47 @@ public sealed partial class MainForm
         commands.Remove = _removeSongCommandBox.Text.Trim();
         commands.Pause = _pauseCommandBox.Text.Trim();
         commands.Resume = _resumeCommandBox.Text.Trim();
+    }
+
+    private void SaveMusicRequestSettingsFromControls()
+    {
+        try
+        {
+            var config = _configurationService.Load();
+            ReadMusicRequestSettings(config);
+            _configurationService.SaveMusicRequestSettings(config.MusicRequests);
+
+            var restartRequired = _activeConfig is not null &&
+                _activeConfig.MusicRequests.Enabled != config.MusicRequests.Enabled;
+
+            if (_activeConfig is not null)
+            {
+                _activeConfig.MusicRequests = config.MusicRequests;
+            }
+
+            _musicRequests?.UpdateConfig(config.MusicRequests);
+            _spotify?.UpdateConfig(config.MusicRequests);
+            EnsureSpotify(config.MusicRequests);
+            SetSpotifyStatus("Einstellungen gespeichert", ActiveColor);
+            SetOverallStatus("Musikwunsch-Einstellungen gespeichert", ActiveColor);
+            AppendLog("Musikwunsch-Einstellungen wurden gespeichert.");
+
+            if (restartRequired)
+            {
+                AppendLog(
+                    "Das Ein- oder Ausschalten der Musikwünsche wird nach " +
+                    "dem nächsten Neustart der Plugin-Verbindung wirksam.");
+            }
+        }
+        catch (Exception exception)
+        {
+            AppendLog(
+                "Musikwunsch-Einstellungen konnten nicht gespeichert werden: " +
+                exception.Message);
+            SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
+            SetOverallStatus("Musikwunsch-Einstellungsfehler", ErrorColor);
+            ShowSection("music");
+        }
     }
 
     private static void ApplyMusicMessageDefaults(MusicRequestChatMessages messages)
@@ -793,7 +834,7 @@ public sealed partial class MainForm
         var entry = SelectedMusicEntry();
         if (entry is null) return;
         AddMusicListValue(_musicUserBlacklistBox, entry.UserLogin);
-        SaveSettingsFromControls();
+        SaveMusicRequestSettingsFromControls();
     }
 
     private void BlacklistSelectedMusicTrack()
@@ -802,7 +843,7 @@ public sealed partial class MainForm
         if (track is null) return;
         AddMusicListValue(_musicTrackIdBlacklistBox, track.Id);
         AddMusicListValue(_musicTitleBlacklistBox, track.Name);
-        SaveSettingsFromControls();
+        SaveMusicRequestSettingsFromControls();
     }
 
     private void BlacklistSelectedMusicArtist()
@@ -810,7 +851,7 @@ public sealed partial class MainForm
         var artist = SelectedMusicEntry()?.Track?.Artist;
         if (string.IsNullOrWhiteSpace(artist)) return;
         AddMusicListValue(_musicArtistBlacklistBox, artist);
-        SaveSettingsFromControls();
+        SaveMusicRequestSettingsFromControls();
     }
 
     private static void AddMusicListValue(TextBox box, string value)
