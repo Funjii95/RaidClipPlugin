@@ -3,7 +3,9 @@ using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 
+
 namespace RaidClipPlugin;
+
 
 public sealed partial class MainForm
 {
@@ -121,6 +123,7 @@ public sealed partial class MainForm
         RowHeadersVisible = false
     };
 
+
     private SpotifyService? _spotify;
     private readonly MusicRequestStore _musicStore = new();
     private MusicRequestService? _musicRequests;
@@ -128,14 +131,17 @@ public sealed partial class MainForm
     private Task? _musicRequestTask;
     private Task? _musicEventSubTask;
 
+
     private static TextBox NewMusicMessageBox() => new()
     {
         Width = 430, Height = 50, Multiline = true,
         ScrollBars = ScrollBars.Vertical, MaxLength = 500
     };
 
+
     private static TextBox NewCommandBox(string text) => new()
         { Width = 150, Text = text, MaxLength = 30 };
+
 
     private static TextBox NewMusicListBox() => new()
     {
@@ -143,6 +149,7 @@ public sealed partial class MainForm
         ScrollBars = ScrollBars.Vertical,
         PlaceholderText = "Ein Eintrag pro Zeile oder mit Komma getrennt"
     };
+
 
     private void InitializeMusicRequestEvents()
     {
@@ -178,6 +185,7 @@ public sealed partial class MainForm
             await ClearMusicQueueAsync();
     }
 
+
     private void BuildMusicRequestPage()
     {
         _playbackModeBox.Items.AddRange(new object[]
@@ -185,6 +193,7 @@ public sealed partial class MainForm
             "Zur Warteschlange hinzufügen", "Sofort abspielen"
         });
         _playbackModeBox.SelectedIndex = 0;
+
 
         var header = new TableLayoutPanel
         {
@@ -211,6 +220,7 @@ public sealed partial class MainForm
         header.Controls.Add(titleFlow, 0, 0);
         header.Controls.Add(_spotifyStatusLabel, 1, 0);
 
+
         var connection = CreateMinigameFlow();
         connection.Controls.Add(_musicEnabledCheck);
         connection.Controls.Add(CreateSettingEditor(
@@ -233,6 +243,7 @@ public sealed partial class MainForm
         connection.Controls.Add(_rewardIdLabel);
         connection.Controls.Add(_saveMusicSettingsButton);
 
+
         var filters = CreateMinigameFlow();
         filters.Controls.Add(CreateSettingEditor(
             "Maximale Songdauer (Min.)", _maxSongDurationControl));
@@ -252,6 +263,7 @@ public sealed partial class MainForm
         filterSave.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         filters.Controls.Add(filterSave);
 
+
         var blacklists = CreateMinigameFlow();
         blacklists.Controls.Add(CreateSettingEditor(
             "Twitch-Nutzer", _musicUserBlacklistBox));
@@ -266,6 +278,7 @@ public sealed partial class MainForm
         var blacklistSave = NewActionButton("Einstellungen speichern");
         blacklistSave.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         blacklists.Controls.Add(blacklistSave);
+
 
         ConfigureMusicGrid();
         var queueLayout = new TableLayoutPanel
@@ -289,6 +302,7 @@ public sealed partial class MainForm
         queueLayout.Controls.Add(queueActions, 0, 0);
         queueLayout.Controls.Add(_musicGrid, 0, 1);
 
+
         var messages = CreateMinigameFlow();
         messages.Controls.Add(CreateSettingEditor("Erfolg · Warteschlange", _musicQueuedMessageBox));
         messages.Controls.Add(CreateSettingEditor("Erfolg · Sofort", _musicPlayingMessageBox));
@@ -302,6 +316,7 @@ public sealed partial class MainForm
         var messageSave = NewActionButton("Einstellungen speichern");
         messageSave.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         messages.Controls.Add(messageSave);
+
 
         var commands = CreateMinigameFlow();
         foreach (var pair in new (CheckBox Enabled, TextBox Command)[]
@@ -321,6 +336,7 @@ public sealed partial class MainForm
         commandSave.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         commands.Controls.Add(commandSave);
 
+
         var tabs = new TabControl { Dock = DockStyle.Fill };
         AddMinigameTab(tabs, "Verbindung", connection);
         AddMinigameTab(tabs, "Filter & Limits", filters);
@@ -328,6 +344,7 @@ public sealed partial class MainForm
         AddMinigameTab(tabs, "Chattexte", messages);
         AddMinigameTab(tabs, "Mod-Commands", commands);
         AddMinigameTab(tabs, "Warteschlange", queueLayout);
+
 
         var layout = new TableLayoutPanel
         {
@@ -340,6 +357,7 @@ public sealed partial class MainForm
         layout.Controls.Add(tabs, 0, 1);
         _musicPage.Controls.Add(layout);
     }
+
 
     private void ConfigureMusicGrid()
     {
@@ -356,6 +374,7 @@ public sealed partial class MainForm
                 Name = name, HeaderText = header, Width = width
             });
     }
+
 
     private void LoadMusicRequestSettings(MusicRequestConfig config)
     {
@@ -412,6 +431,7 @@ public sealed partial class MainForm
         UpdateSpotifyStatus();
         _ = RefreshMusicGridAsync();
     }
+
 
     private void ReadMusicRequestSettings(AppConfig config)
     {
@@ -474,6 +494,7 @@ public sealed partial class MainForm
         commands.Resume = _resumeCommandBox.Text.Trim();
     }
 
+
     private void SaveMusicRequestSettingsFromControls()
     {
         try
@@ -482,13 +503,16 @@ public sealed partial class MainForm
             ReadMusicRequestSettings(config);
             _configurationService.SaveMusicRequestSettings(config.MusicRequests);
 
+
             var restartRequired = _activeConfig is not null &&
                 _activeConfig.MusicRequests.Enabled != config.MusicRequests.Enabled;
+
 
             if (_activeConfig is not null)
             {
                 _activeConfig.MusicRequests = config.MusicRequests;
             }
+
 
             _musicRequests?.UpdateConfig(config.MusicRequests);
             _spotify?.UpdateConfig(config.MusicRequests);
@@ -496,6 +520,7 @@ public sealed partial class MainForm
             SetSpotifyStatus("Einstellungen gespeichert", ActiveColor);
             SetOverallStatus("Musikwunsch-Einstellungen gespeichert", ActiveColor);
             AppendLog("Musikwunsch-Einstellungen wurden gespeichert.");
+
 
             if (restartRequired)
             {
@@ -515,6 +540,7 @@ public sealed partial class MainForm
         }
     }
 
+
     private static void ApplyMusicMessageDefaults(MusicRequestChatMessages messages)
     {
         var defaults = new MusicRequestChatMessages();
@@ -530,11 +556,14 @@ public sealed partial class MainForm
         messages.InvalidInput = string.IsNullOrWhiteSpace(messages.InvalidInput) ? defaults.InvalidInput : messages.InvalidInput.Trim();
     }
 
+
     private static string ReadMusicMessage(TextBox box, string fallback) =>
         string.IsNullOrWhiteSpace(box.Text) ? fallback : box.Text.Trim();
 
+
     private static void SetMusicList(TextBox box, IEnumerable<string> values) =>
         box.Text = string.Join(Environment.NewLine, values);
+
 
     private static List<string> ReadMusicList(TextBox box, bool twitch = false) =>
         box.Text.Split(new[] { ',', ';', '\r', '\n' },
@@ -544,23 +573,21 @@ public sealed partial class MainForm
                 ? value.TrimStart('@').ToLowerInvariant() : value)
             .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
+
     private void EnsureSpotify(MusicRequestConfig config)
     {
         if (_spotify is null) _spotify = new SpotifyService(config);
         else _spotify.UpdateConfig(config);
     }
 
+
     private MusicRequestConfig ReadSpotifyConnectionSettings()
     {
-        var music = _configurationService.Load().MusicRequests;
-        music.SpotifyClientId = _spotifyClientIdBox.Text.Trim();
-        music.SelectedDeviceId =
-            (_spotifyDeviceBox.SelectedItem as SpotifyDevice)?.Id ??
-            music.SelectedDeviceId;
-        music.UseActiveDevice = _useActiveDeviceCheck.Checked;
-        music.ActivateSelectedDevice = _activateDeviceCheck.Checked;
-        return music;
+        var config = _configurationService.Load();
+        ReadMusicRequestSettings(config);
+        return config.MusicRequests;
     }
+
 
     private async Task ConnectSpotifyAsync()
     {
@@ -587,11 +614,13 @@ public sealed partial class MainForm
         }
     }
 
+
     private void DisconnectSpotify()
     {
         _spotify?.Disconnect();
         UpdateSpotifyStatus();
     }
+
 
     private async Task RefreshSpotifyDevicesAsync()
     {
@@ -620,11 +649,17 @@ public sealed partial class MainForm
         }
     }
 
+
     private async Task RefreshMusicRewardsAsync()
     {
         try
         {
-            var config = ReadSettingsFromControls();
+            var config = _configurationService.Load();
+            ReadMusicRequestSettings(config);
+            if (!string.IsNullOrWhiteSpace(_twitchChannelBox.Text))
+            {
+                config.Twitch.BroadcasterLogin = _twitchChannelBox.Text.Trim();
+            }
             var token = _shutdown?.Token ?? CancellationToken.None;
             var session = await new AuthenticationService(config)
                 .GetSessionAsync(token);
@@ -642,6 +677,7 @@ public sealed partial class MainForm
                 reward.Id.Equals(config.MusicRequests.SelectedRewardId,
                     StringComparison.Ordinal));
             if (selectedIndex >= 0) _rewardBox.SelectedIndex = selectedIndex;
+
 
             var usableCount = allRewards.Count(reward =>
                 reward.IsEnabled && reward.RequiresInput);
@@ -673,6 +709,7 @@ public sealed partial class MainForm
         }
     }
 
+
     private void UpdateSpotifyStatus()
     {
         if (_spotify?.IsConnected == true)
@@ -689,6 +726,7 @@ public sealed partial class MainForm
         }
     }
 
+
     private void SetSpotifyFailureStatus(Exception exception)
     {
         SetSpotifyStatus(
@@ -696,6 +734,7 @@ public sealed partial class MainForm
                 StringComparison.OrdinalIgnoreCase)
                 ? "Token abgelaufen" : "Fehler", ErrorColor);
     }
+
 
     private void SetSpotifyStatus(string state, Color color)
     {
@@ -707,6 +746,7 @@ public sealed partial class MainForm
         _spotifyStatusLabel.Text = "● Spotify: " + state;
         _spotifyStatusLabel.ForeColor = color;
     }
+
 
     private async Task RefreshMusicGridAsync()
     {
@@ -728,6 +768,7 @@ public sealed partial class MainForm
         }
     }
 
+
     private void PopulateMusicGrid(IReadOnlyList<MusicRequestEntry> entries)
     {
         _musicGrid.Rows.Clear();
@@ -747,6 +788,7 @@ public sealed partial class MainForm
         }
     }
 
+
     private static string MusicStatusText(MusicRequestStatus status) =>
         status switch
         {
@@ -761,9 +803,11 @@ public sealed partial class MainForm
             _ => status.ToString()
         };
 
+
     private MusicRequestEntry? SelectedMusicEntry() =>
         _musicGrid.SelectedRows.Count == 1
             ? _musicGrid.SelectedRows[0].Tag as MusicRequestEntry : null;
+
 
     private async Task PlaySelectedMusicEntryAsync()
     {
@@ -785,6 +829,7 @@ public sealed partial class MainForm
         }
     }
 
+
     private async Task SkipSpotifyAsync()
     {
         try
@@ -800,6 +845,7 @@ public sealed partial class MainForm
         }
     }
 
+
     private async Task RetrySelectedMusicEntryAsync()
     {
         var entry = SelectedMusicEntry();
@@ -807,6 +853,7 @@ public sealed partial class MainForm
         await _musicRequests.RetryAsync(entry,
             _shutdown?.Token ?? CancellationToken.None);
     }
+
 
     private async Task RemoveSelectedMusicEntryAsync()
     {
@@ -816,6 +863,7 @@ public sealed partial class MainForm
             _shutdown?.Token ?? CancellationToken.None);
         await RefreshMusicGridAsync();
     }
+
 
     private void OpenSelectedSpotifyLink()
     {
@@ -829,6 +877,7 @@ public sealed partial class MainForm
             { UseShellExecute = true });
     }
 
+
     private void BlacklistSelectedMusicUser()
     {
         var entry = SelectedMusicEntry();
@@ -836,6 +885,7 @@ public sealed partial class MainForm
         AddMusicListValue(_musicUserBlacklistBox, entry.UserLogin);
         SaveMusicRequestSettingsFromControls();
     }
+
 
     private void BlacklistSelectedMusicTrack()
     {
@@ -846,6 +896,7 @@ public sealed partial class MainForm
         SaveMusicRequestSettingsFromControls();
     }
 
+
     private void BlacklistSelectedMusicArtist()
     {
         var artist = SelectedMusicEntry()?.Track?.Artist;
@@ -854,6 +905,7 @@ public sealed partial class MainForm
         SaveMusicRequestSettingsFromControls();
     }
 
+
     private static void AddMusicListValue(TextBox box, string value)
     {
         var values = ReadMusicList(box);
@@ -861,6 +913,7 @@ public sealed partial class MainForm
             values.Add(value.Trim().TrimStart('@'));
         SetMusicList(box, values);
     }
+
 
     private async Task ClearMusicQueueAsync()
     {
@@ -873,6 +926,7 @@ public sealed partial class MainForm
         await RefreshMusicGridAsync();
     }
 
+
     private async Task StartMusicRequestsAsync(
         AppConfig config, TwitchSession session, TwitchService twitch,
         TwitchUser broadcaster, CancellationToken cancellationToken)
@@ -884,6 +938,7 @@ public sealed partial class MainForm
                 _spotify?.IsConnected == true ? ActiveColor : InactiveColor);
             return;
         }
+
 
         try
         {
@@ -925,6 +980,8 @@ public sealed partial class MainForm
             AppendLog("RaidClip, Chat, Punkte, Minigames und Clips starten trotzdem weiter.");
         }
     }
+
+
 
 
     private void StopMusicRequests()
