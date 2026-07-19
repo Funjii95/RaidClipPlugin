@@ -974,11 +974,17 @@ private enum CloseChoice
         long maximum,
         int width = 90)
     {
+        if (maximum < minimum)
+        {
+            maximum = minimum;
+        }
+
+        var safeValue = Math.Min(Math.Max(value, minimum), maximum);
         return new NumericUpDown
         {
             Minimum = minimum,
             Maximum = maximum,
-            Value = Math.Clamp(value, minimum, maximum),
+            Value = safeValue,
             Width = width,
             ThousandsSeparator = true
         };
@@ -5442,10 +5448,15 @@ private enum CloseChoice
         NumericUpDown control,
         long value)
     {
-        control.Value = Math.Clamp(
-            value,
-            control.Minimum,
+        if (control.Maximum < control.Minimum)
+        {
+            control.Maximum = control.Minimum;
+        }
+
+        var safeValue = Math.Min(
+            Math.Max((decimal)value, control.Minimum),
             control.Maximum);
+        control.Value = safeValue;
     }
 
     private void AddHistoryEntry(ClipHistoryEntry entry)
