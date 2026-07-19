@@ -551,19 +551,19 @@ jobs:
           dCA8IDcyMDsnKQpzaGVsbCA9IHNoZWxsLnJlcGxhY2UoJ3BpY3R1cmUuVmlzaWJsZSA9ICFjb21w
           YWN0ICYmIENsaWVudFNpemUuSGVpZ2h0ID49IDc0MDsnLCAncGljdHVyZS5WaXNpYmxlID0gIWNv
           bXBhY3QgJiYgQ2xpZW50U2l6ZS5IZWlnaHQgPj0gNzAwOycpCnNoZWxsID0gc2hlbGwucmVwbGFj
-          ZSgnYnV0dG9uLldpZHRoID0gY29tcGFjdCA/IDQyIDogMjQwOwogICAgICBidXR0b24uSGVpZ2h0
-          ID0gY29tcGFjdCA/IDM0IDogNTA7JywgJ2J1dHRvbi5XaWR0aCA9IGNvbXBhY3QgPyA0MiA6IDI0
-          ODsKICAgICAgYnV0dG9uLkhlaWdodCA9IGNvbXBhY3QgPyAzNCA6IDQ2OycpCnNoZWxsID0gc2hl
-          bGwucmVwbGFjZSgnYnV0dG9uLlBhZGRpbmcgPSBjb21wYWN0ID8gUGFkZGluZy5FbXB0eSA6IG5l
-          dyBQYWRkaW5nKDE0LCA4LCAxMiwgOCk7JywgJ2J1dHRvbi5QYWRkaW5nID0gY29tcGFjdCA/IFBh
-          ZGRpbmcuRW1wdHkgOiBuZXcgUGFkZGluZygxNCwgNSwgMTIsIDUpOycpCndyaXRlKHJvb3QgLyAn
-          TWFpbkZvcm0uTW9kZXJuU2hlbGwuY3MnLCBzaGVsbCkKY3Nwcm9qX3BhdGggPSByb290IC8gJ1Jh
-          aWRDbGlwUGx1Z2luLmNzcHJvaicKY3Nwcm9qID0gcmVhZChjc3Byb2pfcGF0aCkKY3Nwcm9qID0g
-          cmUuc3ViKHInPFZlcnNpb24+W148XSs8L1ZlcnNpb24+JywgJzxWZXJzaW9uPjEuOS4xNzwvVmVy
-          c2lvbj4nLCBjc3Byb2opCmNzcHJvaiA9IHJlLnN1YihyJzxGaWxlVmVyc2lvbj5bXjxdKzwvRmls
-          ZVZlcnNpb24+JywgJzxGaWxlVmVyc2lvbj4xLjkuMTcuMDwvRmlsZVZlcnNpb24+JywgY3Nwcm9q
-          KQp3cml0ZShjc3Byb2pfcGF0aCwgY3Nwcm9qKQpwcmludCgnTW9kZXJuIGRhc2hib2FyZCBHVUkg
-          cGF0Y2ggYXBwbGllZC4nKQ==
+          ZSgnYnV0dG9uLldpZHRoID0gY29tcGFjdCA/IDQyIDogMjQwO1xuICAgICAgYnV0dG9uLkhlaWdo
+          dCA9IGNvbXBhY3QgPyAzNCA6IDUwOycsICdidXR0b24uV2lkdGggPSBjb21wYWN0ID8gNDIgOiAy
+          NDg7XG4gICAgICBidXR0b24uSGVpZ2h0ID0gY29tcGFjdCA/IDM0IDogNDY7JykKc2hlbGwgPSBz
+          aGVsbC5yZXBsYWNlKCdidXR0b24uUGFkZGluZyA9IGNvbXBhY3QgPyBQYWRkaW5nLkVtcHR5IDog
+          bmV3IFBhZGRpbmcoMTQsIDgsIDEyLCA4KTsnLCAnYnV0dG9uLlBhZGRpbmcgPSBjb21wYWN0ID8g
+          UGFkZGluZy5FbXB0eSA6IG5ldyBQYWRkaW5nKDE0LCA1LCAxMiwgNSk7JykKd3JpdGUocm9vdCAv
+          ICdNYWluRm9ybS5Nb2Rlcm5TaGVsbC5jcycsIHNoZWxsKQpjc3Byb2pfcGF0aCA9IHJvb3QgLyAn
+          UmFpZENsaXBQbHVnaW4uY3Nwcm9qJwpjc3Byb2ogPSByZWFkKGNzcHJval9wYXRoKQpjc3Byb2og
+          PSByZS5zdWIocic8VmVyc2lvbj5bXjxdKzwvVmVyc2lvbj4nLCAnPFZlcnNpb24+MS45LjE3PC9W
+          ZXJzaW9uPicsIGNzcHJvaikKY3Nwcm9qID0gcmUuc3ViKHInPEZpbGVWZXJzaW9uPltePF0rPC9G
+          aWxlVmVyc2lvbj4nLCAnPEZpbGVWZXJzaW9uPjEuOS4xNy4wPC9GaWxlVmVyc2lvbj4nLCBjc3By
+          b2opCndyaXRlKGNzcHJval9wYXRoLCBjc3Byb2opCnByaW50KCdNb2Rlcm4gZGFzaGJvYXJkIEdV
+          SSBwYXRjaCBhcHBsaWVkLicp
           '@
           $patch = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($patchBase64 -replace '\s','')))
           Set-Content -Path apply_modern_dashboard_1917.py -Value $patch -Encoding UTF8
