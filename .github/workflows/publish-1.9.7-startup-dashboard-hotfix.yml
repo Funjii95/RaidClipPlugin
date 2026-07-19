@@ -447,12 +447,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $notes = @'
-Hotfix 1.9.7
-
-- Pluginstart robuster gemacht: fehlende/fehlerhafte Musikwünsche starten den gemeinsamen EventSub-Teil nicht mehr unnötig mit.
-- Dashboard bereinigt: Healthcheck auf das Wesentliche reduziert.
-- Schnellaktionen wieder sichtbar und ohne abgeschnittene Scroll-Leiste angeordnet.
-- Update-Button/Update-Bereich bleibt erreichbar.
-'@
+          $notes = "Hotfix 1.9.7`n`n- Pluginstart robuster gemacht: fehlende/fehlerhafte Musikwünsche starten den gemeinsamen EventSub-Teil nicht mehr unnötig mit.`n- Dashboard bereinigt: Healthcheck auf das Wesentliche reduziert.`n- Schnellaktionen wieder sichtbar und ohne abgeschnittene Scroll-Leiste angeordnet.`n- Update-Button/Update-Bereich bleibt erreichbar."
           gh release create "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --title "RaidClipPlugin v$env:VERSION" --notes $notes || gh release upload "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --clobber
