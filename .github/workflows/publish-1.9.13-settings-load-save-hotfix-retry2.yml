@@ -1,0 +1,98 @@
+name: Publish 1.9.13 Settings Load Save Hotfix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.13-settings-load-save-hotfix-retry2.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: 1.9.13
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply settings load/save hotfix
+        shell: pwsh
+        run: |
+          $script = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKCmRlZiByZWFkKHBhdGg6IFBhdGgpIC0+IHN0cjoKICAgIHJldHVybiBwYXRoLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgtc2lnJykKCmRlZiB3cml0ZShwYXRoOiBQYXRoLCB0ZXh0OiBzdHIpIC0+IE5vbmU6CiAgICBwYXRoLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9J3V0Zi04JykKCm1haW5fcGF0aCA9IHJvb3QgLyAnTWFpbkZvcm0uY3MnCm1haW4gPSByZWFkKG1haW5fcGF0aCkKCm9sZF9jYWxscyA9ICcnJyAgICAgICAgY29uZmlnLkNoYXQuUmFpZE1lc3NhZ2VUZW1wbGF0ZSA9IF9jaGF0VGVtcGxhdGVCb3guVGV4dC5UcmltKCk7CiAgICAgICAgUmVhZE11c2ljUmVxdWVzdFNldHRpbmdzKGNvbmZpZyk7CiAgICAgICAgUmVhZEF1dG9EaXNjb3JkQ2xpcFBvc3RlclNldHRpbmdzKGNvbmZpZyk7CiAgICAgICAgUmVhZEhlaXN0Q29tbWFuZHNTZXR0aW5ncyhjb25maWcpOwogICAgICAgIFJlYWREdWVsU2V0dGluZ3MoY29uZmlnKTsKICAgICAgICBSZWFkTGl2ZUNoYXRTZXR0aW5ncyhjb25maWcpOwogICAgICAgIHJldHVybiBjb25maWc7JycnCm5ld19jYWxscyA9ICcnJyAgICAgICAgY29uZmlnLkNoYXQuUmFpZE1lc3NhZ2VUZW1wbGF0ZSA9IF9jaGF0VGVtcGxhdGVCb3guVGV4dC5UcmltKCk7CiAgICAgICAgUmVhZE11c2ljUmVxdWVzdFNldHRpbmdzKGNvbmZpZyk7CiAgICAgICAgUmVhZENsaXBEaXNjb3JkU2V0dGluZ3MoY29uZmlnKTsKICAgICAgICBSZWFkQXV0b0Rpc2NvcmRDbGlwUG9zdGVyU2V0dGluZ3MoY29uZmlnKTsKICAgICAgICBjb25maWcuR2l2ZWF3YXlzID0gUmVhZEdpdmVhd2F5U2V0dGluZ3MoKTsKICAgICAgICBSZWFkSGVpc3RDb21tYW5kc1NldHRpbmdzKGNvbmZpZyk7CiAgICAgICAgUmVhZER1ZWxTZXR0aW5ncyhjb25maWcpOwogICAgICAgIFJlYWRMaXZlQ2hhdFNldHRpbmdzKGNvbmZpZyk7CiAgICAgICAgcmV0dXJuIGNvbmZpZzsnJycKaWYgb2xkX2NhbGxzIGluIG1haW46CiAgICBtYWluID0gbWFpbi5yZXBsYWNlKG9sZF9jYWxscywgbmV3X2NhbGxzLCAxKQplbGlmICdSZWFkQ2xpcERpc2NvcmRTZXR0aW5ncyhjb25maWcpOycgbm90IGluIG1haW4gb3IgJ2NvbmZpZy5HaXZlYXdheXMgPSBSZWFkR2l2ZWF3YXlTZXR0aW5ncygpOycgbm90IGluIG1haW46CiAgICByYWlzZSBSdW50aW1lRXJyb3IoJ1JlYWRTZXR0aW5nc0Zyb21Db250cm9scyBzYXZlIGFnZ3JlZ2F0aW9uIGJsb2NrIG5vdCBmb3VuZCcpCgpvbGRfc2F2ZSA9ICcnJyAgICAgICAgICAgIHZhciBjb25maWcgPSBSZWFkU2V0dGluZ3NGcm9tQ29udHJvbHMoKTsKICAgICAgICAgICAgX2NvbmZpZ3VyYXRpb25TZXJ2aWNlLlNhdmVHdWlTZXR0aW5ncyhjb25maWcpOwogICAgICAgICAgICBBcHBseVJ1bnRpbWVTZXR0aW5ncyhjb25maWcpOycnJwpuZXdfc2F2ZSA9ICcnJyAgICAgICAgICAgIHZhciBjb25maWcgPSBSZWFkU2V0dGluZ3NGcm9tQ29udHJvbHMoKTsKICAgICAgICAgICAgX2NvbmZpZ3VyYXRpb25TZXJ2aWNlLlNhdmVHdWlTZXR0aW5ncyhjb25maWcpOwogICAgICAgICAgICBfZGlzY29yZENyZWRlbnRpYWxTdG9yZS5TYXZlQXN5bmMoX2Rpc2NvcmRDcmVkZW50aWFscykKICAgICAgICAgICAgICAgIC5HZXRBd2FpdGVyKCkKICAgICAgICAgICAgICAgIC5HZXRSZXN1bHQoKTsKICAgICAgICAgICAgQXBwbHlSdW50aW1lU2V0dGluZ3MoY29uZmlnKTsnJycKaWYgb2xkX3NhdmUgaW4gbWFpbjoKICAgIG1haW4gPSBtYWluLnJlcGxhY2Uob2xkX3NhdmUsIG5ld19zYXZlLCAxKQplbGlmICdfZGlzY29yZENyZWRlbnRpYWxTdG9yZS5TYXZlQXN5bmMoX2Rpc2NvcmRDcmVkZW50aWFscyknIG5vdCBpbiBtYWluOgogICAgcmFpc2UgUnVudGltZUVycm9yKCdTYXZlU2V0dGluZ3NGcm9tQ29udHJvbHMgcGVyc2lzdGVuY2UgYmxvY2sgbm90IGZvdW5kJykKCndyaXRlKG1haW5fcGF0aCwgbWFpbikKCmNzcHJval9wYXRoID0gcm9vdCAvICdSYWlkQ2xpcFBsdWdpbi5jc3Byb2onCmNzcHJvaiA9IHJlYWQoY3Nwcm9qX3BhdGgpCmNzcHJvaiA9IHJlLnN1YihyJzxWZXJzaW9uPltePF0rPC9WZXJzaW9uPicsICc8VmVyc2lvbj4xLjkuMTM8L1ZlcnNpb24+JywgY3Nwcm9qKQpjc3Byb2ogPSByZS5zdWIocic8RmlsZVZlcnNpb24+W148XSs8L0ZpbGVWZXJzaW9uPicsICc8RmlsZVZlcnNpb24+MS45LjEzLjA8L0ZpbGVWZXJzaW9uPicsIGNzcHJvaikKd3JpdGUoY3Nwcm9qX3BhdGgsIGNzcHJvaikKCnByaW50KCdTZXR0aW5ncyBzYXZlL2xvYWQgaG90Zml4IGFwcGxpZWQgZm9yIDEuOS4xMycpCg=='))
+          Set-Content -Path patch-settings-hotfix.py -Value $script -Encoding UTF8
+          python patch-settings-hotfix.py
+
+      - name: Commit hotfix source
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            Write-Host "No source changes to commit."
+          } else {
+            git commit -m "Fix settings save aggregation for 1.9.13"
+            git push
+          }
+
+      - name: Restore
+        run: dotnet restore RaidClipPlugin/RaidClipPlugin.csproj
+
+      - name: Restore tests
+        run: dotnet restore RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj
+
+      - name: Build
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release --no-restore
+
+      - name: Test
+        run: dotnet test RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj -c Release --no-restore --verbosity normal
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe wurde nicht gefunden." }
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin\Installer\RaidClipPlugin.iss"
+          $installer = Get-ChildItem -Path RaidClipPlugin/installer-output -Filter *.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $installer) { throw "Installer wurde nicht erzeugt." }
+          Copy-Item $installer.FullName "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Generate update.json
+        shell: pwsh
+        run: |
+          $asset = "RaidClipPluginSetup-$env:VERSION.exe"
+          $hash = (Get-FileHash $asset -Algorithm SHA256).Hash.ToLowerInvariant()
+          $update = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$asset"
+            changelog = "Hotfix: Der zentrale Speichern-Button übernimmt jetzt auch Clip/Discord- und Giveaway-Einstellungen sowie Discord-Zugangsdaten. Dadurch werden Settings nach einem Neustart wieder korrekt geladen."
+            sha256 = $hash
+          }
+          $update | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $notes = "Hotfix 1.9.13 - Repariert den Settings-Speicherweg: Allgemeines Speichern übernimmt jetzt auch Clip/Discord- und Giveaway-Einstellungen sowie Discord-Zugangsdaten. Dadurch werden Einstellungen nach Neustart wieder korrekt geladen."
+          gh release create "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --title "RaidClipPlugin v$env:VERSION" --notes $notes || gh release upload "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --clobber
