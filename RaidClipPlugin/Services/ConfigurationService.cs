@@ -501,19 +501,8 @@ public sealed class ConfigurationService
             .Where(name => name.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-        config.Heist.StartCommand = NormalizeCommand(config.Heist.StartCommand);
-        config.Heist.JoinCommand = NormalizeCommand(config.Heist.JoinCommand);
-        config.Duel.DuelCommand = NormalizeCommand(config.Duel.DuelCommand);
-        config.Duel.AcceptCommand = NormalizeCommand(config.Duel.AcceptCommand);
-        config.Duel.DenyCommand = NormalizeCommand(config.Duel.DenyCommand);
-        config.Duel.LoserTimeoutSeconds = Math.Clamp(
-            config.Duel.LoserTimeoutSeconds, 1, 1_209_600);
-        config.Duel.LoserTimeoutReason = string.IsNullOrWhiteSpace(
-            config.Duel.LoserTimeoutReason)
-            ? "Duel verloren"
-            : config.Duel.LoserTimeoutReason.Trim();
-        if (config.Duel.LoserTimeoutReason.Length > 500)
-            config.Duel.LoserTimeoutReason = config.Duel.LoserTimeoutReason[..500];
+        NormalizeHeistSettings(config.Heist);
+        NormalizeDuelSettings(config.Duel);
         config.Commands.Command = NormalizeCommand(config.Commands.Command);
         config.Commands.ExportDirectory = (config.Commands.ExportDirectory ?? "exports").Trim();
         config.Commands.CommandRoleOverrides = (config.Commands.CommandRoleOverrides ??
@@ -718,6 +707,12 @@ public sealed class ConfigurationService
 
     public static void ValidateDuelSettings(DuelConfig duel)
     {
+        NormalizeDuelSettings(duel);
+        if (!duel.Enabled)
+        {
+            return;
+        }
+
         var commands = new[] { duel.DuelCommand, duel.AcceptCommand, duel.DenyCommand };
         if (commands.Any(string.IsNullOrWhiteSpace) ||
             commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() != commands.Length)
@@ -746,26 +741,30 @@ public sealed class ConfigurationService
     public static void ValidateHeistAndCommands(AppConfig config)
     {
         var heist = config.Heist;
-        if (heist.MinimumParticipants < 3)
-            throw new InvalidOperationException("Der Heist benötigt mindestens 3 Teilnehmer.");
-        if (heist.MaximumParticipants < heist.MinimumParticipants || heist.MaximumParticipants > 500)
-            throw new InvalidOperationException("Die maximale Heist-Teilnehmerzahl muss zwischen Mindestteilnehmern und 500 liegen.");
-        if (heist.JoinDurationSeconds is < 10 or > 300)
-            throw new InvalidOperationException("Die Heist-Beitrittszeit muss zwischen 10 und 300 Sekunden liegen.");
-        if (heist.SuccessChancePercent is < 0 or > 100)
-            throw new InvalidOperationException("Die Heist-Erfolgschance muss zwischen 0 und 100 Prozent liegen.");
-        if (heist.UserCooldownMinutes < 0 || heist.GlobalCooldownMinutes < 0)
-            throw new InvalidOperationException("Heist-Cooldowns dürfen nicht negativ sein.");
-        if (string.IsNullOrWhiteSpace(heist.StartCommand) || string.IsNullOrWhiteSpace(heist.JoinCommand) ||
-            heist.StartCommand.Equals(heist.JoinCommand, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Heist-Start- und Beitritts-Command müssen unterschiedlich und gültig sein.");
-        if (!(heist.AllowEveryone || heist.AllowFollowers || heist.AllowSubscribers || heist.AllowVips || heist.AllowModerators))
-            throw new InvalidOperationException("Bitte mindestens eine Heist-Berechtigung aktivieren.");
-        var messages = new[] { heist.StartMessage, heist.JoinMessage, heist.AlreadyJoinedMessage,
-            heist.NoActiveHeistMessage, heist.MaximumParticipantsMessage, heist.NotEnoughParticipantsMessage,
-            heist.EvaluationMessage, heist.SuccessMessage, heist.FailureMessage };
-        if (messages.Any(string.IsNullOrWhiteSpace))
-            throw new InvalidOperationException("Alle Heist-Chatnachrichten müssen ausgefüllt sein.");
+        NormalizeHeistSettings(heist);
+        if (heist.Enabled)
+        {
+            if (heist.MinimumParticipants < 3)
+                throw new InvalidOperationException("Der Heist benötigt mindestens 3 Teilnehmer.");
+            if (heist.MaximumParticipants < heist.MinimumParticipants || heist.MaximumParticipants > 500)
+                throw new InvalidOperationException("Die maximale Heist-Teilnehmerzahl muss zwischen Mindestteilnehmern und 500 liegen.");
+            if (heist.JoinDurationSeconds is < 10 or > 300)
+                throw new InvalidOperationException("Die Heist-Beitrittszeit muss zwischen 10 und 300 Sekunden liegen.");
+            if (heist.SuccessChancePercent is < 0 or > 100)
+                throw new InvalidOperationException("Die Heist-Erfolgschance muss zwischen 0 und 100 Prozent liegen.");
+            if (heist.UserCooldownMinutes < 0 || heist.GlobalCooldownMinutes < 0)
+                throw new InvalidOperationException("Heist-Cooldowns dürfen nicht negativ sein.");
+            if (string.IsNullOrWhiteSpace(heist.StartCommand) || string.IsNullOrWhiteSpace(heist.JoinCommand) ||
+                heist.StartCommand.Equals(heist.JoinCommand, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Heist-Start- und Beitritts-Command müssen unterschiedlich und gültig sein.");
+            if (!(heist.AllowEveryone || heist.AllowFollowers || heist.AllowSubscribers || heist.AllowVips || heist.AllowModerators))
+                throw new InvalidOperationException("Bitte mindestens eine Heist-Berechtigung aktivieren.");
+            var messages = new[] { heist.StartMessage, heist.JoinMessage, heist.AlreadyJoinedMessage,
+                heist.NoActiveHeistMessage, heist.MaximumParticipantsMessage, heist.NotEnoughParticipantsMessage,
+                heist.EvaluationMessage, heist.SuccessMessage, heist.FailureMessage };
+            if (messages.Any(string.IsNullOrWhiteSpace))
+                throw new InvalidOperationException("Alle Heist-Chatnachrichten müssen ausgefüllt sein.");
+        }
 
 
         var commands = config.Commands;
@@ -1026,6 +1025,71 @@ public sealed class ConfigurationService
         return normalized.Length > 0 && !normalized.StartsWith('!')
             ? "!" + normalized
             : normalized;
+    }
+
+
+    private static void NormalizeHeistSettings(HeistConfig heist)
+    {
+        var defaults = new HeistConfig();
+        heist.StartCommand = NormalizeCommand(heist.StartCommand, defaults.StartCommand);
+        heist.JoinCommand = NormalizeCommand(heist.JoinCommand, defaults.JoinCommand);
+        heist.MinimumParticipants = Math.Clamp(heist.MinimumParticipants, 3, 500);
+        heist.MaximumParticipants = Math.Clamp(
+            Math.Max(heist.MaximumParticipants, heist.MinimumParticipants),
+            heist.MinimumParticipants,
+            500);
+        heist.JoinDurationSeconds = Math.Clamp(heist.JoinDurationSeconds, 10, 300);
+        heist.SuccessChancePercent = Math.Clamp(heist.SuccessChancePercent, 0, 100);
+        heist.UserCooldownMinutes = Math.Clamp(heist.UserCooldownMinutes, 0, 10080);
+        heist.GlobalCooldownMinutes = Math.Clamp(heist.GlobalCooldownMinutes, 0, 10080);
+        heist.StartMessage = NormalizeOptionalText(heist.StartMessage, defaults.StartMessage);
+        heist.JoinMessage = NormalizeOptionalText(heist.JoinMessage, defaults.JoinMessage);
+        heist.AlreadyJoinedMessage = NormalizeOptionalText(heist.AlreadyJoinedMessage, defaults.AlreadyJoinedMessage);
+        heist.NoActiveHeistMessage = NormalizeOptionalText(heist.NoActiveHeistMessage, defaults.NoActiveHeistMessage);
+        heist.MaximumParticipantsMessage = NormalizeOptionalText(heist.MaximumParticipantsMessage, defaults.MaximumParticipantsMessage);
+        heist.NotEnoughParticipantsMessage = NormalizeOptionalText(heist.NotEnoughParticipantsMessage, defaults.NotEnoughParticipantsMessage);
+        heist.EvaluationMessage = NormalizeOptionalText(heist.EvaluationMessage, defaults.EvaluationMessage);
+        heist.SuccessMessage = NormalizeOptionalText(heist.SuccessMessage, defaults.SuccessMessage);
+        heist.FailureMessage = NormalizeOptionalText(heist.FailureMessage, defaults.FailureMessage);
+    }
+
+
+    private static void NormalizeDuelSettings(DuelConfig duel)
+    {
+        var defaults = new DuelConfig();
+        duel.DuelCommand = NormalizeCommand(duel.DuelCommand, defaults.DuelCommand);
+        duel.AcceptCommand = NormalizeCommand(duel.AcceptCommand, defaults.AcceptCommand);
+        duel.DenyCommand = NormalizeCommand(duel.DenyCommand, defaults.DenyCommand);
+        if (duel.AcceptCommand.Equals(duel.DuelCommand, StringComparison.OrdinalIgnoreCase))
+            duel.AcceptCommand = defaults.AcceptCommand;
+        if (duel.DenyCommand.Equals(duel.DuelCommand, StringComparison.OrdinalIgnoreCase) ||
+            duel.DenyCommand.Equals(duel.AcceptCommand, StringComparison.OrdinalIgnoreCase))
+            duel.DenyCommand = defaults.DenyCommand;
+        duel.MinimumBet = Math.Clamp(duel.MinimumBet, 1, 9_000_000_000L);
+        duel.MaximumBet = Math.Clamp(
+            Math.Max(duel.MaximumBet, duel.MinimumBet),
+            duel.MinimumBet,
+            9_000_000_000L);
+        duel.RequestTimeoutSeconds = Math.Clamp(duel.RequestTimeoutSeconds, 10, 300);
+        duel.UserCooldownSeconds = Math.Clamp(duel.UserCooldownSeconds, 0, 3600);
+        duel.GlobalCooldownSeconds = Math.Clamp(duel.GlobalCooldownSeconds, 0, 3600);
+        duel.ChallengerWinChancePercent = Math.Clamp(duel.ChallengerWinChancePercent, 1, 99);
+        duel.LoserTimeoutSeconds = Math.Clamp(duel.LoserTimeoutSeconds, 1, 1_209_600);
+        duel.LoserTimeoutReason = NormalizeOptionalText(duel.LoserTimeoutReason, defaults.LoserTimeoutReason);
+        if (duel.LoserTimeoutReason.Length > 500)
+            duel.LoserTimeoutReason = duel.LoserTimeoutReason[..500];
+        duel.DuelRequestMessage = NormalizeOptionalText(duel.DuelRequestMessage, defaults.DuelRequestMessage);
+        duel.DuelAcceptedMessage = NormalizeOptionalText(duel.DuelAcceptedMessage, defaults.DuelAcceptedMessage);
+        duel.DuelWinMessage = NormalizeOptionalText(duel.DuelWinMessage, defaults.DuelWinMessage);
+        duel.DuelDeniedMessage = NormalizeOptionalText(duel.DuelDeniedMessage, defaults.DuelDeniedMessage);
+        duel.DuelTimeoutMessage = NormalizeOptionalText(duel.DuelTimeoutMessage, defaults.DuelTimeoutMessage);
+        duel.NotEnoughPointsChallengerMessage = NormalizeOptionalText(duel.NotEnoughPointsChallengerMessage, defaults.NotEnoughPointsChallengerMessage);
+        duel.NotEnoughPointsTargetMessage = NormalizeOptionalText(duel.NotEnoughPointsTargetMessage, defaults.NotEnoughPointsTargetMessage);
+        duel.SelfDuelMessage = NormalizeOptionalText(duel.SelfDuelMessage, defaults.SelfDuelMessage);
+        duel.NoPendingDuelMessage = NormalizeOptionalText(duel.NoPendingDuelMessage, defaults.NoPendingDuelMessage);
+        duel.WrongTargetMessage = NormalizeOptionalText(duel.WrongTargetMessage, defaults.WrongTargetMessage);
+        duel.AlreadyPendingDuelMessage = NormalizeOptionalText(duel.AlreadyPendingDuelMessage, defaults.AlreadyPendingDuelMessage);
+        duel.InvalidBetMessage = NormalizeOptionalText(duel.InvalidBetMessage, defaults.InvalidBetMessage);
     }
 
 
