@@ -1,0 +1,98 @@
+name: Publish 1.9.14 Settings Music Navigation Hotfix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.14-settings-music-navigation-hotfix.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: 1.9.14
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply settings music navigation hotfix
+        shell: pwsh
+        run: |
+          $script = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKCmRlZiByZWFkKHBhdGg6IFBhdGgpIC0+IHN0cjoKICAgIHJldHVybiBwYXRoLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgtc2lnJykKCmRlZiB3cml0ZShwYXRoOiBQYXRoLCB0ZXh0OiBzdHIpIC0+IE5vbmU6CiAgICBwYXRoLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9J3V0Zi04JykKCm1haW5fcGF0aCA9IHJvb3QgLyAnTWFpbkZvcm0uY3MnCm1haW4gPSByZWFkKG1haW5fcGF0aCkKb2xkID0gJycnICAgICAgICAgICAgZWxzZSBpZiAoSXNNdXNpY0NvbmZpZ3VyYXRpb25FcnJvcihleGNlcHRpb24uTWVzc2FnZSkpCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIFNldFNwb3RpZnlTdGF0dXMoIkVpbnN0ZWxsdW5nZW4gdW5nw7xsdGlnIiwgRXJyb3JDb2xvcik7CiAgICAgICAgICAgICAgICBTaG93U2VjdGlvbigibXVzaWMiKTsKICAgICAgICAgICAgfScnJwpuZXcgPSAnJycgICAgICAgICAgICBlbHNlIGlmIChJc011c2ljQ29uZmlndXJhdGlvbkVycm9yKGV4Y2VwdGlvbi5NZXNzYWdlKSkKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgU2V0U3BvdGlmeVN0YXR1cygiRWluc3RlbGx1bmdlbiB1bmfDvGx0aWciLCBFcnJvckNvbG9yKTsKICAgICAgICAgICAgICAgIGlmIChfbXVzaWNQYWdlLlZpc2libGUpCiAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgU2hvd1NlY3Rpb24oIm11c2ljIik7CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0nJycKaWYgb2xkIGluIG1haW46CiAgICBtYWluID0gbWFpbi5yZXBsYWNlKG9sZCwgbmV3LCAxKQplbGlmICdpZiAoX211c2ljUGFnZS5WaXNpYmxlKScgbm90IGluIG1haW46CiAgICByYWlzZSBSdW50aW1lRXJyb3IoJ011c2ljIGVycm9yIG5hdmlnYXRpb24gYmxvY2sgbm90IGZvdW5kJykKd3JpdGUobWFpbl9wYXRoLCBtYWluKQoKY3Nwcm9qX3BhdGggPSByb290IC8gJ1JhaWRDbGlwUGx1Z2luLmNzcHJvaicKY3Nwcm9qID0gcmVhZChjc3Byb2pfcGF0aCkKY3Nwcm9qID0gcmUuc3ViKHInPFZlcnNpb24+W148XSs8L1ZlcnNpb24+JywgJzxWZXJzaW9uPjEuOS4xNDwvVmVyc2lvbj4nLCBjc3Byb2opCmNzcHJvaiA9IHJlLnN1YihyJzxGaWxlVmVyc2lvbj5bXjxdKzwvRmlsZVZlcnNpb24+JywgJzxGaWxlVmVyc2lvbj4xLjkuMTQuMDwvRmlsZVZlcnNpb24+JywgY3Nwcm9qKQp3cml0ZShjc3Byb2pfcGF0aCwgY3Nwcm9qKQoKcHJpbnQoJ011c2ljIHNldHRpbmdzIG5hdmlnYXRpb24gaG90Zml4IGFwcGxpZWQgZm9yIDEuOS4xNCcpCg=='))
+          Set-Content -Path patch-music-navigation-hotfix.py -Value $script -Encoding UTF8
+          python patch-music-navigation-hotfix.py
+
+      - name: Commit hotfix source
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            Write-Host "No source changes to commit."
+          } else {
+            git commit -m "Fix settings save music navigation for 1.9.14"
+            git push
+          }
+
+      - name: Restore
+        run: dotnet restore RaidClipPlugin/RaidClipPlugin.csproj
+
+      - name: Restore tests
+        run: dotnet restore RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj
+
+      - name: Build
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release --no-restore
+
+      - name: Test
+        run: dotnet test RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj -c Release --no-restore --verbosity normal
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe wurde nicht gefunden." }
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin\Installer\RaidClipPlugin.iss"
+          $installer = Get-ChildItem -Path RaidClipPlugin/installer-output -Filter *.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $installer) { throw "Installer wurde nicht erzeugt." }
+          Copy-Item $installer.FullName "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Generate update.json
+        shell: pwsh
+        run: |
+          $asset = "RaidClipPluginSetup-$env:VERSION.exe"
+          $hash = (Get-FileHash $asset -Algorithm SHA256).Hash.ToLowerInvariant()
+          $update = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$asset"
+            changelog = "Hotfix: Der allgemeine Einstellungen-speichern-Button springt bei Musikwunsch-Validierungsfehlern nicht mehr automatisch in den Musikwunsch-Reiter. Musikwunsch-Fehler werden weiterhin im Status und Log angezeigt."
+            sha256 = $hash
+          }
+          $update | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $notes = "Hotfix 1.9.14 - Verhindert, dass der allgemeine Einstellungen-speichern-Button bei Musikwunsch-Fehlern automatisch in den Musikwunsch-Reiter springt. Build, Tests, ZIP, Installer und update.json werden mitgeliefert."
+          gh release create "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --title "RaidClipPlugin v$env:VERSION" --notes $notes || gh release upload "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --clobber
