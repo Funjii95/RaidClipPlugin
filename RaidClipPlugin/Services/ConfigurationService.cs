@@ -436,8 +436,11 @@ public sealed class ConfigurationService
             .Select(id => id.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-        config.Chat.RaidMessageTemplate =
-            (config.Chat.RaidMessageTemplate ?? "").Trim();
+        config.Chat ??= new ChatConfig();
+        var defaultChat = new ChatConfig();
+        config.Chat.RaidMessageTemplate = NormalizeOptionalText(
+            config.Chat.RaidMessageTemplate,
+            defaultChat.RaidMessageTemplate);
         config.Update.SkippedVersion =
             (config.Update.SkippedVersion ?? "").Trim();
         config.StreamCheck ??= new StreamCheckConfig();
@@ -528,14 +531,25 @@ public sealed class ConfigurationService
             custom.RequiredRole = CommandRegistry.ParseRole(custom.RequiredRole).ToString();
         }
         NormalizeMusicRequests(config.MusicRequests);
-        config.Minigame.GambleRanges =
-            (config.Minigame.GambleRanges is { Count: > 0 }
-                ? config.Minigame.GambleRanges
-                : MinigameConfig.CreateDefaultRanges())
-            .Select(range =>
+        NormalizeGambleRanges(config.Minigame);
+    }
+
+
+    private static void NormalizeGambleRanges(MinigameConfig minigame)
+    {
+        var defaults = MinigameConfig.CreateDefaultRanges();
+        var ranges = minigame.GambleRanges is { Count: 4 }
+            ? minigame.GambleRanges
+            : defaults;
+
+        minigame.GambleRanges = ranges
+            .Select((range, index) =>
             {
                 var clone = CloneRange(range);
-                clone.ChatText = (clone.ChatText ?? "").Trim();
+                var fallback = index < defaults.Count
+                    ? defaults[index].ChatText
+                    : defaults[^1].ChatText;
+                clone.ChatText = NormalizeOptionalText(clone.ChatText, fallback);
                 return clone;
             })
             .ToList();
@@ -1324,6 +1338,7 @@ public sealed class ConfigurationService
         config.AllowedRoles ??= new GiveawayAllowedRoles();
         config.ModeratorCommands ??= new GiveawayModeratorCommands();
         config.ChatMessages ??= new GiveawayChatMessages();
+        NormalizeGiveawayMessages(config.ChatMessages);
         config.Title = (config.Title ?? "").Trim();
         config.Description = (config.Description ?? "").Trim();
         config.Prize = (config.Prize ?? "").Trim();
@@ -1346,6 +1361,36 @@ public sealed class ConfigurationService
     }
 
 
+    private static void NormalizeGiveawayMessages(GiveawayChatMessages messages)
+    {
+        var defaults = new GiveawayChatMessages();
+        messages.Started = NormalizeGiveawayMessage(messages.Started, defaults.Started);
+        messages.Joined = NormalizeGiveawayMessage(messages.Joined, defaults.Joined);
+        messages.Duplicate = NormalizeGiveawayMessage(messages.Duplicate, defaults.Duplicate);
+        messages.InsufficientPoints = NormalizeGiveawayMessage(messages.InsufficientPoints, defaults.InsufficientPoints);
+        messages.Excluded = NormalizeGiveawayMessage(messages.Excluded, defaults.Excluded);
+        messages.Ended = NormalizeGiveawayMessage(messages.Ended, defaults.Ended);
+        messages.Winner = NormalizeGiveawayMessage(messages.Winner, defaults.Winner);
+        messages.Winners = NormalizeGiveawayMessage(messages.Winners, defaults.Winners);
+        messages.Status = NormalizeGiveawayMessage(messages.Status, defaults.Status);
+        messages.Paused = NormalizeGiveawayMessage(messages.Paused, defaults.Paused);
+        messages.Resumed = NormalizeGiveawayMessage(messages.Resumed, defaults.Resumed);
+        messages.Cancelled = NormalizeGiveawayMessage(messages.Cancelled, defaults.Cancelled);
+        messages.Offline = NormalizeGiveawayMessage(messages.Offline, defaults.Offline);
+        messages.NotActive = NormalizeGiveawayMessage(messages.NotActive, defaults.NotActive);
+    }
+
+
+    private static GiveawayChatMessage NormalizeGiveawayMessage(
+        GiveawayChatMessage? message,
+        GiveawayChatMessage fallback)
+    {
+        message ??= new GiveawayChatMessage();
+        message.Text = NormalizeOptionalText(message.Text, fallback.Text);
+        return message;
+    }
+
+
     private static string NormalizeCommandText(string? value)
     {
         var command = System.Text.RegularExpressions.Regex.Replace(
@@ -1362,18 +1407,19 @@ public sealed class ConfigurationService
         clip.AllowedRoles ??= new ClipAllowedRolesConfig();
         clip.ChatMessages ??= new ClipChatMessages();
         var defaultMessages = new ClipChatMessages();
-        clip.ChatMessages.Starting ??= defaultMessages.Starting;
-        clip.ChatMessages.Success ??= defaultMessages.Success;
-        clip.ChatMessages.SuccessDiscord ??= defaultMessages.SuccessDiscord;
-        clip.ChatMessages.Cooldown ??= defaultMessages.Cooldown;
-        clip.ChatMessages.Offline ??= defaultMessages.Offline;
-        clip.ChatMessages.Forbidden ??= defaultMessages.Forbidden;
-        clip.ChatMessages.TwitchError ??= defaultMessages.TwitchError;
-        clip.ChatMessages.PartialDiscord ??= defaultMessages.PartialDiscord;
-        clip.ChatMessages.QueueFull ??= defaultMessages.QueueFull;
-        clip.ChatMessages.Busy ??= defaultMessages.Busy;
-        clip.ChatMessages.LimitReached ??= defaultMessages.LimitReached;
-        clip.ChatMessages.MissingScope ??= defaultMessages.MissingScope;
+        var defaultDiscord = new DiscordClipsConfig();
+        clip.ChatMessages.Starting = NormalizeClipMessage(clip.ChatMessages.Starting, defaultMessages.Starting);
+        clip.ChatMessages.Success = NormalizeClipMessage(clip.ChatMessages.Success, defaultMessages.Success);
+        clip.ChatMessages.SuccessDiscord = NormalizeClipMessage(clip.ChatMessages.SuccessDiscord, defaultMessages.SuccessDiscord);
+        clip.ChatMessages.Cooldown = NormalizeClipMessage(clip.ChatMessages.Cooldown, defaultMessages.Cooldown);
+        clip.ChatMessages.Offline = NormalizeClipMessage(clip.ChatMessages.Offline, defaultMessages.Offline);
+        clip.ChatMessages.Forbidden = NormalizeClipMessage(clip.ChatMessages.Forbidden, defaultMessages.Forbidden);
+        clip.ChatMessages.TwitchError = NormalizeClipMessage(clip.ChatMessages.TwitchError, defaultMessages.TwitchError);
+        clip.ChatMessages.PartialDiscord = NormalizeClipMessage(clip.ChatMessages.PartialDiscord, defaultMessages.PartialDiscord);
+        clip.ChatMessages.QueueFull = NormalizeClipMessage(clip.ChatMessages.QueueFull, defaultMessages.QueueFull);
+        clip.ChatMessages.Busy = NormalizeClipMessage(clip.ChatMessages.Busy, defaultMessages.Busy);
+        clip.ChatMessages.LimitReached = NormalizeClipMessage(clip.ChatMessages.LimitReached, defaultMessages.LimitReached);
+        clip.ChatMessages.MissingScope = NormalizeClipMessage(clip.ChatMessages.MissingScope, defaultMessages.MissingScope);
         clip.Command = NormalizeCommand(clip.Command, "!clip");
         clip.Aliases = (clip.Aliases ?? new List<string>())
             .Where(value => !string.IsNullOrWhiteSpace(value))
@@ -1388,13 +1434,13 @@ public sealed class ConfigurationService
         discord.InviteCommand = string.IsNullOrWhiteSpace(discord.InviteCommand)
             ? "!raidpluginjoindc" : discord.InviteCommand.Trim().ToLowerInvariant();
         discord.InviteUrl = (discord.InviteUrl ?? "").Trim();
-        discord.InviteMessage = (discord.InviteMessage ?? "").Trim();
+        discord.InviteMessage = NormalizeOptionalText(discord.InviteMessage, defaultDiscord.InviteMessage);
         discord.InviteCooldownSeconds = Math.Clamp(
             discord.InviteCooldownSeconds, 0, 86400);
         discord.GuildId = (discord.GuildId ?? "").Trim();
-        discord.MessageTemplate = (discord.MessageTemplate ?? "").Trim();
-        discord.EmbedColor = (discord.EmbedColor ?? "#9146FF").Trim();
-        discord.FooterText = (discord.FooterText ?? "").Trim();
+        discord.MessageTemplate = NormalizeOptionalText(discord.MessageTemplate, defaultDiscord.MessageTemplate);
+        discord.EmbedColor = NormalizeOptionalText(discord.EmbedColor, defaultDiscord.EmbedColor);
+        discord.FooterText = NormalizeOptionalText(discord.FooterText, defaultDiscord.FooterText);
         discord.MentionRoleId = string.IsNullOrWhiteSpace(discord.MentionRoleId)
             ? null : discord.MentionRoleId.Trim();
         discord.Channels = (discord.Channels ?? new List<DiscordClipChannelConfig>())
@@ -1408,6 +1454,16 @@ public sealed class ConfigurationService
                 channel.MessageTemplate = (channel.MessageTemplate ?? "").Trim();
                 return channel;
             }).ToList();
+    }
+
+
+    private static ClipChatMessage NormalizeClipMessage(
+        ClipChatMessage? message,
+        ClipChatMessage fallback)
+    {
+        message ??= new ClipChatMessage();
+        message.Text = NormalizeOptionalText(message.Text, fallback.Text);
+        return message;
     }
 
 
