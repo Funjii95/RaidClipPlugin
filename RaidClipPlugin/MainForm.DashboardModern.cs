@@ -22,8 +22,8 @@ public sealed partial class MainForm
             Padding = Padding.Empty,
             BackColor = BackgroundColor
         };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 64));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 36));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
 
         header.Dock = DockStyle.Fill;
         header.Margin = new Padding(0, 0, 14, 0);
@@ -43,7 +43,7 @@ public sealed partial class MainForm
             BackColor = SurfaceColor,
             Padding = new Padding(14, 10, 14, 10),
             Margin = Padding.Empty,
-            MinimumSize = new Size(360, 92)
+            MinimumSize = new Size(420, 92)
         };
 
         var layout = new TableLayoutPanel
@@ -55,8 +55,8 @@ public sealed partial class MainForm
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 66));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 112));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         _versionLabel.Dock = DockStyle.Fill;
         _versionLabel.AutoSize = false;
@@ -75,10 +75,10 @@ public sealed partial class MainForm
             Padding = Padding.Empty
         };
 
-        CompactDashboardButton(_updateButton, 170);
-        CompactDashboardButton(_changelogButton, 142);
-        CompactDashboardButton(_installUpdateButton, 150);
-        CompactDashboardButton(_skipUpdateButton, 112);
+        CompactDashboardButton(_updateButton, 160);
+        CompactDashboardButton(_changelogButton, 132);
+        CompactDashboardButton(_installUpdateButton, 140);
+        CompactDashboardButton(_skipUpdateButton, 104);
         _updateButton.Margin = new Padding(3, 3, 3, 3);
         _changelogButton.Margin = new Padding(3, 3, 3, 3);
         _installUpdateButton.Margin = new Padding(3, 3, 3, 3);
@@ -168,32 +168,56 @@ public sealed partial class MainForm
 
     private Control CreateDashboardActionBar(Control actions)
     {
-        actions.Dock = DockStyle.Fill;
-        actions.Margin = Padding.Empty;
+        var host = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 7,
+            RowCount = 1,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 13));
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 22));
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 13));
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 12));
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10));
+
         if (actions is FlowLayoutPanel flow)
         {
             flow.AutoScroll = false;
             flow.WrapContents = false;
-            flow.Padding = Padding.Empty;
-            flow.Margin = Padding.Empty;
-            foreach (Control child in flow.Controls)
+            var orderedControls = flow.Controls.Cast<Control>().ToArray();
+            flow.Controls.Clear();
+            for (var index = 0; index < Math.Min(orderedControls.Length, host.ColumnCount); index++)
             {
-                child.Margin = new Padding(4, 2, 4, 2);
+                var child = orderedControls[index];
+                child.Dock = DockStyle.Fill;
+                child.Margin = new Padding(4, 3, 4, 3);
                 if (child is Button button)
                 {
                     button.AutoSize = false;
-                    button.Width = Math.Min(Math.Max(button.Width, 128), 168);
-                    button.Height = 34;
-                    button.Padding = new Padding(6, 0, 6, 0);
+                    button.Height = 36;
+                    button.Padding = new Padding(4, 0, 4, 0);
                 }
                 else if (child is TextBox textBox)
                 {
-                    textBox.Width = Math.Min(Math.Max(textBox.Width, 150), 220);
-                    textBox.Height = 30;
+                    textBox.AutoSize = false;
+                    textBox.Height = 32;
                 }
+                host.Controls.Add(child, index, 0);
             }
         }
-        return CreateDashboardSection("Schnellaktionen", actions);
+        else
+        {
+            actions.Dock = DockStyle.Fill;
+            host.Controls.Add(actions, 0, 0);
+            host.SetColumnSpan(actions, host.ColumnCount);
+        }
+
+        return CreateDashboardSection("Schnellaktionen", host);
     }
 
     private Control CreateModernDashboardLayout(Control dashboardHeader, Control dashboardIndicators, Control dashboardActions, Control dashboardHealth)
@@ -208,9 +232,9 @@ public sealed partial class MainForm
             Margin = Padding.Empty
         };
         page.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
-        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
-        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
-        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 102));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 94));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 86));
         page.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         page.Controls.Add(dashboardHeader, 0, 0);
         page.Controls.Add(CreateDashboardSection("Module & Verbindungen", dashboardIndicators), 0, 1);
@@ -317,22 +341,54 @@ public sealed partial class MainForm
 
     private Control CreateDashboardHealthSummary()
     {
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = SurfaceColor, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 18));
-        var summary = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, AutoScroll = false, BackColor = SurfaceColor, Margin = Padding.Empty, Padding = Padding.Empty };
-        _moduleHealthOverallDot.Margin = new Padding(0, 5, 6, 0);
-        _moduleHealthSummaryLabel.AutoSize = true;
-        _moduleHealthSummaryLabel.Margin = new Padding(0, 2, 6, 0);
-        _moduleHealthProgressLabel.AutoSize = true;
-        _moduleHealthProgressLabel.Margin = new Padding(0, 2, 0, 0);
+
+        var summary = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoScroll = false,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        _moduleHealthOverallDot.Margin = new Padding(0, 6, 6, 0);
+        _moduleHealthSummaryLabel.AutoSize = false;
+        _moduleHealthSummaryLabel.Width = 210;
+        _moduleHealthSummaryLabel.Height = 24;
+        _moduleHealthSummaryLabel.TextAlign = ContentAlignment.MiddleLeft;
+        _moduleHealthSummaryLabel.AutoEllipsis = true;
+        _moduleHealthProgressLabel.AutoSize = false;
+        _moduleHealthProgressLabel.Width = 90;
+        _moduleHealthProgressLabel.Height = 24;
+        _moduleHealthProgressLabel.TextAlign = ContentAlignment.MiddleRight;
+        _moduleHealthProgressLabel.AutoEllipsis = true;
         summary.Controls.Add(_moduleHealthOverallDot);
         summary.Controls.Add(_moduleHealthSummaryLabel);
         summary.Controls.Add(_moduleHealthProgressLabel);
         layout.Controls.Add(summary, 0, 0);
-        var buttons = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = SurfaceColor, Margin = Padding.Empty, Padding = Padding.Empty };
+
+        var buttons = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            BackColor = SurfaceColor,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
         buttons.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         buttons.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         CompactDashboardButton(_checkModulesButton, 110);
@@ -344,18 +400,25 @@ public sealed partial class MainForm
         buttons.Controls.Add(_checkModulesButton, 0, 0);
         buttons.Controls.Add(_restartModulesButton, 1, 0);
         layout.Controls.Add(buttons, 0, 1);
-        var states = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, BackColor = SurfaceColor, Margin = Padding.Empty, Padding = new Padding(0, 3, 0, 0) };
-        states.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        states.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        for (var i = 0; i < 3; i++) states.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3F));
-        var stateRows = new[] { "OBS bereit", "Chat bereit", "EventSub bereit", "Player bereit", "Commands", "Punkte" };
-        for (var i = 0; i < stateRows.Length; i++) states.Controls.Add(new Label { Text = stateRows[i], Dock = DockStyle.Fill, ForeColor = HealthyStatusColor, Font = new Font("Segoe UI", 7.8F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true, Padding = new Padding(2, 0, 2, 0) }, i % 2, i / 2);
-        layout.Controls.Add(states, 0, 2);
-        _moduleHealthLastCheckLabel.Dock = DockStyle.Fill;
+
+        var footer = new Panel { Dock = DockStyle.Fill, BackColor = SurfaceColor, Margin = Padding.Empty, Padding = Padding.Empty };
+        var essentials = new Label
+        {
+            Dock = DockStyle.Fill,
+            AutoSize = false,
+            ForeColor = MutedTextColor,
+            Font = new Font("Segoe UI", 8F),
+            TextAlign = ContentAlignment.MiddleLeft,
+            AutoEllipsis = true,
+            Text = "OBS · Chat · EventSub · Player · Commands · Punkte"
+        };
+        _moduleHealthLastCheckLabel.Dock = DockStyle.Bottom;
         _moduleHealthLastCheckLabel.AutoSize = false;
-        _moduleHealthLastCheckLabel.TextAlign = ContentAlignment.MiddleRight;
-        _moduleHealthLastCheckLabel.Margin = Padding.Empty;
-        layout.Controls.Add(_moduleHealthLastCheckLabel, 0, 3);
+        _moduleHealthLastCheckLabel.Height = 18;
+        _moduleHealthLastCheckLabel.TextAlign = ContentAlignment.BottomRight;
+        footer.Controls.Add(essentials);
+        footer.Controls.Add(_moduleHealthLastCheckLabel);
+        layout.Controls.Add(footer, 0, 2);
         return layout;
     }
 

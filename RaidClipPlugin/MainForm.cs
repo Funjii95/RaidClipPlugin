@@ -2720,15 +2720,18 @@ private enum CloseChoice
                     SetModerationStatus("Deaktiviert", InactiveColor);
                 }
 
-                if (config.MusicRequests.Enabled && _musicRequests is not null)
+                var musicRequestsRuntimeActive =
+                    config.MusicRequests.Enabled && _musicRequests is not null;
+
+                if (musicRequestsRuntimeActive && _musicRequests is not null)
                 {
-                                        _chatModeration.MessageReceived += message =>
-          {
-              if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
-                  return Task.CompletedTask;
-              return _musicRequests.ProcessChatMessageAsync(
-                  message, cancellationToken);
-          };
+                    _chatModeration.MessageReceived += message =>
+                    {
+                        if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
+                            return Task.CompletedTask;
+                        return _musicRequests.ProcessChatMessageAsync(
+                            message, cancellationToken);
+                    };
                 }
 
                 if (config.ClipCommand.Enabled && _clipCommandService is not null)
@@ -2825,16 +2828,18 @@ private enum CloseChoice
                     UpdateModuleHealthDisplay(Array.Empty<ModuleHealthStatus>());
                 }
 
-                if ((config.Minigame.PointsEnabled &&
-                     (config.Minigame.FollowPointsEnabled ||
-                      config.Minigame.SubPointsEnabled ||
-                      config.Minigame.ChannelRewardPointsEnabled)) ||
-                    config.MusicRequests.Enabled)
+                var passiveMinigameEventsEnabled =
+                    config.Minigame.PointsEnabled &&
+                    (config.Minigame.FollowPointsEnabled ||
+                     config.Minigame.SubPointsEnabled ||
+                     config.Minigame.ChannelRewardPointsEnabled);
+
+                if (passiveMinigameEventsEnabled || musicRequestsRuntimeActive)
                 {
                     _minigameEvents = new MinigameEventService(
                         config.Twitch.ClientId, session.AccessToken,
                         _broadcaster.Id, session.UserId, config.Minigame,
-                        config.MusicRequests.Enabled
+                        musicRequestsRuntimeActive
                             ? config.MusicRequests.SelectedRewardId : "");
                     if (_minigame is not null)
                     {
@@ -2842,7 +2847,7 @@ private enum CloseChoice
                             _minigame.ProcessPassiveEventAsync(
                                 passiveEvent, cancellationToken);
                     }
-                    if (_musicRequests is not null)
+                    if (musicRequestsRuntimeActive && _musicRequests is not null)
                     {
                         _minigameEvents.MusicRedemptionReceived += redemption =>
                             _musicRequests.EnqueueAsync(
