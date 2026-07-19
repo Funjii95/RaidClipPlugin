@@ -2673,8 +2673,24 @@ private enum CloseChoice
                 _playerIndicator,
                 "Player");
 
-            await StartMusicRequestsAsync(
-                config, session, twitch, _broadcaster, cancellationToken);
+            try
+            {
+                await StartMusicRequestsAsync(
+                    config, session, twitch, _broadcaster, cancellationToken);
+            }
+            catch (OperationCanceledException)
+                when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                config.MusicRequests.Enabled = false;
+                _musicRequests = null;
+                SetSpotifyStatus("Musikwünsche deaktiviert", WarningStatusColor);
+                AppendLog("Musikwünsche wurden deaktiviert: " + exception.Message);
+                AppendLog("Plugin startet ohne Musikwünsche weiter.");
+            }
             await StartClipCommandAsync(
                 config, session, twitch, _broadcaster, cancellationToken);
             await StartAutoDiscordClipPosterAsync(
@@ -2893,8 +2909,9 @@ private enum CloseChoice
             }
             else if (IsMusicConfigurationError(exception.Message))
             {
-                SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
-                ShowSection("music");
+                SetSpotifyStatus("Musikwünsche deaktiviert", WarningStatusColor);
+                AppendLog("Musikwunsch-Fehler blockiert den Pluginstart nicht mehr. Bitte Musikwünsche später separat prüfen.");
+                ShowSection("dashboard");
             }
             else if (IsClipConfigurationError(exception.Message))
             {
