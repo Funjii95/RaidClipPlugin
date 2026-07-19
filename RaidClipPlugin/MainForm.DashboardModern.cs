@@ -172,8 +172,8 @@ public sealed partial class MainForm
         var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 220));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 136));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 236));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 128));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
         main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         main.Controls.Add(dashboardHeader, 0, 0);
@@ -254,18 +254,18 @@ public sealed partial class MainForm
 
     private Control CreateModuleInfoCard(string title, string status, string icon, Color color)
     {
-        var card = CreateCardPanel(color, new Padding(14, 12, 14, 12));
-        card.Margin = new Padding(6, 6, 6, 6);
-        card.MinimumSize = new Size(150, 78);
+        var card = CreateCardPanel(color, new Padding(10, 8, 10, 8));
+        card.Margin = new Padding(5, 4, 5, 4);
+        card.MinimumSize = new Size(150, 66);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 46));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.Controls.Add(new Label { Text = icon, Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 19F, FontStyle.Bold), ForeColor = color, BackColor = Color.Transparent }, 0, 0);
+        layout.Controls.Add(new Label { Text = icon, Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 17F, FontStyle.Bold), ForeColor = color, BackColor = Color.Transparent }, 0, 0);
         var text = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        text.RowStyles.Add(new RowStyle(SizeType.Percent, 54));
-        text.RowStyles.Add(new RowStyle(SizeType.Percent, 46));
-        text.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft, AutoEllipsis = true }, 0, 0);
-        text.Controls.Add(new Label { Text = status, Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = color, TextAlign = ContentAlignment.TopLeft, AutoEllipsis = true }, 0, 1);
+        text.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        text.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        text.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 9.4F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft, AutoEllipsis = true, Margin = Padding.Empty }, 0, 0);
+        text.Controls.Add(new Label { Text = status, Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 8.4F, FontStyle.Bold), ForeColor = color, TextAlign = ContentAlignment.TopLeft, AutoEllipsis = true, Margin = Padding.Empty }, 0, 1);
         layout.Controls.Add(text, 1, 0);
         card.Controls.Add(layout);
         return card;
