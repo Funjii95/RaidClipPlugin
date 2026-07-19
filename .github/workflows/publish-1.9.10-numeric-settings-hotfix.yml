@@ -1,0 +1,135 @@
+name: Publish 1.9.10 Numeric Settings Hotfix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.10-numeric-settings-hotfix.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: '1.9.10'
+
+jobs:
+  build_release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply numeric settings hotfix
+        shell: pwsh
+        run: |
+          $scriptBase64 = @'
+          ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoIlJhaWRDbGlw
+          UGx1Z2luIikKCmRlZiByZWFkKHBhdGg6IFBhdGgpIC0+IHN0cjoKICAgIHJldHVybiBwYXRoLnJl
+          YWRfdGV4dChlbmNvZGluZz0idXRmLTgtc2lnIikKCmRlZiB3cml0ZShwYXRoOiBQYXRoLCB0ZXh0
+          OiBzdHIpIC0+IE5vbmU6CiAgICBwYXRoLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9InV0Zi04
+          IikKCm1haW5fcGF0aCA9IHJvb3QgLyAiTWFpbkZvcm0uY3MiCm1haW4gPSByZWFkKG1haW5fcGF0
+          aCkKCm9sZF9jcmVhdGUgPSAiIiIgICAgcHJpdmF0ZSBzdGF0aWMgTnVtZXJpY1VwRG93biBDcmVh
+          dGVJbnRlZ2VyQ29udHJvbCgKICAgICAgICBsb25nIHZhbHVlLAogICAgICAgIGxvbmcgbWluaW11
+          bSwKICAgICAgICBsb25nIG1heGltdW0sCiAgICAgICAgaW50IHdpZHRoID0gOTApCiAgICB7CiAg
+          ICAgICAgcmV0dXJuIG5ldyBOdW1lcmljVXBEb3duCiAgICAgICAgewogICAgICAgICAgICBNaW5p
+          bXVtID0gbWluaW11bSwKICAgICAgICAgICAgTWF4aW11bSA9IG1heGltdW0sCiAgICAgICAgICAg
+          IFZhbHVlID0gTWF0aC5DbGFtcCh2YWx1ZSwgbWluaW11bSwgbWF4aW11bSksCiAgICAgICAgICAg
+          IFdpZHRoID0gd2lkdGgsCiAgICAgICAgICAgIFRob3VzYW5kc1NlcGFyYXRvciA9IHRydWUKICAg
+          ICAgICB9OwogICAgfQoiIiIKbmV3X2NyZWF0ZSA9ICIiIiAgICBwcml2YXRlIHN0YXRpYyBOdW1l
+          cmljVXBEb3duIENyZWF0ZUludGVnZXJDb250cm9sKAogICAgICAgIGxvbmcgdmFsdWUsCiAgICAg
+          ICAgbG9uZyBtaW5pbXVtLAogICAgICAgIGxvbmcgbWF4aW11bSwKICAgICAgICBpbnQgd2lkdGgg
+          PSA5MCkKICAgIHsKICAgICAgICBpZiAobWF4aW11bSA8IG1pbmltdW0pCiAgICAgICAgewogICAg
+          ICAgICAgICBtYXhpbXVtID0gbWluaW11bTsKICAgICAgICB9CgogICAgICAgIHZhciBzYWZlVmFs
+          dWUgPSBNYXRoLk1pbihNYXRoLk1heCh2YWx1ZSwgbWluaW11bSksIG1heGltdW0pOwogICAgICAg
+          IHJldHVybiBuZXcgTnVtZXJpY1VwRG93bgogICAgICAgIHsKICAgICAgICAgICAgTWluaW11bSA9
+          IG1pbmltdW0sCiAgICAgICAgICAgIE1heGltdW0gPSBtYXhpbXVtLAogICAgICAgICAgICBWYWx1
+          ZSA9IHNhZmVWYWx1ZSwKICAgICAgICAgICAgV2lkdGggPSB3aWR0aCwKICAgICAgICAgICAgVGhv
+          dXNhbmRzU2VwYXJhdG9yID0gdHJ1ZQogICAgICAgIH07CiAgICB9CiIiIgppZiBvbGRfY3JlYXRl
+          IG5vdCBpbiBtYWluIGFuZCAidmFyIHNhZmVWYWx1ZSA9IE1hdGguTWluKE1hdGguTWF4KHZhbHVl
+          LCBtaW5pbXVtKSwgbWF4aW11bSk7IiBub3QgaW4gbWFpbjoKICAgIHJhaXNlIFJ1bnRpbWVFcnJv
+          cigiQ3JlYXRlSW50ZWdlckNvbnRyb2wgYmxvY2sgbm90IGZvdW5kIikKbWFpbiA9IG1haW4ucmVw
+          bGFjZShvbGRfY3JlYXRlLCBuZXdfY3JlYXRlKQoKb2xkX3NldCA9ICIiIiAgICBwcml2YXRlIHN0
+          YXRpYyB2b2lkIFNldE51bWVyaWNWYWx1ZSgKICAgICAgICBOdW1lcmljVXBEb3duIGNvbnRyb2ws
+          CiAgICAgICAgbG9uZyB2YWx1ZSkKICAgIHsKICAgICAgICBjb250cm9sLlZhbHVlID0gTWF0aC5D
+          bGFtcCgKICAgICAgICAgICAgdmFsdWUsCiAgICAgICAgICAgIGNvbnRyb2wuTWluaW11bSwKICAg
+          ICAgICAgICAgY29udHJvbC5NYXhpbXVtKTsKICAgIH0KIiIiCm5ld19zZXQgPSAiIiIgICAgcHJp
+          dmF0ZSBzdGF0aWMgdm9pZCBTZXROdW1lcmljVmFsdWUoCiAgICAgICAgTnVtZXJpY1VwRG93biBj
+          b250cm9sLAogICAgICAgIGxvbmcgdmFsdWUpCiAgICB7CiAgICAgICAgaWYgKGNvbnRyb2wuTWF4
+          aW11bSA8IGNvbnRyb2wuTWluaW11bSkKICAgICAgICB7CiAgICAgICAgICAgIGNvbnRyb2wuTWF4
+          aW11bSA9IGNvbnRyb2wuTWluaW11bTsKICAgICAgICB9CgogICAgICAgIHZhciBzYWZlVmFsdWUg
+          PSBNYXRoLk1pbigKICAgICAgICAgICAgTWF0aC5NYXgoKGRlY2ltYWwpdmFsdWUsIGNvbnRyb2wu
+          TWluaW11bSksCiAgICAgICAgICAgIGNvbnRyb2wuTWF4aW11bSk7CiAgICAgICAgY29udHJvbC5W
+          YWx1ZSA9IHNhZmVWYWx1ZTsKICAgIH0KIiIiCmlmIG9sZF9zZXQgbm90IGluIG1haW4gYW5kICJj
+          b250cm9sLk1heGltdW0gPSBjb250cm9sLk1pbmltdW07IiBub3QgaW4gbWFpbjoKICAgIHJhaXNl
+          IFJ1bnRpbWVFcnJvcigiU2V0TnVtZXJpY1ZhbHVlIGJsb2NrIG5vdCBmb3VuZCIpCm1haW4gPSBt
+          YWluLnJlcGxhY2Uob2xkX3NldCwgbmV3X3NldCkKd3JpdGUobWFpbl9wYXRoLCBtYWluKQoKY3Nw
+          cm9qX3BhdGggPSByb290IC8gIlJhaWRDbGlwUGx1Z2luLmNzcHJvaiIKY3Nwcm9qID0gcmVhZChj
+          c3Byb2pfcGF0aCkKY3Nwcm9qID0gcmUuc3ViKHIiPFZlcnNpb24+W148XSs8L1ZlcnNpb24+Iiwg
+          IjxWZXJzaW9uPjEuOS4xMDwvVmVyc2lvbj4iLCBjc3Byb2opCmNzcHJvaiA9IHJlLnN1YihyIjxG
+          aWxlVmVyc2lvbj5bXjxdKzwvRmlsZVZlcnNpb24+IiwgIjxGaWxlVmVyc2lvbj4xLjkuMTAuMDwv
+          RmlsZVZlcnNpb24+IiwgY3Nwcm9qKQp3cml0ZShjc3Byb2pfcGF0aCwgY3Nwcm9qKQoKcHJpbnQo
+          IkhvdGZpeCAxLjkuMTAgYW5nZXdlbmRldC4iKQo=
+          '@
+          $script = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($scriptBase64))
+          Set-Content -Path apply_hotfix_1910.py -Value $script -Encoding UTF8
+          python apply_hotfix_1910.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit patched source
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/RaidClipPlugin.csproj
+          git commit -m "Harden numeric settings loading for 1.9.10" || echo "No source changes to commit"
+          git push
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force RaidClipPlugin/publish -ErrorAction SilentlyContinue
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin\Installer\RaidClipPlugin.iss"
+          $installer = Get-ChildItem -Path RaidClipPlugin/installer-output -Filter *.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $installer) { throw "Installer wurde nicht erzeugt." }
+          Copy-Item $installer.FullName "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Generate update metadata
+        shell: pwsh
+        run: |
+          $zip = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $repo = "${{ github.repository }}"
+          $download = "https://github.com/$repo/releases/download/v$env:VERSION/$zip"
+          $meta = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = $download
+            changelog = "Hotfix: NumericUpDown-Werte werden beim Laden robust begrenzt. Alte oder kaputte Einstellungen können die GUI nicht mehr mit value must be less than abbrechen. Enthält zusätzlich den Musikwunsch-Startfix aus 1.9.9."
+            sha256 = $hash
+          }
+          $meta | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = "Hotfix 1.9.10 - NumericUpDown-Werte werden beim Laden sicher begrenzt, damit alte oder kaputte Einstellungen die GUI nicht mehr mit value must be less than abbrechen. Enthält den Musikwunsch-Startfix aus 1.9.9."
+          gh release create "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --title "RaidClipPlugin v$env:VERSION" --notes $notes || gh release upload "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --clobber
