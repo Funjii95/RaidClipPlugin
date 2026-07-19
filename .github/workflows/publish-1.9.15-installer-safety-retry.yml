@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: \${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -30,148 +30,7 @@ jobs:
       - name: Apply installer safety and log stability hotfix
         shell: pwsh
         run: |
-          $script = @'
-          from pathlib import Path
-          import re
-
-          root = Path('RaidClipPlugin')
-
-          def read(path: Path) -> str:
-              return path.read_text(encoding='utf-8-sig')
-
-          def write(path: Path, text: str) -> None:
-              path.write_text(text, encoding='utf-8')
-
-          update_path = root / 'Services' / 'UpdateService.cs'
-          text = read(update_path)
-          text = text.replace('''        if (!extension.Equals(".zip", StringComparison.OrdinalIgnoreCase) &&
-                !extension.Equals(".exe", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                "Das Update muss als ZIP- oder EXE-Datei bereitgestellt werden.");
-        }''', '''        if (!extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                "Auto-Updates müssen als ZIP-Paket bereitgestellt werden. " +
-                "Installer-EXE-Dateien dürfen nicht als Update-Payload verwendet werden.");
-        }''')
-          text = text.replace('''        if (extension == ".zip")
-        {
-            ExtractZipSafely(downloadPath, payloadDirectory);
-        }
-        else
-        {
-            File.Copy(
-                downloadPath,
-                Path.Combine(payloadDirectory, AppExecutableName),
-                overwrite: true);
-        }''', '''        ExtractZipSafely(downloadPath, payloadDirectory);''')
-          text = text.replace('''                "Das Update muss als ZIP- oder EXE-Datei bereitgestellt werden.");''', '''                "Auto-Updates müssen als ZIP-Paket bereitgestellt werden.");''')
-          if 'Installer-EXE-Dateien dürfen nicht als Update-Payload verwendet werden' not in text:
-              raise RuntimeError('UpdateService ZIP-only patch is missing')
-          if 'Path.Combine(payloadDirectory, AppExecutableName)' in text and 'File.Copy' in text[text.find('ExtractZipSafely(downloadPath, payloadDirectory);'):text.find('if (!File.Exists')]:
-              raise RuntimeError('Unsafe EXE payload copy still exists')
-          write(update_path, text)
-
-          main_path = root / 'MainForm.cs'
-          main = read(main_path)
-          old = '''    private void AppendLog(string message)
-    {
-        if (IsDisposed)
-        {
-            return;
-        }
-
-        if (InvokeRequired)
-        {
-            try
-            {
-                BeginInvoke(new Action(() => AppendLog(message)));
-            }
-            catch (InvalidOperationException)
-            {
-            }
-            return;
-        }
-
-        _fileLog.WriteLine(message);
-        _logBox.AppendText(
-            $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
-        _logBox.SelectionStart = _logBox.TextLength;
-        _logBox.ScrollToCaret();
-    }
-'''
-          new = '''    private void AppendLog(string message)
-    {
-        if (IsDisposed || Disposing)
-        {
-            return;
-        }
-
-        if (InvokeRequired)
-        {
-            try
-            {
-                if (!IsDisposed && !Disposing && IsHandleCreated)
-                {
-                    BeginInvoke(new Action(() => AppendLog(message)));
-                }
-            }
-            catch (InvalidOperationException)
-            {
-            }
-            catch (ObjectDisposedException)
-            {
-            }
-            return;
-        }
-
-        try
-        {
-            _fileLog.WriteLine(message);
-        }
-        catch
-        {
-        }
-
-        if (_logBox.IsDisposed || _logBox.Disposing || !_logBox.IsHandleCreated)
-        {
-            return;
-        }
-
-        try
-        {
-            _logBox.AppendText(
-                $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
-            _logBox.SelectionStart = _logBox.TextLength;
-            _logBox.ScrollToCaret();
-        }
-        catch (InvalidOperationException)
-        {
-        }
-        catch (ObjectDisposedException)
-        {
-        }
-    }
-'''
-          if old in main:
-              main = main.replace(old, new)
-          else:
-              section_start = main.find('private void AppendLog')
-              section_end = main.find('private void SetOverallStatus')
-              section = main[section_start:section_end]
-              if 'catch (ObjectDisposedException)' not in section or '_logBox.IsDisposed' not in section:
-                  raise RuntimeError('AppendLog block not patched and no disposal guard found')
-          write(main_path, main)
-
-          csproj_path = root / 'RaidClipPlugin.csproj'
-          csproj = read(csproj_path)
-          csproj = re.sub(r'<Version>[^<]+</Version>', '<Version>1.9.15</Version>', csproj)
-          csproj = re.sub(r'<FileVersion>[^<]+</FileVersion>', '<FileVersion>1.9.15.0</FileVersion>', csproj)
-          write(csproj_path, csproj)
-
-          print('1.9.15 installer safety and log stability hotfix applied')
-          '@
+          $script = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKCmRlZiByZWFkKHBhdGg6IFBhdGgpIC0+IHN0cjoKICAgIHJldHVybiBwYXRoLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgtc2lnJykKCmRlZiB3cml0ZShwYXRoOiBQYXRoLCB0ZXh0OiBzdHIpIC0+IE5vbmU6CiAgICBwYXRoLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9J3V0Zi04JykKCnVwZGF0ZV9wYXRoID0gcm9vdCAvICdTZXJ2aWNlcycgLyAnVXBkYXRlU2VydmljZS5jcycKdGV4dCA9IHJlYWQodXBkYXRlX3BhdGgpCnRleHQgPSB0ZXh0LnJlcGxhY2UoJycnICAgICAgICBpZiAoIWV4dGVuc2lvbi5FcXVhbHMoIi56aXAiLCBTdHJpbmdDb21wYXJpc29uLk9yZGluYWxJZ25vcmVDYXNlKSAmJgogICAgICAgICAgICAgICAhZXh0ZW5zaW9uLkVxdWFscygiLmV4ZSIsIFN0cmluZ0NvbXBhcmlzb24uT3JkaW5hbElnbm9yZUNhc2UpKQogICAgICAgIHsKICAgICAgICAgICAgdGhyb3cgbmV3IEludmFsaWRPcGVyYXRpb25FeGNlcHRpb24oCiAgICAgICAgICAgICAgICAiRGFzIFVwZGF0ZSBtdXNzIGFscyBaSVAtIG9kZXIgRVhFLURhdGVpIGJlcmVpdGdlc3RlbGx0IHdlcmRlbi4iKTsKICAgICAgICB9JycnLCAnJycgICAgICAgIGlmICghZXh0ZW5zaW9uLkVxdWFscygiLnppcCIsIFN0cmluZ0NvbXBhcmlzb24uT3JkaW5hbElnbm9yZUNhc2UpKQogICAgICAgIHsKICAgICAgICAgICAgdGhyb3cgbmV3IEludmFsaWRPcGVyYXRpb25FeGNlcHRpb24oCiAgICAgICAgICAgICAgICAiQXV0by1VcGRhdGVzIG3DvHNzZW4gYWxzIFpJUC1QYWtldCBiZXJlaXRnZXN0ZWxsdCB3ZXJkZW4uICIgKwogICAgICAgICAgICAgICAgIkluc3RhbGxlci1FWEUtRGF0ZWllbiBkw7xyZmVuIG5pY2h0IGFscyBVcGRhdGUtUGF5bG9hZCB2ZXJ3ZW5kZXQgd2VyZGVuLiIpOwogICAgICAgIH0nJycpCnRleHQgPSB0ZXh0LnJlcGxhY2UoJycnICAgICAgICBpZiAoZXh0ZW5zaW9uID09ICIuemlwIikKICAgICAgICB7CiAgICAgICAgICAgIEV4dHJhY3RaaXBTYWZlbHkoZG93bmxvYWRQYXRoLCBwYXlsb2FkRGlyZWN0b3J5KTsKICAgICAgICB9CiAgICAgICAgZWxzZQogICAgICAgIHsKICAgICAgICAgICAgRmlsZS5Db3B5KAogICAgICAgICAgICAgICAgZG93bmxvYWRQYXRoLAogICAgICAgICAgICAgICAgUGF0aC5Db21iaW5lKHBheWxvYWREaXJlY3RvcnksIEFwcEV4ZWN1dGFibGVOYW1lKSwKICAgICAgICAgICAgICAgIG92ZXJ3cml0ZTogdHJ1ZSk7CiAgICAgICAgfScnJywgJycnICAgICAgICBFeHRyYWN0WmlwU2FmZWx5KGRvd25sb2FkUGF0aCwgcGF5bG9hZERpcmVjdG9yeSk7JycnKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKCcnJyAgICAgICAgICAgICAgICAiRGFzIFVwZGF0ZSBtdXNzIGFscyBaSVAtIG9kZXIgRVhFLURhdGVpIGJlcmVpdGdlc3RlbGx0IHdlcmRlbi4iKTsnJycsICcnJyAgICAgICAgICAgICAgICAiQXV0by1VcGRhdGVzIG3DvHNzZW4gYWxzIFpJUC1QYWtldCBiZXJlaXRnZXN0ZWxsdCB3ZXJkZW4uIik7JycnKQppZiAnSW5zdGFsbGVyLUVYRS1EYXRlaWVuIGTDvHJmZW4gbmljaHQgYWxzIFVwZGF0ZS1QYXlsb2FkIHZlcndlbmRldCB3ZXJkZW4nIG5vdCBpbiB0ZXh0OgogICAgcmFpc2UgUnVudGltZUVycm9yKCdVcGRhdGVTZXJ2aWNlIFpJUC1vbmx5IHBhdGNoIGlzIG1pc3NpbmcnKQpzZWdtZW50X3N0YXJ0ID0gdGV4dC5maW5kKCdFeHRyYWN0WmlwU2FmZWx5KGRvd25sb2FkUGF0aCwgcGF5bG9hZERpcmVjdG9yeSk7JykKc2VnbWVudF9lbmQgPSB0ZXh0LmZpbmQoJ2lmICghRmlsZS5FeGlzdHMnLCBzZWdtZW50X3N0YXJ0KQppZiBzZWdtZW50X3N0YXJ0ID49IDAgYW5kIHNlZ21lbnRfZW5kID4gc2VnbWVudF9zdGFydCBhbmQgJ0ZpbGUuQ29weScgaW4gdGV4dFtzZWdtZW50X3N0YXJ0OnNlZ21lbnRfZW5kXToKICAgIHJhaXNlIFJ1bnRpbWVFcnJvcignVW5zYWZlIEVYRSBwYXlsb2FkIGNvcHkgc3RpbGwgZXhpc3RzJykKd3JpdGUodXBkYXRlX3BhdGgsIHRleHQpCgptYWluX3BhdGggPSByb290IC8gJ01haW5Gb3JtLmNzJwptYWluID0gcmVhZChtYWluX3BhdGgpCm9sZCA9ICcnJyAgICBwcml2YXRlIHZvaWQgQXBwZW5kTG9nKHN0cmluZyBtZXNzYWdlKQogICAgewogICAgICAgIGlmIChJc0Rpc3Bvc2VkKQogICAgICAgIHsKICAgICAgICAgICAgcmV0dXJuOwogICAgICAgIH0KCiAgICAgICAgaWYgKEludm9rZVJlcXVpcmVkKQogICAgICAgIHsKICAgICAgICAgICAgdHJ5CiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIEJlZ2luSW52b2tlKG5ldyBBY3Rpb24oKCkgPT4gQXBwZW5kTG9nKG1lc3NhZ2UpKSk7CiAgICAgICAgICAgIH0KICAgICAgICAgICAgY2F0Y2ggKEludmFsaWRPcGVyYXRpb25FeGNlcHRpb24pCiAgICAgICAgICAgIHsKICAgICAgICAgICAgfQogICAgICAgICAgICByZXR1cm47CiAgICAgICAgfQoKICAgICAgICBfZmlsZUxvZy5Xcml0ZUxpbmUobWVzc2FnZSk7CiAgICAgICAgX2xvZ0JveC5BcHBlbmRUZXh0KAogICAgICAgICAgICAkIlt7RGF0ZVRpbWUuTm93OkhIOm1tOnNzfV0ge21lc3NhZ2V9e0Vudmlyb25tZW50Lk5ld0xpbmV9Iik7CiAgICAgICAgX2xvZ0JveC5TZWxlY3Rpb25TdGFydCA9IF9sb2dCb3guVGV4dExlbmd0aDsKICAgICAgICBfbG9nQm94LlNjcm9sbFRvQ2FyZXQoKTsKICAgIH0KJycnCm5ldyA9ICcnJyAgICBwcml2YXRlIHZvaWQgQXBwZW5kTG9nKHN0cmluZyBtZXNzYWdlKQogICAgewogICAgICAgIGlmIChJc0Rpc3Bvc2VkIHx8IERpc3Bvc2luZykKICAgICAgICB7CiAgICAgICAgICAgIHJldHVybjsKICAgICAgICB9CgogICAgICAgIGlmIChJbnZva2VSZXF1aXJlZCkKICAgICAgICB7CiAgICAgICAgICAgIHRyeQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICBpZiAoIUlzRGlzcG9zZWQgJiYgIURpc3Bvc2luZyAmJiBJc0hhbmRsZUNyZWF0ZWQpCiAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgQmVnaW5JbnZva2UobmV3IEFjdGlvbigoKSA9PiBBcHBlbmRMb2cobWVzc2FnZSkpKTsKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQogICAgICAgICAgICBjYXRjaCAoSW52YWxpZE9wZXJhdGlvbkV4Y2VwdGlvbikKICAgICAgICAgICAgewogICAgICAgICAgICB9CiAgICAgICAgICAgIGNhdGNoIChPYmplY3REaXNwb3NlZEV4Y2VwdGlvbikKICAgICAgICAgICAgewogICAgICAgICAgICB9CiAgICAgICAgICAgIHJldHVybjsKICAgICAgICB9CgogICAgICAgIHRyeQogICAgICAgIHsKICAgICAgICAgICAgX2ZpbGVMb2cuV3JpdGVMaW5lKG1lc3NhZ2UpOwogICAgICAgIH0KICAgICAgICBjYXRjaAogICAgICAgIHsKICAgICAgICB9CgogICAgICAgIGlmIChfbG9nQm94LklzRGlzcG9zZWQgfHwgX2xvZ0JveC5EaXNwb3NpbmcgfHwgIV9sb2dCb3guSXNIYW5kbGVDcmVhdGVkKQogICAgICAgIHsKICAgICAgICAgICAgcmV0dXJuOwogICAgICAgIH0KCiAgICAgICAgdHJ5CiAgICAgICAgewogICAgICAgICAgICBfbG9nQm94LkFwcGVuZFRleHQoCiAgICAgICAgICAgICAgICAkIlt7RGF0ZVRpbWUuTm93OkhIOm1tOnNzfV0ge21lc3NhZ2V9e0Vudmlyb25tZW50Lk5ld0xpbmV9Iik7CiAgICAgICAgICAgIF9sb2dCb3guU2VsZWN0aW9uU3RhcnQgPSBfbG9nQm94LlRleHRMZW5ndGg7CiAgICAgICAgICAgIF9sb2dCb3guU2Nyb2xsVG9DYXJldCgpOwogICAgICAgIH0KICAgICAgICBjYXRjaCAoSW52YWxpZE9wZXJhdGlvbkV4Y2VwdGlvbikKICAgICAgICB7CiAgICAgICAgfQogICAgICAgIGNhdGNoIChPYmplY3REaXNwb3NlZEV4Y2VwdGlvbikKICAgICAgICB7CiAgICAgICAgfQogICAgfQonJycKaWYgb2xkIGluIG1haW46CiAgICBtYWluID0gbWFpbi5yZXBsYWNlKG9sZCwgbmV3KQplbHNlOgogICAgc2VjdGlvbl9zdGFydCA9IG1haW4uZmluZCgncHJpdmF0ZSB2b2lkIEFwcGVuZExvZycpCiAgICBzZWN0aW9uX2VuZCA9IG1haW4uZmluZCgncHJpdmF0ZSB2b2lkIFNldE92ZXJhbGxTdGF0dXMnKQogICAgc2VjdGlvbiA9IG1haW5bc2VjdGlvbl9zdGFydDpzZWN0aW9uX2VuZF0KICAgIGlmICdjYXRjaCAoT2JqZWN0RGlzcG9zZWRFeGNlcHRpb24pJyBub3QgaW4gc2VjdGlvbiBvciAnX2xvZ0JveC5Jc0Rpc3Bvc2VkJyBub3QgaW4gc2VjdGlvbjoKICAgICAgICByYWlzZSBSdW50aW1lRXJyb3IoJ0FwcGVuZExvZyBibG9jayBub3QgcGF0Y2hlZCBhbmQgbm8gZGlzcG9zYWwgZ3VhcmQgZm91bmQnKQp3cml0ZShtYWluX3BhdGgsIG1haW4pCgpjc3Byb2pfcGF0aCA9IHJvb3QgLyAnUmFpZENsaXBQbHVnaW4uY3Nwcm9qJwpjc3Byb2ogPSByZWFkKGNzcHJval9wYXRoKQpjc3Byb2ogPSByZS5zdWIocic8VmVyc2lvbj5bXjxdKzwvVmVyc2lvbj4nLCAnPFZlcnNpb24+MS45LjE1PC9WZXJzaW9uPicsIGNzcHJvaikKY3Nwcm9qID0gcmUuc3ViKHInPEZpbGVWZXJzaW9uPltePF0rPC9GaWxlVmVyc2lvbj4nLCAnPEZpbGVWZXJzaW9uPjEuOS4xNS4wPC9GaWxlVmVyc2lvbj4nLCBjc3Byb2opCndyaXRlKGNzcHJval9wYXRoLCBjc3Byb2opCgpwcmludCgnMS45LjE1IGluc3RhbGxlciBzYWZldHkgYW5kIGxvZyBzdGFiaWxpdHkgaG90Zml4IGFwcGxpZWQnKQo='))
           Set-Content -Path patch-1.9.15-hotfix.py -Value $script -Encoding UTF8
           python patch-1.9.15-hotfix.py
 
@@ -210,7 +69,7 @@ jobs:
         shell: pwsh
         run: |
           choco install innosetup -y --no-progress
-          $iscc = "\${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { throw "ISCC.exe wurde nicht gefunden." }
           & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin\Installer\RaidClipPlugin.iss"
           $installer = Get-ChildItem -Path RaidClipPlugin/installer-output -Filter *.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -247,7 +106,7 @@ jobs:
       - name: Create GitHub release
         shell: pwsh
         env:
-          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $notes = "Kritischer Hotfix 1.9.15 - Auto-Update zeigt jetzt auf das ZIP-Paket statt auf den Installer. Der Updater akzeptiert keine Installer-EXE mehr als Payload. GUI-Logging ignoriert Logs sicher, wenn das Fenster bereits geschlossen wurde. Wichtig: Falls deine aktuell installierte RaidClipPlugin.exe bereits den Installer startet, bitte diese Version einmal manuell per Installer installieren oder das ZIP entpacken. Danach funktionieren zukünftige Auto-Updates wieder korrekt."
           gh release create "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --title "RaidClipPlugin v$env:VERSION" --notes $notes || gh release upload "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --clobber
