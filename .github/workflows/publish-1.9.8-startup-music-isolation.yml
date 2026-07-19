@@ -1,0 +1,153 @@
+name: Publish 1.9.8 Startup Music Isolation Hotfix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.8-startup-music-isolation.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: 1.9.8
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply startup hotfix
+        shell: pwsh
+        run: |
+          @'
+          from pathlib import Path
+          import re
+          
+          root = Path('RaidClipPlugin')
+          
+          def read(path: Path) -> str:
+              return path.read_text(encoding='utf-8-sig')
+          
+          def write(path: Path, text: str) -> None:
+              path.write_text(text, encoding='utf-8')
+          
+          main_path = root / 'MainForm.cs'
+          main = read(main_path)
+          
+          old_call = '''            await StartMusicRequestsAsync(
+                          config, session, twitch, _broadcaster, cancellationToken);
+          '''
+          new_call = '''            try
+                      {
+                          await StartMusicRequestsAsync(
+                              config, session, twitch, _broadcaster, cancellationToken);
+                      }
+                      catch (OperationCanceledException)
+                          when (cancellationToken.IsCancellationRequested)
+                      {
+                          throw;
+                      }
+                      catch (Exception exception)
+                      {
+                          config.MusicRequests.Enabled = false;
+                          _musicRequests = null;
+                          SetSpotifyStatus("Musikwünsche deaktiviert", WarningStatusColor);
+                          AppendLog("Musikwünsche wurden deaktiviert: " + exception.Message);
+                          AppendLog("Plugin startet ohne Musikwünsche weiter.");
+                      }
+          '''
+          if old_call not in main:
+              raise RuntimeError('StartMusicRequestsAsync call block not found')
+          main = main.replace(old_call, new_call)
+          
+          old_music_catch = '''            else if (IsMusicConfigurationError(exception.Message))
+                      {
+                          SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
+                          ShowSection("music");
+                      }
+          '''
+          new_music_catch = '''            else if (IsMusicConfigurationError(exception.Message))
+                      {
+                          SetSpotifyStatus("Musikwünsche deaktiviert", WarningStatusColor);
+                          AppendLog("Musikwunsch-Fehler blockiert den Pluginstart nicht mehr. Bitte Musikwünsche später separat prüfen.");
+                          ShowSection("dashboard");
+                      }
+          '''
+          if old_music_catch not in main:
+              raise RuntimeError('Music configuration catch block not found')
+          main = main.replace(old_music_catch, new_music_catch, 1)
+          write(main_path, main)
+          
+          csproj_path = root / 'RaidClipPlugin.csproj'
+          csproj = read(csproj_path)
+          csproj = re.sub(r'<Version>[^<]+</Version>', '<Version>1.9.8</Version>', csproj)
+          csproj = re.sub(r'<FileVersion>[^<]+</FileVersion>', '<FileVersion>1.9.8.0</FileVersion>', csproj)
+          write(csproj_path, csproj)
+          
+          print('Hotfix 1.9.8 angewendet.')
+          
+          '@ | Set-Content -Path apply_hotfix_198.py -Encoding UTF8
+          python apply_hotfix_198.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit patched source
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/RaidClipPlugin.csproj
+          git commit -m "Isolate music request startup for 1.9.8" || echo "No source changes to commit"
+          git push
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force RaidClipPlugin/publish -ErrorAction SilentlyContinue
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin\Installer\RaidClipPlugin.iss"
+          $installer = Get-ChildItem -Path RaidClipPlugin/installer-output -Filter *.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $installer) { throw "Installer wurde nicht erzeugt." }
+          Copy-Item $installer.FullName "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Generate update metadata
+        shell: pwsh
+        run: |
+          $zip = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $repo = "${{ github.repository }}"
+          $download = "https://github.com/$repo/releases/download/v$env:VERSION/$zip"
+          $meta = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = $download
+            changelog = "Hotfix: Musikwünsche/Spotify sind beim Start vollständig optional. Fehler dort deaktivieren nur das Musikmodul; RaidClip startet weiter und bleibt auf dem Dashboard."
+            sha256 = $hash
+          }
+          $meta | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = "Hotfix 1.9.8 - Musikwünsche/Spotify sind beim Start isoliert. Fehler dort deaktivieren nur das Musikmodul; RaidClip, OBS, Twitch, Chat, Punkte und Minigames können weiter starten."
+          gh release create "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --title "RaidClipPlugin v$env:VERSION" --notes $notes || gh release upload "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --clobber
