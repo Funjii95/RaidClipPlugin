@@ -1,0 +1,153 @@
+name: Publish 1.9.19 Update Button Fix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.19-update-button-fix.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: '1.9.19'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply update button fix
+        shell: pwsh
+        run: |
+          $patchBase64 = @'
+          ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKZGFzaGJvYXJk
+          ID0gcm9vdCAvICdNYWluRm9ybS5EYXNoYm9hcmRNb2Rlcm4uY3MnCmNzcHJvaiA9IHJvb3QgLyAnUmFpZENsaXBQbHVnaW4uY3Nw
+          cm9qJwoKdGV4dCA9IGRhc2hib2FyZC5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04LXNpZycpCm9sZCA9ICcnJyAgICBwcml2YXRl
+          IENvbnRyb2wgQ3JlYXRlVXBkYXRlU3RhdHVzQ2FyZCgpCiAgICB7CiAgICAgICAgdmFyIGNhcmQgPSBDcmVhdGVDYXJkUGFuZWwo
+          QWNjZW50Q29sb3IsIG5ldyBQYWRkaW5nKDE4LCAxNCwgMTgsIDE0KSk7CiAgICAgICAgY2FyZC5NaW5pbXVtU2l6ZSA9IG5ldyBT
+          aXplKDMyMCwgODgpOwogICAgICAgIHZhciBsYXlvdXQgPSBuZXcgVGFibGVMYXlvdXRQYW5lbCB7IERvY2sgPSBEb2NrU3R5bGUu
+          RmlsbCwgQ29sdW1uQ291bnQgPSAyLCBSb3dDb3VudCA9IDEsIEJhY2tDb2xvciA9IENvbG9yLlRyYW5zcGFyZW50LCBNYXJnaW4g
+          PSBQYWRkaW5nLkVtcHR5LCBQYWRkaW5nID0gUGFkZGluZy5FbXB0eSB9OwogICAgICAgIGxheW91dC5Db2x1bW5TdHlsZXMuQWRk
+          KG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgMTE4KSk7CiAgICAgICAgbGF5b3V0LkNvbHVtblN0eWxlcy5BZGQo
+          bmV3IENvbHVtblN0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDEwMCkpOwogICAgICAgIF92ZXJzaW9uTGFiZWwuRG9jayA9IERvY2tT
+          dHlsZS5GaWxsOwogICAgICAgIF92ZXJzaW9uTGFiZWwuQXV0b1NpemUgPSBmYWxzZTsKICAgICAgICBfdmVyc2lvbkxhYmVsLlRl
+          eHRBbGlnbiA9IENvbnRlbnRBbGlnbm1lbnQuTWlkZGxlTGVmdDsKICAgICAgICBfdmVyc2lvbkxhYmVsLk1hcmdpbiA9IFBhZGRp
+          bmcuRW1wdHk7CiAgICAgICAgX3ZlcnNpb25MYWJlbC5NYXhpbXVtU2l6ZSA9IFNpemUuRW1wdHk7CiAgICAgICAgX3ZlcnNpb25M
+          YWJlbC5Gb250ID0gbmV3IEZvbnQoIlNlZ29lIFVJIiwgOS40RiwgRm9udFN0eWxlLkJvbGQpOwogICAgICAgIF92ZXJzaW9uTGFi
+          ZWwuRm9yZUNvbG9yID0gSGVhbHRoeVN0YXR1c0NvbG9yOwogICAgICAgIHZhciBidXR0b25Ib3N0ID0gbmV3IFBhbmVsIHsgRG9j
+          ayA9IERvY2tTdHlsZS5GaWxsLCBCYWNrQ29sb3IgPSBDb2xvci5UcmFuc3BhcmVudCwgTWFyZ2luID0gUGFkZGluZy5FbXB0eSwg
+          UGFkZGluZyA9IG5ldyBQYWRkaW5nKDQpIH07CiAgICAgICAgZm9yZWFjaCAodmFyIGJ1dHRvbiBpbiBuZXdbXSB7IF91cGRhdGVC
+          dXR0b24sIF9jaGFuZ2Vsb2dCdXR0b24sIF9pbnN0YWxsVXBkYXRlQnV0dG9uLCBfc2tpcFVwZGF0ZUJ1dHRvbiB9KQogICAgICAg
+          IHsKICBDb21wYWN0RGFzaGJvYXJkQnV0dG9uKGJ1dHRvbiwgMCk7CiAgYnV0dG9uLkRvY2sgPSBEb2NrU3R5bGUuRmlsbDsKICBi
+          dXR0b24uTWFyZ2luID0gUGFkZGluZy5FbXB0eTsKICBidXR0b25Ib3N0LkNvbnRyb2xzLkFkZChidXR0b24pOwogIGJ1dHRvbi5C
+          cmluZ1RvRnJvbnQoKTsKICAgICAgICB9CiAgICAgICAgbGF5b3V0LkNvbnRyb2xzLkFkZChfdmVyc2lvbkxhYmVsLCAwLCAwKTsK
+          ICAgICAgICBsYXlvdXQuQ29udHJvbHMuQWRkKGJ1dHRvbkhvc3QsIDEsIDApOwogICAgICAgIGNhcmQuQ29udHJvbHMuQWRkKGxh
+          eW91dCk7CiAgICAgICAgcmV0dXJuIGNhcmQ7CiAgICB9CicnJwpuZXcgPSAnJycgICAgcHJpdmF0ZSBDb250cm9sIENyZWF0ZVVw
+          ZGF0ZVN0YXR1c0NhcmQoKQogICAgewogICAgICAgIHZhciBjYXJkID0gQ3JlYXRlQ2FyZFBhbmVsKEFjY2VudENvbG9yLCBuZXcg
+          UGFkZGluZygxOCwgMTQsIDE4LCAxNCkpOwogICAgICAgIGNhcmQuTWluaW11bVNpemUgPSBuZXcgU2l6ZSgzMjAsIDg4KTsKICAg
+          ICAgICB2YXIgbGF5b3V0ID0gbmV3IFRhYmxlTGF5b3V0UGFuZWwgeyBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIENvbHVtbkNvdW50
+          ID0gMiwgUm93Q291bnQgPSAxLCBCYWNrQ29sb3IgPSBDb2xvci5UcmFuc3BhcmVudCwgTWFyZ2luID0gUGFkZGluZy5FbXB0eSwg
+          UGFkZGluZyA9IFBhZGRpbmcuRW1wdHkgfTsKICAgICAgICBsYXlvdXQuQ29sdW1uU3R5bGVzLkFkZChuZXcgQ29sdW1uU3R5bGUo
+          U2l6ZVR5cGUuQWJzb2x1dGUsIDExOCkpOwogICAgICAgIGxheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShT
+          aXplVHlwZS5QZXJjZW50LCAxMDApKTsKICAgICAgICBfdmVyc2lvbkxhYmVsLkRvY2sgPSBEb2NrU3R5bGUuRmlsbDsKICAgICAg
+          ICBfdmVyc2lvbkxhYmVsLkF1dG9TaXplID0gZmFsc2U7CiAgICAgICAgX3ZlcnNpb25MYWJlbC5UZXh0QWxpZ24gPSBDb250ZW50
+          QWxpZ25tZW50Lk1pZGRsZUxlZnQ7CiAgICAgICAgX3ZlcnNpb25MYWJlbC5NYXJnaW4gPSBQYWRkaW5nLkVtcHR5OwogICAgICAg
+          IF92ZXJzaW9uTGFiZWwuTWF4aW11bVNpemUgPSBTaXplLkVtcHR5OwogICAgICAgIF92ZXJzaW9uTGFiZWwuRm9udCA9IG5ldyBG
+          b250KCJTZWdvZSBVSSIsIDkuNEYsIEZvbnRTdHlsZS5Cb2xkKTsKICAgICAgICBfdmVyc2lvbkxhYmVsLkZvcmVDb2xvciA9IEhl
+          YWx0aHlTdGF0dXNDb2xvcjsKCiAgICAgICAgdmFyIGJ1dHRvbkhvc3QgPSBuZXcgRmxvd0xheW91dFBhbmVsCiAgICAgICAgewog
+          ICAgICAgICAgICBEb2NrID0gRG9ja1N0eWxlLkZpbGwsCiAgICAgICAgICAgIEZsb3dEaXJlY3Rpb24gPSBGbG93RGlyZWN0aW9u
+          LkxlZnRUb1JpZ2h0LAogICAgICAgICAgICBXcmFwQ29udGVudHMgPSBmYWxzZSwKICAgICAgICAgICAgQXV0b1Njcm9sbCA9IGZh
+          bHNlLAogICAgICAgICAgICBCYWNrQ29sb3IgPSBDb2xvci5UcmFuc3BhcmVudCwKICAgICAgICAgICAgTWFyZ2luID0gUGFkZGlu
+          Zy5FbXB0eSwKICAgICAgICAgICAgUGFkZGluZyA9IG5ldyBQYWRkaW5nKDQsIDYsIDQsIDQpCiAgICAgICAgfTsKCiAgICAgICAg
+          Zm9yZWFjaCAodmFyIGJ1dHRvbiBpbiBuZXdbXSB7IF91cGRhdGVCdXR0b24sIF9jaGFuZ2Vsb2dCdXR0b24sIF9pbnN0YWxsVXBk
+          YXRlQnV0dG9uLCBfc2tpcFVwZGF0ZUJ1dHRvbiB9KQogICAgICAgIHsKICAgICAgICAgICAgQ29tcGFjdERhc2hib2FyZEJ1dHRv
+          bihidXR0b24sIGJ1dHRvbiA9PSBfdXBkYXRlQnV0dG9uID8gMTc2IDogMTUwKTsKICAgICAgICAgICAgYnV0dG9uLkRvY2sgPSBE
+          b2NrU3R5bGUuTm9uZTsKICAgICAgICAgICAgYnV0dG9uLkhlaWdodCA9IDM0OwogICAgICAgICAgICBidXR0b24uTWF4aW11bVNp
+          emUgPSBuZXcgU2l6ZShidXR0b24uV2lkdGgsIDM0KTsKICAgICAgICAgICAgYnV0dG9uLk1hcmdpbiA9IG5ldyBQYWRkaW5nKDAs
+          IDAsIDgsIDApOwogICAgICAgICAgICBidXR0b25Ib3N0LkNvbnRyb2xzLkFkZChidXR0b24pOwogICAgICAgIH0KCiAgICAgICAg
+          bGF5b3V0LkNvbnRyb2xzLkFkZChfdmVyc2lvbkxhYmVsLCAwLCAwKTsKICAgICAgICBsYXlvdXQuQ29udHJvbHMuQWRkKGJ1dHRv
+          bkhvc3QsIDEsIDApOwogICAgICAgIGNhcmQuQ29udHJvbHMuQWRkKGxheW91dCk7CiAgICAgICAgcmV0dXJuIGNhcmQ7CiAgICB9
+          CicnJwppZiBvbGQgbm90IGluIHRleHQ6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCdVcGRhdGUgc3RhdHVzIGNhcmQgYmxvY2sgbm90
+          IGZvdW5kJykKdGV4dCA9IHRleHQucmVwbGFjZShvbGQsIG5ldykKZGFzaGJvYXJkLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9
+          J3V0Zi04JykKCnByb2plY3QgPSBjc3Byb2oucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOC1zaWcnKQpwcm9qZWN0ID0gcmUuc3Vi
+          KHInPFZlcnNpb24+W148XSs8L1ZlcnNpb24+JywgJzxWZXJzaW9uPjEuOS4xOTwvVmVyc2lvbj4nLCBwcm9qZWN0KQpwcm9qZWN0
+          ID0gcmUuc3ViKHInPEZpbGVWZXJzaW9uPltePF0rPC9GaWxlVmVyc2lvbj4nLCAnPEZpbGVWZXJzaW9uPjEuOS4xOS4wPC9GaWxl
+          VmVyc2lvbj4nLCBwcm9qZWN0KQpwcm9qZWN0ID0gcmUuc3ViKHInPEFzc2VtYmx5VmVyc2lvbj5bXjxdKzwvQXNzZW1ibHlWZXJz
+          aW9uPicsICc8QXNzZW1ibHlWZXJzaW9uPjEuOS4xOS4wPC9Bc3NlbWJseVZlcnNpb24+JywgcHJvamVjdCkKY3Nwcm9qLndyaXRl
+          X3RleHQocHJvamVjdCwgZW5jb2Rpbmc9J3V0Zi04JykKcHJpbnQoJ0ZpeGVkIHVwZGF0ZSBidXR0b24gaGl0Ym94IGFuZCB2ZXJz
+          aW9uIDEuOS4xOS4nKQo=
+          '@
+          $patchBytes = [Convert]::FromBase64String(($patchBase64 -replace '\s', ''))
+          [IO.File]::WriteAllBytes('apply_update_button_fix_1919.py', $patchBytes)
+          python apply_update_button_fix_1919.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit source changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.DashboardModern.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            echo "No source changes to commit."
+          } else {
+            git commit -m "Fix update button hitbox for 1.9.19"
+            git push
+          }
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/RaidClipPlugin
+          Compress-Archive -Path publish/RaidClipPlugin/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
+          $iscc = Join-Path (Join-Path $programFilesX86 'Inno Setup 6') 'ISCC.exe'
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin/Installer/RaidClipPlugin.iss"
+          Copy-Item "RaidClipPlugin/Installer/Output/RaidClipPluginSetup-$env:VERSION.exe" "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Create update manifest
+        shell: pwsh
+        run: |
+          $zip = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
+            changelog = "Hotfix 1.9.19: Update-Button im Dashboard wieder klickbar. Unsichtbare Update-Buttons überlagern den Suchbutton nicht mehr."
+            sha256 = $sha
+          }
+          $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "v$env:VERSION"
+          git tag -f $tag
+          git push origin $tag --force
+          gh release delete $tag -y --cleanup-tag 2>$null || $true
+          gh release create $tag `
+            "RaidClipPlugin-$env:VERSION-win-x64.zip" `
+            "RaidClipPluginSetup-$env:VERSION.exe" `
+            "update.json" `
+            --title "RaidClipPlugin $env:VERSION" `
+            --notes "Hotfix 1.9.19`n`n- Update-Button im Dashboard wieder klickbar gemacht.`n- Update-Buttons liegen nicht mehr übereinander.`n- ZIP, Installer und update.json veröffentlicht."
