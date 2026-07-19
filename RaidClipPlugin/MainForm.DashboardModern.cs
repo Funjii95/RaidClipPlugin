@@ -22,8 +22,8 @@ public sealed partial class MainForm
             Padding = Padding.Empty,
             BackColor = BackgroundColor
         };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 64));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 36));
 
         header.Dock = DockStyle.Fill;
         header.Margin = new Padding(0, 0, 14, 0);
@@ -43,7 +43,7 @@ public sealed partial class MainForm
             BackColor = SurfaceColor,
             Padding = new Padding(14, 10, 14, 10),
             Margin = Padding.Empty,
-            MinimumSize = new Size(220, 70)
+            MinimumSize = new Size(360, 92)
         };
 
         var layout = new TableLayoutPanel
@@ -55,39 +55,46 @@ public sealed partial class MainForm
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 66));
 
         _versionLabel.Dock = DockStyle.Fill;
         _versionLabel.AutoSize = false;
         _versionLabel.TextAlign = ContentAlignment.MiddleLeft;
-        _versionLabel.Margin = Padding.Empty;
+        _versionLabel.Margin = new Padding(0, 0, 8, 0);
         _versionLabel.MaximumSize = Size.Empty;
 
-        var buttons = new TableLayoutPanel
+        var buttons = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 1,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = true,
+            AutoScroll = false,
             BackColor = SurfaceColor,
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
-        buttons.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        CompactDashboardButton(_updateButton, 160);
-        _updateButton.Dock = DockStyle.Fill;
-        _updateButton.Margin = Padding.Empty;
-        buttons.Controls.Add(_updateButton, 0, 0);
 
-        _changelogButton.Visible = false;
-        _installUpdateButton.Visible = false;
-        _skipUpdateButton.Visible = false;
+        CompactDashboardButton(_updateButton, 170);
+        CompactDashboardButton(_changelogButton, 142);
+        CompactDashboardButton(_installUpdateButton, 150);
+        CompactDashboardButton(_skipUpdateButton, 112);
+        _updateButton.Margin = new Padding(3, 3, 3, 3);
+        _changelogButton.Margin = new Padding(3, 3, 3, 3);
+        _installUpdateButton.Margin = new Padding(3, 3, 3, 3);
+        _skipUpdateButton.Margin = new Padding(3, 3, 3, 3);
+
+        buttons.Controls.Add(_updateButton);
+        buttons.Controls.Add(_changelogButton);
+        buttons.Controls.Add(_installUpdateButton);
+        buttons.Controls.Add(_skipUpdateButton);
 
         layout.Controls.Add(_versionLabel, 0, 0);
         layout.Controls.Add(buttons, 1, 0);
         card.Controls.Add(layout);
         return card;
     }
+
 
     private static void CompactDashboardButton(Button button, int width)
     {
@@ -200,7 +207,7 @@ public sealed partial class MainForm
             BackColor = BackgroundColor,
             Margin = Padding.Empty
         };
-        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
         page.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
         page.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
         page.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
