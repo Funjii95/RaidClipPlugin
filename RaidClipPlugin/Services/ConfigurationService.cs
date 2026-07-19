@@ -670,21 +670,25 @@ public sealed class ConfigurationService
         if (config.Minigame.PointsCommandPerlenEnabled) pointCommands.Add("!perlen");
         if (!string.IsNullOrWhiteSpace(config.Minigame.CustomPointsCommand))
             pointCommands.Add(config.Minigame.CustomPointsCommand);
-        var musicCommands = new[]
+        IEnumerable<string> musicCommands = Enumerable.Empty<string>();
+        if (config.MusicRequests.Enabled)
         {
-            (config.MusicRequests.ModeratorCommands.SongEnabled,
-                config.MusicRequests.ModeratorCommands.Song),
-            (config.MusicRequests.ModeratorCommands.SkipEnabled,
-                config.MusicRequests.ModeratorCommands.Skip),
-            (config.MusicRequests.ModeratorCommands.QueueEnabled,
-                config.MusicRequests.ModeratorCommands.Queue),
-            (config.MusicRequests.ModeratorCommands.RemoveEnabled,
-                config.MusicRequests.ModeratorCommands.Remove),
-            (config.MusicRequests.ModeratorCommands.PauseEnabled,
-                config.MusicRequests.ModeratorCommands.Pause),
-            (config.MusicRequests.ModeratorCommands.ResumeEnabled,
-                config.MusicRequests.ModeratorCommands.Resume)
-        }.Where(item => item.Item1).Select(item => item.Item2);
+            musicCommands = new[]
+            {
+                (config.MusicRequests.ModeratorCommands.SongEnabled,
+                    config.MusicRequests.ModeratorCommands.Song),
+                (config.MusicRequests.ModeratorCommands.SkipEnabled,
+                    config.MusicRequests.ModeratorCommands.Skip),
+                (config.MusicRequests.ModeratorCommands.QueueEnabled,
+                    config.MusicRequests.ModeratorCommands.Queue),
+                (config.MusicRequests.ModeratorCommands.RemoveEnabled,
+                    config.MusicRequests.ModeratorCommands.Remove),
+                (config.MusicRequests.ModeratorCommands.PauseEnabled,
+                    config.MusicRequests.ModeratorCommands.Pause),
+                (config.MusicRequests.ModeratorCommands.ResumeEnabled,
+                    config.MusicRequests.ModeratorCommands.Resume)
+            }.Where(item => item.Item1).Select(item => item.Item2);
+        }
         if (pointCommands.Intersect(musicCommands,
                 StringComparer.OrdinalIgnoreCase).Any())
             throw new InvalidOperationException(
@@ -981,7 +985,28 @@ public sealed class ConfigurationService
         config.ModeratorCommands.Remove = NormalizeCommand(config.ModeratorCommands.Remove);
         config.ModeratorCommands.Pause = NormalizeCommand(config.ModeratorCommands.Pause);
         config.ModeratorCommands.Resume = NormalizeCommand(config.ModeratorCommands.Resume);
+        NormalizeMusicRequestMessages(config.ChatMessages);
     }
+
+
+    private static void NormalizeMusicRequestMessages(MusicRequestChatMessages messages)
+    {
+        var defaults = new MusicRequestChatMessages();
+        messages.Queued = NormalizeOptionalText(messages.Queued, defaults.Queued);
+        messages.Playing = NormalizeOptionalText(messages.Playing, defaults.Playing);
+        messages.NotFound = NormalizeOptionalText(messages.NotFound, defaults.NotFound);
+        messages.NoDevice = NormalizeOptionalText(messages.NoDevice, defaults.NoDevice);
+        messages.TooLong = NormalizeOptionalText(messages.TooLong, defaults.TooLong);
+        messages.ExplicitBlocked = NormalizeOptionalText(messages.ExplicitBlocked, defaults.ExplicitBlocked);
+        messages.Cooldown = NormalizeOptionalText(messages.Cooldown, defaults.Cooldown);
+        messages.QueueFull = NormalizeOptionalText(messages.QueueFull, defaults.QueueFull);
+        messages.Blacklisted = NormalizeOptionalText(messages.Blacklisted, defaults.Blacklisted);
+        messages.InvalidInput = NormalizeOptionalText(messages.InvalidInput, defaults.InvalidInput);
+    }
+
+
+    private static string NormalizeOptionalText(string? value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
 
     private static List<string> NormalizeList(
@@ -1006,6 +1031,12 @@ public sealed class ConfigurationService
 
     public static void ValidateMusicRequestSettings(MusicRequestConfig config)
     {
+        NormalizeMusicRequests(config);
+        if (!config.Enabled)
+        {
+            return;
+        }
+
         if (config.MaximumTrackDurationMinutes is < 1 or > 180)
             throw new InvalidOperationException(
                 "Die maximale Songdauer muss zwischen 1 und 180 Minuten liegen.");
@@ -1040,8 +1071,7 @@ public sealed class ConfigurationService
             config.ChatMessages.Blacklisted, config.ChatMessages.InvalidInput
         };
         if (messages.Any(string.IsNullOrWhiteSpace))
-            throw new InvalidOperationException(
-                "Musikwunsch-Chattexte dürfen nicht leer sein.");
+            NormalizeMusicRequestMessages(config.ChatMessages);
         var enabledCommands = new[]
         {
             (config.ModeratorCommands.SongEnabled, config.ModeratorCommands.Song),

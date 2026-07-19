@@ -359,6 +359,7 @@ public sealed partial class MainForm
 
     private void LoadMusicRequestSettings(MusicRequestConfig config)
     {
+        ApplyMusicMessageDefaults(config.ChatMessages);
         _musicEnabledCheck.Checked = config.Enabled;
         _spotifyClientIdBox.Text = config.SpotifyClientId;
         _rewardIdBox.Text = config.SelectedRewardId;
@@ -415,6 +416,7 @@ public sealed partial class MainForm
     private void ReadMusicRequestSettings(AppConfig config)
     {
         var music = config.MusicRequests;
+        ApplyMusicMessageDefaults(music.ChatMessages);
         music.Enabled = _musicEnabledCheck.Checked;
         music.SpotifyClientId = _spotifyClientIdBox.Text.Trim();
         music.SelectedRewardId = _rewardIdBox.Text.Trim();
@@ -448,15 +450,15 @@ public sealed partial class MainForm
         music.TrackBlacklist = ReadMusicList(_musicTrackIdBlacklistBox);
         music.SongTitleBlacklist = ReadMusicList(_musicTitleBlacklistBox);
         music.BlockedTitleTerms = ReadMusicList(_musicBlockedTermsBox);
-        music.ChatMessages.Queued = _musicQueuedMessageBox.Text.Trim();
-        music.ChatMessages.Playing = _musicPlayingMessageBox.Text.Trim();
-        music.ChatMessages.NotFound = _musicNotFoundMessageBox.Text.Trim();
-        music.ChatMessages.NoDevice = _musicNoDeviceMessageBox.Text.Trim();
-        music.ChatMessages.TooLong = _musicTooLongMessageBox.Text.Trim();
-        music.ChatMessages.ExplicitBlocked = _musicExplicitMessageBox.Text.Trim();
-        music.ChatMessages.Cooldown = _musicCooldownMessageBox.Text.Trim();
-        music.ChatMessages.QueueFull = _musicQueueFullMessageBox.Text.Trim();
-        music.ChatMessages.Blacklisted = _musicBlacklistMessageBox.Text.Trim();
+        music.ChatMessages.Queued = ReadMusicMessage(_musicQueuedMessageBox, music.ChatMessages.Queued);
+        music.ChatMessages.Playing = ReadMusicMessage(_musicPlayingMessageBox, music.ChatMessages.Playing);
+        music.ChatMessages.NotFound = ReadMusicMessage(_musicNotFoundMessageBox, music.ChatMessages.NotFound);
+        music.ChatMessages.NoDevice = ReadMusicMessage(_musicNoDeviceMessageBox, music.ChatMessages.NoDevice);
+        music.ChatMessages.TooLong = ReadMusicMessage(_musicTooLongMessageBox, music.ChatMessages.TooLong);
+        music.ChatMessages.ExplicitBlocked = ReadMusicMessage(_musicExplicitMessageBox, music.ChatMessages.ExplicitBlocked);
+        music.ChatMessages.Cooldown = ReadMusicMessage(_musicCooldownMessageBox, music.ChatMessages.Cooldown);
+        music.ChatMessages.QueueFull = ReadMusicMessage(_musicQueueFullMessageBox, music.ChatMessages.QueueFull);
+        music.ChatMessages.Blacklisted = ReadMusicMessage(_musicBlacklistMessageBox, music.ChatMessages.Blacklisted);
         var commands = music.ModeratorCommands;
         commands.SongEnabled = _songCommandCheck.Checked;
         commands.SkipEnabled = _skipCommandCheck.Checked;
@@ -471,6 +473,24 @@ public sealed partial class MainForm
         commands.Pause = _pauseCommandBox.Text.Trim();
         commands.Resume = _resumeCommandBox.Text.Trim();
     }
+
+    private static void ApplyMusicMessageDefaults(MusicRequestChatMessages messages)
+    {
+        var defaults = new MusicRequestChatMessages();
+        messages.Queued = string.IsNullOrWhiteSpace(messages.Queued) ? defaults.Queued : messages.Queued.Trim();
+        messages.Playing = string.IsNullOrWhiteSpace(messages.Playing) ? defaults.Playing : messages.Playing.Trim();
+        messages.NotFound = string.IsNullOrWhiteSpace(messages.NotFound) ? defaults.NotFound : messages.NotFound.Trim();
+        messages.NoDevice = string.IsNullOrWhiteSpace(messages.NoDevice) ? defaults.NoDevice : messages.NoDevice.Trim();
+        messages.TooLong = string.IsNullOrWhiteSpace(messages.TooLong) ? defaults.TooLong : messages.TooLong.Trim();
+        messages.ExplicitBlocked = string.IsNullOrWhiteSpace(messages.ExplicitBlocked) ? defaults.ExplicitBlocked : messages.ExplicitBlocked.Trim();
+        messages.Cooldown = string.IsNullOrWhiteSpace(messages.Cooldown) ? defaults.Cooldown : messages.Cooldown.Trim();
+        messages.QueueFull = string.IsNullOrWhiteSpace(messages.QueueFull) ? defaults.QueueFull : messages.QueueFull.Trim();
+        messages.Blacklisted = string.IsNullOrWhiteSpace(messages.Blacklisted) ? defaults.Blacklisted : messages.Blacklisted.Trim();
+        messages.InvalidInput = string.IsNullOrWhiteSpace(messages.InvalidInput) ? defaults.InvalidInput : messages.InvalidInput.Trim();
+    }
+
+    private static string ReadMusicMessage(TextBox box, string fallback) =>
+        string.IsNullOrWhiteSpace(box.Text) ? fallback : box.Text.Trim();
 
     private static void SetMusicList(TextBox box, IEnumerable<string> values) =>
         box.Text = string.Join(Environment.NewLine, values);
