@@ -361,6 +361,9 @@ public sealed class ConfigurationService
             }
 
 
+            if (settings.Minigame is not null)
+                config.Minigame = settings.Minigame;
+
             if (settings.MinigameEnabled is not null)
                 config.Minigame.Enabled = settings.MinigameEnabled.Value;
             if (settings.PointsEnabled is not null)
@@ -392,8 +395,6 @@ public sealed class ConfigurationService
                     .ToList();
             if (settings.LiveChat is not null)
                 config.LiveChat = settings.LiveChat;
-            if (settings.Minigame is not null)
-                config.Minigame = settings.Minigame;
             if (settings.Heist is not null)
                 config.Heist = settings.Heist;
             if (settings.Duel is not null)
