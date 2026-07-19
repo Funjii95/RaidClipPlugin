@@ -1,0 +1,175 @@
+name: Apply startup and dashboard fix 1.9.5
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/apply-startup-dashboard-fix-195.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: windows-latest
+    steps:
+      - name: Quellcode laden
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: .NET 10 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Fix anwenden
+        shell: pwsh
+        run: |
+          $script = @'
+from pathlib import Path
+import re
+
+root = Path('RaidClipPlugin')
+
+def read(path):
+    return path.read_text(encoding='utf-8-sig')
+
+def write(path, text):
+    path.write_text(text, encoding='utf-8')
+
+# 1) Musikwünsche dürfen den Bot-Start nicht mehr komplett abbrechen.
+music_path = root / 'MainForm.MusicRequests.cs'
+music = read(music_path)
+start_marker = '    private async Task StartMusicRequestsAsync(\n'
+end_marker = '\n\n    private void StopMusicRequests()'
+start = music.index(start_marker)
+end = music.index(end_marker, start)
+new_music = '''    private async Task StartMusicRequestsAsync(
+        AppConfig config, TwitchSession session, TwitchService twitch,
+        TwitchUser broadcaster, CancellationToken cancellationToken)
+    {
+        if (!config.MusicRequests.Enabled)
+        {
+            SetSpotifyStatus(_spotify?.IsConnected == true
+                ? "Verbunden · Modul deaktiviert" : "Nicht verbunden",
+                _spotify?.IsConnected == true ? ActiveColor : InactiveColor);
+            return;
+        }
+
+        try
+        {
+            EnsureSpotify(config.MusicRequests);
+            var rewards = await twitch.GetCustomRewardsAsync(
+                broadcaster.Id, cancellationToken);
+            var selectedReward = rewards.FirstOrDefault(reward => reward.Id.Equals(
+                config.MusicRequests.SelectedRewardId, StringComparison.Ordinal));
+            if (selectedReward is null)
+                throw new InvalidOperationException(
+                    "Die ausgewählte Twitch-Musikwunsch-Belohnung wurde nicht gefunden.");
+            if (!selectedReward.IsEnabled)
+                throw new InvalidOperationException(
+                    "Die Twitch-Musikwunsch-Belohnung ist deaktiviert.");
+            if (!selectedReward.RequiresInput)
+                throw new InvalidOperationException(
+                    "Die Twitch-Musikwunsch-Belohnung muss Texteingaben erlauben.");
+            config.MusicRequests.SelectedRewardName = selectedReward.Title;
+            _musicRequests = new MusicRequestService(
+                broadcaster.Id, session.UserId, config.MusicRequests,
+                twitch, _spotify!, _musicStore);
+            _musicRequests.RequestUpdated += entry => _ = RefreshMusicGridAsync();
+            _musicRequestTask = _musicRequests.RunAsync(cancellationToken);
+            ObserveMinigameTask(_musicRequestTask!);
+            SetSpotifyStatus(_spotify!.IsConnected
+                ? "Verbunden · EventSub wird gemeinsam gestartet"
+                : "EventSub wird gemeinsam gestartet · Spotify fehlt",
+                _spotify.IsConnected ? ActiveColor : WaitingColor);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _musicRequests = null;
+            SetSpotifyFailureStatus(exception);
+            AppendLog("Musikwünsche wurden für diese Sitzung deaktiviert: " + exception.Message);
+            AppendLog("RaidClip, Chat, Punkte, Minigames und Clips starten trotzdem weiter.");
+        }
+    }
+'''
+music = music[:start] + new_music + music[end:]
+write(music_path, music)
+
+# 2) Dashboard-Kacheln lesbar halten: keine 40px-Inhaltsbereiche mehr.
+dash_path = root / 'MainForm.DashboardModern.cs'
+dash = read(dash_path)
+dash = dash.replace('MinimumSize = new Size(110, 64)', 'MinimumSize = new Size(130, 78)')
+dash = dash.replace('Padding = new Padding(10, 8, 10, 8)', 'Padding = new Padding(12, 10, 12, 10)')
+dash = dash.replace('Font = new Font("Segoe UI", 9.4F, FontStyle.Bold)', 'Font = new Font("Segoe UI", 9.8F, FontStyle.Bold)')
+dash = dash.replace('page.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));\n        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));\n        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 94));\n        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));',
+'''page.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));''')
+dash = dash.replace('Padding = new Padding(16, 12, 16, 12)', 'Padding = new Padding(18, 12, 18, 12)')
+dash = dash.replace('layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));', 'layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));')
+dash = dash.replace('Padding = new Padding(12, 8, 12, 10)', 'Padding = new Padding(12, 10, 12, 12)')
+dash = dash.replace('Font = new Font("Segoe UI", 9F, FontStyle.Bold)', 'Font = new Font("Segoe UI", 9.5F, FontStyle.Bold)')
+dash = dash.replace('var panel = new TableLayoutPanel { Name = "SurfacePanel", Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.FromArgb(16, 20, 24), Padding = new Padding(6), Margin = new Padding(4, 0, 4, 0) };',
+                    'var panel = new TableLayoutPanel { Name = "SurfacePanel", Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.FromArgb(16, 20, 24), Padding = new Padding(8), Margin = new Padding(4, 0, 4, 0), MinimumSize = new Size(110, 78) };')
+dash = dash.replace('Font = new Font("Segoe UI", 8.4F, FontStyle.Bold)', 'Font = new Font("Segoe UI", 8.8F, FontStyle.Bold)')
+dash = dash.replace('Font = new Font("Segoe UI", 11F, FontStyle.Bold)', 'Font = new Font("Segoe UI", 12F, FontStyle.Bold)')
+dash = dash.replace('Font = new Font("Segoe UI", 7.4F)', 'Font = new Font("Segoe UI", 8F)')
+write(dash_path, dash)
+
+# 3) Mojibake im neuen Moderationscenter säubern.
+mod_path = root / 'MainForm.ModerationCenter.cs'
+mod = read(mod_path)
+replacements = {
+    'gefÃ¤hrliche': 'gefährliche',
+    'lÃ¶schen': 'löschen',
+    'LÃ¶schen': 'Löschen',
+    'Â·': '·',
+    'MusikwÃ¼nsche': 'Musikwünsche',
+    'Ã¼ber': 'über',
+    'geschÃ¼tzt': 'geschützt',
+    'geprÃ¼ft': 'geprüft'
+}
+for bad, good in replacements.items():
+    mod = mod.replace(bad, good)
+write(mod_path, mod)
+
+# 4) Version bump.
+csproj_path = root / 'RaidClipPlugin.csproj'
+csproj = read(csproj_path)
+csproj = re.sub(r'<Version>[^<]+</Version>', '<Version>1.9.5</Version>', csproj)
+csproj = re.sub(r'<FileVersion>[^<]+</FileVersion>', '<FileVersion>1.9.5.0</FileVersion>', csproj)
+write(csproj_path, csproj)
+
+print('Startup-/Dashboard-Fix 1.9.5 angewendet.')
+'@
+          Set-Content -Path "patch-195.py" -Value $script -Encoding UTF8
+          python patch-195.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build "RaidClipPlugin/RaidClipPlugin.csproj" -c Release
+
+      - name: Tests
+        shell: pwsh
+        run: dotnet test "RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj" -c Release
+
+      - name: Änderungen committen
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Keine Änderungen zu committen."
+            exit 0
+          }
+          git commit -m "Fix startup when music requests fail and restore dashboard tiles"
+          git push
