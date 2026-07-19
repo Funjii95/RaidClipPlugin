@@ -8,7 +8,24 @@ public sealed partial class MainForm
         "Twitch" => "▣",
         "EventSub" => "✦",
         "Player" => "▶",
+        "Discord" => "☁",
+        "Musikdienst" => "♫",
+        "Commands" => "</>",
+        "Updater" => "↻",
         _ => "●"
+    };
+
+    private static Color GetServiceAccent(string service) => service switch
+    {
+        "OBS" => Color.FromArgb(230, 235, 242),
+        "Twitch" => Color.FromArgb(166, 96, 255),
+        "EventSub" => Color.FromArgb(255, 203, 72),
+        "Player" => Color.FromArgb(46, 204, 113),
+        "Discord" => Color.FromArgb(88, 101, 242),
+        "Musikdienst" => Color.FromArgb(255, 92, 167),
+        "Commands" => Color.FromArgb(0, 211, 255),
+        "Updater" => Color.FromArgb(64, 156, 255),
+        _ => AccentColor
     };
 
     private static Color CardColor => Color.FromArgb(15, 20, 27);
@@ -81,13 +98,14 @@ public sealed partial class MainForm
     private Control CreateDashboardStatusCard(Label indicator)
     {
         var service = indicator.Text.Contains("OBS", StringComparison.OrdinalIgnoreCase) ? "OBS" : indicator.Text.Contains("Twitch", StringComparison.OrdinalIgnoreCase) ? "Twitch" : indicator.Text.Contains("EventSub", StringComparison.OrdinalIgnoreCase) ? "EventSub" : indicator.Text.Contains("Player", StringComparison.OrdinalIgnoreCase) ? "Player" : "Service";
-        var card = CreateCardPanel(HealthyStatusColor, new Padding(14, 12, 14, 12));
+        var accent = GetServiceAccent(service);
+        var card = CreateCardPanel(accent, new Padding(14, 12, 14, 12));
         card.Margin = new Padding(6, 0, 6, 0);
-        card.MinimumSize = new Size(150, 92);
+        card.MinimumSize = new Size(150, 86);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 54));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.Controls.Add(new Label { Text = GetServiceIcon(service), Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 22F, FontStyle.Bold), ForeColor = service.Equals("Twitch", StringComparison.OrdinalIgnoreCase) ? Color.FromArgb(166, 96, 255) : AccentColor, BackColor = Color.Transparent }, 0, 0);
+        layout.Controls.Add(new Label { Text = GetServiceIcon(service), Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 22F, FontStyle.Bold), ForeColor = accent, BackColor = Color.Transparent }, 0, 0);
         indicator.Dock = DockStyle.Fill;
         indicator.AutoSize = false;
         indicator.BorderStyle = BorderStyle.None;
@@ -105,6 +123,7 @@ public sealed partial class MainForm
     private Control CreateDashboardActionBar(Control actions)
     {
         var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
+        host.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         foreach (var percent in new[] { 15, 18, 18, 24, 13, 12 }) host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, percent));
         if (actions is FlowLayoutPanel flow)
         {
@@ -117,8 +136,8 @@ public sealed partial class MainForm
       var child = orderedControls[index];
       child.Dock = DockStyle.Fill;
       child.Margin = new Padding(5, 4, 5, 4);
-      if (child is Button button) { button.AutoSize = false; button.Height = 42; button.Padding = new Padding(6, 0, 6, 0); button.AutoEllipsis = true; }
-      else if (child is TextBox textBox) { textBox.AutoSize = false; textBox.Height = 34; textBox.Margin = new Padding(5, 8, 5, 4); }
+      if (child is Button button) { button.AutoSize = false; button.Height = 38; button.MaximumSize = new Size(0, 38); button.Padding = new Padding(6, 0, 6, 0); button.AutoEllipsis = true; }
+      else if (child is TextBox textBox) { textBox.AutoSize = false; textBox.Height = 30; textBox.Margin = new Padding(5, 6, 5, 4); }
       host.Controls.Add(child, index, 0);
   }
         }
@@ -136,20 +155,22 @@ public sealed partial class MainForm
         var page = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(26, 22, 26, 22), BackColor = BackgroundColor, Margin = Padding.Empty };
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
-        var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 98));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 132));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 210));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 120));
+        var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 176));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 106));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
         main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         main.Controls.Add(dashboardHeader, 0, 0);
         main.Controls.Add(CreateHeroStatusCard(), 0, 1);
         main.Controls.Add(CreateDashboardSection("Module & Verbindungen", CreateModuleGrid()), 0, 2);
         main.Controls.Add(CreateDashboardSection("Heutige Statistiken", CreateDashboardStatsGrid()), 0, 3);
         main.Controls.Add(dashboardActions, 0, 4);
+        main.Controls.Add(CreateDashboardSection("Aktive Module", CreateActiveModulesGrid()), 0, 5);
         var side = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = BackgroundColor, Margin = Padding.Empty, Padding = Padding.Empty };
-        side.RowStyles.Add(new RowStyle(SizeType.Percent, 54));
-        side.RowStyles.Add(new RowStyle(SizeType.Percent, 46));
+        side.RowStyles.Add(new RowStyle(SizeType.Absolute, 430));
+        side.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         side.Controls.Add(CreateDashboardSection("Systemprüfung", dashboardHealth), 0, 0);
         side.Controls.Add(CreateDashboardSection("Bot Log", CreateRecentActivityList()), 0, 1);
         page.Controls.Add(main, 0, 0);
@@ -210,10 +231,10 @@ public sealed partial class MainForm
         grid.Controls.Add(CreateDashboardStatusCard(_obsIndicator), 1, 0);
         grid.Controls.Add(CreateDashboardStatusCard(_eventSubIndicator), 2, 0);
         grid.Controls.Add(CreateDashboardStatusCard(_playerIndicator), 3, 0);
-        grid.Controls.Add(CreateModuleInfoCard("Discord", "Optional", "☁", WarningStatusColor), 0, 1);
-        grid.Controls.Add(CreateModuleInfoCard("Musikdienst", "Optional", "♫", HealthyStatusColor), 1, 1);
-        grid.Controls.Add(CreateModuleInfoCard("Commands", "Bereit", "</>", HealthyStatusColor), 2, 1);
-        grid.Controls.Add(CreateModuleInfoCard("Updater", "Aktuell", "↻", HealthyStatusColor), 3, 1);
+        grid.Controls.Add(CreateModuleInfoCard("Discord", "Optional", GetServiceIcon("Discord"), GetServiceAccent("Discord")), 0, 1);
+        grid.Controls.Add(CreateModuleInfoCard("Musikdienst", "Optional", GetServiceIcon("Musikdienst"), GetServiceAccent("Musikdienst")), 1, 1);
+        grid.Controls.Add(CreateModuleInfoCard("Commands", "Bereit", GetServiceIcon("Commands"), GetServiceAccent("Commands")), 2, 1);
+        grid.Controls.Add(CreateModuleInfoCard("Updater", "Aktuell", GetServiceIcon("Updater"), GetServiceAccent("Updater")), 3, 1);
         return grid;
     }
 
@@ -239,7 +260,7 @@ public sealed partial class MainForm
     private Control CreateDashboardSection(string title, Control content)
     {
         var card = CreateCardPanel(AccentColor, new Padding(14, 10, 14, 14));
-        card.Margin = new Padding(0, 0, 0, 10);
+        card.Margin = new Padding(0, 0, 0, 8);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
