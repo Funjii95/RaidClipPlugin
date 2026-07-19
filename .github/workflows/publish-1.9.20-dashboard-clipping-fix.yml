@@ -1,0 +1,134 @@
+name: Publish 1.9.20 Dashboard Clipping Fix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.20-dashboard-clipping-fix.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: '1.9.20'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply dashboard clipping fix
+        shell: pwsh
+        run: |
+          $patchBase64 = @'
+          ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKZGFzaGJvYXJk
+          ID0gcm9vdCAvICdNYWluRm9ybS5EYXNoYm9hcmRNb2Rlcm4uY3MnCmNzcHJvaiA9IHJvb3QgLyAnUmFpZENsaXBQbHVnaW4uY3Nw
+          cm9qJwoKdGV4dCA9IGRhc2hib2FyZC5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04LXNpZycpCnJlcGxhY2VtZW50cyA9IHsKICAg
+          ICdsYXlvdXQuQ29sdW1uU3R5bGVzLkFkZChuZXcgQ29sdW1uU3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgNjgpKTtcbiAgICAgICAg
+          bGF5b3V0LkNvbHVtblN0eWxlcy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDMyKSk7JzoKICAgICdsYXlv
+          dXQuQ29sdW1uU3R5bGVzLkFkZChuZXcgQ29sdW1uU3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgNjIpKTtcbiAgICAgICAgbGF5b3V0
+          LkNvbHVtblN0eWxlcy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDM4KSk7JywKICAgICdoZWFkZXIuTWFy
+          Z2luID0gbmV3IFBhZGRpbmcoMCwgMCwgMTgsIDApOyc6CiAgICAnaGVhZGVyLk1hcmdpbiA9IG5ldyBQYWRkaW5nKDAsIDAsIDE0
+          LCAwKTsnLAogICAgJ3ZhciBjYXJkID0gQ3JlYXRlQ2FyZFBhbmVsKEFjY2VudENvbG9yLCBuZXcgUGFkZGluZygxOCwgMTQsIDE4
+          LCAxNCkpO1xuICAgICAgICBjYXJkLk1pbmltdW1TaXplID0gbmV3IFNpemUoMzIwLCA4OCk7JzoKICAgICd2YXIgY2FyZCA9IENy
+          ZWF0ZUNhcmRQYW5lbChBY2NlbnRDb2xvciwgbmV3IFBhZGRpbmcoMTQsIDEyLCAxNCwgMTIpKTtcbiAgICAgICAgY2FyZC5NaW5p
+          bXVtU2l6ZSA9IG5ldyBTaXplKDI4MCwgODIpOycsCiAgICAnbGF5b3V0LkNvbHVtblN0eWxlcy5BZGQobmV3IENvbHVtblN0eWxl
+          KFNpemVUeXBlLkFic29sdXRlLCAxMTgpKTsnOgogICAgJ2xheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShT
+          aXplVHlwZS5BYnNvbHV0ZSwgOTYpKTsnLAogICAgJ1BhZGRpbmcgPSBuZXcgUGFkZGluZyg0LCA2LCA0LCA0KSc6CiAgICAnUGFk
+          ZGluZyA9IG5ldyBQYWRkaW5nKDIsIDYsIDIsIDQpJywKICAgICdDb21wYWN0RGFzaGJvYXJkQnV0dG9uKGJ1dHRvbiwgYnV0dG9u
+          ID09IF91cGRhdGVCdXR0b24gPyAxNzYgOiAxNTApOyc6CiAgICAnQ29tcGFjdERhc2hib2FyZEJ1dHRvbihidXR0b24sIGJ1dHRv
+          biA9PSBfdXBkYXRlQnV0dG9uID8gMTY0IDogMTQyKTsnLAogICAgJ2J1dHRvbi5IZWlnaHQgPSAzNDtcbiAgICAgICAgICAgIGJ1
+          dHRvbi5NYXhpbXVtU2l6ZSA9IG5ldyBTaXplKGJ1dHRvbi5XaWR0aCwgMzQpOyc6CiAgICAnYnV0dG9uLkhlaWdodCA9IDM0O1xu
+          ICAgICAgICAgICAgYnV0dG9uLk1pbmltdW1TaXplID0gbmV3IFNpemUoYnV0dG9uLldpZHRoLCAzNCk7XG4gICAgICAgICAgICBi
+          dXR0b24uTWF4aW11bVNpemUgPSBuZXcgU2l6ZShidXR0b24uV2lkdGgsIDM0KTsnLAogICAgJ21haW4uUm93U3R5bGVzLkFkZChu
+          ZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDE3NikpO1xuICAgICAgICBtYWluLlJvd1N0eWxlcy5BZGQobmV3IFJvd1N0
+          eWxlKFNpemVUeXBlLkFic29sdXRlLCAxMDYpKTtcbiAgICAgICAgbWFpbi5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXpl
+          VHlwZS5BYnNvbHV0ZSwgODIpKTsnOgogICAgJ21haW4uUm93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1
+          dGUsIDIyMCkpO1xuICAgICAgICBtYWluLlJvd1N0eWxlcy5BZGQobmV3IFJvd1N0eWxlKFNpemVUeXBlLkFic29sdXRlLCAxMzYp
+          KTtcbiAgICAgICAgbWFpbi5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgMTA0KSk7JywKICAg
+          ICdjYXJkLk1pbmltdW1TaXplID0gbmV3IFNpemUoMTUwLCA4Nik7JzoKICAgICdjYXJkLk1pbmltdW1TaXplID0gbmV3IFNpemUo
+          MTUwLCA4NCk7JywKICAgICdwYW5lbC5NaW5pbXVtU2l6ZSA9IG5ldyBTaXplKDExMiwgODIpOyc6CiAgICAncGFuZWwuTWluaW11
+          bVNpemUgPSBuZXcgU2l6ZSgxMTIsIDc2KTsnCn0KZm9yIG9sZCwgbmV3IGluIHJlcGxhY2VtZW50cy5pdGVtcygpOgogICAgaWYg
+          b2xkIG5vdCBpbiB0ZXh0OgogICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoZidFeHBlY3RlZCBibG9jayBub3QgZm91bmQ6IHtvbGRb
+          OjgwXX0nKQogICAgdGV4dCA9IHRleHQucmVwbGFjZShvbGQsIG5ldykKCmRhc2hib2FyZC53cml0ZV90ZXh0KHRleHQsIGVuY29k
+          aW5nPSd1dGYtOCcpCgpwcm9qZWN0ID0gY3Nwcm9qLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgtc2lnJykKcHJvamVjdCA9IHJl
+          LnN1YihyJzxWZXJzaW9uPltePF0rPC9WZXJzaW9uPicsICc8VmVyc2lvbj4xLjkuMjA8L1ZlcnNpb24+JywgcHJvamVjdCkKcHJv
+          amVjdCA9IHJlLnN1YihyJzxGaWxlVmVyc2lvbj5bXjxdKzwvRmlsZVZlcnNpb24+JywgJzxGaWxlVmVyc2lvbj4xLjkuMjAuMDwv
+          RmlsZVZlcnNpb24+JywgcHJvamVjdCkKcHJvamVjdCA9IHJlLnN1YihyJzxBc3NlbWJseVZlcnNpb24+W148XSs8L0Fzc2VtYmx5
+          VmVyc2lvbj4nLCAnPEFzc2VtYmx5VmVyc2lvbj4xLjkuMjAuMDwvQXNzZW1ibHlWZXJzaW9uPicsIHByb2plY3QpCmNzcHJvai53
+          cml0ZV90ZXh0KHByb2plY3QsIGVuY29kaW5nPSd1dGYtOCcpCnByaW50KCdEYXNoYm9hcmQgcm93IGhlaWdodHMgYW5kIHVwZGF0
+          ZSBidXR0b24gd2lkdGggZml4ZWQgZm9yIDEuOS4yMC4nKQo=
+          '@
+          $patchBytes = [Convert]::FromBase64String(($patchBase64 -replace '\s', ''))
+          [IO.File]::WriteAllBytes('apply_dashboard_clipping_fix_1920.py', $patchBytes)
+          python apply_dashboard_clipping_fix_1920.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit source changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.DashboardModern.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            echo "No source changes to commit."
+          } else {
+            git commit -m "Fix dashboard clipping for 1.9.20"
+            git push
+          }
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
+          $iscc = Join-Path (Join-Path $programFilesX86 'Inno Setup 6') 'ISCC.exe'
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin/Installer/RaidClipPlugin.iss"
+          Copy-Item "RaidClipPlugin/installer-output/RaidClipPlugin-Setup-$env:VERSION.exe" "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Create update manifest
+        shell: pwsh
+        run: |
+          $zip = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
+            changelog = "Hotfix 1.9.20: Dashboard-Clipping behoben. Schnellaktionen, heutige Statistiken und Update-Button werden vollständig angezeigt."
+            sha256 = $sha
+          }
+          $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "v$env:VERSION"
+          git tag -f $tag
+          git push origin $tag --force
+          gh release delete $tag -y --cleanup-tag 2>$null || $true
+          gh release create $tag `
+            "RaidClipPlugin-$env:VERSION-win-x64.zip" `
+            "RaidClipPluginSetup-$env:VERSION.exe" `
+            "update.json" `
+            --title "RaidClipPlugin $env:VERSION" `
+            --notes "Hotfix 1.9.20`n`n- Schnellaktionen nicht mehr abgeschnitten.`n- Heutige Statistiken vollständig sichtbar.`n- Update-Button erhält mehr Breite und wird nicht mehr abgeschnitten.`n- ZIP, Installer und update.json veröffentlicht."
