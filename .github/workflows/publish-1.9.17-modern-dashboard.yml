@@ -597,8 +597,8 @@ jobs:
         run: |
           choco install innosetup -y --no-progress
           $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
-          $iscc = Join-Path $programFilesX86 'Inno Setup 6ISCC.exe'
-          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPluginInstallerRaidClipPlugin.iss"
+          $iscc = Join-Path $programFilesX86 'Inno Setup 6/ISCC.exe'
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin/Installer/RaidClipPlugin.iss"
           $installer = Get-ChildItem -Path RaidClipPlugin/installer-output -Filter *.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1
           if (-not $installer) { throw "Installer wurde nicht erzeugt." }
           Copy-Item $installer.FullName "RaidClipPluginSetup-$env:VERSION.exe" -Force
