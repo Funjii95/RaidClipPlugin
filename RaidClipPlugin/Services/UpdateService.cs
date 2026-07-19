@@ -62,11 +62,11 @@ public sealed class UpdateService
             "update.json enthält keine sichere downloadUrl.");
         var extension = Path.GetExtension(downloadUri.AbsolutePath);
 
-        if (!extension.Equals(".zip", StringComparison.OrdinalIgnoreCase) &&
-            !extension.Equals(".exe", StringComparison.OrdinalIgnoreCase))
+        if (!extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException(
-                "Das Update muss als ZIP- oder EXE-Datei bereitgestellt werden.");
+                "Auto-Updates müssen als ZIP-Paket bereitgestellt werden. " +
+                "Installer-EXE-Dateien dürfen nicht als Update-Payload verwendet werden.");
         }
 
         var sha256 = (manifest.Sha256 ?? "")
@@ -164,17 +164,7 @@ public sealed class UpdateService
                 "Das Update wurde verworfen.");
         }
 
-        if (extension == ".zip")
-        {
-            ExtractZipSafely(downloadPath, payloadDirectory);
-        }
-        else
-        {
-            File.Copy(
-                downloadPath,
-                Path.Combine(payloadDirectory, AppExecutableName),
-                overwrite: true);
-        }
+        ExtractZipSafely(downloadPath, payloadDirectory);
 
         if (!File.Exists(Path.Combine(
                 payloadDirectory,
