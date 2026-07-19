@@ -77,14 +77,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $notes = @'
-Hotfix 1.9.23
-
-- Minigame-Einstellungen speichern jetzt unabhängig von anderen Einstellungsbereichen.
-- „Spiele aktivieren“, Gamble, Casino, Limits und Historie bleiben nach Neustart erhalten.
-- Casino-Spiele, Limits & Fairness und Historie & Daten haben eigene Speicherbuttons.
-- Die Commands-Seite wird mit Standard-Commands befüllt, auch wenn ein anderer Settings-Bereich beim Laden fehlschlägt.
-'@
+          $notesPath = 'release-notes-1.9.23.md'
+          @(
+            'Hotfix 1.9.23'
+            ''
+            '- Minigame-Einstellungen speichern jetzt unabhängig von anderen Einstellungsbereichen.'
+            '- „Spiele aktivieren“, Gamble, Casino, Limits und Historie bleiben nach Neustart erhalten.'
+            '- Casino-Spiele, Limits & Fairness und Historie & Daten haben eigene Speicherbuttons.'
+            '- Die Commands-Seite wird mit Standard-Commands befüllt, auch wenn ein anderer Settings-Bereich beim Laden fehlschlägt.'
+          ) | Set-Content -Path $notesPath -Encoding UTF8
           gh release delete v1.9.23 --yes --cleanup-tag 2>$null || $true
-          gh release create v1.9.23 RaidClipPlugin-1.9.23-win-x64.zip update.json --title "RaidClipPlugin 1.9.23" --notes "$notes"
+          gh release create v1.9.23 RaidClipPlugin-1.9.23-win-x64.zip update.json --title "RaidClipPlugin 1.9.23" --notes-file $notesPath
 
