@@ -1,0 +1,148 @@
+﻿name: Publish 1.9.22 Dashboard Module Cards Fix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.22-dashboard-module-cards-fix.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: '1.9.22'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply dashboard module card clipping fix
+        shell: pwsh
+        run: |
+          $patchBase64 = @'
+          ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKZGFzaCA9IHJv
+          b3QgLyAnTWFpbkZvcm0uRGFzaGJvYXJkTW9kZXJuLmNzJwpjc3Byb2ogPSByb290IC8gJ1JhaWRDbGlwUGx1Z2luLmNzcHJvaicK
+          CnRleHQgPSBkYXNoLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgtc2lnJykKcmVwbGFjZW1lbnRzID0gewogICAgJ21haW4uUm93
+          U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDIyMCkpOyc6CiAgICAgICAgJ21haW4uUm93U3R5bGVz
+          LkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDIzNikpOycsCiAgICAnbWFpbi5Sb3dTdHlsZXMuQWRkKG5ldyBS
+          b3dTdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgMTM2KSk7JzoKICAgICAgICAnbWFpbi5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHls
+          ZShTaXplVHlwZS5BYnNvbHV0ZSwgMTI4KSk7JywKICAgICd2YXIgY2FyZCA9IENyZWF0ZUNhcmRQYW5lbChjb2xvciwgbmV3IFBh
+          ZGRpbmcoMTQsIDEyLCAxNCwgMTIpKTtcbiAgICAgICAgY2FyZC5NYXJnaW4gPSBuZXcgUGFkZGluZyg2LCA2LCA2LCA2KTtcbiAg
+          ICAgICAgY2FyZC5NaW5pbXVtU2l6ZSA9IG5ldyBTaXplKDE1MCwgNzgpOyc6CiAgICAgICAgJ3ZhciBjYXJkID0gQ3JlYXRlQ2Fy
+          ZFBhbmVsKGNvbG9yLCBuZXcgUGFkZGluZygxMCwgOCwgMTAsIDgpKTtcbiAgICAgICAgY2FyZC5NYXJnaW4gPSBuZXcgUGFkZGlu
+          Zyg1LCA0LCA1LCA0KTtcbiAgICAgICAgY2FyZC5NaW5pbXVtU2l6ZSA9IG5ldyBTaXplKDE1MCwgNjYpOycsCiAgICAnbGF5b3V0
+          LkNvbHVtblN0eWxlcy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLkFic29sdXRlLCA1MCkpOyc6CiAgICAgICAgJ2xheW91
+          dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgNDYpKTsnLAogICAgJ2xheW91dC5D
+          b250cm9scy5BZGQobmV3IExhYmVsIHsgVGV4dCA9IGljb24sIERvY2sgPSBEb2NrU3R5bGUuRmlsbCwgQXV0b1NpemUgPSBmYWxz
+          ZSwgVGV4dEFsaWduID0gQ29udGVudEFsaWdubWVudC5NaWRkbGVDZW50ZXIsIEZvbnQgPSBuZXcgRm9udCgiU2Vnb2UgVUkiLCAx
+          OUYsIEZvbnRTdHlsZS5Cb2xkKSwgRm9yZUNvbG9yID0gY29sb3IsIEJhY2tDb2xvciA9IENvbG9yLlRyYW5zcGFyZW50IH0sIDAs
+          IDApOyc6CiAgICAgICAgJ2xheW91dC5Db250cm9scy5BZGQobmV3IExhYmVsIHsgVGV4dCA9IGljb24sIERvY2sgPSBEb2NrU3R5
+          bGUuRmlsbCwgQXV0b1NpemUgPSBmYWxzZSwgVGV4dEFsaWduID0gQ29udGVudEFsaWdubWVudC5NaWRkbGVDZW50ZXIsIEZvbnQg
+          PSBuZXcgRm9udCgiU2Vnb2UgVUkiLCAxN0YsIEZvbnRTdHlsZS5Cb2xkKSwgRm9yZUNvbG9yID0gY29sb3IsIEJhY2tDb2xvciA9
+          IENvbG9yLlRyYW5zcGFyZW50IH0sIDAsIDApOycsCiAgICAndGV4dC5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlw
+          ZS5QZXJjZW50LCA1NCkpO1xuICAgICAgICB0ZXh0LlJvd1N0eWxlcy5BZGQobmV3IFJvd1N0eWxlKFNpemVUeXBlLlBlcmNlbnQs
+          IDQ2KSk7JzoKICAgICAgICAndGV4dC5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5QZXJjZW50LCA1MCkpO1xu
+          ICAgICAgICB0ZXh0LlJvd1N0eWxlcy5BZGQobmV3IFJvd1N0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDUwKSk7JywKICAgICd0ZXh0
+          LkNvbnRyb2xzLkFkZChuZXcgTGFiZWwgeyBUZXh0ID0gdGl0bGUsIERvY2sgPSBEb2NrU3R5bGUuRmlsbCwgQXV0b1NpemUgPSBm
+          YWxzZSwgRm9udCA9IG5ldyBGb250KCJTZWdvZSBVSSIsIDEwRiwgRm9udFN0eWxlLkJvbGQpLCBGb3JlQ29sb3IgPSBUZXh0Q29s
+          b3IsIFRleHRBbGlnbiA9IENvbnRlbnRBbGlnbm1lbnQuQm90dG9tTGVmdCwgQXV0b0VsbGlwc2lzID0gdHJ1ZSB9LCAwLCAwKTsn
+          OgogICAgICAgICd0ZXh0LkNvbnRyb2xzLkFkZChuZXcgTGFiZWwgeyBUZXh0ID0gdGl0bGUsIERvY2sgPSBEb2NrU3R5bGUuRmls
+          bCwgQXV0b1NpemUgPSBmYWxzZSwgRm9udCA9IG5ldyBGb250KCJTZWdvZSBVSSIsIDkuNEYsIEZvbnRTdHlsZS5Cb2xkKSwgRm9y
+          ZUNvbG9yID0gVGV4dENvbG9yLCBUZXh0QWxpZ24gPSBDb250ZW50QWxpZ25tZW50LkJvdHRvbUxlZnQsIEF1dG9FbGxpcHNpcyA9
+          IHRydWUsIE1hcmdpbiA9IFBhZGRpbmcuRW1wdHkgfSwgMCwgMCk7JywKICAgICd0ZXh0LkNvbnRyb2xzLkFkZChuZXcgTGFiZWwg
+          eyBUZXh0ID0gc3RhdHVzLCBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIEF1dG9TaXplID0gZmFsc2UsIEZvbnQgPSBuZXcgRm9udCgi
+          U2Vnb2UgVUkiLCA5RiwgRm9udFN0eWxlLkJvbGQpLCBGb3JlQ29sb3IgPSBjb2xvciwgVGV4dEFsaWduID0gQ29udGVudEFsaWdu
+          bWVudC5Ub3BMZWZ0LCBBdXRvRWxsaXBzaXMgPSB0cnVlIH0sIDAsIDEpOyc6CiAgICAgICAgJ3RleHQuQ29udHJvbHMuQWRkKG5l
+          dyBMYWJlbCB7IFRleHQgPSBzdGF0dXMsIERvY2sgPSBEb2NrU3R5bGUuRmlsbCwgQXV0b1NpemUgPSBmYWxzZSwgRm9udCA9IG5l
+          dyBGb250KCJTZWdvZSBVSSIsIDguNEYsIEZvbnRTdHlsZS5Cb2xkKSwgRm9yZUNvbG9yID0gY29sb3IsIFRleHRBbGlnbiA9IENv
+          bnRlbnRBbGlnbm1lbnQuVG9wTGVmdCwgQXV0b0VsbGlwc2lzID0gdHJ1ZSwgTWFyZ2luID0gUGFkZGluZy5FbXB0eSB9LCAwLCAx
+          KTsnLAp9CmZvciBvbGQsIG5ldyBpbiByZXBsYWNlbWVudHMuaXRlbXMoKToKICAgIGlmIG9sZCBub3QgaW4gdGV4dDoKICAgICAg
+          ICByYWlzZSBTeXN0ZW1FeGl0KCdFeHBlY3RlZCBkYXNoYm9hcmQgYmxvY2sgbm90IGZvdW5kOiAnICsgb2xkWzoxMjBdKQogICAg
+          dGV4dCA9IHRleHQucmVwbGFjZShvbGQsIG5ldywgMSkKCmRhc2gud3JpdGVfdGV4dCh0ZXh0LCBlbmNvZGluZz0ndXRmLTgnKQoK
+          cHJvamVjdCA9IGNzcHJvai5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04LXNpZycpCnByb2plY3QgPSByZS5zdWIocic8VmVyc2lv
+          bj5bXjxdKzwvVmVyc2lvbj4nLCAnPFZlcnNpb24+MS45LjIyPC9WZXJzaW9uPicsIHByb2plY3QpCnByb2plY3QgPSByZS5zdWIo
+          cic8RmlsZVZlcnNpb24+W148XSs8L0ZpbGVWZXJzaW9uPicsICc8RmlsZVZlcnNpb24+MS45LjIyLjA8L0ZpbGVWZXJzaW9uPics
+          IHByb2plY3QpCmlmICc8QXNzZW1ibHlWZXJzaW9uPicgaW4gcHJvamVjdDoKICAgIHByb2plY3QgPSByZS5zdWIocic8QXNzZW1i
+          bHlWZXJzaW9uPltePF0rPC9Bc3NlbWJseVZlcnNpb24+JywgJzxBc3NlbWJseVZlcnNpb24+MS45LjIyLjA8L0Fzc2VtYmx5VmVy
+          c2lvbj4nLCBwcm9qZWN0KQpjc3Byb2oud3JpdGVfdGV4dChwcm9qZWN0LCBlbmNvZGluZz0ndXRmLTgnKQoKcHJpbnQoJ0Rhc2hi
+          b2FyZCBtb2R1bGUgY2FyZHMgZml4ZWQgZm9yIDEuOS4yMi4nKQ==
+          '@
+          $patchBytes = [Convert]::FromBase64String(($patchBase64 -replace '\s', ''))
+          [IO.File]::WriteAllBytes('apply_dashboard_module_cards_fix_1922.py', $patchBytes)
+          python apply_dashboard_module_cards_fix_1922.py
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit source changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/MainForm.DashboardModern.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            echo "No source changes to commit."
+          } else {
+            git commit -m "Fix dashboard module cards for 1.9.22"
+            git push
+          }
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
+          $iscc = Join-Path (Join-Path $programFilesX86 'Inno Setup 6') 'ISCC.exe'
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin/Installer/RaidClipPlugin.iss"
+          Copy-Item "RaidClipPlugin/installer-output/RaidClipPlugin-Setup-$env:VERSION.exe" "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Create update manifest
+        shell: pwsh
+        run: |
+          $zip = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
+            changelog = "Hotfix 1.9.22: Dashboard-Modulkarten für Discord, Musikdienst, Commands und Updater werden vollständig angezeigt."
+            sha256 = $sha
+          }
+          $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "v$env:VERSION"
+          $notes = "Hotfix 1.9.22
+
+- Dashboard-Modulkarten der zweiten Reihe werden nicht mehr abgeschnitten.
+- Discord, Musikdienst, Commands und Updater bleiben vollständig lesbar.
+- Build geprüft und ZIP, Installer, update.json veröffentlicht."
+          git tag -f $tag
+          git push origin $tag --force
+          gh release delete $tag -y --cleanup-tag 2>$null || $true
+          gh release create $tag `
+            "RaidClipPlugin-$env:VERSION-win-x64.zip" `
+            "RaidClipPluginSetup-$env:VERSION.exe" `
+            "update.json" `
+            --title "RaidClipPlugin $env:VERSION" `
+            --notes $notes
