@@ -5491,7 +5491,7 @@ private enum CloseChoice
 
     private void AppendLog(string message)
     {
-        if (IsDisposed)
+        if (IsDisposed || Disposing)
         {
             return;
         }
@@ -5500,19 +5500,46 @@ private enum CloseChoice
         {
             try
             {
-                BeginInvoke(new Action(() => AppendLog(message)));
+                if (!IsDisposed && !Disposing && IsHandleCreated)
+                {
+                    BeginInvoke(new Action(() => AppendLog(message)));
+                }
             }
             catch (InvalidOperationException)
+            {
+            }
+            catch (ObjectDisposedException)
             {
             }
             return;
         }
 
-        _fileLog.WriteLine(message);
-        _logBox.AppendText(
-            $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
-        _logBox.SelectionStart = _logBox.TextLength;
-        _logBox.ScrollToCaret();
+        try
+        {
+            _fileLog.WriteLine(message);
+        }
+        catch
+        {
+        }
+
+        if (_logBox.IsDisposed || _logBox.Disposing || !_logBox.IsHandleCreated)
+        {
+            return;
+        }
+
+        try
+        {
+            _logBox.AppendText(
+                $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+            _logBox.SelectionStart = _logBox.TextLength;
+            _logBox.ScrollToCaret();
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
     }
 
     private void SetOverallStatus(string text, Color color)
