@@ -25,6 +25,8 @@ public sealed partial class MainForm : Form
     private static readonly Color DisabledStatusColor = Color.FromArgb(130, 134, 142);
     private static readonly Color UnknownStatusColor = Color.FromArgb(95, 146, 212);
 
+    private bool _settingsSaveBusy;
+
     private readonly Button _startButton = new()
     {
         Text = "Plugin starten",
@@ -5301,15 +5303,22 @@ private enum CloseChoice
         return config;
     }
 
-    private void SaveSettingsFromControls()
+    private async void SaveSettingsFromControls()
     {
+        if (_settingsSaveBusy)
+        {
+            AppendLog("Speichern läuft bereits. Bitte kurz warten …");
+            return;
+        }
+
+        _settingsSaveBusy = true;
+        SetSettingsControlsEnabled(false);
+
         try
         {
             var config = ReadSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
-            _discordCredentialStore.SaveAsync(_discordCredentials)
-                .GetAwaiter()
-                .GetResult();
+            await _discordCredentialStore.SaveAsync(_discordCredentials);
             ApplyRuntimeSettings(config);
             AppendLog("Einstellungen wurden gespeichert.");
             SetOverallStatus("Einstellungen gespeichert", ActiveColor);
@@ -5340,6 +5349,21 @@ private enum CloseChoice
                 ShowSection("clip-discord");
             }
         }
+        finally
+        {
+            SetSettingsControlsEnabled(true);
+            _settingsSaveBusy = false;
+        }
+    }
+
+    private void SetSettingsControlsEnabled(bool enabled)
+    {
+        _saveSettingsButton.Enabled = enabled;
+        _saveModerationSettingsButton.Enabled = enabled;
+        _saveMinigameSettingsButton.Enabled = enabled;
+        _heistSaveButton.Enabled = enabled;
+        _duelSaveButton.Enabled = enabled;
+        _autoPosterSaveButton.Enabled = enabled;
     }
 
     private void ApplyRuntimeSettings(AppConfig updated)
