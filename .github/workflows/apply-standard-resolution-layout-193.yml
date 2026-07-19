@@ -581,13 +581,13 @@ jobs:
             CreateDashboardIndicatorGrid(_obsIndicator, _twitchIndicator, _eventSubIndicator, _playerIndicator),
             CreateDashboardActionBar(actions),
             dashboardHealth);
-'''
+          '''
           new = '''        var dashboardLayout = CreateModernDashboardLayout(
             CreateDashboardHeader(header, updatePanel),
             CreateDashboardIndicatorGrid(_obsIndicator, _twitchIndicator, _eventSubIndicator, _playerIndicator),
             CreateDashboardActionBar(actions),
             CreateDashboardHealthSummary());
-'''
+          '''
           if old not in main:
               raise SystemExit("Dashboard layout call not found")
           main = main.replace(old, new)
