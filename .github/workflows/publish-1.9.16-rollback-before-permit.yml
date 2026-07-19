@@ -1,0 +1,106 @@
+name: Publish 1.9.16 Rollback Before Permit
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.16-rollback-before-permit.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: 1.9.16
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout v1.9.2 before permit
+        uses: actions/checkout@v4
+        with:
+          ref: v1.9.2
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply rollback version and safe updater patch
+        shell: pwsh
+        run: |
+          $script = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKCmRlZiByZWFkKHBhdGgpOgogICAgcmV0dXJuIFBhdGgocGF0aCkucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOC1zaWcnKQoKZGVmIHdyaXRlKHBhdGgsIHRleHQpOgogICAgUGF0aChwYXRoKS53cml0ZV90ZXh0KHRleHQsIGVuY29kaW5nPSd1dGYtOCcpCgpjc3Byb2pfcGF0aCA9IHJvb3QgLyAnUmFpZENsaXBQbHVnaW4uY3Nwcm9qJwpjc3Byb2ogPSByZWFkKGNzcHJval9wYXRoKQpjc3Byb2ogPSByZS5zdWIocic8VmVyc2lvbj5bXjxdKzwvVmVyc2lvbj4nLCAnPFZlcnNpb24+MS45LjE2PC9WZXJzaW9uPicsIGNzcHJvaikKY3Nwcm9qID0gcmUuc3ViKHInPEZpbGVWZXJzaW9uPltePF0rPC9GaWxlVmVyc2lvbj4nLCAnPEZpbGVWZXJzaW9uPjEuOS4xNi4wPC9GaWxlVmVyc2lvbj4nLCBjc3Byb2opCndyaXRlKGNzcHJval9wYXRoLCBjc3Byb2opCgp1cGRhdGVfcGF0aCA9IHJvb3QgLyAnU2VydmljZXMnIC8gJ1VwZGF0ZVNlcnZpY2UuY3MnCnRleHQgPSByZWFkKHVwZGF0ZV9wYXRoKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKCcnJyAgICAgICAgaWYgKCFleHRlbnNpb24uRXF1YWxzKCIuemlwIiwgU3RyaW5nQ29tcGFyaXNvbi5PcmRpbmFsSWdub3JlQ2FzZSkgJiYKICAgICAgICAgICAgIWV4dGVuc2lvbi5FcXVhbHMoIi5leGUiLCBTdHJpbmdDb21wYXJpc29uLk9yZGluYWxJZ25vcmVDYXNlKSkKICAgICAgICB7CiAgICAgICAgICAgIHRocm93IG5ldyBJbnZhbGlkT3BlcmF0aW9uRXhjZXB0aW9uKAogICAgICAgICAgICAgICAgIkRhcyBVcGRhdGUgbXVzcyBhbHMgWklQLSBvZGVyIEVYRS1EYXRlaSBiZXJlaXRnZXN0ZWxsdCB3ZXJkZW4uIik7CiAgICAgICAgfScnJywgJycnICAgICAgICBpZiAoIWV4dGVuc2lvbi5FcXVhbHMoIi56aXAiLCBTdHJpbmdDb21wYXJpc29uLk9yZGluYWxJZ25vcmVDYXNlKSkKICAgICAgICB7CiAgICAgICAgICAgIHRocm93IG5ldyBJbnZhbGlkT3BlcmF0aW9uRXhjZXB0aW9uKAogICAgICAgICAgICAgICAgIkF1dG8tVXBkYXRlcyBtw7xzc2VuIGFscyBaSVAtUGFrZXQgYmVyZWl0Z2VzdGVsbHQgd2VyZGVuLiAiICsKICAgICAgICAgICAgICAgICJJbnN0YWxsZXItRVhFLURhdGVpZW4gZMO8cmZlbiBuaWNodCBhbHMgVXBkYXRlLVBheWxvYWQgdmVyd2VuZGV0IHdlcmRlbi4iKTsKICAgICAgICB9JycnKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKCcnJyAgICAgICAgaWYgKGV4dGVuc2lvbiA9PSAiLnppcCIpCiAgICAgICAgewogICAgICAgICAgICBFeHRyYWN0WmlwU2FmZWx5KGRvd25sb2FkUGF0aCwgcGF5bG9hZERpcmVjdG9yeSk7CiAgICAgICAgfQogICAgICAgIGVsc2UKICAgICAgICB7CiAgICAgICAgICAgIEZpbGUuQ29weSgKICAgICAgICAgICAgICAgIGRvd25sb2FkUGF0aCwKICAgICAgICAgICAgICAgIFBhdGguQ29tYmluZShwYXlsb2FkRGlyZWN0b3J5LCBBcHBFeGVjdXRhYmxlTmFtZSksCiAgICAgICAgICAgICAgICBvdmVyd3JpdGU6IHRydWUpOwogICAgICAgIH0nJycsICcnJyAgICAgICAgRXh0cmFjdFppcFNhZmVseShkb3dubG9hZFBhdGgsIHBheWxvYWREaXJlY3RvcnkpOycnJykKaWYgJ0luc3RhbGxlci1FWEUtRGF0ZWllbiBkw7xyZmVuIG5pY2h0IGFscyBVcGRhdGUtUGF5bG9hZCB2ZXJ3ZW5kZXQgd2VyZGVuJyBub3QgaW4gdGV4dDoKICAgIHJhaXNlIFJ1bnRpbWVFcnJvcignWklQLW9ubHkgdXBkYXRlIHNhZmV0eSBwYXRjaCBtaXNzaW5nJykKc2VnbWVudF9zdGFydCA9IHRleHQuZmluZCgnRXh0cmFjdFppcFNhZmVseShkb3dubG9hZFBhdGgsIHBheWxvYWREaXJlY3RvcnkpOycpCnNlZ21lbnRfZW5kID0gdGV4dC5maW5kKCdpZiAoIUZpbGUuRXhpc3RzJywgc2VnbWVudF9zdGFydCkKaWYgc2VnbWVudF9zdGFydCA+PSAwIGFuZCBzZWdtZW50X2VuZCA+IHNlZ21lbnRfc3RhcnQgYW5kICdGaWxlLkNvcHknIGluIHRleHRbc2VnbWVudF9zdGFydDpzZWdtZW50X2VuZF06CiAgICByYWlzZSBSdW50aW1lRXJyb3IoJ1Vuc2FmZSBFWEUgY29weSBicmFuY2ggc3RpbGwgcHJlc2VudCcpCndyaXRlKHVwZGF0ZV9wYXRoLCB0ZXh0KQpwcmludCgnUm9sbGJhY2sgdjEuOS4yIHNvdXJjZSBwYXRjaGVkIHRvIDEuOS4xNiB3aXRoIFpJUC1vbmx5IHVwZGF0ZXInKQo='))
+          Set-Content -Path patch-rollback-1.9.16.py -Value $script -Encoding UTF8
+          python patch-rollback-1.9.16.py
+
+      - name: Verify permit is absent
+        shell: pwsh
+        run: |
+          if (Select-String -Path RaidClipPlugin/**/*.cs -Pattern 'permit' -SimpleMatch -Quiet) {
+            throw 'Rollback-Stand enthält noch permit.'
+          }
+
+      - name: Restore
+        run: dotnet restore RaidClipPlugin/RaidClipPlugin.csproj
+
+      - name: Restore tests
+        run: dotnet restore RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj
+
+      - name: Build
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release --no-restore
+
+      - name: Test
+        run: dotnet test RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj -c Release --no-restore --verbosity normal
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe wurde nicht gefunden." }
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin\Installer\RaidClipPlugin.iss"
+          $installer = Get-ChildItem -Path RaidClipPlugin/installer-output -Filter *.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $installer) { throw "Installer wurde nicht erzeugt." }
+          Copy-Item $installer.FullName "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Verify ZIP update payload
+        shell: pwsh
+        run: |
+          $asset = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          if (-not (Test-Path $asset)) { throw "ZIP wurde nicht erzeugt." }
+          $extract = Join-Path $env:RUNNER_TEMP "verify-update-payload"
+          if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }
+          New-Item -ItemType Directory -Path $extract | Out-Null
+          Expand-Archive -Path $asset -DestinationPath $extract -Force
+          if (-not (Test-Path (Join-Path $extract 'RaidClipPlugin.exe'))) { throw "ZIP enthält keine RaidClipPlugin.exe im Hauptordner." }
+
+      - name: Generate update.json
+        shell: pwsh
+        run: |
+          $asset = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $hash = (Get-FileHash $asset -Algorithm SHA256).Hash.ToLowerInvariant()
+          $update = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$asset"
+            changelog = "Rollback auf den stabilen Stand v1.9.2 vor dem !permit-/Moderation-Center-Update. Auto-Update bleibt abgesichert und nutzt ausschließlich ZIP-Pakete."
+            sha256 = $hash
+          }
+          $update | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+          $json = Get-Content update.json -Raw | ConvertFrom-Json
+          if (-not $json.downloadUrl.EndsWith('.zip')) { throw 'update.json zeigt nicht auf ein ZIP.' }
+          if ($json.downloadUrl -like '*Setup*.exe*') { throw 'update.json zeigt auf den Installer.' }
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $notes = "Rollback 1.9.16: basiert auf v1.9.2, also dem Stand vor !permit / Moderation-Center. Der ZIP-only Auto-Updater-Fix bleibt enthalten, damit die App nicht wieder durch den Installer ersetzt wird."
+          gh release create "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --title "RaidClipPlugin v$env:VERSION" --notes $notes || gh release upload "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --clobber
