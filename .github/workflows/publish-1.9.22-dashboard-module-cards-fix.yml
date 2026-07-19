@@ -132,11 +132,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $tag = "v$env:VERSION"
-          $notes = "Hotfix 1.9.22
-
-- Dashboard-Modulkarten der zweiten Reihe werden nicht mehr abgeschnitten.
-- Discord, Musikdienst, Commands und Updater bleiben vollständig lesbar.
-- Build geprüft und ZIP, Installer, update.json veröffentlicht."
+          $notes = "Hotfix 1.9.22``n``n- Dashboard-Modulkarten der zweiten Reihe werden nicht mehr abgeschnitten.``n- Discord, Musikdienst, Commands und Updater bleiben vollständig lesbar.``n- Build geprüft und ZIP, Installer, update.json veröffentlicht."
           git tag -f $tag
           git push origin $tag --force
           gh release delete $tag -y --cleanup-tag 2>$null || $true
@@ -146,3 +142,4 @@ jobs:
             "update.json" `
             --title "RaidClipPlugin $env:VERSION" `
             --notes $notes
+
