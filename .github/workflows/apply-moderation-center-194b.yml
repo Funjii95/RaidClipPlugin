@@ -36,91 +36,91 @@ jobs:
         shell: pwsh
         run: |
           $fix = @'
-from pathlib import Path
-
-path = Path("RaidClipPlugin/MainForm.cs")
-text = path.read_text(encoding="utf-8-sig")
-start_marker = "    private async Task HandleChatMessageAsync("
-end_marker = "\n\n    private void AddChatMessage("
-start = text.index(start_marker)
-end = text.index(end_marker, start)
-replacement = """    private async Task HandleChatMessageAsync(
-        ChatMessage message,
-        AppConfig config,
-        TwitchService twitch,
-        string broadcasterId,
-        string broadcasterLogin,
-        string moderatorId,
-        CancellationToken cancellationToken)
-    {
-        AddChatMessage(message);
-
-        if (config.Moderation.ShowMessagesInLog)
-        {
-            AppendLog($"[Chat] {message.UserName}: {message.Text}");
-        }
-
-        var handledByModerationCenter = await ProcessModerationCenterAsync(
-            message,
-            config,
-            twitch,
-            broadcasterId,
-            broadcasterLogin,
-            moderatorId,
-            cancellationToken);
-        if (handledByModerationCenter ||
-            message.CommandAuthorization == CommandAuthorization.Denied)
-        {
-            return;
-        }
-
-        if (!config.Moderation.AutoFilterEnabled ||
-            string.IsNullOrWhiteSpace(message.Text))
-        {
-            return;
-        }
-
-        if (config.Moderation.WhitelistModsAndVips && message.IsWhitelisted)
-        {
-            return;
-        }
-
-        var blockedWord = config.Moderation.BlockedWords.FirstOrDefault(word =>
-            ContainsBlockedWord(message.Text, word));
-
-        if (blockedWord is null || _chatModeration is null)
-        {
-            return;
-        }
-
-        message.CommandAuthorization = CommandAuthorization.Denied;
-        try
-        {
-            await _chatModeration.DeleteMessageAsync(
-                message.Id,
-                cancellationToken);
-            AppendLog(
-                $"Wortfilter: Nachricht von {message.UserName} wegen " +
-                $"‚{blockedWord}‘ gelöscht.");
-        }
-        catch (OperationCanceledException)
-            when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            AppendLog(
-                "Wortfilter konnte Nachricht nicht löschen: " +
-                exception.Message);
-        }
-    }
-"""
-text = text[:start] + replacement + text[end:]
-if "ProcessModerationCenterAsync" not in text:
-    raise RuntimeError("Moderationscenter-Aufruf fehlt nach Fix.")
-path.write_text(text, encoding="utf-8")
-print("Chatmoderation-Fix angewendet.")
-'@
+          from pathlib import Path
+          
+          path = Path("RaidClipPlugin/MainForm.cs")
+          text = path.read_text(encoding="utf-8-sig")
+          start_marker = "    private async Task HandleChatMessageAsync("
+          end_marker = "\n\n    private void AddChatMessage("
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+          replacement = """    private async Task HandleChatMessageAsync(
+                  ChatMessage message,
+                  AppConfig config,
+                  TwitchService twitch,
+                  string broadcasterId,
+                  string broadcasterLogin,
+                  string moderatorId,
+                  CancellationToken cancellationToken)
+              {
+                  AddChatMessage(message);
+          
+                  if (config.Moderation.ShowMessagesInLog)
+                  {
+                      AppendLog($"[Chat] {message.UserName}: {message.Text}");
+                  }
+          
+                  var handledByModerationCenter = await ProcessModerationCenterAsync(
+                      message,
+                      config,
+                      twitch,
+                      broadcasterId,
+                      broadcasterLogin,
+                      moderatorId,
+                      cancellationToken);
+                  if (handledByModerationCenter ||
+                      message.CommandAuthorization == CommandAuthorization.Denied)
+                  {
+                      return;
+                  }
+          
+                  if (!config.Moderation.AutoFilterEnabled ||
+                      string.IsNullOrWhiteSpace(message.Text))
+                  {
+                      return;
+                  }
+          
+                  if (config.Moderation.WhitelistModsAndVips && message.IsWhitelisted)
+                  {
+                      return;
+                  }
+          
+                  var blockedWord = config.Moderation.BlockedWords.FirstOrDefault(word =>
+                      ContainsBlockedWord(message.Text, word));
+          
+                  if (blockedWord is null || _chatModeration is null)
+                  {
+                      return;
+                  }
+          
+                  message.CommandAuthorization = CommandAuthorization.Denied;
+                  try
+                  {
+                      await _chatModeration.DeleteMessageAsync(
+                          message.Id,
+                          cancellationToken);
+                      AppendLog(
+                          $"Wortfilter: Nachricht von {message.UserName} wegen " +
+                          $"‚{blockedWord}‘ gelöscht.");
+                  }
+                  catch (OperationCanceledException)
+                      when (cancellationToken.IsCancellationRequested)
+                  {
+                  }
+                  catch (Exception exception)
+                  {
+                      AppendLog(
+                          "Wortfilter konnte Nachricht nicht löschen: " +
+                          exception.Message);
+                  }
+              }
+          """
+          text = text[:start] + replacement + text[end:]
+          if "ProcessModerationCenterAsync" not in text:
+              raise RuntimeError("Moderationscenter-Aufruf fehlt nach Fix.")
+          path.write_text(text, encoding="utf-8")
+          print("Chatmoderation-Fix angewendet.")
+          '@
           Set-Content -Path "fix-moderation-center.py" -Value $fix -Encoding UTF8
           python fix-moderation-center.py
 
