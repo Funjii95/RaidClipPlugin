@@ -1,4 +1,4 @@
-﻿namespace RaidClipPlugin.Config;
+namespace RaidClipPlugin.Config;
 
 public class AppConfig
 {
@@ -79,6 +79,75 @@ public class ModerationConfig
     public bool WhitelistModsAndVips { get; set; } = true;
     public int TimeoutSeconds { get; set; } = 600;
     public List<string> BlockedWords { get; set; } = new();
+    public bool ConfirmDestructiveActions { get; set; } = true;
+    public List<string> UserWhitelist { get; set; } = new();
+    public LinkFilterConfig LinkFilter { get; set; } = new();
+    public PermitConfig Permit { get; set; } = new();
+}
+
+public enum LinkModerationAction
+{
+    LogOnly,
+    DeleteMessage,
+    DeleteAndWarn,
+    DeleteAndTimeout,
+    DeleteWarnAndTimeout
+}
+
+public enum PermitMode
+{
+    SingleMessage,
+    SingleLink,
+    TimeWindow
+}
+
+public class LinkFilterConfig
+{
+    public bool Enabled { get; set; } = false;
+    public bool DetectBareDomains { get; set; } = true;
+    public bool DetectObfuscatedLinks { get; set; } = true;
+    public bool BotResponseEnabled { get; set; } = true;
+    public int BotResponseCooldownSeconds { get; set; } = 30;
+    public string WarningTemplate { get; set; } =
+        "@{user}, Links sind nur nach Freigabe durch einen Moderator erlaubt. Nutze bei Bedarf {command}.";
+    public LinkModerationAction Action { get; set; } = LinkModerationAction.DeleteAndWarn;
+    public int TimeoutSeconds { get; set; } = 60;
+    public bool ExemptBroadcaster { get; set; } = true;
+    public bool ExemptModerators { get; set; } = true;
+    public bool ExemptVips { get; set; } = true;
+    public bool ExemptSubscribers { get; set; } = false;
+    public bool ApplyBlacklistToPrivilegedUsers { get; set; } = false;
+    public List<string> KnownBotLogins { get; set; } = new()
+    {
+        "nightbot",
+        "streamelements",
+        "streamlabs",
+        "moobot",
+        "raidclipplugin"
+    };
+    public List<string> WhitelistedDomains { get; set; } = new()
+    {
+        "twitch.tv",
+        "clips.twitch.tv"
+    };
+    public List<string> BlacklistedDomains { get; set; } = new();
+}
+
+public class PermitConfig
+{
+    public bool Enabled { get; set; } = true;
+    public bool UnpermitEnabled { get; set; } = true;
+    public string Command { get; set; } = "!permit";
+    public string UnpermitCommand { get; set; } = "!unpermit";
+    public int DefaultDurationSeconds { get; set; } = 60;
+    public int MinimumDurationSeconds { get; set; } = 10;
+    public int MaximumDurationSeconds { get; set; } = 600;
+    public PermitMode Mode { get; set; } = PermitMode.SingleMessage;
+    public bool PersistActivePermits { get; set; } = false;
+    public bool AllowVips { get; set; } = false;
+    public bool AllowSubscribers { get; set; } = false;
+    public bool ReplyOnDenied { get; set; } = false;
+    public bool ReplyOnSuccess { get; set; } = true;
 }
 
 public class MinigameConfig

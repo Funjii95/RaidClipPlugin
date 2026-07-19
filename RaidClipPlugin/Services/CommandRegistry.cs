@@ -121,6 +121,15 @@ public sealed class CommandRegistry
             config.DiscordClips.InviteCommand, config.DiscordClips.InviteCommandEnabled,
             userCooldown:config.DiscordClips.InviteCooldownSeconds, order:90);
 
+        Add("moderation.permit", config.Moderation.Permit.Command, null, "moderation", "Moderation", "Linkfreigabe",
+            "Erlaubt einem Zuschauer vorÃ¼bergehend das Posten eines Links.", config.Moderation.Permit.Command + " @Benutzer [30s|5m|1h]",
+            config.Moderation.Permit.Command + " @Funjii 5m", config.Moderation.Enabled && config.Moderation.Permit.Enabled,
+            CommandRole.Moderator, order: 130);
+        Add("moderation.unpermit", config.Moderation.Permit.UnpermitCommand, null, "moderation", "Moderation", "Linkfreigabe widerrufen",
+            "Widerruft eine aktive Linkfreigabe.", config.Moderation.Permit.UnpermitCommand + " @Benutzer",
+            config.Moderation.Permit.UnpermitCommand + " @Funjii", config.Moderation.Enabled && config.Moderation.Permit.UnpermitEnabled,
+            CommandRole.Moderator, order: 131);
+
         foreach (var custom in config.Commands.CustomCommands)
         {
             var id = string.IsNullOrWhiteSpace(custom.Id)

@@ -2705,10 +2705,14 @@ private enum CloseChoice
                     SetModerationStatus("Startet …", WaitingColor);
                     _chatModeration.Activated += () =>
                         SetModerationStatus("Aktiv", ActiveColor);
-                    _chatModeration.MessageObserved += message =>
+                    _chatModeration.MessageAuthorizing += message =>
                         HandleChatMessageAsync(
                             message,
                             config,
+                            twitch,
+                            _broadcaster.Id,
+                            _broadcaster.Login,
+                            session.UserId,
                             cancellationToken);
                 }
                 else
@@ -2954,6 +2958,10 @@ private enum CloseChoice
     private async Task HandleChatMessageAsync(
         ChatMessage message,
         AppConfig config,
+        TwitchService twitch,
+        string broadcasterId,
+        string broadcasterLogin,
+        string moderatorId,
         CancellationToken cancellationToken)
     {
         AddChatMessage(message);
@@ -2961,6 +2969,19 @@ private enum CloseChoice
         if (config.Moderation.ShowMessagesInLog)
         {
             AppendLog($"[Chat] {message.UserName}: {message.Text}");
+        }
+
+        await ProcessModerationCenterAsync(
+            message,
+            config,
+            twitch,
+            broadcasterId,
+            broadcasterLogin,
+            moderatorId,
+            cancellationToken);
+        if (message.CommandAuthorization == CommandAuthorization.Denied)
+        {
+            return;
         }
 
         if (!config.Moderation.AutoFilterEnabled ||
@@ -2982,6 +3003,7 @@ private enum CloseChoice
             return;
         }
 
+        message.CommandAuthorization = CommandAuthorization.Denied;
         try
         {
             await _chatModeration.DeleteMessageAsync(
@@ -3002,6 +3024,7 @@ private enum CloseChoice
                 exception.Message);
         }
     }
+
 
     private void AddChatMessage(ChatMessage message)
     {
@@ -4967,6 +4990,7 @@ private enum CloseChoice
             _blockedWordsBox.Text = string.Join(
                 ", ",
                 config.Moderation.BlockedWords);
+            LoadModerationCenterSettings(config);
             _healthcheckEnabledCheck.Checked = config.ModuleHealth.Enabled;
             _healthAutoRestartCheck.Checked = config.ModuleHealth.AutoRestartEnabled;
             _gambleHealthcheckCheck.Checked = config.ModuleHealth.GambleHealthcheckEnabled;
@@ -5136,6 +5160,7 @@ private enum CloseChoice
             .Where(word => word.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+        ReadModerationCenterSettings(config);
         config.ModuleHealth.Enabled = _healthcheckEnabledCheck.Checked;
         config.ModuleHealth.AutoRestartEnabled = _healthAutoRestartCheck.Checked;
         config.ModuleHealth.GambleHealthcheckEnabled = _gambleHealthcheckCheck.Checked;
