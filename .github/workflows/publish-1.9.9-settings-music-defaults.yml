@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 env:
-  VERSION: 1.9.9
+  VERSION: '1.9.9'
 
 jobs:
   release:
