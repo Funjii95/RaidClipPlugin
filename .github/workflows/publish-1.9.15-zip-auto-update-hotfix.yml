@@ -1,0 +1,98 @@
+name: Publish 1.9.15 ZIP Auto Update Hotfix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.15-zip-auto-update-hotfix.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: 1.9.15
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply ZIP-only updater hotfix
+        shell: pwsh
+        run: |
+          $script = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKCmRlZiByZWFkKHBhdGg6IFBhdGgpIC0+IHN0cjoKICAgIHJldHVybiBwYXRoLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgtc2lnJykKCmRlZiB3cml0ZShwYXRoOiBQYXRoLCB0ZXh0OiBzdHIpIC0+IE5vbmU6CiAgICBwYXRoLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9J3V0Zi04JykKCnVwZGF0ZV9wYXRoID0gcm9vdCAvICdTZXJ2aWNlcycgLyAnVXBkYXRlU2VydmljZS5jcycKdGV4dCA9IHJlYWQodXBkYXRlX3BhdGgpCnRleHQgPSB0ZXh0LnJlcGxhY2UoJycnICAgICAgICBpZiAoIWV4dGVuc2lvbi5FcXVhbHMoIi56aXAiLCBTdHJpbmdDb21wYXJpc29uLk9yZGluYWxJZ25vcmVDYXNlKSAmJgogICAgICAgICAgICAhZXh0ZW5zaW9uLkVxdWFscygiLmV4ZSIsIFN0cmluZ0NvbXBhcmlzb24uT3JkaW5hbElnbm9yZUNhc2UpKQogICAgICAgIHsKICAgICAgICAgICAgdGhyb3cgbmV3IEludmFsaWRPcGVyYXRpb25FeGNlcHRpb24oCiAgICAgICAgICAgICAgICAiRGFzIFVwZGF0ZSBtdXNzIGFscyBaSVAtIG9kZXIgRVhFLURhdGVpIGJlcmVpdGdlc3RlbGx0IHdlcmRlbi4iKTsKICAgICAgICB9JycnLCAnJycgICAgICAgIGlmICghZXh0ZW5zaW9uLkVxdWFscygiLnppcCIsIFN0cmluZ0NvbXBhcmlzb24uT3JkaW5hbElnbm9yZUNhc2UpKQogICAgICAgIHsKICAgICAgICAgICAgdGhyb3cgbmV3IEludmFsaWRPcGVyYXRpb25FeGNlcHRpb24oCiAgICAgICAgICAgICAgICAiQXV0by1VcGRhdGVzIG3DvHNzZW4gYWxzIFpJUC1QYWtldCBiZXJlaXRnZXN0ZWxsdCB3ZXJkZW4uICIgKwogICAgICAgICAgICAgICAgIkluc3RhbGxlci1FWEUtRGF0ZWllbiBkw7xyZmVuIG5pY2h0IGFscyBVcGRhdGUtUGF5bG9hZCB2ZXJ3ZW5kZXQgd2VyZGVuLiIpOwogICAgICAgIH0nJycpCnRleHQgPSB0ZXh0LnJlcGxhY2UoJycnICAgICAgICBpZiAoZXh0ZW5zaW9uID09ICIuemlwIikKICAgICAgICB7CiAgICAgICAgICAgIEV4dHJhY3RaaXBTYWZlbHkoZG93bmxvYWRQYXRoLCBwYXlsb2FkRGlyZWN0b3J5KTsKICAgICAgICB9CiAgICAgICAgZWxzZQogICAgICAgIHsKICAgICAgICAgICAgRmlsZS5Db3B5KAogICAgICAgICAgICAgICAgZG93bmxvYWRQYXRoLAogICAgICAgICAgICAgICAgUGF0aC5Db21iaW5lKHBheWxvYWREaXJlY3RvcnksIEFwcEV4ZWN1dGFibGVOYW1lKSwKICAgICAgICAgICAgICAgIG92ZXJ3cml0ZTogdHJ1ZSk7CiAgICAgICAgfScnJywgJycnICAgICAgICBFeHRyYWN0WmlwU2FmZWx5KGRvd25sb2FkUGF0aCwgcGF5bG9hZERpcmVjdG9yeSk7JycnKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKCcnJyAgICAgICAgICAgICAgICAiRGFzIFVwZGF0ZSBtdXNzIGFscyBaSVAtIG9kZXIgRVhFLURhdGVpIGJlcmVpdGdlc3RlbGx0IHdlcmRlbi4iKTsnJycsICcnJyAgICAgICAgICAgICAgICAiQXV0by1VcGRhdGVzIG3DvHNzZW4gYWxzIFpJUC1QYWtldCBiZXJlaXRnZXN0ZWxsdCB3ZXJkZW4uIik7JycnKQppZiAnSW5zdGFsbGVyLUVYRS1EYXRlaWVuIGTDvHJmZW4gbmljaHQgYWxzIFVwZGF0ZS1QYXlsb2FkIHZlcndlbmRldCB3ZXJkZW4nIG5vdCBpbiB0ZXh0OgogICAgcmFpc2UgUnVudGltZUVycm9yKCdVcGRhdGVTZXJ2aWNlIFpJUC1vbmx5IHBhdGNoIHdhcyBub3QgYXBwbGllZCcpCndyaXRlKHVwZGF0ZV9wYXRoLCB0ZXh0KQoKY3Nwcm9qX3BhdGggPSByb290IC8gJ1JhaWRDbGlwUGx1Z2luLmNzcHJvaicKY3Nwcm9qID0gcmVhZChjc3Byb2pfcGF0aCkKY3Nwcm9qID0gcmUuc3ViKHInPFZlcnNpb24+W148XSs8L1ZlcnNpb24+JywgJzxWZXJzaW9uPjEuOS4xNTwvVmVyc2lvbj4nLCBjc3Byb2opCmNzcHJvaiA9IHJlLnN1YihyJzxGaWxlVmVyc2lvbj5bXjxdKzwvRmlsZVZlcnNpb24+JywgJzxGaWxlVmVyc2lvbj4xLjkuMTUuMDwvRmlsZVZlcnNpb24+JywgY3Nwcm9qKQp3cml0ZShjc3Byb2pfcGF0aCwgY3Nwcm9qKQoKcHJpbnQoJ1VwZGF0ZXIgWklQLW9ubHkgaG90Zml4IGFwcGxpZWQgZm9yIDEuOS4xNScpCg=='))
+          Set-Content -Path patch-updater-zip-hotfix.py -Value $script -Encoding UTF8
+          python patch-updater-zip-hotfix.py
+
+      - name: Commit hotfix source
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/Services/UpdateService.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            Write-Host "No source changes to commit."
+          } else {
+            git commit -m "Fix updater to use ZIP payloads only for 1.9.15"
+            git push
+          }
+
+      - name: Restore
+        run: dotnet restore RaidClipPlugin/RaidClipPlugin.csproj
+
+      - name: Restore tests
+        run: dotnet restore RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj
+
+      - name: Build
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release --no-restore
+
+      - name: Test
+        run: dotnet test RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj -c Release --no-restore --verbosity normal
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe wurde nicht gefunden." }
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin\Installer\RaidClipPlugin.iss"
+          $installer = Get-ChildItem -Path RaidClipPlugin/installer-output -Filter *.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $installer) { throw "Installer wurde nicht erzeugt." }
+          Copy-Item $installer.FullName "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Generate update.json
+        shell: pwsh
+        run: |
+          $asset = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $hash = (Get-FileHash $asset -Algorithm SHA256).Hash.ToLowerInvariant()
+          $update = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$asset"
+            changelog = "Kritischer Hotfix: Auto-Update verwendet ab jetzt ausschließlich ZIP-Pakete. Installer-EXE-Dateien werden nicht mehr als Update-Payload akzeptiert, damit RaidClipPlugin.exe nicht versehentlich durch den Installer ersetzt wird."
+            sha256 = $hash
+          }
+          $update | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $notes = "Kritischer Hotfix 1.9.15 - Auto-Update zeigt jetzt auf das ZIP-Paket statt auf den Installer. Der Updater akzeptiert keine Installer-EXE mehr als Payload, damit RaidClipPlugin.exe nicht durch den Installer ersetzt wird. Falls deine aktuelle EXE bereits den Installer startet, bitte einmal manuell den Installer aus diesem Release ausführen oder das ZIP entpacken."
+          gh release create "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --title "RaidClipPlugin v$env:VERSION" --notes $notes || gh release upload "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --clobber
