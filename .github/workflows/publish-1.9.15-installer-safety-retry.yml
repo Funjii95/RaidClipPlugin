@@ -1,0 +1,253 @@
+name: Publish 1.9.15 Installer Safety Retry
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-1.9.15-installer-safety-retry.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: 1.9.15
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: \${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply installer safety and log stability hotfix
+        shell: pwsh
+        run: |
+          $script = @'
+          from pathlib import Path
+          import re
+
+          root = Path('RaidClipPlugin')
+
+          def read(path: Path) -> str:
+              return path.read_text(encoding='utf-8-sig')
+
+          def write(path: Path, text: str) -> None:
+              path.write_text(text, encoding='utf-8')
+
+          update_path = root / 'Services' / 'UpdateService.cs'
+          text = read(update_path)
+          text = text.replace('''        if (!extension.Equals(".zip", StringComparison.OrdinalIgnoreCase) &&
+                !extension.Equals(".exe", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Das Update muss als ZIP- oder EXE-Datei bereitgestellt werden.");
+        }''', '''        if (!extension.Equals(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Auto-Updates müssen als ZIP-Paket bereitgestellt werden. " +
+                "Installer-EXE-Dateien dürfen nicht als Update-Payload verwendet werden.");
+        }''')
+          text = text.replace('''        if (extension == ".zip")
+        {
+            ExtractZipSafely(downloadPath, payloadDirectory);
+        }
+        else
+        {
+            File.Copy(
+                downloadPath,
+                Path.Combine(payloadDirectory, AppExecutableName),
+                overwrite: true);
+        }''', '''        ExtractZipSafely(downloadPath, payloadDirectory);''')
+          text = text.replace('''                "Das Update muss als ZIP- oder EXE-Datei bereitgestellt werden.");''', '''                "Auto-Updates müssen als ZIP-Paket bereitgestellt werden.");''')
+          if 'Installer-EXE-Dateien dürfen nicht als Update-Payload verwendet werden' not in text:
+              raise RuntimeError('UpdateService ZIP-only patch is missing')
+          if 'Path.Combine(payloadDirectory, AppExecutableName)' in text and 'File.Copy' in text[text.find('ExtractZipSafely(downloadPath, payloadDirectory);'):text.find('if (!File.Exists')]:
+              raise RuntimeError('Unsafe EXE payload copy still exists')
+          write(update_path, text)
+
+          main_path = root / 'MainForm.cs'
+          main = read(main_path)
+          old = '''    private void AppendLog(string message)
+    {
+        if (IsDisposed)
+        {
+            return;
+        }
+
+        if (InvokeRequired)
+        {
+            try
+            {
+                BeginInvoke(new Action(() => AppendLog(message)));
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            return;
+        }
+
+        _fileLog.WriteLine(message);
+        _logBox.AppendText(
+            $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+        _logBox.SelectionStart = _logBox.TextLength;
+        _logBox.ScrollToCaret();
+    }
+'''
+          new = '''    private void AppendLog(string message)
+    {
+        if (IsDisposed || Disposing)
+        {
+            return;
+        }
+
+        if (InvokeRequired)
+        {
+            try
+            {
+                if (!IsDisposed && !Disposing && IsHandleCreated)
+                {
+                    BeginInvoke(new Action(() => AppendLog(message)));
+                }
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            return;
+        }
+
+        try
+        {
+            _fileLog.WriteLine(message);
+        }
+        catch
+        {
+        }
+
+        if (_logBox.IsDisposed || _logBox.Disposing || !_logBox.IsHandleCreated)
+        {
+            return;
+        }
+
+        try
+        {
+            _logBox.AppendText(
+                $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+            _logBox.SelectionStart = _logBox.TextLength;
+            _logBox.ScrollToCaret();
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+'''
+          if old in main:
+              main = main.replace(old, new)
+          else:
+              section_start = main.find('private void AppendLog')
+              section_end = main.find('private void SetOverallStatus')
+              section = main[section_start:section_end]
+              if 'catch (ObjectDisposedException)' not in section or '_logBox.IsDisposed' not in section:
+                  raise RuntimeError('AppendLog block not patched and no disposal guard found')
+          write(main_path, main)
+
+          csproj_path = root / 'RaidClipPlugin.csproj'
+          csproj = read(csproj_path)
+          csproj = re.sub(r'<Version>[^<]+</Version>', '<Version>1.9.15</Version>', csproj)
+          csproj = re.sub(r'<FileVersion>[^<]+</FileVersion>', '<FileVersion>1.9.15.0</FileVersion>', csproj)
+          write(csproj_path, csproj)
+
+          print('1.9.15 installer safety and log stability hotfix applied')
+          '@
+          Set-Content -Path patch-1.9.15-hotfix.py -Value $script -Encoding UTF8
+          python patch-1.9.15-hotfix.py
+
+      - name: Commit hotfix source
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/Services/UpdateService.cs RaidClipPlugin/MainForm.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            Write-Host "No source changes to commit."
+          } else {
+            git commit -m "Fix installer update payload handling and log disposal"
+            git push
+          }
+
+      - name: Restore
+        run: dotnet restore RaidClipPlugin/RaidClipPlugin.csproj
+
+      - name: Restore tests
+        run: dotnet restore RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj
+
+      - name: Build
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release --no-restore
+
+      - name: Test
+        run: dotnet test RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj -c Release --no-restore --verbosity normal
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "\${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe wurde nicht gefunden." }
+          & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin\Installer\RaidClipPlugin.iss"
+          $installer = Get-ChildItem -Path RaidClipPlugin/installer-output -Filter *.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $installer) { throw "Installer wurde nicht erzeugt." }
+          Copy-Item $installer.FullName "RaidClipPluginSetup-$env:VERSION.exe" -Force
+
+      - name: Verify ZIP update payload
+        shell: pwsh
+        run: |
+          $asset = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          if (-not (Test-Path $asset)) { throw "ZIP wurde nicht erzeugt." }
+          $extract = Join-Path $env:RUNNER_TEMP "verify-update-payload"
+          if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }
+          New-Item -ItemType Directory -Path $extract | Out-Null
+          Expand-Archive -Path $asset -DestinationPath $extract -Force
+          if (-not (Test-Path (Join-Path $extract 'RaidClipPlugin.exe'))) { throw "ZIP enthält keine RaidClipPlugin.exe im Hauptordner." }
+
+      - name: Generate update.json
+        shell: pwsh
+        run: |
+          $asset = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $hash = (Get-FileHash $asset -Algorithm SHA256).Hash.ToLowerInvariant()
+          $update = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$asset"
+            changelog = "Kritischer Hotfix: Auto-Update verwendet ausschließlich ZIP-Pakete. Installer-EXE-Dateien werden nicht mehr als Update-Payload akzeptiert, damit RaidClipPlugin.exe nicht versehentlich durch den Installer ersetzt wird. Zusätzlich wurde das GUI-Logging gegen bereits geschlossene Fenster abgesichert."
+            sha256 = $hash
+          }
+          $update | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+          $json = Get-Content update.json -Raw | ConvertFrom-Json
+          if (-not $json.downloadUrl.EndsWith('.zip')) { throw 'update.json zeigt nicht auf ein ZIP.' }
+          if ($json.downloadUrl -like '*Setup*.exe*') { throw 'update.json zeigt auf den Installer.' }
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $notes = "Kritischer Hotfix 1.9.15 - Auto-Update zeigt jetzt auf das ZIP-Paket statt auf den Installer. Der Updater akzeptiert keine Installer-EXE mehr als Payload. GUI-Logging ignoriert Logs sicher, wenn das Fenster bereits geschlossen wurde. Wichtig: Falls deine aktuell installierte RaidClipPlugin.exe bereits den Installer startet, bitte diese Version einmal manuell per Installer installieren oder das ZIP entpacken. Danach funktionieren zukünftige Auto-Updates wieder korrekt."
+          gh release create "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --title "RaidClipPlugin v$env:VERSION" --notes $notes || gh release upload "v$env:VERSION" "RaidClipPlugin-$env:VERSION-win-x64.zip" "RaidClipPluginSetup-$env:VERSION.exe" update.json --clobber
