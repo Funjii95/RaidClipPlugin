@@ -77,15 +77,16 @@ jobs:
           IDAsIDgsIDApOwogICAgICAgICAgICBidXR0b25Ib3N0LkNvbnRyb2xzLkFkZChidXR0b24pOwogICAgICAgIH0KCiAgICAgICAg
           bGF5b3V0LkNvbnRyb2xzLkFkZChfdmVyc2lvbkxhYmVsLCAwLCAwKTsKICAgICAgICBsYXlvdXQuQ29udHJvbHMuQWRkKGJ1dHRv
           bkhvc3QsIDEsIDApOwogICAgICAgIGNhcmQuQ29udHJvbHMuQWRkKGxheW91dCk7CiAgICAgICAgcmV0dXJuIGNhcmQ7CiAgICB9
-          CicnJwppZiBvbGQgbm90IGluIHRleHQ6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCdVcGRhdGUgc3RhdHVzIGNhcmQgYmxvY2sgbm90
-          IGZvdW5kJykKdGV4dCA9IHRleHQucmVwbGFjZShvbGQsIG5ldykKZGFzaGJvYXJkLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9
-          J3V0Zi04JykKCnByb2plY3QgPSBjc3Byb2oucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOC1zaWcnKQpwcm9qZWN0ID0gcmUuc3Vi
-          KHInPFZlcnNpb24+W148XSs8L1ZlcnNpb24+JywgJzxWZXJzaW9uPjEuOS4xOTwvVmVyc2lvbj4nLCBwcm9qZWN0KQpwcm9qZWN0
-          ID0gcmUuc3ViKHInPEZpbGVWZXJzaW9uPltePF0rPC9GaWxlVmVyc2lvbj4nLCAnPEZpbGVWZXJzaW9uPjEuOS4xOS4wPC9GaWxl
-          VmVyc2lvbj4nLCBwcm9qZWN0KQpwcm9qZWN0ID0gcmUuc3ViKHInPEFzc2VtYmx5VmVyc2lvbj5bXjxdKzwvQXNzZW1ibHlWZXJz
-          aW9uPicsICc8QXNzZW1ibHlWZXJzaW9uPjEuOS4xOS4wPC9Bc3NlbWJseVZlcnNpb24+JywgcHJvamVjdCkKY3Nwcm9qLndyaXRl
-          X3RleHQocHJvamVjdCwgZW5jb2Rpbmc9J3V0Zi04JykKcHJpbnQoJ0ZpeGVkIHVwZGF0ZSBidXR0b24gaGl0Ym94IGFuZCB2ZXJz
-          aW9uIDEuOS4xOS4nKQo=
+          CicnJwppZiBvbGQgaW4gdGV4dDoKICAgIHRleHQgPSB0ZXh0LnJlcGxhY2Uob2xkLCBuZXcpCmVsaWYgJ3ZhciBidXR0b25Ib3N0
+          ID0gbmV3IEZsb3dMYXlvdXRQYW5lbCcgbm90IGluIHRleHQ6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCdVcGRhdGUgc3RhdHVzIGNh
+          cmQgYmxvY2sgbm90IGZvdW5kJykKZGFzaGJvYXJkLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9J3V0Zi04JykKCnByb2plY3Qg
+          PSBjc3Byb2oucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOC1zaWcnKQpwcm9qZWN0ID0gcmUuc3ViKHInPFZlcnNpb24+W148XSs8
+          L1ZlcnNpb24+JywgJzxWZXJzaW9uPjEuOS4xOTwvVmVyc2lvbj4nLCBwcm9qZWN0KQpwcm9qZWN0ID0gcmUuc3ViKHInPEZpbGVW
+          ZXJzaW9uPltePF0rPC9GaWxlVmVyc2lvbj4nLCAnPEZpbGVWZXJzaW9uPjEuOS4xOS4wPC9GaWxlVmVyc2lvbj4nLCBwcm9qZWN0
+          KQpwcm9qZWN0ID0gcmUuc3ViKHInPEFzc2VtYmx5VmVyc2lvbj5bXjxdKzwvQXNzZW1ibHlWZXJzaW9uPicsICc8QXNzZW1ibHlW
+          ZXJzaW9uPjEuOS4xOS4wPC9Bc3NlbWJseVZlcnNpb24+JywgcHJvamVjdCkKY3Nwcm9qLndyaXRlX3RleHQocHJvamVjdCwgZW5j
+          b2Rpbmc9J3V0Zi04JykKcHJpbnQoJ1VwZGF0ZSBidXR0b24gZml4IGlzIHByZXNlbnQ7IHZlcnNpb24gMS45LjE5IGlzIHNldC4n
+          KQo=
           '@
           $patchBytes = [Convert]::FromBase64String(($patchBase64 -replace '\s', ''))
           [IO.File]::WriteAllBytes('apply_update_button_fix_1919.py', $patchBytes)
@@ -111,8 +112,8 @@ jobs:
       - name: Publish app
         shell: pwsh
         run: |
-          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/RaidClipPlugin
-          Compress-Archive -Path publish/RaidClipPlugin/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
 
       - name: Build installer
         shell: pwsh
@@ -121,7 +122,7 @@ jobs:
           $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
           $iscc = Join-Path (Join-Path $programFilesX86 'Inno Setup 6') 'ISCC.exe'
           & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin/Installer/RaidClipPlugin.iss"
-          Copy-Item "RaidClipPlugin/Installer/Output/RaidClipPluginSetup-$env:VERSION.exe" "RaidClipPluginSetup-$env:VERSION.exe" -Force
+          Copy-Item "RaidClipPlugin/installer-output/RaidClipPlugin-Setup-$env:VERSION.exe" "RaidClipPluginSetup-$env:VERSION.exe" -Force
 
       - name: Create update manifest
         shell: pwsh
