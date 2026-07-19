@@ -1,0 +1,89 @@
+﻿name: Publish 1.9.24 Minigame Load Persistence Hotfix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  patch-build-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          dotnet-quality: preview
+
+      - name: Patch minigame load persistence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $patchBase64 = 'JEVycm9yQWN0aW9uUHJlZmVyZW5jZSA9ICdTdG9wJwokY29uZmlnUGF0aCA9ICdSYWlkQ2xpcFBsdWdpbi9TZXJ2aWNlcy9Db25maWd1cmF0aW9uU2VydmljZS5jcycKJHByb2plY3RQYXRoID0gJ1JhaWRDbGlwUGx1Z2luL1JhaWRDbGlwUGx1Z2luLmNzcHJvaicKCiRjb25maWcgPSBHZXQtQ29udGVudCAkY29uZmlnUGF0aCAtUmF3IC1FbmNvZGluZyBVVEY4CiRwcm9qZWN0ID0gR2V0LUNvbnRlbnQgJHByb2plY3RQYXRoIC1SYXcgLUVuY29kaW5nIFVURjgKCiRvbGRPcmRlciA9IEAnCiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5CbG9ja2VkV29yZHMgaXMgbm90IG51bGwpCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGNvbmZpZy5Nb2RlcmF0aW9uLkJsb2NrZWRXb3JkcyA9IHNldHRpbmdzLkJsb2NrZWRXb3JkczsKICAgICAgICAgICAgfQoKCiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5NaW5pZ2FtZUVuYWJsZWQgaXMgbm90IG51bGwpCidACiRuZXdPcmRlciA9IEAnCiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5CbG9ja2VkV29yZHMgaXMgbm90IG51bGwpCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGNvbmZpZy5Nb2RlcmF0aW9uLkJsb2NrZWRXb3JkcyA9IHNldHRpbmdzLkJsb2NrZWRXb3JkczsKICAgICAgICAgICAgfQoKCiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5NaW5pZ2FtZSBpcyBub3QgbnVsbCkKICAgICAgICAgICAgICAgIGNvbmZpZy5NaW5pZ2FtZSA9IHNldHRpbmdzLk1pbmlnYW1lOwoKICAgICAgICAgICAgaWYgKHNldHRpbmdzLk1pbmlnYW1lRW5hYmxlZCBpcyBub3QgbnVsbCkKJ0AKaWYgKCRjb25maWcuQ29udGFpbnMoJG9sZE9yZGVyKSAtYW5kIC1ub3QgJGNvbmZpZy5Db250YWlucygiaWYgKHNldHRpbmdzLk1pbmlnYW1lIGlzIG5vdCBudWxsKWByYG4gICAgICAgICAgICAgICAgY29uZmlnLk1pbmlnYW1lID0gc2V0dGluZ3MuTWluaWdhbWU7YHJgbmByYG4gICAgICAgICAgICBpZiAoc2V0dGluZ3MuTWluaWdhbWVFbmFibGVkIGlzIG5vdCBudWxsKSIpKQp7CiAgICAkY29uZmlnID0gJGNvbmZpZy5SZXBsYWNlKCRvbGRPcmRlciwgJG5ld09yZGVyKQp9CgokbGF0ZU1pbmlnYW1lID0gQCcKICAgICAgICAgICAgaWYgKHNldHRpbmdzLkxpdmVDaGF0IGlzIG5vdCBudWxsKQogICAgICAgICAgICAgICAgY29uZmlnLkxpdmVDaGF0ID0gc2V0dGluZ3MuTGl2ZUNoYXQ7CiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5NaW5pZ2FtZSBpcyBub3QgbnVsbCkKICAgICAgICAgICAgICAgIGNvbmZpZy5NaW5pZ2FtZSA9IHNldHRpbmdzLk1pbmlnYW1lOwogICAgICAgICAgICBpZiAoc2V0dGluZ3MuSGVpc3QgaXMgbm90IG51bGwpCidACiRsYXRlTWluaWdhbWVSZXBsYWNlbWVudCA9IEAnCiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5MaXZlQ2hhdCBpcyBub3QgbnVsbCkKICAgICAgICAgICAgICAgIGNvbmZpZy5MaXZlQ2hhdCA9IHNldHRpbmdzLkxpdmVDaGF0OwogICAgICAgICAgICBpZiAoc2V0dGluZ3MuSGVpc3QgaXMgbm90IG51bGwpCidACmlmICgkY29uZmlnLkNvbnRhaW5zKCRsYXRlTWluaWdhbWUpKQp7CiAgICAkY29uZmlnID0gJGNvbmZpZy5SZXBsYWNlKCRsYXRlTWluaWdhbWUsICRsYXRlTWluaWdhbWVSZXBsYWNlbWVudCkKfQplbHNlaWYgKCRjb25maWcuQ29udGFpbnMoJ2lmIChzZXR0aW5ncy5NaW5pZ2FtZSBpcyBub3QgbnVsbCknKSAtYW5kCiAgICAgICAgLW5vdCAkY29uZmlnLkNvbnRhaW5zKCJpZiAoc2V0dGluZ3MuTWluaWdhbWUgaXMgbm90IG51bGwpYHJgbiAgICAgICAgICAgICAgICBjb25maWcuTWluaWdhbWUgPSBzZXR0aW5ncy5NaW5pZ2FtZTtgcmBuYHJgbiAgICAgICAgICAgIGlmIChzZXR0aW5ncy5NaW5pZ2FtZUVuYWJsZWQgaXMgbm90IG51bGwpIikpCnsKICAgIHRocm93ICdDb3VsZCBub3Qgc2FmZWx5IG1vdmUgTWluaWdhbWUgc2V0dGluZ3MgbG9hZCBvcmRlci4nCn0KCiRzYXZlTmVlZGxlID0gQCcKICAgICAgICAgICAgTWluaWdhbWUgPSBjb25maWcuTWluaWdhbWUsCiAgICAgICAgICAgIEhlaXN0ID0gY29uZmlnLkhlaXN0LAonQAokc2F2ZVJlcGxhY2VtZW50ID0gQCcKICAgICAgICAgICAgTWluaWdhbWUgPSBjb25maWcuTWluaWdhbWUsCiAgICAgICAgICAgIEhlaXN0ID0gY29uZmlnLkhlaXN0LAonQAppZiAoLW5vdCAkY29uZmlnLkNvbnRhaW5zKCRzYXZlTmVlZGxlKSkKewogICAgdGhyb3cgJ0NvdWxkIG5vdCB2ZXJpZnkgTWluaWdhbWUgc2F2ZSBibG9jay4nCn0KCiRwcm9qZWN0ID0gW3JlZ2V4XTo6UmVwbGFjZSgkcHJvamVjdCwgJzxWZXJzaW9uPltePF0rPC9WZXJzaW9uPicsICc8VmVyc2lvbj4xLjkuMjQ8L1ZlcnNpb24+JywgMSkKJHByb2plY3QgPSBbcmVnZXhdOjpSZXBsYWNlKCRwcm9qZWN0LCAnPEZpbGVWZXJzaW9uPltePF0rPC9GaWxlVmVyc2lvbj4nLCAnPEZpbGVWZXJzaW9uPjEuOS4yNC4wPC9GaWxlVmVyc2lvbj4nLCAxKQoKW1N5c3RlbS5JTy5GaWxlXTo6V3JpdGVBbGxUZXh0KCRjb25maWdQYXRoLCAkY29uZmlnLCBbU3lzdGVtLlRleHQuVVRGOEVuY29kaW5nXTo6bmV3KCRmYWxzZSkpCltTeXN0ZW0uSU8uRmlsZV06OldyaXRlQWxsVGV4dCgkcHJvamVjdFBhdGgsICRwcm9qZWN0LCBbU3lzdGVtLlRleHQuVVRGOEVuY29kaW5nXTo6bmV3KCRmYWxzZSkpCgpnaXQgZGlmZiAtLSBSYWlkQ2xpcFBsdWdpbi9TZXJ2aWNlcy9Db25maWd1cmF0aW9uU2VydmljZS5jcyBSYWlkQ2xpcFBsdWdpbi9SYWlkQ2xpcFBsdWdpbi5jc3Byb2oK'
+          $patchText = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($patchBase64))
+          [System.IO.File]::WriteAllText('patch-1924.ps1', $patchText, [System.Text.UTF8Encoding]::new($false))
+          ./patch-1924.ps1
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            Write-Host "No source changes to commit."
+          } else {
+            git commit -m "Fix minigame settings load precedence"
+            git push
+          }
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/RaidClipPlugin
+
+      - name: Build installer package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Compress-Archive -Path publish/RaidClipPlugin/* -DestinationPath RaidClipPlugin-1.9.24-win-x64.zip -Force
+          $hash = (Get-FileHash RaidClipPlugin-1.9.24-win-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v1.9.24/RaidClipPlugin-1.9.24-win-x64.zip"
+          $manifest = [ordered]@{
+            latestVersion = "1.9.24"
+            downloadUrl = $downloadUrl
+            changelog = "Hotfix: Minigame-Haken bleiben nach Neustart erhalten. Alte settings.json Werte überschreiben neue GUI-Werte nicht mehr."
+            sha256 = $hash
+          }
+          $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $notesPath = 'release-notes-1.9.24.md'
+          @(
+            'Hotfix 1.9.24'
+            ''
+            '- Minigame-Ladereihenfolge korrigiert.'
+            '- Alte eingebettete Minigame-Werte können den gespeicherten GUI-Haken nicht mehr zurücksetzen.'
+            '- Fix für „Spiele aktivieren“ bleibt nach Neustart nicht erhalten.'
+          ) | Set-Content -Path $notesPath -Encoding UTF8
+          gh release delete v1.9.24 --yes --cleanup-tag 2>$null || $true
+          gh release create v1.9.24 RaidClipPlugin-1.9.24-win-x64.zip update.json --title "RaidClipPlugin 1.9.24" --notes-file $notesPath
