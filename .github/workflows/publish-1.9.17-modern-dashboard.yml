@@ -29,458 +29,558 @@ jobs:
       - name: Apply modern dashboard GUI
         shell: pwsh
         run: |
-          @'
-          from pathlib import Path
-          import re
-
-          root = Path('RaidClipPlugin')
-
-          dashboard = r'''namespace RaidClipPlugin;
-
-public sealed partial class MainForm
-{
-    private static string GetServiceIcon(string service) => service switch
-    {
-        "OBS" => "◉",
-        "Twitch" => "▣",
-        "EventSub" => "✦",
-        "Player" => "▶",
-        _ => "●"
-    };
-
-    private static Color CardColor => Color.FromArgb(15, 20, 27);
-    private static Color CardBorderColor => Color.FromArgb(42, 50, 63);
-
-    private Control CreateDashboardHeader(Control header, Control updatePanel)
-    {
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty, Padding = Padding.Empty, BackColor = BackgroundColor };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
-        header.Dock = DockStyle.Fill;
-        header.Margin = new Padding(0, 0, 18, 0);
-        if (updatePanel is ScrollableControl scroller) scroller.AutoScroll = false;
-        layout.Controls.Add(header, 0, 0);
-        layout.Controls.Add(CreateUpdateStatusCard(), 1, 0);
-        return layout;
-    }
-
-    private Control CreateUpdateStatusCard()
-    {
-        var card = CreateCardPanel(AccentColor, new Padding(18, 14, 18, 14));
-        card.MinimumSize = new Size(320, 88);
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 118));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        _versionLabel.Dock = DockStyle.Fill;
-        _versionLabel.AutoSize = false;
-        _versionLabel.TextAlign = ContentAlignment.MiddleLeft;
-        _versionLabel.Margin = Padding.Empty;
-        _versionLabel.MaximumSize = Size.Empty;
-        _versionLabel.Font = new Font("Segoe UI", 9.4F, FontStyle.Bold);
-        _versionLabel.ForeColor = HealthyStatusColor;
-        var buttonHost = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(4) };
-        foreach (var button in new[] { _updateButton, _changelogButton, _installUpdateButton, _skipUpdateButton })
-        {
-            CompactDashboardButton(button, 0);
-            button.Dock = DockStyle.Fill;
-            button.Margin = Padding.Empty;
-            buttonHost.Controls.Add(button);
-            button.BringToFront();
-        }
-        layout.Controls.Add(_versionLabel, 0, 0);
-        layout.Controls.Add(buttonHost, 1, 0);
-        card.Controls.Add(layout);
-        return card;
-    }
-
-    private static void CompactDashboardButton(Button button, int width)
-    {
-        button.AutoSize = false;
-        if (width > 0) button.Width = width;
-        button.Height = 38;
-        button.Padding = new Padding(8, 0, 8, 0);
-        button.TextAlign = ContentAlignment.MiddleCenter;
-        button.AutoEllipsis = true;
-        button.MinimumSize = new Size(0, 36);
-    }
-
-    private Control CreateDashboardIndicatorGrid(params Label[] indicators)
-    {
-        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = indicators.Length, RowCount = 1, Margin = Padding.Empty, Padding = Padding.Empty, BackColor = Color.Transparent };
-        for (var index = 0; index < indicators.Length; index++)
-        {
-            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / indicators.Length));
-            grid.Controls.Add(CreateDashboardStatusCard(indicators[index]), index, 0);
-        }
-        return grid;
-    }
-
-    private Control CreateDashboardStatusCard(Label indicator)
-    {
-        var service = indicator.Text.Contains("OBS", StringComparison.OrdinalIgnoreCase) ? "OBS" : indicator.Text.Contains("Twitch", StringComparison.OrdinalIgnoreCase) ? "Twitch" : indicator.Text.Contains("EventSub", StringComparison.OrdinalIgnoreCase) ? "EventSub" : indicator.Text.Contains("Player", StringComparison.OrdinalIgnoreCase) ? "Player" : "Service";
-        var card = CreateCardPanel(HealthyStatusColor, new Padding(14, 12, 14, 12));
-        card.Margin = new Padding(6, 0, 6, 0);
-        card.MinimumSize = new Size(150, 92);
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 54));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.Controls.Add(new Label { Text = GetServiceIcon(service), Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 22F, FontStyle.Bold), ForeColor = service.Equals("Twitch", StringComparison.OrdinalIgnoreCase) ? Color.FromArgb(166, 96, 255) : AccentColor, BackColor = Color.Transparent }, 0, 0);
-        indicator.Dock = DockStyle.Fill;
-        indicator.AutoSize = false;
-        indicator.BorderStyle = BorderStyle.None;
-        indicator.BackColor = Color.Transparent;
-        indicator.TextAlign = ContentAlignment.MiddleLeft;
-        indicator.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
-        indicator.Padding = new Padding(2, 0, 0, 0);
-        indicator.AutoEllipsis = true;
-        indicator.Margin = Padding.Empty;
-        layout.Controls.Add(indicator, 1, 0);
-        card.Controls.Add(layout);
-        return card;
-    }
-
-    private Control CreateDashboardActionBar(Control actions)
-    {
-        var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        foreach (var percent in new[] { 15, 18, 18, 24, 13, 12 }) host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, percent));
-        if (actions is FlowLayoutPanel flow)
-        {
-            flow.AutoScroll = false;
-            flow.WrapContents = false;
-            var orderedControls = flow.Controls.Cast<Control>().Where(control => !ReferenceEquals(control, _overallStatusLabel)).Take(host.ColumnCount).ToArray();
-            flow.Controls.Clear();
-            for (var index = 0; index < orderedControls.Length; index++)
-            {
-                var child = orderedControls[index];
-                child.Dock = DockStyle.Fill;
-                child.Margin = new Padding(5, 4, 5, 4);
-                if (child is Button button) { button.AutoSize = false; button.Height = 42; button.Padding = new Padding(6, 0, 6, 0); button.AutoEllipsis = true; }
-                else if (child is TextBox textBox) { textBox.AutoSize = false; textBox.Height = 34; textBox.Margin = new Padding(5, 8, 5, 4); }
-                host.Controls.Add(child, index, 0);
-            }
-        }
-        else
-        {
-            actions.Dock = DockStyle.Fill;
-            host.Controls.Add(actions, 0, 0);
-            host.SetColumnSpan(actions, host.ColumnCount);
-        }
-        return CreateDashboardSection("Schnellaktionen", host);
-    }
-
-    private Control CreateModernDashboardLayout(Control dashboardHeader, Control dashboardIndicators, Control dashboardActions, Control dashboardHealth)
-    {
-        var page = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(26, 22, 26, 22), BackColor = BackgroundColor, Margin = Padding.Empty };
-        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
-        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
-        var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 98));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 132));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 210));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 120));
-        main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        main.Controls.Add(dashboardHeader, 0, 0);
-        main.Controls.Add(CreateHeroStatusCard(), 0, 1);
-        main.Controls.Add(CreateDashboardSection("Module & Verbindungen", CreateModuleGrid()), 0, 2);
-        main.Controls.Add(CreateDashboardSection("Heutige Statistiken", CreateDashboardStatsGrid()), 0, 3);
-        main.Controls.Add(dashboardActions, 0, 4);
-        var side = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = BackgroundColor, Margin = Padding.Empty, Padding = Padding.Empty };
-        side.RowStyles.Add(new RowStyle(SizeType.Percent, 54));
-        side.RowStyles.Add(new RowStyle(SizeType.Percent, 46));
-        side.Controls.Add(CreateDashboardSection("Systemprüfung", dashboardHealth), 0, 0);
-        side.Controls.Add(CreateDashboardSection("Bot Log", CreateRecentActivityList()), 0, 1);
-        page.Controls.Add(main, 0, 0);
-        page.Controls.Add(side, 1, 0);
-        return page;
-    }
-
-    private Control CreateHeroStatusCard()
-    {
-        var hero = CreateCardPanel(AccentColor, new Padding(26, 22, 26, 22));
-        hero.Margin = new Padding(0, 0, 0, 10);
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 260));
-        layout.Controls.Add(new Label { Text = "R", Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 32F, FontStyle.Bold), ForeColor = AccentColor, BackColor = Color.Transparent }, 0, 0);
-        var text = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Margin = new Padding(8, 0, 0, 0), Padding = Padding.Empty };
-        text.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
-        text.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        text.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        text.Controls.Add(new Label { Text = "RaidClipPlugin", Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 15F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
-        _overallStatusLabel.Dock = DockStyle.Fill;
-        _overallStatusLabel.AutoSize = false;
-        _overallStatusLabel.TextAlign = ContentAlignment.MiddleLeft;
-        _overallStatusLabel.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-        _overallStatusLabel.Margin = Padding.Empty;
-        _overallStatusLabel.Padding = Padding.Empty;
-        text.Controls.Add(_overallStatusLabel, 0, 1);
-        text.Controls.Add(new Label { Text = "Alle Kernmodule bleiben getrennt und blockieren sich nicht gegenseitig.", Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 9.2F), ForeColor = MutedTextColor, TextAlign = ContentAlignment.TopLeft, AutoEllipsis = true }, 0, 2);
-        var meta = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
-        meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
-        meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
-        meta.RowStyles.Add(new RowStyle(SizeType.Percent, 44));
-        meta.RowStyles.Add(new RowStyle(SizeType.Percent, 56));
-        AddHeroMeta(meta, 0, "Kanal", "Funjii");
-        AddHeroMeta(meta, 1, "Version", _updateService.CurrentDisplayVersion);
-        AddHeroMeta(meta, 2, "Status", "Live");
-        layout.Controls.Add(text, 1, 0);
-        layout.Controls.Add(meta, 2, 0);
-        hero.Controls.Add(layout);
-        return hero;
-    }
-
-    private static void AddHeroMeta(TableLayoutPanel meta, int column, string title, string value)
-    {
-        meta.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, AutoSize = false, ForeColor = MutedTextColor, Font = new Font("Segoe UI", 8.4F), TextAlign = ContentAlignment.BottomCenter, AutoEllipsis = true }, column, 0);
-        meta.Controls.Add(new Label { Text = value, Dock = DockStyle.Fill, AutoSize = false, ForeColor = TextColor, Font = new Font("Segoe UI", 10F, FontStyle.Bold), TextAlign = ContentAlignment.TopCenter, AutoEllipsis = true }, column, 1);
-    }
-
-    private Control CreateModuleGrid()
-    {
-        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 2, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
-        for (var i = 0; i < 4; i++) grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        grid.Controls.Add(CreateDashboardStatusCard(_twitchIndicator), 0, 0);
-        grid.Controls.Add(CreateDashboardStatusCard(_obsIndicator), 1, 0);
-        grid.Controls.Add(CreateDashboardStatusCard(_eventSubIndicator), 2, 0);
-        grid.Controls.Add(CreateDashboardStatusCard(_playerIndicator), 3, 0);
-        grid.Controls.Add(CreateModuleInfoCard("Discord", "Optional", "☁", WarningStatusColor), 0, 1);
-        grid.Controls.Add(CreateModuleInfoCard("Musikdienst", "Optional", "♫", HealthyStatusColor), 1, 1);
-        grid.Controls.Add(CreateModuleInfoCard("Commands", "Bereit", "</>", HealthyStatusColor), 2, 1);
-        grid.Controls.Add(CreateModuleInfoCard("Updater", "Aktuell", "↻", HealthyStatusColor), 3, 1);
-        return grid;
-    }
-
-    private Control CreateModuleInfoCard(string title, string status, string icon, Color color)
-    {
-        var card = CreateCardPanel(color, new Padding(14, 12, 14, 12));
-        card.Margin = new Padding(6, 6, 6, 6);
-        card.MinimumSize = new Size(150, 78);
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.Controls.Add(new Label { Text = icon, Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 19F, FontStyle.Bold), ForeColor = color, BackColor = Color.Transparent }, 0, 0);
-        var text = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        text.RowStyles.Add(new RowStyle(SizeType.Percent, 54));
-        text.RowStyles.Add(new RowStyle(SizeType.Percent, 46));
-        text.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 10F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft, AutoEllipsis = true }, 0, 0);
-        text.Controls.Add(new Label { Text = status, Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = color, TextAlign = ContentAlignment.TopLeft, AutoEllipsis = true }, 0, 1);
-        layout.Controls.Add(text, 1, 0);
-        card.Controls.Add(layout);
-        return card;
-    }
-
-    private Control CreateDashboardSection(string title, Control content)
-    {
-        var card = CreateCardPanel(AccentColor, new Padding(14, 10, 14, 14));
-        card.Margin = new Padding(0, 0, 0, 10);
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, ForeColor = TextColor, Font = new Font("Segoe UI", 9.8F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true }, 0, 0);
-        content.Dock = DockStyle.Fill;
-        content.Margin = Padding.Empty;
-        layout.Controls.Add(content, 0, 1);
-        card.Controls.Add(layout);
-        return card;
-    }
-
-    private Control CreateDashboardSection(Control content, Padding margin)
-    {
-        content.Dock = DockStyle.Fill;
-        content.Margin = Padding.Empty;
-        var card = CreateCardPanel(AccentColor, new Padding(12));
-        card.Margin = margin;
-        card.Controls.Add(content);
-        return card;
-    }
-
-    private Control CreateDashboardStatsGrid()
-    {
-        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 1, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
-        for (var i = 0; i < 6; i++) grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 6F));
-        grid.Controls.Add(CreateStatisticCard("💬", "Chat", "—", AccentColor), 0, 0);
-        grid.Controls.Add(CreateStatisticCard("</>", "Commands", "—", Color.FromArgb(255, 159, 67)), 1, 0);
-        grid.Controls.Add(CreateStatisticCard("▣", "Raidclips", _historyList.Items.Count.ToString("N0"), AccentColor), 2, 0);
-        grid.Controls.Add(CreateStatisticCard("👥", "Raids", "—", Color.FromArgb(166, 96, 255)), 3, 0);
-        grid.Controls.Add(CreateStatisticCard("◴", "Punkte", "—", Color.FromArgb(245, 176, 65)), 4, 0);
-        grid.Controls.Add(CreateStatisticCard("⚠", "Fehler", "Keine", UnhealthyStatusColor), 5, 0);
-        return grid;
-    }
-
-    private Control CreateStatisticCard(string icon, string label, string value, Color color)
-    {
-        var panel = CreateCardPanel(color, new Padding(10, 8, 10, 8));
-        panel.Margin = new Padding(5, 0, 5, 0);
-        panel.MinimumSize = new Size(112, 82);
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 34));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 34));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 32));
-        layout.Controls.Add(new Label { Text = icon, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 15F, FontStyle.Bold), ForeColor = color, TextAlign = ContentAlignment.MiddleCenter, AutoEllipsis = true }, 0, 0);
-        layout.Controls.Add(new Label { Text = value, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 15F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.MiddleCenter, AutoEllipsis = true }, 0, 1);
-        layout.Controls.Add(new Label { Text = label, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 8.2F), ForeColor = MutedTextColor, TextAlign = ContentAlignment.TopCenter, AutoEllipsis = true }, 0, 2);
-        panel.Controls.Add(layout);
-        return panel;
-    }
-
-    private Control CreateDashboardHealthSummary()
-    {
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-        var summary = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, AutoScroll = false, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        _moduleHealthOverallDot.Margin = new Padding(0, 8, 8, 0);
-        _moduleHealthSummaryLabel.AutoSize = false;
-        _moduleHealthSummaryLabel.Width = 220;
-        _moduleHealthSummaryLabel.Height = 30;
-        _moduleHealthSummaryLabel.TextAlign = ContentAlignment.MiddleLeft;
-        _moduleHealthSummaryLabel.AutoEllipsis = true;
-        _moduleHealthSummaryLabel.Margin = Padding.Empty;
-        _moduleHealthProgressLabel.AutoSize = false;
-        _moduleHealthProgressLabel.Width = 92;
-        _moduleHealthProgressLabel.Height = 30;
-        _moduleHealthProgressLabel.TextAlign = ContentAlignment.MiddleRight;
-        _moduleHealthProgressLabel.AutoEllipsis = true;
-        summary.Controls.Add(_moduleHealthOverallDot);
-        summary.Controls.Add(_moduleHealthSummaryLabel);
-        summary.Controls.Add(_moduleHealthProgressLabel);
-        layout.Controls.Add(summary, 0, 0);
-        var buttons = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        buttons.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        buttons.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        CompactDashboardButton(_checkModulesButton, 0);
-        CompactDashboardButton(_restartModulesButton, 0);
-        _checkModulesButton.Text = "Jetzt prüfen";
-        _restartModulesButton.Text = "Reparieren";
-        _checkModulesButton.Dock = DockStyle.Fill;
-        _restartModulesButton.Dock = DockStyle.Fill;
-        _checkModulesButton.Margin = new Padding(0, 4, 5, 4);
-        _restartModulesButton.Margin = new Padding(5, 4, 0, 4);
-        buttons.Controls.Add(_checkModulesButton, 0, 0);
-        buttons.Controls.Add(_restartModulesButton, 1, 0);
-        layout.Controls.Add(buttons, 0, 1);
-        var list = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 7, BackColor = Color.Transparent, Margin = new Padding(0, 8, 0, 0), Padding = Padding.Empty };
-        for (var i = 0; i < 7; i++) list.RowStyles.Add(new RowStyle(SizeType.Percent, 100F / 7F));
-        foreach (var row in new[] { ("Twitch API", "OK", HealthyStatusColor), ("Twitch Chat", "Bereit", HealthyStatusColor), ("EventSub", "Bereit", HealthyStatusColor), ("OBS Studio", "Bereit", HealthyStatusColor), ("Lokaler Player", "Bereit", HealthyStatusColor), ("Commands", "Bereit", HealthyStatusColor), ("Updater", "Aktuell", HealthyStatusColor) }) list.Controls.Add(CreateHealthRow(row.Item1, row.Item2, row.Item3));
-        layout.Controls.Add(list, 0, 2);
-        _moduleHealthLastCheckLabel.Dock = DockStyle.Fill;
-        _moduleHealthLastCheckLabel.AutoSize = false;
-        _moduleHealthLastCheckLabel.TextAlign = ContentAlignment.BottomRight;
-        _moduleHealthLastCheckLabel.Margin = Padding.Empty;
-        layout.Controls.Add(_moduleHealthLastCheckLabel, 0, 3);
-        return layout;
-    }
-
-    private Control CreateHealthRow(string name, string state, Color color)
-    {
-        var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, BackColor = Color.Transparent, Margin = new Padding(0, 1, 0, 1), Padding = Padding.Empty };
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 24));
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 78));
-        row.Controls.Add(new Label { Text = "●", Dock = DockStyle.Fill, ForeColor = color, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 11F, FontStyle.Bold) }, 0, 0);
-        row.Controls.Add(new Label { Text = name, Dock = DockStyle.Fill, ForeColor = TextColor, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI", 9F), AutoEllipsis = true }, 1, 0);
-        row.Controls.Add(new Label { Text = state, Dock = DockStyle.Fill, ForeColor = color, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 8.8F, FontStyle.Bold), AutoEllipsis = true }, 2, 0);
-        return row;
-    }
-
-    private Control CreateActiveModulesGrid()
-    {
-        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, BackColor = Color.Transparent, Padding = new Padding(2), Margin = Padding.Empty };
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        for (var i = 0; i < 4; i++) grid.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
-        var items = new[] { "Twitch Chat", "Musik System", "EventSub", "Giveaway", "Raidclip", "Commands", "Punkte", "Updater" };
-        for (var i = 0; i < items.Length; i++) grid.Controls.Add(new Label { Text = "●  " + items[i], Dock = DockStyle.Fill, ForeColor = HealthyStatusColor, Font = new Font("Segoe UI", 8.2F), Padding = new Padding(2, 1, 2, 0), AutoEllipsis = true }, i % 2, i / 2);
-        return grid;
-    }
-
-    private Control CreateRecentActivityList()
-    {
-        var box = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 8, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
-        for (var i = 0; i < 8; i++) box.RowStyles.Add(new RowStyle(SizeType.Percent, 12.5F));
-        var rows = new[] { "● Healthcheck bereit", "● Twitch Chat wartet auf Verbindung", "● Raidclip-System bereit", "● Updater aktuell", "● Commands geladen", "● Punkte-System bereit", "● OBS wartet auf Start", "● Lokaler Player bereit" };
-        foreach (var text in rows) box.Controls.Add(new Label { Text = text, Dock = DockStyle.Fill, ForeColor = text.Contains("wartet", StringComparison.OrdinalIgnoreCase) ? WarningStatusColor : MutedTextColor, Font = new Font("Segoe UI", 8.4F), TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true });
-        return box;
-    }
-
-    private DashboardCardPanel CreateCardPanel(Color accent, Padding padding)
-    {
-        return new DashboardCardPanel { Dock = DockStyle.Fill, BackColor = CardColor, AccentColor = accent, Padding = padding, Margin = Padding.Empty };
-    }
-
-    private sealed class DashboardCardPanel : Panel
-    {
-        public Color AccentColor { get; set; } = Color.FromArgb(222, 24, 30);
-        public DashboardCardPanel() => DoubleBuffered = true;
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            var bounds = ClientRectangle;
-            if (bounds.Width <= 1 || bounds.Height <= 1) return;
-            using var background = new SolidBrush(BackColor);
-            e.Graphics.FillRectangle(background, bounds);
-            using var border = new Pen(Color.FromArgb(42, 50, 63), 1F);
-            e.Graphics.DrawRectangle(border, 0, 0, bounds.Width - 1, bounds.Height - 1);
-            using var accent = new Pen(AccentColor, 2F);
-            e.Graphics.DrawLine(accent, 12, bounds.Height - 2, bounds.Width - 12, bounds.Height - 2);
-        }
-    }
-}
-'''
-
-          (root / 'MainForm.DashboardModern.cs').write_text(dashboard, encoding='utf-8')
-          def read(path): return path.read_text(encoding='utf-8-sig')
-          def write(path, text): path.write_text(text, encoding='utf-8')
-          main = read(root / 'MainForm.cs')
-          replacements = {
-              'private static Color BackgroundColor = Color.FromArgb(8, 8, 9);': 'private static Color BackgroundColor = Color.FromArgb(5, 8, 12);',
-              'private static Color SidebarColor = Color.FromArgb(12, 12, 13);': 'private static Color SidebarColor = Color.FromArgb(8, 11, 16);',
-              'private static Color SurfaceColor = Color.FromArgb(19, 19, 21);': 'private static Color SurfaceColor = Color.FromArgb(15, 20, 27);',
-              'private static Color InputColor = Color.FromArgb(13, 13, 14);': 'private static Color InputColor = Color.FromArgb(10, 14, 20);',
-              'private static Color BorderColor = Color.FromArgb(86, 86, 90);': 'private static Color BorderColor = Color.FromArgb(48, 57, 72);',
-              'private static Color AccentColor = Color.FromArgb(222, 24, 30);': 'private static Color AccentColor = Color.FromArgb(255, 47, 56);',
-              'private static Color AccentDarkColor = Color.FromArgb(92, 12, 15);': 'private static Color AccentDarkColor = Color.FromArgb(108, 21, 28);',
-              'private static Color TextColor = Color.FromArgb(235, 235, 238);': 'private static Color TextColor = Color.FromArgb(245, 247, 250);',
-              'private static Color MutedTextColor = Color.FromArgb(174, 174, 180);': 'private static Color MutedTextColor = Color.FromArgb(154, 163, 175);',
-              'private static Color ActiveColor = Color.FromArgb(239, 36, 42);': 'private static Color ActiveColor = Color.FromArgb(64, 214, 126);',
-              'MinimumSize = new Size(1080, 680);': 'MinimumSize = new Size(1280, 760);',
-              'Size = new Size(1560, 940);': 'Size = new Size(1440, 860);',
-              'rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 292));': 'rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 284));'
-          }
-          for old, new in replacements.items():
-              if old not in main: print('WARN missing MainForm replacement:', old[:80])
-              main = main.replace(old, new)
-          main = re.sub(r'Width = 228,s*Height = 58,', 'Width = 248,
-            Height = 48,', main, count=1)
-          main = re.sub(r'Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),s*ForeColor = TextColor,s*BackColor = SidebarColor,s*Padding = new Padding(14, 7, 12, 7),', 'Font = new Font("Segoe UI", 9.0F, FontStyle.Bold),
-            ForeColor = TextColor,
-            BackColor = SidebarColor,
-            Padding = new Padding(14, 5, 12, 5),', main, count=1)
-          main = re.sub(r'Width = 238,s*Height = 138,', 'Width = 252,
-            Height = 116,', main, count=1)
-          write(root / 'MainForm.cs', main)
-          shell = read(root / 'MainForm.ModernShell.cs')
-          shell = shell.replace('private const int SidebarExpandedWidth = 272;', 'private const int SidebarExpandedWidth = 284;')
-          shell = shell.replace('var compact = ClientSize.Width < 1500 || ClientSize.Height < 900;', 'var compact = ClientSize.Width < 1220 || ClientSize.Height < 720;')
-          shell = shell.replace('picture.Visible = !compact && ClientSize.Height >= 740;', 'picture.Visible = !compact && ClientSize.Height >= 700;')
-          shell = shell.replace('button.Width = compact ? 42 : 240;
-                button.Height = compact ? 34 : 50;', 'button.Width = compact ? 42 : 248;
-                button.Height = compact ? 34 : 46;')
-          shell = shell.replace('button.Padding = compact ? Padding.Empty : new Padding(14, 8, 12, 8);', 'button.Padding = compact ? Padding.Empty : new Padding(14, 5, 12, 5);')
-          write(root / 'MainForm.ModernShell.cs', shell)
-          csproj_path = root / 'RaidClipPlugin.csproj'
-          csproj = read(csproj_path)
-          csproj = re.sub(r'<Version>[^<]+</Version>', '<Version>1.9.17</Version>', csproj)
-          csproj = re.sub(r'<FileVersion>[^<]+</FileVersion>', '<FileVersion>1.9.17.0</FileVersion>', csproj)
-          write(csproj_path, csproj)
-          print('Modern dashboard GUI patch applied.')
-          '@ | Set-Content -Path apply_modern_dashboard_1917.py -Encoding UTF8
+          $patchBase64 = @'
+          ICAgICAgICAgIGZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAogICAgICAgICAgaW1wb3J0IHJlCgog
+          ICAgICAgICAgcm9vdCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luJykKCiAgICAgICAgICBkYXNoYm9h
+          cmQgPSByJycnbmFtZXNwYWNlIFJhaWRDbGlwUGx1Z2luOwoKcHVibGljIHNlYWxlZCBwYXJ0aWFs
+          IGNsYXNzIE1haW5Gb3JtCnsKICAgIHByaXZhdGUgc3RhdGljIHN0cmluZyBHZXRTZXJ2aWNlSWNv
+          bihzdHJpbmcgc2VydmljZSkgPT4gc2VydmljZSBzd2l0Y2gKICAgIHsKICAgICAgICAiT0JTIiA9
+          PiAi4peJIiwKICAgICAgICAiVHdpdGNoIiA9PiAi4pajIiwKICAgICAgICAiRXZlbnRTdWIiID0+
+          ICLinKYiLAogICAgICAgICJQbGF5ZXIiID0+ICLilrYiLAogICAgICAgIF8gPT4gIuKXjyIKICAg
+          IH07CgogICAgcHJpdmF0ZSBzdGF0aWMgQ29sb3IgQ2FyZENvbG9yID0+IENvbG9yLkZyb21Bcmdi
+          KDE1LCAyMCwgMjcpOwogICAgcHJpdmF0ZSBzdGF0aWMgQ29sb3IgQ2FyZEJvcmRlckNvbG9yID0+
+          IENvbG9yLkZyb21BcmdiKDQyLCA1MCwgNjMpOwoKICAgIHByaXZhdGUgQ29udHJvbCBDcmVhdGVE
+          YXNoYm9hcmRIZWFkZXIoQ29udHJvbCBoZWFkZXIsIENvbnRyb2wgdXBkYXRlUGFuZWwpCiAgICB7
+          CiAgICAgICAgdmFyIGxheW91dCA9IG5ldyBUYWJsZUxheW91dFBhbmVsIHsgRG9jayA9IERvY2tT
+          dHlsZS5GaWxsLCBDb2x1bW5Db3VudCA9IDIsIFJvd0NvdW50ID0gMSwgTWFyZ2luID0gUGFkZGlu
+          Zy5FbXB0eSwgUGFkZGluZyA9IFBhZGRpbmcuRW1wdHksIEJhY2tDb2xvciA9IEJhY2tncm91bmRD
+          b2xvciB9OwogICAgICAgIGxheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShT
+          aXplVHlwZS5QZXJjZW50LCA2OCkpOwogICAgICAgIGxheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5l
+          dyBDb2x1bW5TdHlsZShTaXplVHlwZS5QZXJjZW50LCAzMikpOwogICAgICAgIGhlYWRlci5Eb2Nr
+          ID0gRG9ja1N0eWxlLkZpbGw7CiAgICAgICAgaGVhZGVyLk1hcmdpbiA9IG5ldyBQYWRkaW5nKDAs
+          IDAsIDE4LCAwKTsKICAgICAgICBpZiAodXBkYXRlUGFuZWwgaXMgU2Nyb2xsYWJsZUNvbnRyb2wg
+          c2Nyb2xsZXIpIHNjcm9sbGVyLkF1dG9TY3JvbGwgPSBmYWxzZTsKICAgICAgICBsYXlvdXQuQ29u
+          dHJvbHMuQWRkKGhlYWRlciwgMCwgMCk7CiAgICAgICAgbGF5b3V0LkNvbnRyb2xzLkFkZChDcmVh
+          dGVVcGRhdGVTdGF0dXNDYXJkKCksIDEsIDApOwogICAgICAgIHJldHVybiBsYXlvdXQ7CiAgICB9
+          CgogICAgcHJpdmF0ZSBDb250cm9sIENyZWF0ZVVwZGF0ZVN0YXR1c0NhcmQoKQogICAgewogICAg
+          ICAgIHZhciBjYXJkID0gQ3JlYXRlQ2FyZFBhbmVsKEFjY2VudENvbG9yLCBuZXcgUGFkZGluZygx
+          OCwgMTQsIDE4LCAxNCkpOwogICAgICAgIGNhcmQuTWluaW11bVNpemUgPSBuZXcgU2l6ZSgzMjAs
+          IDg4KTsKICAgICAgICB2YXIgbGF5b3V0ID0gbmV3IFRhYmxlTGF5b3V0UGFuZWwgeyBEb2NrID0g
+          RG9ja1N0eWxlLkZpbGwsIENvbHVtbkNvdW50ID0gMiwgUm93Q291bnQgPSAxLCBCYWNrQ29sb3Ig
+          PSBDb2xvci5UcmFuc3BhcmVudCwgTWFyZ2luID0gUGFkZGluZy5FbXB0eSwgUGFkZGluZyA9IFBh
+          ZGRpbmcuRW1wdHkgfTsKICAgICAgICBsYXlvdXQuQ29sdW1uU3R5bGVzLkFkZChuZXcgQ29sdW1u
+          U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDExOCkpOwogICAgICAgIGxheW91dC5Db2x1bW5TdHls
+          ZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5QZXJjZW50LCAxMDApKTsKICAgICAgICBf
+          dmVyc2lvbkxhYmVsLkRvY2sgPSBEb2NrU3R5bGUuRmlsbDsKICAgICAgICBfdmVyc2lvbkxhYmVs
+          LkF1dG9TaXplID0gZmFsc2U7CiAgICAgICAgX3ZlcnNpb25MYWJlbC5UZXh0QWxpZ24gPSBDb250
+          ZW50QWxpZ25tZW50Lk1pZGRsZUxlZnQ7CiAgICAgICAgX3ZlcnNpb25MYWJlbC5NYXJnaW4gPSBQ
+          YWRkaW5nLkVtcHR5OwogICAgICAgIF92ZXJzaW9uTGFiZWwuTWF4aW11bVNpemUgPSBTaXplLkVt
+          cHR5OwogICAgICAgIF92ZXJzaW9uTGFiZWwuRm9udCA9IG5ldyBGb250KCJTZWdvZSBVSSIsIDku
+          NEYsIEZvbnRTdHlsZS5Cb2xkKTsKICAgICAgICBfdmVyc2lvbkxhYmVsLkZvcmVDb2xvciA9IEhl
+          YWx0aHlTdGF0dXNDb2xvcjsKICAgICAgICB2YXIgYnV0dG9uSG9zdCA9IG5ldyBQYW5lbCB7IERv
+          Y2sgPSBEb2NrU3R5bGUuRmlsbCwgQmFja0NvbG9yID0gQ29sb3IuVHJhbnNwYXJlbnQsIE1hcmdp
+          biA9IFBhZGRpbmcuRW1wdHksIFBhZGRpbmcgPSBuZXcgUGFkZGluZyg0KSB9OwogICAgICAgIGZv
+          cmVhY2ggKHZhciBidXR0b24gaW4gbmV3W10geyBfdXBkYXRlQnV0dG9uLCBfY2hhbmdlbG9nQnV0
+          dG9uLCBfaW5zdGFsbFVwZGF0ZUJ1dHRvbiwgX3NraXBVcGRhdGVCdXR0b24gfSkKICAgICAgICB7
+          CiAgICAgICAgICAgIENvbXBhY3REYXNoYm9hcmRCdXR0b24oYnV0dG9uLCAwKTsKICAgICAgICAg
+          ICAgYnV0dG9uLkRvY2sgPSBEb2NrU3R5bGUuRmlsbDsKICAgICAgICAgICAgYnV0dG9uLk1hcmdp
+          biA9IFBhZGRpbmcuRW1wdHk7CiAgICAgICAgICAgIGJ1dHRvbkhvc3QuQ29udHJvbHMuQWRkKGJ1
+          dHRvbik7CiAgICAgICAgICAgIGJ1dHRvbi5CcmluZ1RvRnJvbnQoKTsKICAgICAgICB9CiAgICAg
+          ICAgbGF5b3V0LkNvbnRyb2xzLkFkZChfdmVyc2lvbkxhYmVsLCAwLCAwKTsKICAgICAgICBsYXlv
+          dXQuQ29udHJvbHMuQWRkKGJ1dHRvbkhvc3QsIDEsIDApOwogICAgICAgIGNhcmQuQ29udHJvbHMu
+          QWRkKGxheW91dCk7CiAgICAgICAgcmV0dXJuIGNhcmQ7CiAgICB9CgogICAgcHJpdmF0ZSBzdGF0
+          aWMgdm9pZCBDb21wYWN0RGFzaGJvYXJkQnV0dG9uKEJ1dHRvbiBidXR0b24sIGludCB3aWR0aCkK
+          ICAgIHsKICAgICAgICBidXR0b24uQXV0b1NpemUgPSBmYWxzZTsKICAgICAgICBpZiAod2lkdGgg
+          PiAwKSBidXR0b24uV2lkdGggPSB3aWR0aDsKICAgICAgICBidXR0b24uSGVpZ2h0ID0gMzg7CiAg
+          ICAgICAgYnV0dG9uLlBhZGRpbmcgPSBuZXcgUGFkZGluZyg4LCAwLCA4LCAwKTsKICAgICAgICBi
+          dXR0b24uVGV4dEFsaWduID0gQ29udGVudEFsaWdubWVudC5NaWRkbGVDZW50ZXI7CiAgICAgICAg
+          YnV0dG9uLkF1dG9FbGxpcHNpcyA9IHRydWU7CiAgICAgICAgYnV0dG9uLk1pbmltdW1TaXplID0g
+          bmV3IFNpemUoMCwgMzYpOwogICAgfQoKICAgIHByaXZhdGUgQ29udHJvbCBDcmVhdGVEYXNoYm9h
+          cmRJbmRpY2F0b3JHcmlkKHBhcmFtcyBMYWJlbFtdIGluZGljYXRvcnMpCiAgICB7CiAgICAgICAg
+          dmFyIGdyaWQgPSBuZXcgVGFibGVMYXlvdXRQYW5lbCB7IERvY2sgPSBEb2NrU3R5bGUuRmlsbCwg
+          Q29sdW1uQ291bnQgPSBpbmRpY2F0b3JzLkxlbmd0aCwgUm93Q291bnQgPSAxLCBNYXJnaW4gPSBQ
+          YWRkaW5nLkVtcHR5LCBQYWRkaW5nID0gUGFkZGluZy5FbXB0eSwgQmFja0NvbG9yID0gQ29sb3Iu
+          VHJhbnNwYXJlbnQgfTsKICAgICAgICBmb3IgKHZhciBpbmRleCA9IDA7IGluZGV4IDwgaW5kaWNh
+          dG9ycy5MZW5ndGg7IGluZGV4KyspCiAgICAgICAgewogICAgICAgICAgICBncmlkLkNvbHVtblN0
+          eWxlcy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDEwMEYgLyBpbmRpY2F0
+          b3JzLkxlbmd0aCkpOwogICAgICAgICAgICBncmlkLkNvbnRyb2xzLkFkZChDcmVhdGVEYXNoYm9h
+          cmRTdGF0dXNDYXJkKGluZGljYXRvcnNbaW5kZXhdKSwgaW5kZXgsIDApOwogICAgICAgIH0KICAg
+          ICAgICByZXR1cm4gZ3JpZDsKICAgIH0KCiAgICBwcml2YXRlIENvbnRyb2wgQ3JlYXRlRGFzaGJv
+          YXJkU3RhdHVzQ2FyZChMYWJlbCBpbmRpY2F0b3IpCiAgICB7CiAgICAgICAgdmFyIHNlcnZpY2Ug
+          PSBpbmRpY2F0b3IuVGV4dC5Db250YWlucygiT0JTIiwgU3RyaW5nQ29tcGFyaXNvbi5PcmRpbmFs
+          SWdub3JlQ2FzZSkgPyAiT0JTIiA6IGluZGljYXRvci5UZXh0LkNvbnRhaW5zKCJUd2l0Y2giLCBT
+          dHJpbmdDb21wYXJpc29uLk9yZGluYWxJZ25vcmVDYXNlKSA/ICJUd2l0Y2giIDogaW5kaWNhdG9y
+          LlRleHQuQ29udGFpbnMoIkV2ZW50U3ViIiwgU3RyaW5nQ29tcGFyaXNvbi5PcmRpbmFsSWdub3Jl
+          Q2FzZSkgPyAiRXZlbnRTdWIiIDogaW5kaWNhdG9yLlRleHQuQ29udGFpbnMoIlBsYXllciIsIFN0
+          cmluZ0NvbXBhcmlzb24uT3JkaW5hbElnbm9yZUNhc2UpID8gIlBsYXllciIgOiAiU2VydmljZSI7
+          CiAgICAgICAgdmFyIGNhcmQgPSBDcmVhdGVDYXJkUGFuZWwoSGVhbHRoeVN0YXR1c0NvbG9yLCBu
+          ZXcgUGFkZGluZygxNCwgMTIsIDE0LCAxMikpOwogICAgICAgIGNhcmQuTWFyZ2luID0gbmV3IFBh
+          ZGRpbmcoNiwgMCwgNiwgMCk7CiAgICAgICAgY2FyZC5NaW5pbXVtU2l6ZSA9IG5ldyBTaXplKDE1
+          MCwgOTIpOwogICAgICAgIHZhciBsYXlvdXQgPSBuZXcgVGFibGVMYXlvdXRQYW5lbCB7IERvY2sg
+          PSBEb2NrU3R5bGUuRmlsbCwgQ29sdW1uQ291bnQgPSAyLCBSb3dDb3VudCA9IDEsIEJhY2tDb2xv
+          ciA9IENvbG9yLlRyYW5zcGFyZW50LCBNYXJnaW4gPSBQYWRkaW5nLkVtcHR5LCBQYWRkaW5nID0g
+          UGFkZGluZy5FbXB0eSB9OwogICAgICAgIGxheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1
+          bW5TdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgNTQpKTsKICAgICAgICBsYXlvdXQuQ29sdW1uU3R5
+          bGVzLkFkZChuZXcgQ29sdW1uU3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgMTAwKSk7CiAgICAgICAg
+          bGF5b3V0LkNvbnRyb2xzLkFkZChuZXcgTGFiZWwgeyBUZXh0ID0gR2V0U2VydmljZUljb24oc2Vy
+          dmljZSksIERvY2sgPSBEb2NrU3R5bGUuRmlsbCwgQXV0b1NpemUgPSBmYWxzZSwgVGV4dEFsaWdu
+          ID0gQ29udGVudEFsaWdubWVudC5NaWRkbGVDZW50ZXIsIEZvbnQgPSBuZXcgRm9udCgiU2Vnb2Ug
+          VUkiLCAyMkYsIEZvbnRTdHlsZS5Cb2xkKSwgRm9yZUNvbG9yID0gc2VydmljZS5FcXVhbHMoIlR3
+          aXRjaCIsIFN0cmluZ0NvbXBhcmlzb24uT3JkaW5hbElnbm9yZUNhc2UpID8gQ29sb3IuRnJvbUFy
+          Z2IoMTY2LCA5NiwgMjU1KSA6IEFjY2VudENvbG9yLCBCYWNrQ29sb3IgPSBDb2xvci5UcmFuc3Bh
+          cmVudCB9LCAwLCAwKTsKICAgICAgICBpbmRpY2F0b3IuRG9jayA9IERvY2tTdHlsZS5GaWxsOwog
+          ICAgICAgIGluZGljYXRvci5BdXRvU2l6ZSA9IGZhbHNlOwogICAgICAgIGluZGljYXRvci5Cb3Jk
+          ZXJTdHlsZSA9IEJvcmRlclN0eWxlLk5vbmU7CiAgICAgICAgaW5kaWNhdG9yLkJhY2tDb2xvciA9
+          IENvbG9yLlRyYW5zcGFyZW50OwogICAgICAgIGluZGljYXRvci5UZXh0QWxpZ24gPSBDb250ZW50
+          QWxpZ25tZW50Lk1pZGRsZUxlZnQ7CiAgICAgICAgaW5kaWNhdG9yLkZvbnQgPSBuZXcgRm9udCgi
+          U2Vnb2UgVUkiLCAxMC4yRiwgRm9udFN0eWxlLkJvbGQpOwogICAgICAgIGluZGljYXRvci5QYWRk
+          aW5nID0gbmV3IFBhZGRpbmcoMiwgMCwgMCwgMCk7CiAgICAgICAgaW5kaWNhdG9yLkF1dG9FbGxp
+          cHNpcyA9IHRydWU7CiAgICAgICAgaW5kaWNhdG9yLk1hcmdpbiA9IFBhZGRpbmcuRW1wdHk7CiAg
+          ICAgICAgbGF5b3V0LkNvbnRyb2xzLkFkZChpbmRpY2F0b3IsIDEsIDApOwogICAgICAgIGNhcmQu
+          Q29udHJvbHMuQWRkKGxheW91dCk7CiAgICAgICAgcmV0dXJuIGNhcmQ7CiAgICB9CgogICAgcHJp
+          dmF0ZSBDb250cm9sIENyZWF0ZURhc2hib2FyZEFjdGlvbkJhcihDb250cm9sIGFjdGlvbnMpCiAg
+          ICB7CiAgICAgICAgdmFyIGhvc3QgPSBuZXcgVGFibGVMYXlvdXRQYW5lbCB7IERvY2sgPSBEb2Nr
+          U3R5bGUuRmlsbCwgQ29sdW1uQ291bnQgPSA2LCBSb3dDb3VudCA9IDEsIEJhY2tDb2xvciA9IENv
+          bG9yLlRyYW5zcGFyZW50LCBNYXJnaW4gPSBQYWRkaW5nLkVtcHR5LCBQYWRkaW5nID0gUGFkZGlu
+          Zy5FbXB0eSB9OwogICAgICAgIGZvcmVhY2ggKHZhciBwZXJjZW50IGluIG5ld1tdIHsgMTUsIDE4
+          LCAxOCwgMjQsIDEzLCAxMiB9KSBob3N0LkNvbHVtblN0eWxlcy5BZGQobmV3IENvbHVtblN0eWxl
+          KFNpemVUeXBlLlBlcmNlbnQsIHBlcmNlbnQpKTsKICAgICAgICBpZiAoYWN0aW9ucyBpcyBGbG93
+          TGF5b3V0UGFuZWwgZmxvdykKICAgICAgICB7CiAgICAgICAgICAgIGZsb3cuQXV0b1Njcm9sbCA9
+          IGZhbHNlOwogICAgICAgICAgICBmbG93LldyYXBDb250ZW50cyA9IGZhbHNlOwogICAgICAgICAg
+          ICB2YXIgb3JkZXJlZENvbnRyb2xzID0gZmxvdy5Db250cm9scy5DYXN0PENvbnRyb2w+KCkuV2hl
+          cmUoY29udHJvbCA9PiAhUmVmZXJlbmNlRXF1YWxzKGNvbnRyb2wsIF9vdmVyYWxsU3RhdHVzTGFi
+          ZWwpKS5UYWtlKGhvc3QuQ29sdW1uQ291bnQpLlRvQXJyYXkoKTsKICAgICAgICAgICAgZmxvdy5D
+          b250cm9scy5DbGVhcigpOwogICAgICAgICAgICBmb3IgKHZhciBpbmRleCA9IDA7IGluZGV4IDwg
+          b3JkZXJlZENvbnRyb2xzLkxlbmd0aDsgaW5kZXgrKykKICAgICAgICAgICAgewogICAgICAgICAg
+          ICAgICAgdmFyIGNoaWxkID0gb3JkZXJlZENvbnRyb2xzW2luZGV4XTsKICAgICAgICAgICAgICAg
+          IGNoaWxkLkRvY2sgPSBEb2NrU3R5bGUuRmlsbDsKICAgICAgICAgICAgICAgIGNoaWxkLk1hcmdp
+          biA9IG5ldyBQYWRkaW5nKDUsIDQsIDUsIDQpOwogICAgICAgICAgICAgICAgaWYgKGNoaWxkIGlz
+          IEJ1dHRvbiBidXR0b24pIHsgYnV0dG9uLkF1dG9TaXplID0gZmFsc2U7IGJ1dHRvbi5IZWlnaHQg
+          PSA0MjsgYnV0dG9uLlBhZGRpbmcgPSBuZXcgUGFkZGluZyg2LCAwLCA2LCAwKTsgYnV0dG9uLkF1
+          dG9FbGxpcHNpcyA9IHRydWU7IH0KICAgICAgICAgICAgICAgIGVsc2UgaWYgKGNoaWxkIGlzIFRl
+          eHRCb3ggdGV4dEJveCkgeyB0ZXh0Qm94LkF1dG9TaXplID0gZmFsc2U7IHRleHRCb3guSGVpZ2h0
+          ID0gMzQ7IHRleHRCb3guTWFyZ2luID0gbmV3IFBhZGRpbmcoNSwgOCwgNSwgNCk7IH0KICAgICAg
+          ICAgICAgICAgIGhvc3QuQ29udHJvbHMuQWRkKGNoaWxkLCBpbmRleCwgMCk7CiAgICAgICAgICAg
+          IH0KICAgICAgICB9CiAgICAgICAgZWxzZQogICAgICAgIHsKICAgICAgICAgICAgYWN0aW9ucy5E
+          b2NrID0gRG9ja1N0eWxlLkZpbGw7CiAgICAgICAgICAgIGhvc3QuQ29udHJvbHMuQWRkKGFjdGlv
+          bnMsIDAsIDApOwogICAgICAgICAgICBob3N0LlNldENvbHVtblNwYW4oYWN0aW9ucywgaG9zdC5D
+          b2x1bW5Db3VudCk7CiAgICAgICAgfQogICAgICAgIHJldHVybiBDcmVhdGVEYXNoYm9hcmRTZWN0
+          aW9uKCJTY2huZWxsYWt0aW9uZW4iLCBob3N0KTsKICAgIH0KCiAgICBwcml2YXRlIENvbnRyb2wg
+          Q3JlYXRlTW9kZXJuRGFzaGJvYXJkTGF5b3V0KENvbnRyb2wgZGFzaGJvYXJkSGVhZGVyLCBDb250
+          cm9sIGRhc2hib2FyZEluZGljYXRvcnMsIENvbnRyb2wgZGFzaGJvYXJkQWN0aW9ucywgQ29udHJv
+          bCBkYXNoYm9hcmRIZWFsdGgpCiAgICB7CiAgICAgICAgdmFyIHBhZ2UgPSBuZXcgVGFibGVMYXlv
+          dXRQYW5lbCB7IERvY2sgPSBEb2NrU3R5bGUuRmlsbCwgQ29sdW1uQ291bnQgPSAyLCBSb3dDb3Vu
+          dCA9IDEsIFBhZGRpbmcgPSBuZXcgUGFkZGluZygyNiwgMjIsIDI2LCAyMiksIEJhY2tDb2xvciA9
+          IEJhY2tncm91bmRDb2xvciwgTWFyZ2luID0gUGFkZGluZy5FbXB0eSB9OwogICAgICAgIHBhZ2Uu
+          Q29sdW1uU3R5bGVzLkFkZChuZXcgQ29sdW1uU3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgNzIpKTsK
+          ICAgICAgICBwYWdlLkNvbHVtblN0eWxlcy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLlBl
+          cmNlbnQsIDI4KSk7CiAgICAgICAgdmFyIG1haW4gPSBuZXcgVGFibGVMYXlvdXRQYW5lbCB7IERv
+          Y2sgPSBEb2NrU3R5bGUuRmlsbCwgQ29sdW1uQ291bnQgPSAxLCBSb3dDb3VudCA9IDUsIEJhY2tD
+          b2xvciA9IEJhY2tncm91bmRDb2xvciwgTWFyZ2luID0gbmV3IFBhZGRpbmcoMCwgMCwgMTgsIDAp
+          LCBQYWRkaW5nID0gUGFkZGluZy5FbXB0eSB9OwogICAgICAgIG1haW4uUm93U3R5bGVzLkFkZChu
+          ZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDk4KSk7CiAgICAgICAgbWFpbi5Sb3dTdHls
+          ZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgMTMyKSk7CiAgICAgICAgbWFp
+          bi5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgMjEwKSk7CiAg
+          ICAgICAgbWFpbi5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwg
+          MTIwKSk7CiAgICAgICAgbWFpbi5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5Q
+          ZXJjZW50LCAxMDApKTsKICAgICAgICBtYWluLkNvbnRyb2xzLkFkZChkYXNoYm9hcmRIZWFkZXIs
+          IDAsIDApOwogICAgICAgIG1haW4uQ29udHJvbHMuQWRkKENyZWF0ZUhlcm9TdGF0dXNDYXJkKCks
+          IDAsIDEpOwogICAgICAgIG1haW4uQ29udHJvbHMuQWRkKENyZWF0ZURhc2hib2FyZFNlY3Rpb24o
+          Ik1vZHVsZSAmIFZlcmJpbmR1bmdlbiIsIENyZWF0ZU1vZHVsZUdyaWQoKSksIDAsIDIpOwogICAg
+          ICAgIG1haW4uQ29udHJvbHMuQWRkKENyZWF0ZURhc2hib2FyZFNlY3Rpb24oIkhldXRpZ2UgU3Rh
+          dGlzdGlrZW4iLCBDcmVhdGVEYXNoYm9hcmRTdGF0c0dyaWQoKSksIDAsIDMpOwogICAgICAgIG1h
+          aW4uQ29udHJvbHMuQWRkKGRhc2hib2FyZEFjdGlvbnMsIDAsIDQpOwogICAgICAgIHZhciBzaWRl
+          ID0gbmV3IFRhYmxlTGF5b3V0UGFuZWwgeyBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIENvbHVtbkNv
+          dW50ID0gMSwgUm93Q291bnQgPSAyLCBCYWNrQ29sb3IgPSBCYWNrZ3JvdW5kQ29sb3IsIE1hcmdp
+          biA9IFBhZGRpbmcuRW1wdHksIFBhZGRpbmcgPSBQYWRkaW5nLkVtcHR5IH07CiAgICAgICAgc2lk
+          ZS5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5QZXJjZW50LCA1NCkpOwogICAg
+          ICAgIHNpZGUuUm93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgNDYp
+          KTsKICAgICAgICBzaWRlLkNvbnRyb2xzLkFkZChDcmVhdGVEYXNoYm9hcmRTZWN0aW9uKCJTeXN0
+          ZW1wcsO8ZnVuZyIsIGRhc2hib2FyZEhlYWx0aCksIDAsIDApOwogICAgICAgIHNpZGUuQ29udHJv
+          bHMuQWRkKENyZWF0ZURhc2hib2FyZFNlY3Rpb24oIkJvdCBMb2ciLCBDcmVhdGVSZWNlbnRBY3Rp
+          dml0eUxpc3QoKSksIDAsIDEpOwogICAgICAgIHBhZ2UuQ29udHJvbHMuQWRkKG1haW4sIDAsIDAp
+          OwogICAgICAgIHBhZ2UuQ29udHJvbHMuQWRkKHNpZGUsIDEsIDApOwogICAgICAgIHJldHVybiBw
+          YWdlOwogICAgfQoKICAgIHByaXZhdGUgQ29udHJvbCBDcmVhdGVIZXJvU3RhdHVzQ2FyZCgpCiAg
+          ICB7CiAgICAgICAgdmFyIGhlcm8gPSBDcmVhdGVDYXJkUGFuZWwoQWNjZW50Q29sb3IsIG5ldyBQ
+          YWRkaW5nKDI2LCAyMiwgMjYsIDIyKSk7CiAgICAgICAgaGVyby5NYXJnaW4gPSBuZXcgUGFkZGlu
+          ZygwLCAwLCAwLCAxMCk7CiAgICAgICAgdmFyIGxheW91dCA9IG5ldyBUYWJsZUxheW91dFBhbmVs
+          IHsgRG9jayA9IERvY2tTdHlsZS5GaWxsLCBDb2x1bW5Db3VudCA9IDMsIFJvd0NvdW50ID0gMSwg
+          QmFja0NvbG9yID0gQ29sb3IuVHJhbnNwYXJlbnQsIE1hcmdpbiA9IFBhZGRpbmcuRW1wdHksIFBh
+          ZGRpbmcgPSBQYWRkaW5nLkVtcHR5IH07CiAgICAgICAgbGF5b3V0LkNvbHVtblN0eWxlcy5BZGQo
+          bmV3IENvbHVtblN0eWxlKFNpemVUeXBlLkFic29sdXRlLCA5NikpOwogICAgICAgIGxheW91dC5D
+          b2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5QZXJjZW50LCAxMDApKTsK
+          ICAgICAgICBsYXlvdXQuQ29sdW1uU3R5bGVzLkFkZChuZXcgQ29sdW1uU3R5bGUoU2l6ZVR5cGUu
+          QWJzb2x1dGUsIDI2MCkpOwogICAgICAgIGxheW91dC5Db250cm9scy5BZGQobmV3IExhYmVsIHsg
+          VGV4dCA9ICJSIiwgRG9jayA9IERvY2tTdHlsZS5GaWxsLCBBdXRvU2l6ZSA9IGZhbHNlLCBUZXh0
+          QWxpZ24gPSBDb250ZW50QWxpZ25tZW50Lk1pZGRsZUNlbnRlciwgRm9udCA9IG5ldyBGb250KCJT
+          ZWdvZSBVSSIsIDMyRiwgRm9udFN0eWxlLkJvbGQpLCBGb3JlQ29sb3IgPSBBY2NlbnRDb2xvciwg
+          QmFja0NvbG9yID0gQ29sb3IuVHJhbnNwYXJlbnQgfSwgMCwgMCk7CiAgICAgICAgdmFyIHRleHQg
+          PSBuZXcgVGFibGVMYXlvdXRQYW5lbCB7IERvY2sgPSBEb2NrU3R5bGUuRmlsbCwgQ29sdW1uQ291
+          bnQgPSAxLCBSb3dDb3VudCA9IDMsIEJhY2tDb2xvciA9IENvbG9yLlRyYW5zcGFyZW50LCBNYXJn
+          aW4gPSBuZXcgUGFkZGluZyg4LCAwLCAwLCAwKSwgUGFkZGluZyA9IFBhZGRpbmcuRW1wdHkgfTsK
+          ICAgICAgICB0ZXh0LlJvd1N0eWxlcy5BZGQobmV3IFJvd1N0eWxlKFNpemVUeXBlLkFic29sdXRl
+          LCAzNCkpOwogICAgICAgIHRleHQuUm93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUu
+          QWJzb2x1dGUsIDM2KSk7CiAgICAgICAgdGV4dC5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShT
+          aXplVHlwZS5QZXJjZW50LCAxMDApKTsKICAgICAgICB0ZXh0LkNvbnRyb2xzLkFkZChuZXcgTGFi
+          ZWwgeyBUZXh0ID0gIlJhaWRDbGlwUGx1Z2luIiwgRG9jayA9IERvY2tTdHlsZS5GaWxsLCBBdXRv
+          U2l6ZSA9IGZhbHNlLCBGb250ID0gbmV3IEZvbnQoIlNlZ29lIFVJIiwgMTVGLCBGb250U3R5bGUu
+          Qm9sZCksIEZvcmVDb2xvciA9IFRleHRDb2xvciwgVGV4dEFsaWduID0gQ29udGVudEFsaWdubWVu
+          dC5Cb3R0b21MZWZ0IH0sIDAsIDApOwogICAgICAgIF9vdmVyYWxsU3RhdHVzTGFiZWwuRG9jayA9
+          IERvY2tTdHlsZS5GaWxsOwogICAgICAgIF9vdmVyYWxsU3RhdHVzTGFiZWwuQXV0b1NpemUgPSBm
+          YWxzZTsKICAgICAgICBfb3ZlcmFsbFN0YXR1c0xhYmVsLlRleHRBbGlnbiA9IENvbnRlbnRBbGln
+          bm1lbnQuTWlkZGxlTGVmdDsKICAgICAgICBfb3ZlcmFsbFN0YXR1c0xhYmVsLkZvbnQgPSBuZXcg
+          Rm9udCgiU2Vnb2UgVUkiLCAxNEYsIEZvbnRTdHlsZS5Cb2xkKTsKICAgICAgICBfb3ZlcmFsbFN0
+          YXR1c0xhYmVsLk1hcmdpbiA9IFBhZGRpbmcuRW1wdHk7CiAgICAgICAgX292ZXJhbGxTdGF0dXNM
+          YWJlbC5QYWRkaW5nID0gUGFkZGluZy5FbXB0eTsKICAgICAgICB0ZXh0LkNvbnRyb2xzLkFkZChf
+          b3ZlcmFsbFN0YXR1c0xhYmVsLCAwLCAxKTsKICAgICAgICB0ZXh0LkNvbnRyb2xzLkFkZChuZXcg
+          TGFiZWwgeyBUZXh0ID0gIkFsbGUgS2Vybm1vZHVsZSBibGVpYmVuIGdldHJlbm50IHVuZCBibG9j
+          a2llcmVuIHNpY2ggbmljaHQgZ2VnZW5zZWl0aWcuIiwgRG9jayA9IERvY2tTdHlsZS5GaWxsLCBB
+          dXRvU2l6ZSA9IGZhbHNlLCBGb250ID0gbmV3IEZvbnQoIlNlZ29lIFVJIiwgOS4yRiksIEZvcmVD
+          b2xvciA9IE11dGVkVGV4dENvbG9yLCBUZXh0QWxpZ24gPSBDb250ZW50QWxpZ25tZW50LlRvcExl
+          ZnQsIEF1dG9FbGxpcHNpcyA9IHRydWUgfSwgMCwgMik7CiAgICAgICAgdmFyIG1ldGEgPSBuZXcg
+          VGFibGVMYXlvdXRQYW5lbCB7IERvY2sgPSBEb2NrU3R5bGUuRmlsbCwgQ29sdW1uQ291bnQgPSAz
+          LCBSb3dDb3VudCA9IDIsIEJhY2tDb2xvciA9IENvbG9yLlRyYW5zcGFyZW50LCBNYXJnaW4gPSBQ
+          YWRkaW5nLkVtcHR5LCBQYWRkaW5nID0gUGFkZGluZy5FbXB0eSB9OwogICAgICAgIG1ldGEuQ29s
+          dW1uU3R5bGVzLkFkZChuZXcgQ29sdW1uU3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgMzQpKTsKICAg
+          ICAgICBtZXRhLkNvbHVtblN0eWxlcy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLlBlcmNl
+          bnQsIDMzKSk7CiAgICAgICAgbWV0YS5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShT
+          aXplVHlwZS5QZXJjZW50LCAzMykpOwogICAgICAgIG1ldGEuUm93U3R5bGVzLkFkZChuZXcgUm93
+          U3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgNDQpKTsKICAgICAgICBtZXRhLlJvd1N0eWxlcy5BZGQo
+          bmV3IFJvd1N0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDU2KSk7CiAgICAgICAgQWRkSGVyb01ldGEo
+          bWV0YSwgMCwgIkthbmFsIiwgIkZ1bmppaSIpOwogICAgICAgIEFkZEhlcm9NZXRhKG1ldGEsIDEs
+          ICJWZXJzaW9uIiwgX3VwZGF0ZVNlcnZpY2UuQ3VycmVudERpc3BsYXlWZXJzaW9uKTsKICAgICAg
+          ICBBZGRIZXJvTWV0YShtZXRhLCAyLCAiU3RhdHVzIiwgIkxpdmUiKTsKICAgICAgICBsYXlvdXQu
+          Q29udHJvbHMuQWRkKHRleHQsIDEsIDApOwogICAgICAgIGxheW91dC5Db250cm9scy5BZGQobWV0
+          YSwgMiwgMCk7CiAgICAgICAgaGVyby5Db250cm9scy5BZGQobGF5b3V0KTsKICAgICAgICByZXR1
+          cm4gaGVybzsKICAgIH0KCiAgICBwcml2YXRlIHN0YXRpYyB2b2lkIEFkZEhlcm9NZXRhKFRhYmxl
+          TGF5b3V0UGFuZWwgbWV0YSwgaW50IGNvbHVtbiwgc3RyaW5nIHRpdGxlLCBzdHJpbmcgdmFsdWUp
+          CiAgICB7CiAgICAgICAgbWV0YS5Db250cm9scy5BZGQobmV3IExhYmVsIHsgVGV4dCA9IHRpdGxl
+          LCBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIEF1dG9TaXplID0gZmFsc2UsIEZvcmVDb2xvciA9IE11
+          dGVkVGV4dENvbG9yLCBGb250ID0gbmV3IEZvbnQoIlNlZ29lIFVJIiwgOC40RiksIFRleHRBbGln
+          biA9IENvbnRlbnRBbGlnbm1lbnQuQm90dG9tQ2VudGVyLCBBdXRvRWxsaXBzaXMgPSB0cnVlIH0s
+          IGNvbHVtbiwgMCk7CiAgICAgICAgbWV0YS5Db250cm9scy5BZGQobmV3IExhYmVsIHsgVGV4dCA9
+          IHZhbHVlLCBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIEF1dG9TaXplID0gZmFsc2UsIEZvcmVDb2xv
+          ciA9IFRleHRDb2xvciwgRm9udCA9IG5ldyBGb250KCJTZWdvZSBVSSIsIDEwRiwgRm9udFN0eWxl
+          LkJvbGQpLCBUZXh0QWxpZ24gPSBDb250ZW50QWxpZ25tZW50LlRvcENlbnRlciwgQXV0b0VsbGlw
+          c2lzID0gdHJ1ZSB9LCBjb2x1bW4sIDEpOwogICAgfQoKICAgIHByaXZhdGUgQ29udHJvbCBDcmVh
+          dGVNb2R1bGVHcmlkKCkKICAgIHsKICAgICAgICB2YXIgZ3JpZCA9IG5ldyBUYWJsZUxheW91dFBh
+          bmVsIHsgRG9jayA9IERvY2tTdHlsZS5GaWxsLCBDb2x1bW5Db3VudCA9IDQsIFJvd0NvdW50ID0g
+          MiwgQmFja0NvbG9yID0gQ29sb3IuVHJhbnNwYXJlbnQsIFBhZGRpbmcgPSBQYWRkaW5nLkVtcHR5
+          LCBNYXJnaW4gPSBQYWRkaW5nLkVtcHR5IH07CiAgICAgICAgZm9yICh2YXIgaSA9IDA7IGkgPCA0
+          OyBpKyspIGdyaWQuQ29sdW1uU3R5bGVzLkFkZChuZXcgQ29sdW1uU3R5bGUoU2l6ZVR5cGUuUGVy
+          Y2VudCwgMjUpKTsKICAgICAgICBncmlkLlJvd1N0eWxlcy5BZGQobmV3IFJvd1N0eWxlKFNpemVU
+          eXBlLlBlcmNlbnQsIDUwKSk7CiAgICAgICAgZ3JpZC5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHls
+          ZShTaXplVHlwZS5QZXJjZW50LCA1MCkpOwogICAgICAgIGdyaWQuQ29udHJvbHMuQWRkKENyZWF0
+          ZURhc2hib2FyZFN0YXR1c0NhcmQoX3R3aXRjaEluZGljYXRvciksIDAsIDApOwogICAgICAgIGdy
+          aWQuQ29udHJvbHMuQWRkKENyZWF0ZURhc2hib2FyZFN0YXR1c0NhcmQoX29ic0luZGljYXRvciks
+          IDEsIDApOwogICAgICAgIGdyaWQuQ29udHJvbHMuQWRkKENyZWF0ZURhc2hib2FyZFN0YXR1c0Nh
+          cmQoX2V2ZW50U3ViSW5kaWNhdG9yKSwgMiwgMCk7CiAgICAgICAgZ3JpZC5Db250cm9scy5BZGQo
+          Q3JlYXRlRGFzaGJvYXJkU3RhdHVzQ2FyZChfcGxheWVySW5kaWNhdG9yKSwgMywgMCk7CiAgICAg
+          ICAgZ3JpZC5Db250cm9scy5BZGQoQ3JlYXRlTW9kdWxlSW5mb0NhcmQoIkRpc2NvcmQiLCAiT3B0
+          aW9uYWwiLCAi4piBIiwgV2FybmluZ1N0YXR1c0NvbG9yKSwgMCwgMSk7CiAgICAgICAgZ3JpZC5D
+          b250cm9scy5BZGQoQ3JlYXRlTW9kdWxlSW5mb0NhcmQoIk11c2lrZGllbnN0IiwgIk9wdGlvbmFs
+          IiwgIuKZqyIsIEhlYWx0aHlTdGF0dXNDb2xvciksIDEsIDEpOwogICAgICAgIGdyaWQuQ29udHJv
+          bHMuQWRkKENyZWF0ZU1vZHVsZUluZm9DYXJkKCJDb21tYW5kcyIsICJCZXJlaXQiLCAiPC8+Iiwg
+          SGVhbHRoeVN0YXR1c0NvbG9yKSwgMiwgMSk7CiAgICAgICAgZ3JpZC5Db250cm9scy5BZGQoQ3Jl
+          YXRlTW9kdWxlSW5mb0NhcmQoIlVwZGF0ZXIiLCAiQWt0dWVsbCIsICLihrsiLCBIZWFsdGh5U3Rh
+          dHVzQ29sb3IpLCAzLCAxKTsKICAgICAgICByZXR1cm4gZ3JpZDsKICAgIH0KCiAgICBwcml2YXRl
+          IENvbnRyb2wgQ3JlYXRlTW9kdWxlSW5mb0NhcmQoc3RyaW5nIHRpdGxlLCBzdHJpbmcgc3RhdHVz
+          LCBzdHJpbmcgaWNvbiwgQ29sb3IgY29sb3IpCiAgICB7CiAgICAgICAgdmFyIGNhcmQgPSBDcmVh
+          dGVDYXJkUGFuZWwoY29sb3IsIG5ldyBQYWRkaW5nKDE0LCAxMiwgMTQsIDEyKSk7CiAgICAgICAg
+          Y2FyZC5NYXJnaW4gPSBuZXcgUGFkZGluZyg2LCA2LCA2LCA2KTsKICAgICAgICBjYXJkLk1pbmlt
+          dW1TaXplID0gbmV3IFNpemUoMTUwLCA3OCk7CiAgICAgICAgdmFyIGxheW91dCA9IG5ldyBUYWJs
+          ZUxheW91dFBhbmVsIHsgRG9jayA9IERvY2tTdHlsZS5GaWxsLCBDb2x1bW5Db3VudCA9IDIsIFJv
+          d0NvdW50ID0gMSwgQmFja0NvbG9yID0gQ29sb3IuVHJhbnNwYXJlbnQsIE1hcmdpbiA9IFBhZGRp
+          bmcuRW1wdHksIFBhZGRpbmcgPSBQYWRkaW5nLkVtcHR5IH07CiAgICAgICAgbGF5b3V0LkNvbHVt
+          blN0eWxlcy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLkFic29sdXRlLCA1MCkpOwogICAg
+          ICAgIGxheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5QZXJj
+          ZW50LCAxMDApKTsKICAgICAgICBsYXlvdXQuQ29udHJvbHMuQWRkKG5ldyBMYWJlbCB7IFRleHQg
+          PSBpY29uLCBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIEF1dG9TaXplID0gZmFsc2UsIFRleHRBbGln
+          biA9IENvbnRlbnRBbGlnbm1lbnQuTWlkZGxlQ2VudGVyLCBGb250ID0gbmV3IEZvbnQoIlNlZ29l
+          IFVJIiwgMTlGLCBGb250U3R5bGUuQm9sZCksIEZvcmVDb2xvciA9IGNvbG9yLCBCYWNrQ29sb3Ig
+          PSBDb2xvci5UcmFuc3BhcmVudCB9LCAwLCAwKTsKICAgICAgICB2YXIgdGV4dCA9IG5ldyBUYWJs
+          ZUxheW91dFBhbmVsIHsgRG9jayA9IERvY2tTdHlsZS5GaWxsLCBDb2x1bW5Db3VudCA9IDEsIFJv
+          d0NvdW50ID0gMiwgQmFja0NvbG9yID0gQ29sb3IuVHJhbnNwYXJlbnQsIE1hcmdpbiA9IFBhZGRp
+          bmcuRW1wdHksIFBhZGRpbmcgPSBQYWRkaW5nLkVtcHR5IH07CiAgICAgICAgdGV4dC5Sb3dTdHls
+          ZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5QZXJjZW50LCA1NCkpOwogICAgICAgIHRleHQu
+          Um93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgNDYpKTsKICAgICAg
+          ICB0ZXh0LkNvbnRyb2xzLkFkZChuZXcgTGFiZWwgeyBUZXh0ID0gdGl0bGUsIERvY2sgPSBEb2Nr
+          U3R5bGUuRmlsbCwgQXV0b1NpemUgPSBmYWxzZSwgRm9udCA9IG5ldyBGb250KCJTZWdvZSBVSSIs
+          IDEwRiwgRm9udFN0eWxlLkJvbGQpLCBGb3JlQ29sb3IgPSBUZXh0Q29sb3IsIFRleHRBbGlnbiA9
+          IENvbnRlbnRBbGlnbm1lbnQuQm90dG9tTGVmdCwgQXV0b0VsbGlwc2lzID0gdHJ1ZSB9LCAwLCAw
+          KTsKICAgICAgICB0ZXh0LkNvbnRyb2xzLkFkZChuZXcgTGFiZWwgeyBUZXh0ID0gc3RhdHVzLCBE
+          b2NrID0gRG9ja1N0eWxlLkZpbGwsIEF1dG9TaXplID0gZmFsc2UsIEZvbnQgPSBuZXcgRm9udCgi
+          U2Vnb2UgVUkiLCA5RiwgRm9udFN0eWxlLkJvbGQpLCBGb3JlQ29sb3IgPSBjb2xvciwgVGV4dEFs
+          aWduID0gQ29udGVudEFsaWdubWVudC5Ub3BMZWZ0LCBBdXRvRWxsaXBzaXMgPSB0cnVlIH0sIDAs
+          IDEpOwogICAgICAgIGxheW91dC5Db250cm9scy5BZGQodGV4dCwgMSwgMCk7CiAgICAgICAgY2Fy
+          ZC5Db250cm9scy5BZGQobGF5b3V0KTsKICAgICAgICByZXR1cm4gY2FyZDsKICAgIH0KCiAgICBw
+          cml2YXRlIENvbnRyb2wgQ3JlYXRlRGFzaGJvYXJkU2VjdGlvbihzdHJpbmcgdGl0bGUsIENvbnRy
+          b2wgY29udGVudCkKICAgIHsKICAgICAgICB2YXIgY2FyZCA9IENyZWF0ZUNhcmRQYW5lbChBY2Nl
+          bnRDb2xvciwgbmV3IFBhZGRpbmcoMTQsIDEwLCAxNCwgMTQpKTsKICAgICAgICBjYXJkLk1hcmdp
+          biA9IG5ldyBQYWRkaW5nKDAsIDAsIDAsIDEwKTsKICAgICAgICB2YXIgbGF5b3V0ID0gbmV3IFRh
+          YmxlTGF5b3V0UGFuZWwgeyBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIENvbHVtbkNvdW50ID0gMSwg
+          Um93Q291bnQgPSAyLCBCYWNrQ29sb3IgPSBDb2xvci5UcmFuc3BhcmVudCwgTWFyZ2luID0gUGFk
+          ZGluZy5FbXB0eSwgUGFkZGluZyA9IFBhZGRpbmcuRW1wdHkgfTsKICAgICAgICBsYXlvdXQuUm93
+          U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDI2KSk7CiAgICAgICAg
+          bGF5b3V0LlJvd1N0eWxlcy5BZGQobmV3IFJvd1N0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDEwMCkp
+          OwogICAgICAgIGxheW91dC5Db250cm9scy5BZGQobmV3IExhYmVsIHsgVGV4dCA9IHRpdGxlLCBE
+          b2NrID0gRG9ja1N0eWxlLkZpbGwsIEZvcmVDb2xvciA9IFRleHRDb2xvciwgRm9udCA9IG5ldyBG
+          b250KCJTZWdvZSBVSSIsIDkuOEYsIEZvbnRTdHlsZS5Cb2xkKSwgVGV4dEFsaWduID0gQ29udGVu
+          dEFsaWdubWVudC5NaWRkbGVMZWZ0LCBBdXRvRWxsaXBzaXMgPSB0cnVlIH0sIDAsIDApOwogICAg
+          ICAgIGNvbnRlbnQuRG9jayA9IERvY2tTdHlsZS5GaWxsOwogICAgICAgIGNvbnRlbnQuTWFyZ2lu
+          ID0gUGFkZGluZy5FbXB0eTsKICAgICAgICBsYXlvdXQuQ29udHJvbHMuQWRkKGNvbnRlbnQsIDAs
+          IDEpOwogICAgICAgIGNhcmQuQ29udHJvbHMuQWRkKGxheW91dCk7CiAgICAgICAgcmV0dXJuIGNh
+          cmQ7CiAgICB9CgogICAgcHJpdmF0ZSBDb250cm9sIENyZWF0ZURhc2hib2FyZFNlY3Rpb24oQ29u
+          dHJvbCBjb250ZW50LCBQYWRkaW5nIG1hcmdpbikKICAgIHsKICAgICAgICBjb250ZW50LkRvY2sg
+          PSBEb2NrU3R5bGUuRmlsbDsKICAgICAgICBjb250ZW50Lk1hcmdpbiA9IFBhZGRpbmcuRW1wdHk7
+          CiAgICAgICAgdmFyIGNhcmQgPSBDcmVhdGVDYXJkUGFuZWwoQWNjZW50Q29sb3IsIG5ldyBQYWRk
+          aW5nKDEyKSk7CiAgICAgICAgY2FyZC5NYXJnaW4gPSBtYXJnaW47CiAgICAgICAgY2FyZC5Db250
+          cm9scy5BZGQoY29udGVudCk7CiAgICAgICAgcmV0dXJuIGNhcmQ7CiAgICB9CgogICAgcHJpdmF0
+          ZSBDb250cm9sIENyZWF0ZURhc2hib2FyZFN0YXRzR3JpZCgpCiAgICB7CiAgICAgICAgdmFyIGdy
+          aWQgPSBuZXcgVGFibGVMYXlvdXRQYW5lbCB7IERvY2sgPSBEb2NrU3R5bGUuRmlsbCwgQ29sdW1u
+          Q291bnQgPSA2LCBSb3dDb3VudCA9IDEsIEJhY2tDb2xvciA9IENvbG9yLlRyYW5zcGFyZW50LCBQ
+          YWRkaW5nID0gUGFkZGluZy5FbXB0eSwgTWFyZ2luID0gUGFkZGluZy5FbXB0eSB9OwogICAgICAg
+          IGZvciAodmFyIGkgPSAwOyBpIDwgNjsgaSsrKSBncmlkLkNvbHVtblN0eWxlcy5BZGQobmV3IENv
+          bHVtblN0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDEwMEYgLyA2RikpOwogICAgICAgIGdyaWQuQ29u
+          dHJvbHMuQWRkKENyZWF0ZVN0YXRpc3RpY0NhcmQoIvCfkqwiLCAiQ2hhdCIsICLigJQiLCBBY2Nl
+          bnRDb2xvciksIDAsIDApOwogICAgICAgIGdyaWQuQ29udHJvbHMuQWRkKENyZWF0ZVN0YXRpc3Rp
+          Y0NhcmQoIjwvPiIsICJDb21tYW5kcyIsICLigJQiLCBDb2xvci5Gcm9tQXJnYigyNTUsIDE1OSwg
+          NjcpKSwgMSwgMCk7CiAgICAgICAgZ3JpZC5Db250cm9scy5BZGQoQ3JlYXRlU3RhdGlzdGljQ2Fy
+          ZCgi4pajIiwgIlJhaWRjbGlwcyIsIF9oaXN0b3J5TGlzdC5JdGVtcy5Db3VudC5Ub1N0cmluZygi
+          TjAiKSwgQWNjZW50Q29sb3IpLCAyLCAwKTsKICAgICAgICBncmlkLkNvbnRyb2xzLkFkZChDcmVh
+          dGVTdGF0aXN0aWNDYXJkKCLwn5GlIiwgIlJhaWRzIiwgIuKAlCIsIENvbG9yLkZyb21BcmdiKDE2
+          NiwgOTYsIDI1NSkpLCAzLCAwKTsKICAgICAgICBncmlkLkNvbnRyb2xzLkFkZChDcmVhdGVTdGF0
+          aXN0aWNDYXJkKCLil7QiLCAiUHVua3RlIiwgIuKAlCIsIENvbG9yLkZyb21BcmdiKDI0NSwgMTc2
+          LCA2NSkpLCA0LCAwKTsKICAgICAgICBncmlkLkNvbnRyb2xzLkFkZChDcmVhdGVTdGF0aXN0aWND
+          YXJkKCLimqAiLCAiRmVobGVyIiwgIktlaW5lIiwgVW5oZWFsdGh5U3RhdHVzQ29sb3IpLCA1LCAw
+          KTsKICAgICAgICByZXR1cm4gZ3JpZDsKICAgIH0KCiAgICBwcml2YXRlIENvbnRyb2wgQ3JlYXRl
+          U3RhdGlzdGljQ2FyZChzdHJpbmcgaWNvbiwgc3RyaW5nIGxhYmVsLCBzdHJpbmcgdmFsdWUsIENv
+          bG9yIGNvbG9yKQogICAgewogICAgICAgIHZhciBwYW5lbCA9IENyZWF0ZUNhcmRQYW5lbChjb2xv
+          ciwgbmV3IFBhZGRpbmcoMTAsIDgsIDEwLCA4KSk7CiAgICAgICAgcGFuZWwuTWFyZ2luID0gbmV3
+          IFBhZGRpbmcoNSwgMCwgNSwgMCk7CiAgICAgICAgcGFuZWwuTWluaW11bVNpemUgPSBuZXcgU2l6
+          ZSgxMTIsIDgyKTsKICAgICAgICB2YXIgbGF5b3V0ID0gbmV3IFRhYmxlTGF5b3V0UGFuZWwgeyBE
+          b2NrID0gRG9ja1N0eWxlLkZpbGwsIENvbHVtbkNvdW50ID0gMSwgUm93Q291bnQgPSAzLCBCYWNr
+          Q29sb3IgPSBDb2xvci5UcmFuc3BhcmVudCwgUGFkZGluZyA9IFBhZGRpbmcuRW1wdHksIE1hcmdp
+          biA9IFBhZGRpbmcuRW1wdHkgfTsKICAgICAgICBsYXlvdXQuUm93U3R5bGVzLkFkZChuZXcgUm93
+          U3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgMzQpKTsKICAgICAgICBsYXlvdXQuUm93U3R5bGVzLkFk
+          ZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgMzQpKTsKICAgICAgICBsYXlvdXQuUm93
+          U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgMzIpKTsKICAgICAgICBs
+          YXlvdXQuQ29udHJvbHMuQWRkKG5ldyBMYWJlbCB7IFRleHQgPSBpY29uLCBEb2NrID0gRG9ja1N0
+          eWxlLkZpbGwsIEZvbnQgPSBuZXcgRm9udCgiU2Vnb2UgVUkiLCAxNUYsIEZvbnRTdHlsZS5Cb2xk
+          KSwgRm9yZUNvbG9yID0gY29sb3IsIFRleHRBbGlnbiA9IENvbnRlbnRBbGlnbm1lbnQuTWlkZGxl
+          Q2VudGVyLCBBdXRvRWxsaXBzaXMgPSB0cnVlIH0sIDAsIDApOwogICAgICAgIGxheW91dC5Db250
+          cm9scy5BZGQobmV3IExhYmVsIHsgVGV4dCA9IHZhbHVlLCBEb2NrID0gRG9ja1N0eWxlLkZpbGws
+          IEZvbnQgPSBuZXcgRm9udCgiU2Vnb2UgVUkiLCAxNUYsIEZvbnRTdHlsZS5Cb2xkKSwgRm9yZUNv
+          bG9yID0gVGV4dENvbG9yLCBUZXh0QWxpZ24gPSBDb250ZW50QWxpZ25tZW50Lk1pZGRsZUNlbnRl
+          ciwgQXV0b0VsbGlwc2lzID0gdHJ1ZSB9LCAwLCAxKTsKICAgICAgICBsYXlvdXQuQ29udHJvbHMu
+          QWRkKG5ldyBMYWJlbCB7IFRleHQgPSBsYWJlbCwgRG9jayA9IERvY2tTdHlsZS5GaWxsLCBGb250
+          ID0gbmV3IEZvbnQoIlNlZ29lIFVJIiwgOC4yRiksIEZvcmVDb2xvciA9IE11dGVkVGV4dENvbG9y
+          LCBUZXh0QWxpZ24gPSBDb250ZW50QWxpZ25tZW50LlRvcENlbnRlciwgQXV0b0VsbGlwc2lzID0g
+          dHJ1ZSB9LCAwLCAyKTsKICAgICAgICBwYW5lbC5Db250cm9scy5BZGQobGF5b3V0KTsKICAgICAg
+          ICByZXR1cm4gcGFuZWw7CiAgICB9CgogICAgcHJpdmF0ZSBDb250cm9sIENyZWF0ZURhc2hib2Fy
+          ZEhlYWx0aFN1bW1hcnkoKQogICAgewogICAgICAgIHZhciBsYXlvdXQgPSBuZXcgVGFibGVMYXlv
+          dXRQYW5lbCB7IERvY2sgPSBEb2NrU3R5bGUuRmlsbCwgQ29sdW1uQ291bnQgPSAxLCBSb3dDb3Vu
+          dCA9IDQsIEJhY2tDb2xvciA9IENvbG9yLlRyYW5zcGFyZW50LCBNYXJnaW4gPSBQYWRkaW5nLkVt
+          cHR5LCBQYWRkaW5nID0gUGFkZGluZy5FbXB0eSB9OwogICAgICAgIGxheW91dC5Sb3dTdHlsZXMu
+          QWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgMzQpKTsKICAgICAgICBsYXlvdXQu
+          Um93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDQ2KSk7CiAgICAg
+          ICAgbGF5b3V0LlJvd1N0eWxlcy5BZGQobmV3IFJvd1N0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDEw
+          MCkpOwogICAgICAgIGxheW91dC5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dTdHlsZShTaXplVHlwZS5B
+          YnNvbHV0ZSwgMjQpKTsKICAgICAgICB2YXIgc3VtbWFyeSA9IG5ldyBGbG93TGF5b3V0UGFuZWwg
+          eyBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIEZsb3dEaXJlY3Rpb24gPSBGbG93RGlyZWN0aW9uLkxl
+          ZnRUb1JpZ2h0LCBXcmFwQ29udGVudHMgPSBmYWxzZSwgQXV0b1Njcm9sbCA9IGZhbHNlLCBCYWNr
+          Q29sb3IgPSBDb2xvci5UcmFuc3BhcmVudCwgTWFyZ2luID0gUGFkZGluZy5FbXB0eSwgUGFkZGlu
+          ZyA9IFBhZGRpbmcuRW1wdHkgfTsKICAgICAgICBfbW9kdWxlSGVhbHRoT3ZlcmFsbERvdC5NYXJn
+          aW4gPSBuZXcgUGFkZGluZygwLCA4LCA4LCAwKTsKICAgICAgICBfbW9kdWxlSGVhbHRoU3VtbWFy
+          eUxhYmVsLkF1dG9TaXplID0gZmFsc2U7CiAgICAgICAgX21vZHVsZUhlYWx0aFN1bW1hcnlMYWJl
+          bC5XaWR0aCA9IDIyMDsKICAgICAgICBfbW9kdWxlSGVhbHRoU3VtbWFyeUxhYmVsLkhlaWdodCA9
+          IDMwOwogICAgICAgIF9tb2R1bGVIZWFsdGhTdW1tYXJ5TGFiZWwuVGV4dEFsaWduID0gQ29udGVu
+          dEFsaWdubWVudC5NaWRkbGVMZWZ0OwogICAgICAgIF9tb2R1bGVIZWFsdGhTdW1tYXJ5TGFiZWwu
+          QXV0b0VsbGlwc2lzID0gdHJ1ZTsKICAgICAgICBfbW9kdWxlSGVhbHRoU3VtbWFyeUxhYmVsLk1h
+          cmdpbiA9IFBhZGRpbmcuRW1wdHk7CiAgICAgICAgX21vZHVsZUhlYWx0aFByb2dyZXNzTGFiZWwu
+          QXV0b1NpemUgPSBmYWxzZTsKICAgICAgICBfbW9kdWxlSGVhbHRoUHJvZ3Jlc3NMYWJlbC5XaWR0
+          aCA9IDkyOwogICAgICAgIF9tb2R1bGVIZWFsdGhQcm9ncmVzc0xhYmVsLkhlaWdodCA9IDMwOwog
+          ICAgICAgIF9tb2R1bGVIZWFsdGhQcm9ncmVzc0xhYmVsLlRleHRBbGlnbiA9IENvbnRlbnRBbGln
+          bm1lbnQuTWlkZGxlUmlnaHQ7CiAgICAgICAgX21vZHVsZUhlYWx0aFByb2dyZXNzTGFiZWwuQXV0
+          b0VsbGlwc2lzID0gdHJ1ZTsKICAgICAgICBzdW1tYXJ5LkNvbnRyb2xzLkFkZChfbW9kdWxlSGVh
+          bHRoT3ZlcmFsbERvdCk7CiAgICAgICAgc3VtbWFyeS5Db250cm9scy5BZGQoX21vZHVsZUhlYWx0
+          aFN1bW1hcnlMYWJlbCk7CiAgICAgICAgc3VtbWFyeS5Db250cm9scy5BZGQoX21vZHVsZUhlYWx0
+          aFByb2dyZXNzTGFiZWwpOwogICAgICAgIGxheW91dC5Db250cm9scy5BZGQoc3VtbWFyeSwgMCwg
+          MCk7CiAgICAgICAgdmFyIGJ1dHRvbnMgPSBuZXcgVGFibGVMYXlvdXRQYW5lbCB7IERvY2sgPSBE
+          b2NrU3R5bGUuRmlsbCwgQ29sdW1uQ291bnQgPSAyLCBSb3dDb3VudCA9IDEsIEJhY2tDb2xvciA9
+          IENvbG9yLlRyYW5zcGFyZW50LCBNYXJnaW4gPSBQYWRkaW5nLkVtcHR5LCBQYWRkaW5nID0gUGFk
+          ZGluZy5FbXB0eSB9OwogICAgICAgIGJ1dHRvbnMuQ29sdW1uU3R5bGVzLkFkZChuZXcgQ29sdW1u
+          U3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgNTApKTsKICAgICAgICBidXR0b25zLkNvbHVtblN0eWxl
+          cy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDUwKSk7CiAgICAgICAgQ29t
+          cGFjdERhc2hib2FyZEJ1dHRvbihfY2hlY2tNb2R1bGVzQnV0dG9uLCAwKTsKICAgICAgICBDb21w
+          YWN0RGFzaGJvYXJkQnV0dG9uKF9yZXN0YXJ0TW9kdWxlc0J1dHRvbiwgMCk7CiAgICAgICAgX2No
+          ZWNrTW9kdWxlc0J1dHRvbi5UZXh0ID0gIkpldHp0IHByw7xmZW4iOwogICAgICAgIF9yZXN0YXJ0
+          TW9kdWxlc0J1dHRvbi5UZXh0ID0gIlJlcGFyaWVyZW4iOwogICAgICAgIF9jaGVja01vZHVsZXNC
+          dXR0b24uRG9jayA9IERvY2tTdHlsZS5GaWxsOwogICAgICAgIF9yZXN0YXJ0TW9kdWxlc0J1dHRv
+          bi5Eb2NrID0gRG9ja1N0eWxlLkZpbGw7CiAgICAgICAgX2NoZWNrTW9kdWxlc0J1dHRvbi5NYXJn
+          aW4gPSBuZXcgUGFkZGluZygwLCA0LCA1LCA0KTsKICAgICAgICBfcmVzdGFydE1vZHVsZXNCdXR0
+          b24uTWFyZ2luID0gbmV3IFBhZGRpbmcoNSwgNCwgMCwgNCk7CiAgICAgICAgYnV0dG9ucy5Db250
+          cm9scy5BZGQoX2NoZWNrTW9kdWxlc0J1dHRvbiwgMCwgMCk7CiAgICAgICAgYnV0dG9ucy5Db250
+          cm9scy5BZGQoX3Jlc3RhcnRNb2R1bGVzQnV0dG9uLCAxLCAwKTsKICAgICAgICBsYXlvdXQuQ29u
+          dHJvbHMuQWRkKGJ1dHRvbnMsIDAsIDEpOwogICAgICAgIHZhciBsaXN0ID0gbmV3IFRhYmxlTGF5
+          b3V0UGFuZWwgeyBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIENvbHVtbkNvdW50ID0gMSwgUm93Q291
+          bnQgPSA3LCBCYWNrQ29sb3IgPSBDb2xvci5UcmFuc3BhcmVudCwgTWFyZ2luID0gbmV3IFBhZGRp
+          bmcoMCwgOCwgMCwgMCksIFBhZGRpbmcgPSBQYWRkaW5nLkVtcHR5IH07CiAgICAgICAgZm9yICh2
+          YXIgaSA9IDA7IGkgPCA3OyBpKyspIGxpc3QuUm93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUoU2l6
+          ZVR5cGUuUGVyY2VudCwgMTAwRiAvIDdGKSk7CiAgICAgICAgZm9yZWFjaCAodmFyIHJvdyBpbiBu
+          ZXdbXSB7ICgiVHdpdGNoIEFQSSIsICJPSyIsIEhlYWx0aHlTdGF0dXNDb2xvciksICgiVHdpdGNo
+          IENoYXQiLCAiQmVyZWl0IiwgSGVhbHRoeVN0YXR1c0NvbG9yKSwgKCJFdmVudFN1YiIsICJCZXJl
+          aXQiLCBIZWFsdGh5U3RhdHVzQ29sb3IpLCAoIk9CUyBTdHVkaW8iLCAiQmVyZWl0IiwgSGVhbHRo
+          eVN0YXR1c0NvbG9yKSwgKCJMb2thbGVyIFBsYXllciIsICJCZXJlaXQiLCBIZWFsdGh5U3RhdHVz
+          Q29sb3IpLCAoIkNvbW1hbmRzIiwgIkJlcmVpdCIsIEhlYWx0aHlTdGF0dXNDb2xvciksICgiVXBk
+          YXRlciIsICJBa3R1ZWxsIiwgSGVhbHRoeVN0YXR1c0NvbG9yKSB9KSBsaXN0LkNvbnRyb2xzLkFk
+          ZChDcmVhdGVIZWFsdGhSb3cocm93Lkl0ZW0xLCByb3cuSXRlbTIsIHJvdy5JdGVtMykpOwogICAg
+          ICAgIGxheW91dC5Db250cm9scy5BZGQobGlzdCwgMCwgMik7CiAgICAgICAgX21vZHVsZUhlYWx0
+          aExhc3RDaGVja0xhYmVsLkRvY2sgPSBEb2NrU3R5bGUuRmlsbDsKICAgICAgICBfbW9kdWxlSGVh
+          bHRoTGFzdENoZWNrTGFiZWwuQXV0b1NpemUgPSBmYWxzZTsKICAgICAgICBfbW9kdWxlSGVhbHRo
+          TGFzdENoZWNrTGFiZWwuVGV4dEFsaWduID0gQ29udGVudEFsaWdubWVudC5Cb3R0b21SaWdodDsK
+          ICAgICAgICBfbW9kdWxlSGVhbHRoTGFzdENoZWNrTGFiZWwuTWFyZ2luID0gUGFkZGluZy5FbXB0
+          eTsKICAgICAgICBsYXlvdXQuQ29udHJvbHMuQWRkKF9tb2R1bGVIZWFsdGhMYXN0Q2hlY2tMYWJl
+          bCwgMCwgMyk7CiAgICAgICAgcmV0dXJuIGxheW91dDsKICAgIH0KCiAgICBwcml2YXRlIENvbnRy
+          b2wgQ3JlYXRlSGVhbHRoUm93KHN0cmluZyBuYW1lLCBzdHJpbmcgc3RhdGUsIENvbG9yIGNvbG9y
+          KQogICAgewogICAgICAgIHZhciByb3cgPSBuZXcgVGFibGVMYXlvdXRQYW5lbCB7IERvY2sgPSBE
+          b2NrU3R5bGUuRmlsbCwgQ29sdW1uQ291bnQgPSAzLCBSb3dDb3VudCA9IDEsIEJhY2tDb2xvciA9
+          IENvbG9yLlRyYW5zcGFyZW50LCBNYXJnaW4gPSBuZXcgUGFkZGluZygwLCAxLCAwLCAxKSwgUGFk
+          ZGluZyA9IFBhZGRpbmcuRW1wdHkgfTsKICAgICAgICByb3cuQ29sdW1uU3R5bGVzLkFkZChuZXcg
+          Q29sdW1uU3R5bGUoU2l6ZVR5cGUuQWJzb2x1dGUsIDI0KSk7CiAgICAgICAgcm93LkNvbHVtblN0
+          eWxlcy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDEwMCkpOwogICAgICAg
+          IHJvdy5Db2x1bW5TdHlsZXMuQWRkKG5ldyBDb2x1bW5TdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwg
+          NzgpKTsKICAgICAgICByb3cuQ29udHJvbHMuQWRkKG5ldyBMYWJlbCB7IFRleHQgPSAi4pePIiwg
+          RG9jayA9IERvY2tTdHlsZS5GaWxsLCBGb3JlQ29sb3IgPSBjb2xvciwgVGV4dEFsaWduID0gQ29u
+          dGVudEFsaWdubWVudC5NaWRkbGVDZW50ZXIsIEZvbnQgPSBuZXcgRm9udCgiU2Vnb2UgVUkiLCAx
+          MUYsIEZvbnRTdHlsZS5Cb2xkKSB9LCAwLCAwKTsKICAgICAgICByb3cuQ29udHJvbHMuQWRkKG5l
+          dyBMYWJlbCB7IFRleHQgPSBuYW1lLCBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIEZvcmVDb2xvciA9
+          IFRleHRDb2xvciwgVGV4dEFsaWduID0gQ29udGVudEFsaWdubWVudC5NaWRkbGVMZWZ0LCBGb250
+          ID0gbmV3IEZvbnQoIlNlZ29lIFVJIiwgOUYpLCBBdXRvRWxsaXBzaXMgPSB0cnVlIH0sIDEsIDAp
+          OwogICAgICAgIHJvdy5Db250cm9scy5BZGQobmV3IExhYmVsIHsgVGV4dCA9IHN0YXRlLCBEb2Nr
+          ID0gRG9ja1N0eWxlLkZpbGwsIEZvcmVDb2xvciA9IGNvbG9yLCBUZXh0QWxpZ24gPSBDb250ZW50
+          QWxpZ25tZW50Lk1pZGRsZVJpZ2h0LCBGb250ID0gbmV3IEZvbnQoIlNlZ29lIFVJIiwgOC44Riwg
+          Rm9udFN0eWxlLkJvbGQpLCBBdXRvRWxsaXBzaXMgPSB0cnVlIH0sIDIsIDApOwogICAgICAgIHJl
+          dHVybiByb3c7CiAgICB9CgogICAgcHJpdmF0ZSBDb250cm9sIENyZWF0ZUFjdGl2ZU1vZHVsZXNH
+          cmlkKCkKICAgIHsKICAgICAgICB2YXIgZ3JpZCA9IG5ldyBUYWJsZUxheW91dFBhbmVsIHsgRG9j
+          ayA9IERvY2tTdHlsZS5GaWxsLCBDb2x1bW5Db3VudCA9IDIsIFJvd0NvdW50ID0gNCwgQmFja0Nv
+          bG9yID0gQ29sb3IuVHJhbnNwYXJlbnQsIFBhZGRpbmcgPSBuZXcgUGFkZGluZygyKSwgTWFyZ2lu
+          ID0gUGFkZGluZy5FbXB0eSB9OwogICAgICAgIGdyaWQuQ29sdW1uU3R5bGVzLkFkZChuZXcgQ29s
+          dW1uU3R5bGUoU2l6ZVR5cGUuUGVyY2VudCwgNTApKTsKICAgICAgICBncmlkLkNvbHVtblN0eWxl
+          cy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVUeXBlLlBlcmNlbnQsIDUwKSk7CiAgICAgICAgZm9y
+          ICh2YXIgaSA9IDA7IGkgPCA0OyBpKyspIGdyaWQuUm93U3R5bGVzLkFkZChuZXcgUm93U3R5bGUo
+          U2l6ZVR5cGUuUGVyY2VudCwgMjUpKTsKICAgICAgICB2YXIgaXRlbXMgPSBuZXdbXSB7ICJUd2l0
+          Y2ggQ2hhdCIsICJNdXNpayBTeXN0ZW0iLCAiRXZlbnRTdWIiLCAiR2l2ZWF3YXkiLCAiUmFpZGNs
+          aXAiLCAiQ29tbWFuZHMiLCAiUHVua3RlIiwgIlVwZGF0ZXIiIH07CiAgICAgICAgZm9yICh2YXIg
+          aSA9IDA7IGkgPCBpdGVtcy5MZW5ndGg7IGkrKykgZ3JpZC5Db250cm9scy5BZGQobmV3IExhYmVs
+          IHsgVGV4dCA9ICLil48gICIgKyBpdGVtc1tpXSwgRG9jayA9IERvY2tTdHlsZS5GaWxsLCBGb3Jl
+          Q29sb3IgPSBIZWFsdGh5U3RhdHVzQ29sb3IsIEZvbnQgPSBuZXcgRm9udCgiU2Vnb2UgVUkiLCA4
+          LjJGKSwgUGFkZGluZyA9IG5ldyBQYWRkaW5nKDIsIDEsIDIsIDApLCBBdXRvRWxsaXBzaXMgPSB0
+          cnVlIH0sIGkgJSAyLCBpIC8gMik7CiAgICAgICAgcmV0dXJuIGdyaWQ7CiAgICB9CgogICAgcHJp
+          dmF0ZSBDb250cm9sIENyZWF0ZVJlY2VudEFjdGl2aXR5TGlzdCgpCiAgICB7CiAgICAgICAgdmFy
+          IGJveCA9IG5ldyBUYWJsZUxheW91dFBhbmVsIHsgRG9jayA9IERvY2tTdHlsZS5GaWxsLCBDb2x1
+          bW5Db3VudCA9IDEsIFJvd0NvdW50ID0gOCwgQmFja0NvbG9yID0gQ29sb3IuVHJhbnNwYXJlbnQs
+          IFBhZGRpbmcgPSBQYWRkaW5nLkVtcHR5LCBNYXJnaW4gPSBQYWRkaW5nLkVtcHR5IH07CiAgICAg
+          ICAgZm9yICh2YXIgaSA9IDA7IGkgPCA4OyBpKyspIGJveC5Sb3dTdHlsZXMuQWRkKG5ldyBSb3dT
+          dHlsZShTaXplVHlwZS5QZXJjZW50LCAxMi41RikpOwogICAgICAgIHZhciByb3dzID0gbmV3W10g
+          eyAi4pePIEhlYWx0aGNoZWNrIGJlcmVpdCIsICLil48gVHdpdGNoIENoYXQgd2FydGV0IGF1ZiBW
+          ZXJiaW5kdW5nIiwgIuKXjyBSYWlkY2xpcC1TeXN0ZW0gYmVyZWl0IiwgIuKXjyBVcGRhdGVyIGFr
+          dHVlbGwiLCAi4pePIENvbW1hbmRzIGdlbGFkZW4iLCAi4pePIFB1bmt0ZS1TeXN0ZW0gYmVyZWl0
+          IiwgIuKXjyBPQlMgd2FydGV0IGF1ZiBTdGFydCIsICLil48gTG9rYWxlciBQbGF5ZXIgYmVyZWl0
+          IiB9OwogICAgICAgIGZvcmVhY2ggKHZhciB0ZXh0IGluIHJvd3MpIGJveC5Db250cm9scy5BZGQo
+          bmV3IExhYmVsIHsgVGV4dCA9IHRleHQsIERvY2sgPSBEb2NrU3R5bGUuRmlsbCwgRm9yZUNvbG9y
+          ID0gdGV4dC5Db250YWlucygid2FydGV0IiwgU3RyaW5nQ29tcGFyaXNvbi5PcmRpbmFsSWdub3Jl
+          Q2FzZSkgPyBXYXJuaW5nU3RhdHVzQ29sb3IgOiBNdXRlZFRleHRDb2xvciwgRm9udCA9IG5ldyBG
+          b250KCJTZWdvZSBVSSIsIDguNEYpLCBUZXh0QWxpZ24gPSBDb250ZW50QWxpZ25tZW50Lk1pZGRs
+          ZUxlZnQsIEF1dG9FbGxpcHNpcyA9IHRydWUgfSk7CiAgICAgICAgcmV0dXJuIGJveDsKICAgIH0K
+          CiAgICBwcml2YXRlIERhc2hib2FyZENhcmRQYW5lbCBDcmVhdGVDYXJkUGFuZWwoQ29sb3IgYWNj
+          ZW50LCBQYWRkaW5nIHBhZGRpbmcpCiAgICB7CiAgICAgICAgcmV0dXJuIG5ldyBEYXNoYm9hcmRD
+          YXJkUGFuZWwgeyBEb2NrID0gRG9ja1N0eWxlLkZpbGwsIEJhY2tDb2xvciA9IENhcmRDb2xvciwg
+          QWNjZW50Q29sb3IgPSBhY2NlbnQsIFBhZGRpbmcgPSBwYWRkaW5nLCBNYXJnaW4gPSBQYWRkaW5n
+          LkVtcHR5IH07CiAgICB9CgogICAgcHJpdmF0ZSBzZWFsZWQgY2xhc3MgRGFzaGJvYXJkQ2FyZFBh
+          bmVsIDogUGFuZWwKICAgIHsKICAgICAgICBwdWJsaWMgQ29sb3IgQWNjZW50Q29sb3IgeyBnZXQ7
+          IHNldDsgfSA9IENvbG9yLkZyb21BcmdiKDIyMiwgMjQsIDMwKTsKICAgICAgICBwdWJsaWMgRGFz
+          aGJvYXJkQ2FyZFBhbmVsKCkgPT4gRG91YmxlQnVmZmVyZWQgPSB0cnVlOwogICAgICAgIHByb3Rl
+          Y3RlZCBvdmVycmlkZSB2b2lkIE9uUGFpbnQoUGFpbnRFdmVudEFyZ3MgZSkKICAgICAgICB7CiAg
+          ICAgICAgICAgIGJhc2UuT25QYWludChlKTsKICAgICAgICAgICAgdmFyIGJvdW5kcyA9IENsaWVu
+          dFJlY3RhbmdsZTsKICAgICAgICAgICAgaWYgKGJvdW5kcy5XaWR0aCA8PSAxIHx8IGJvdW5kcy5I
+          ZWlnaHQgPD0gMSkgcmV0dXJuOwogICAgICAgICAgICB1c2luZyB2YXIgYmFja2dyb3VuZCA9IG5l
+          dyBTb2xpZEJydXNoKEJhY2tDb2xvcik7CiAgICAgICAgICAgIGUuR3JhcGhpY3MuRmlsbFJlY3Rh
+          bmdsZShiYWNrZ3JvdW5kLCBib3VuZHMpOwogICAgICAgICAgICB1c2luZyB2YXIgYm9yZGVyID0g
+          bmV3IFBlbihDb2xvci5Gcm9tQXJnYig0MiwgNTAsIDYzKSwgMUYpOwogICAgICAgICAgICBlLkdy
+          YXBoaWNzLkRyYXdSZWN0YW5nbGUoYm9yZGVyLCAwLCAwLCBib3VuZHMuV2lkdGggLSAxLCBib3Vu
+          ZHMuSGVpZ2h0IC0gMSk7CiAgICAgICAgICAgIHVzaW5nIHZhciBhY2NlbnQgPSBuZXcgUGVuKEFj
+          Y2VudENvbG9yLCAyRik7CiAgICAgICAgICAgIGUuR3JhcGhpY3MuRHJhd0xpbmUoYWNjZW50LCAx
+          MiwgYm91bmRzLkhlaWdodCAtIDIsIGJvdW5kcy5XaWR0aCAtIDEyLCBib3VuZHMuSGVpZ2h0IC0g
+          Mik7CiAgICAgICAgfQogICAgfQp9CicnJwoKICAgICAgICAgIChyb290IC8gJ01haW5Gb3JtLkRh
+          c2hib2FyZE1vZGVybi5jcycpLndyaXRlX3RleHQoZGFzaGJvYXJkLCBlbmNvZGluZz0ndXRmLTgn
+          KQogICAgICAgICAgZGVmIHJlYWQocGF0aCk6IHJldHVybiBwYXRoLnJlYWRfdGV4dChlbmNvZGlu
+          Zz0ndXRmLTgtc2lnJykKICAgICAgICAgIGRlZiB3cml0ZShwYXRoLCB0ZXh0KTogcGF0aC53cml0
+          ZV90ZXh0KHRleHQsIGVuY29kaW5nPSd1dGYtOCcpCiAgICAgICAgICBtYWluID0gcmVhZChyb290
+          IC8gJ01haW5Gb3JtLmNzJykKICAgICAgICAgIHJlcGxhY2VtZW50cyA9IHsKICAgICAgICAgICAg
+          ICAncHJpdmF0ZSBzdGF0aWMgQ29sb3IgQmFja2dyb3VuZENvbG9yID0gQ29sb3IuRnJvbUFyZ2Io
+          OCwgOCwgOSk7JzogJ3ByaXZhdGUgc3RhdGljIENvbG9yIEJhY2tncm91bmRDb2xvciA9IENvbG9y
+          LkZyb21BcmdiKDUsIDgsIDEyKTsnLAogICAgICAgICAgICAgICdwcml2YXRlIHN0YXRpYyBDb2xv
+          ciBTaWRlYmFyQ29sb3IgPSBDb2xvci5Gcm9tQXJnYigxMiwgMTIsIDEzKTsnOiAncHJpdmF0ZSBz
+          dGF0aWMgQ29sb3IgU2lkZWJhckNvbG9yID0gQ29sb3IuRnJvbUFyZ2IoOCwgMTEsIDE2KTsnLAog
+          ICAgICAgICAgICAgICdwcml2YXRlIHN0YXRpYyBDb2xvciBTdXJmYWNlQ29sb3IgPSBDb2xvci5G
+          cm9tQXJnYigxOSwgMTksIDIxKTsnOiAncHJpdmF0ZSBzdGF0aWMgQ29sb3IgU3VyZmFjZUNvbG9y
+          ID0gQ29sb3IuRnJvbUFyZ2IoMTUsIDIwLCAyNyk7JywKICAgICAgICAgICAgICAncHJpdmF0ZSBz
+          dGF0aWMgQ29sb3IgSW5wdXRDb2xvciA9IENvbG9yLkZyb21BcmdiKDEzLCAxMywgMTQpOyc6ICdw
+          cml2YXRlIHN0YXRpYyBDb2xvciBJbnB1dENvbG9yID0gQ29sb3IuRnJvbUFyZ2IoMTAsIDE0LCAy
+          MCk7JywKICAgICAgICAgICAgICAncHJpdmF0ZSBzdGF0aWMgQ29sb3IgQm9yZGVyQ29sb3IgPSBD
+          b2xvci5Gcm9tQXJnYig4NiwgODYsIDkwKTsnOiAncHJpdmF0ZSBzdGF0aWMgQ29sb3IgQm9yZGVy
+          Q29sb3IgPSBDb2xvci5Gcm9tQXJnYig0OCwgNTcsIDcyKTsnLAogICAgICAgICAgICAgICdwcml2
+          YXRlIHN0YXRpYyBDb2xvciBBY2NlbnRDb2xvciA9IENvbG9yLkZyb21BcmdiKDIyMiwgMjQsIDMw
+          KTsnOiAncHJpdmF0ZSBzdGF0aWMgQ29sb3IgQWNjZW50Q29sb3IgPSBDb2xvci5Gcm9tQXJnYigy
+          NTUsIDQ3LCA1Nik7JywKICAgICAgICAgICAgICAncHJpdmF0ZSBzdGF0aWMgQ29sb3IgQWNjZW50
+          RGFya0NvbG9yID0gQ29sb3IuRnJvbUFyZ2IoOTIsIDEyLCAxNSk7JzogJ3ByaXZhdGUgc3RhdGlj
+          IENvbG9yIEFjY2VudERhcmtDb2xvciA9IENvbG9yLkZyb21BcmdiKDEwOCwgMjEsIDI4KTsnLAog
+          ICAgICAgICAgICAgICdwcml2YXRlIHN0YXRpYyBDb2xvciBUZXh0Q29sb3IgPSBDb2xvci5Gcm9t
+          QXJnYigyMzUsIDIzNSwgMjM4KTsnOiAncHJpdmF0ZSBzdGF0aWMgQ29sb3IgVGV4dENvbG9yID0g
+          Q29sb3IuRnJvbUFyZ2IoMjQ1LCAyNDcsIDI1MCk7JywKICAgICAgICAgICAgICAncHJpdmF0ZSBz
+          dGF0aWMgQ29sb3IgTXV0ZWRUZXh0Q29sb3IgPSBDb2xvci5Gcm9tQXJnYigxNzQsIDE3NCwgMTgw
+          KTsnOiAncHJpdmF0ZSBzdGF0aWMgQ29sb3IgTXV0ZWRUZXh0Q29sb3IgPSBDb2xvci5Gcm9tQXJn
+          YigxNTQsIDE2MywgMTc1KTsnLAogICAgICAgICAgICAgICdwcml2YXRlIHN0YXRpYyBDb2xvciBB
+          Y3RpdmVDb2xvciA9IENvbG9yLkZyb21BcmdiKDIzOSwgMzYsIDQyKTsnOiAncHJpdmF0ZSBzdGF0
+          aWMgQ29sb3IgQWN0aXZlQ29sb3IgPSBDb2xvci5Gcm9tQXJnYig2NCwgMjE0LCAxMjYpOycsCiAg
+          ICAgICAgICAgICAgJ01pbmltdW1TaXplID0gbmV3IFNpemUoMTA4MCwgNjgwKTsnOiAnTWluaW11
+          bVNpemUgPSBuZXcgU2l6ZSgxMjgwLCA3NjApOycsCiAgICAgICAgICAgICAgJ1NpemUgPSBuZXcg
+          U2l6ZSgxNTYwLCA5NDApOyc6ICdTaXplID0gbmV3IFNpemUoMTQ0MCwgODYwKTsnLAogICAgICAg
+          ICAgICAgICdyb290TGF5b3V0LkNvbHVtblN0eWxlcy5BZGQobmV3IENvbHVtblN0eWxlKFNpemVU
+          eXBlLkFic29sdXRlLCAyOTIpKTsnOiAncm9vdExheW91dC5Db2x1bW5TdHlsZXMuQWRkKG5ldyBD
+          b2x1bW5TdHlsZShTaXplVHlwZS5BYnNvbHV0ZSwgMjg0KSk7JwogICAgICAgICAgfQogICAgICAg
+          ICAgZm9yIG9sZCwgbmV3IGluIHJlcGxhY2VtZW50cy5pdGVtcygpOgogICAgICAgICAgICAgIGlm
+          IG9sZCBub3QgaW4gbWFpbjogcHJpbnQoJ1dBUk4gbWlzc2luZyBNYWluRm9ybSByZXBsYWNlbWVu
+          dDonLCBvbGRbOjgwXSkKICAgICAgICAgICAgICBtYWluID0gbWFpbi5yZXBsYWNlKG9sZCwgbmV3
+          KQogICAgICAgICAgbWFpbiA9IHJlLnN1YihyJ1dpZHRoID0gMjI4LHMqSGVpZ2h0ID0gNTgsJywg
+          J1dpZHRoID0gMjQ4LAogICAgICAgICAgICBIZWlnaHQgPSA0OCwnLCBtYWluLCBjb3VudD0xKQog
+          ICAgICAgICAgbWFpbiA9IHJlLnN1YihyJ0ZvbnQgPSBuZXcgRm9udCgiU2Vnb2UgVUkiLCA5LjJG
+          LCBGb250U3R5bGUuQm9sZCkscypGb3JlQ29sb3IgPSBUZXh0Q29sb3IscypCYWNrQ29sb3IgPSBT
+          aWRlYmFyQ29sb3IscypQYWRkaW5nID0gbmV3IFBhZGRpbmcoMTQsIDcsIDEyLCA3KSwnLCAnRm9u
+          dCA9IG5ldyBGb250KCJTZWdvZSBVSSIsIDkuMEYsIEZvbnRTdHlsZS5Cb2xkKSwKICAgICAgICAg
+          ICAgRm9yZUNvbG9yID0gVGV4dENvbG9yLAogICAgICAgICAgICBCYWNrQ29sb3IgPSBTaWRlYmFy
+          Q29sb3IsCiAgICAgICAgICAgIFBhZGRpbmcgPSBuZXcgUGFkZGluZygxNCwgNSwgMTIsIDUpLCcs
+          IG1haW4sIGNvdW50PTEpCiAgICAgICAgICBtYWluID0gcmUuc3ViKHInV2lkdGggPSAyMzgscypI
+          ZWlnaHQgPSAxMzgsJywgJ1dpZHRoID0gMjUyLAogICAgICAgICAgICBIZWlnaHQgPSAxMTYsJywg
+          bWFpbiwgY291bnQ9MSkKICAgICAgICAgIHdyaXRlKHJvb3QgLyAnTWFpbkZvcm0uY3MnLCBtYWlu
+          KQogICAgICAgICAgc2hlbGwgPSByZWFkKHJvb3QgLyAnTWFpbkZvcm0uTW9kZXJuU2hlbGwuY3Mn
+          KQogICAgICAgICAgc2hlbGwgPSBzaGVsbC5yZXBsYWNlKCdwcml2YXRlIGNvbnN0IGludCBTaWRl
+          YmFyRXhwYW5kZWRXaWR0aCA9IDI3MjsnLCAncHJpdmF0ZSBjb25zdCBpbnQgU2lkZWJhckV4cGFu
+          ZGVkV2lkdGggPSAyODQ7JykKICAgICAgICAgIHNoZWxsID0gc2hlbGwucmVwbGFjZSgndmFyIGNv
+          bXBhY3QgPSBDbGllbnRTaXplLldpZHRoIDwgMTUwMCB8fCBDbGllbnRTaXplLkhlaWdodCA8IDkw
+          MDsnLCAndmFyIGNvbXBhY3QgPSBDbGllbnRTaXplLldpZHRoIDwgMTIyMCB8fCBDbGllbnRTaXpl
+          LkhlaWdodCA8IDcyMDsnKQogICAgICAgICAgc2hlbGwgPSBzaGVsbC5yZXBsYWNlKCdwaWN0dXJl
+          LlZpc2libGUgPSAhY29tcGFjdCAmJiBDbGllbnRTaXplLkhlaWdodCA+PSA3NDA7JywgJ3BpY3R1
+          cmUuVmlzaWJsZSA9ICFjb21wYWN0ICYmIENsaWVudFNpemUuSGVpZ2h0ID49IDcwMDsnKQogICAg
+          ICAgICAgc2hlbGwgPSBzaGVsbC5yZXBsYWNlKCdidXR0b24uV2lkdGggPSBjb21wYWN0ID8gNDIg
+          OiAyNDA7CiAgICAgICAgICAgICAgICBidXR0b24uSGVpZ2h0ID0gY29tcGFjdCA/IDM0IDogNTA7
+          JywgJ2J1dHRvbi5XaWR0aCA9IGNvbXBhY3QgPyA0MiA6IDI0ODsKICAgICAgICAgICAgICAgIGJ1
+          dHRvbi5IZWlnaHQgPSBjb21wYWN0ID8gMzQgOiA0NjsnKQogICAgICAgICAgc2hlbGwgPSBzaGVs
+          bC5yZXBsYWNlKCdidXR0b24uUGFkZGluZyA9IGNvbXBhY3QgPyBQYWRkaW5nLkVtcHR5IDogbmV3
+          IFBhZGRpbmcoMTQsIDgsIDEyLCA4KTsnLCAnYnV0dG9uLlBhZGRpbmcgPSBjb21wYWN0ID8gUGFk
+          ZGluZy5FbXB0eSA6IG5ldyBQYWRkaW5nKDE0LCA1LCAxMiwgNSk7JykKICAgICAgICAgIHdyaXRl
+          KHJvb3QgLyAnTWFpbkZvcm0uTW9kZXJuU2hlbGwuY3MnLCBzaGVsbCkKICAgICAgICAgIGNzcHJv
+          al9wYXRoID0gcm9vdCAvICdSYWlkQ2xpcFBsdWdpbi5jc3Byb2onCiAgICAgICAgICBjc3Byb2og
+          PSByZWFkKGNzcHJval9wYXRoKQogICAgICAgICAgY3Nwcm9qID0gcmUuc3ViKHInPFZlcnNpb24+
+          W148XSs8L1ZlcnNpb24+JywgJzxWZXJzaW9uPjEuOS4xNzwvVmVyc2lvbj4nLCBjc3Byb2opCiAg
+          ICAgICAgICBjc3Byb2ogPSByZS5zdWIocic8RmlsZVZlcnNpb24+W148XSs8L0ZpbGVWZXJzaW9u
+          PicsICc8RmlsZVZlcnNpb24+MS45LjE3LjA8L0ZpbGVWZXJzaW9uPicsIGNzcHJvaikKICAgICAg
+          ICAgIHdyaXRlKGNzcHJval9wYXRoLCBjc3Byb2opCiAgICAgICAgICBwcmludCgnTW9kZXJuIGRh
+          c2hib2FyZCBHVUkgcGF0Y2ggYXBwbGllZC4nKQ==
+          '@
+          $patch = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($patchBase64 -replace '\s','')))
+          Set-Content -Path apply_modern_dashboard_1917.py -Value $patch -Encoding UTF8
           python apply_modern_dashboard_1917.py
 
       - name: Build
