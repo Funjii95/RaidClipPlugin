@@ -112,10 +112,6 @@ jobs:
 
           if ($config -notmatch 'private static void FillEmptyStringPropertiesFromDefaults') {
             $helpers = @'
-              private static string NormalizeTextOrDefault(string? value, string fallback) =>
-                  string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-          
-          
               private static void FillEmptyStringPropertiesFromDefaults<T>(T target)
                   where T : class, new()
               {
@@ -297,4 +293,5 @@ jobs:
                     $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
                     if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
                     gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
+
 
