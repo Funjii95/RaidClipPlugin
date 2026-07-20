@@ -245,30 +245,15 @@ jobs:
           $heist = Get-Content -Raw -Encoding UTF8 $heistPath
           if ($heist -notmatch 'private static string ReadHeistMessage') {
             $helper = "    private static string ReadHeistMessage(TextBox box, string fallback) =>`r`n        string.IsNullOrWhiteSpace(box.Text) ? fallback : box.Text.Trim();`r`n`r`n`r`n    private static string HeistTextOrDefault(string? value, string fallback) =>`r`n        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();`r`n`r`n`r`n"
-            $heist = $heist.Replace(
-              '    private void ReadHeistCommandsSettings(AppConfig config)',
-              $helper + '    private void ReadHeistCommandsSettings(AppConfig config)')
+            $heist = $heist.Replace('    private void ReadHeistCommandsSettings(AppConfig config)', $helper + '    private void ReadHeistCommandsSettings(AppConfig config)')
           }
-          $heist = $heist.Replace(
-            '        var values = new[] { h.StartMessage,h.JoinMessage,h.AlreadyJoinedMessage,h.NoActiveHeistMessage,h.MaximumParticipantsMessage,
-            h.NotEnoughParticipantsMessage,h.EvaluationMessage,h.SuccessMessage,h.FailureMessage };
-        for(var i=0;i<values.Length;i++)_heistMessageBoxes[i].Text=values[i];',
-            '        var defaults = new HeistConfig();
-        var values = new[] { HeistTextOrDefault(h.StartMessage,defaults.StartMessage),HeistTextOrDefault(h.JoinMessage,defaults.JoinMessage),HeistTextOrDefault(h.AlreadyJoinedMessage,defaults.AlreadyJoinedMessage),HeistTextOrDefault(h.NoActiveHeistMessage,defaults.NoActiveHeistMessage),HeistTextOrDefault(h.MaximumParticipantsMessage,defaults.MaximumParticipantsMessage),
-            HeistTextOrDefault(h.NotEnoughParticipantsMessage,defaults.NotEnoughParticipantsMessage),HeistTextOrDefault(h.EvaluationMessage,defaults.EvaluationMessage),HeistTextOrDefault(h.SuccessMessage,defaults.SuccessMessage),HeistTextOrDefault(h.FailureMessage,defaults.FailureMessage) };
-        for(var i=0;i<values.Length;i++)_heistMessageBoxes[i].Text=values[i];')
-          $heist = $heist.Replace(
-            '        h.StartMessage=_heistMessageBoxes[0].Text; h.JoinMessage=_heistMessageBoxes[1].Text; h.AlreadyJoinedMessage=_heistMessageBoxes[2].Text;
-        h.NoActiveHeistMessage=_heistMessageBoxes[3].Text; h.MaximumParticipantsMessage=_heistMessageBoxes[4].Text;
-        h.NotEnoughParticipantsMessage=_heistMessageBoxes[5].Text; h.EvaluationMessage=_heistMessageBoxes[6].Text;
-        h.SuccessMessage=_heistMessageBoxes[7].Text; h.FailureMessage=_heistMessageBoxes[8].Text;',
-            '        var defaults = new HeistConfig();
-        h.StartMessage=ReadHeistMessage(_heistMessageBoxes[0], defaults.StartMessage); h.JoinMessage=ReadHeistMessage(_heistMessageBoxes[1], defaults.JoinMessage); h.AlreadyJoinedMessage=ReadHeistMessage(_heistMessageBoxes[2], defaults.AlreadyJoinedMessage);
-        h.NoActiveHeistMessage=ReadHeistMessage(_heistMessageBoxes[3], defaults.NoActiveHeistMessage); h.MaximumParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[4], defaults.MaximumParticipantsMessage);
-        h.NotEnoughParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[5], defaults.NotEnoughParticipantsMessage); h.EvaluationMessage=ReadHeistMessage(_heistMessageBoxes[6], defaults.EvaluationMessage);
-        h.SuccessMessage=ReadHeistMessage(_heistMessageBoxes[7], defaults.SuccessMessage); h.FailureMessage=ReadHeistMessage(_heistMessageBoxes[8], defaults.FailureMessage);')
+          $loadPattern = '        var values = new\[\] \{ h\.StartMessage,h\.JoinMessage,h\.AlreadyJoinedMessage,h\.NoActiveHeistMessage,h\.MaximumParticipantsMessage,\s*h\.NotEnoughParticipantsMessage,h\.EvaluationMessage,h\.SuccessMessage,h\.FailureMessage \};\s*for\(var i=0;i<values\.Length;i\+\+\)_heistMessageBoxes\[i\]\.Text=values\[i\];'
+          $loadReplacement = "        var defaults = new HeistConfig();`r`n        var values = new[] { HeistTextOrDefault(h.StartMessage,defaults.StartMessage),HeistTextOrDefault(h.JoinMessage,defaults.JoinMessage),HeistTextOrDefault(h.AlreadyJoinedMessage,defaults.AlreadyJoinedMessage),HeistTextOrDefault(h.NoActiveHeistMessage,defaults.NoActiveHeistMessage),HeistTextOrDefault(h.MaximumParticipantsMessage,defaults.MaximumParticipantsMessage),`r`n            HeistTextOrDefault(h.NotEnoughParticipantsMessage,defaults.NotEnoughParticipantsMessage),HeistTextOrDefault(h.EvaluationMessage,defaults.EvaluationMessage),HeistTextOrDefault(h.SuccessMessage,defaults.SuccessMessage),HeistTextOrDefault(h.FailureMessage,defaults.FailureMessage) };`r`n        for(var i=0;i<values.Length;i++)_heistMessageBoxes[i].Text=values[i];"
+          $heist = [regex]::Replace($heist, $loadPattern, $loadReplacement, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          $readPattern = '        h\.StartMessage=_heistMessageBoxes\[0\]\.Text; h\.JoinMessage=_heistMessageBoxes\[1\]\.Text; h\.AlreadyJoinedMessage=_heistMessageBoxes\[2\]\.Text;\s*h\.NoActiveHeistMessage=_heistMessageBoxes\[3\]\.Text; h\.MaximumParticipantsMessage=_heistMessageBoxes\[4\]\.Text;\s*h\.NotEnoughParticipantsMessage=_heistMessageBoxes\[5\]\.Text; h\.EvaluationMessage=_heistMessageBoxes\[6\]\.Text;\s*h\.SuccessMessage=_heistMessageBoxes\[7\]\.Text; h\.FailureMessage=_heistMessageBoxes\[8\]\.Text;'
+          $readReplacement = "        var defaults = new HeistConfig();`r`n        h.StartMessage=ReadHeistMessage(_heistMessageBoxes[0], defaults.StartMessage); h.JoinMessage=ReadHeistMessage(_heistMessageBoxes[1], defaults.JoinMessage); h.AlreadyJoinedMessage=ReadHeistMessage(_heistMessageBoxes[2], defaults.AlreadyJoinedMessage);`r`n        h.NoActiveHeistMessage=ReadHeistMessage(_heistMessageBoxes[3], defaults.NoActiveHeistMessage); h.MaximumParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[4], defaults.MaximumParticipantsMessage);`r`n        h.NotEnoughParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[5], defaults.NotEnoughParticipantsMessage); h.EvaluationMessage=ReadHeistMessage(_heistMessageBoxes[6], defaults.EvaluationMessage);`r`n        h.SuccessMessage=ReadHeistMessage(_heistMessageBoxes[7], defaults.SuccessMessage); h.FailureMessage=ReadHeistMessage(_heistMessageBoxes[8], defaults.FailureMessage);"
+          $heist = [regex]::Replace($heist, $readPattern, $readReplacement, [System.Text.RegularExpressions.RegexOptions]::Singleline)
           Set-Content -Path $heistPath -Value $heist -Encoding UTF8
-
           $dashPath = 'RaidClipPlugin/MainForm.DashboardModern.cs'
           if (Test-Path $dashPath) {
             $dash = Get-Content -Raw -Encoding UTF8 $dashPath
@@ -351,6 +336,7 @@ jobs:
           $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
           if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
           gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
+
 
 
 
