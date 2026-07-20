@@ -278,20 +278,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "v$env:VERSION"
-          $notes = @"
-                    Hotfix 1.9.28
-          
-                    - Speichern nutzt jetzt den GUI-Ladeweg und wird nicht mehr durch technische Twitch-/OAuth-Daten blockiert.
-                    - Leere Standardtexte fÃ¼r Raid, Heist, Duel, Clip-Command, Gamble und MusikwÃ¼nsche werden beim Laden repariert.
-                    - Minigame-/Musikwunsch-Speicherfehler springen nicht mehr automatisch in andere Reiter, sondern zeigen die echte Fehlermeldung.
-                    - Dashboard: Statistik-Karten und Update-Button sind weniger abgeschnitten.
-                    - ZIP, Installer und update.json werden verÃ¶ffentlicht.
-                    "@
-                    git tag -f $tag
-                    git push origin $tag --force
-                    gh release delete $tag -y --cleanup-tag 2>$null || $true
-                    $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
-                    if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
-                    gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
+          $notes = @(
+            "Hotfix 1.9.28",
+            "",
+            "- Speichern nutzt jetzt den GUI-Ladeweg und wird nicht mehr durch technische Twitch-/OAuth-Daten blockiert.",
+            "- Leere Standardtexte fuer Raid, Heist, Duel, Clip-Command, Gamble und Musikwünsche werden beim Laden repariert.",
+            "- Minigame-/Musikwunsch-Speicherfehler springen nicht mehr automatisch in andere Reiter, sondern zeigen die echte Fehlermeldung.",
+            "- Dashboard: Statistik-Karten und Update-Button sind weniger abgeschnitten.",
+            "- ZIP, Installer und update.json werden veröffentlicht."
+          ) -join [Environment]::NewLine
+          git tag -f $tag
+          git push origin $tag --force
+          gh release delete $tag -y --cleanup-tag 2>$null || $true
+          $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
+          if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
+          gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
 
 
