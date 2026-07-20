@@ -2912,7 +2912,7 @@ private enum CloseChoice
             SetOverallStatus("Fehler", ErrorColor);
             if (IsMinigameConfigurationError(exception.Message))
             {
-                SetMinigameStatus("Einstellungen ungültig", ErrorColor);
+                SetMinigameStatus("Fehler: " + exception.Message, ErrorColor);
                 ShowSection("minigame");
             }
             else if (IsMusicConfigurationError(exception.Message))
@@ -5322,7 +5322,7 @@ private enum CloseChoice
 
         try
         {
-            var config = _configurationService.Load();
+            var config = _configurationService.LoadForEditing();
             ReadMinigameSettings(config);
             ReadHeistCommandsSettings(config);
             ReadDuelSettings(config);
@@ -5338,7 +5338,7 @@ private enum CloseChoice
         {
             AppendLog("Minigame-Einstellungen konnten nicht gespeichert werden: " + exception.Message);
             SetOverallStatus("Einstellungsfehler", ErrorColor);
-            SetMinigameStatus("Einstellungen ungültig", ErrorColor);
+            SetMinigameStatus("Fehler: " + exception.Message, ErrorColor);
             ShowSection("minigame");
         }
         finally
@@ -5374,7 +5374,7 @@ private enum CloseChoice
             SetOverallStatus("Einstellungsfehler", ErrorColor);
             if (IsMinigameConfigurationError(exception.Message))
             {
-                SetMinigameStatus("Einstellungen ungültig", ErrorColor);
+                SetMinigameStatus("Fehler: " + exception.Message, ErrorColor);
                 ShowSection("minigame");
             }
             else if (IsMusicConfigurationError(exception.Message))
@@ -5972,6 +5972,7 @@ private enum CloseChoice
         base.OnFormClosing(e);
     }
 }
+
 
 
 

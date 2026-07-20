@@ -200,10 +200,19 @@ public sealed partial class MainForm
         _heistVipsCheck.Checked = h.AllowVips; _heistModeratorsCheck.Checked = h.AllowModerators;
         _heistJoinMessagesCheck.Checked = h.SendParticipantJoinMessages; _heistCountdownMessagesCheck.Checked = h.SendCountdownMessages;
         _heistResultMessagesCheck.Checked = h.SendResultMessages; _heistResetJackpotCheck.Checked = h.ResetJackpotAfterSuccess;
-        var values = new[] { h.StartMessage,h.JoinMessage,h.AlreadyJoinedMessage,h.NoActiveHeistMessage,h.MaximumParticipantsMessage,
-            h.NotEnoughParticipantsMessage,h.EvaluationMessage,h.SuccessMessage,h.FailureMessage };
+        var defaults = new HeistConfig();
+        var values = new[] { HeistTextOrDefault(h.StartMessage,defaults.StartMessage),HeistTextOrDefault(h.JoinMessage,defaults.JoinMessage),HeistTextOrDefault(h.AlreadyJoinedMessage,defaults.AlreadyJoinedMessage),HeistTextOrDefault(h.NoActiveHeistMessage,defaults.NoActiveHeistMessage),HeistTextOrDefault(h.MaximumParticipantsMessage,defaults.MaximumParticipantsMessage),
+            HeistTextOrDefault(h.NotEnoughParticipantsMessage,defaults.NotEnoughParticipantsMessage),HeistTextOrDefault(h.EvaluationMessage,defaults.EvaluationMessage),HeistTextOrDefault(h.SuccessMessage,defaults.SuccessMessage),HeistTextOrDefault(h.FailureMessage,defaults.FailureMessage) };
         for(var i=0;i<values.Length;i++)_heistMessageBoxes[i].Text=values[i];
     }
+
+    private static string ReadHeistMessage(TextBox box, string fallback) =>
+        string.IsNullOrWhiteSpace(box.Text) ? fallback : box.Text.Trim();
+
+
+    private static string HeistTextOrDefault(string? value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+
 
     private void ReadHeistCommandsSettings(AppConfig config)
     {
@@ -216,10 +225,11 @@ public sealed partial class MainForm
         h.AllowVips=_heistVipsCheck.Checked; h.AllowModerators=_heistModeratorsCheck.Checked;
         h.SendParticipantJoinMessages=_heistJoinMessagesCheck.Checked; h.SendCountdownMessages=_heistCountdownMessagesCheck.Checked;
         h.SendResultMessages=_heistResultMessagesCheck.Checked; h.ResetJackpotAfterSuccess=_heistResetJackpotCheck.Checked;
-        h.StartMessage=_heistMessageBoxes[0].Text; h.JoinMessage=_heistMessageBoxes[1].Text; h.AlreadyJoinedMessage=_heistMessageBoxes[2].Text;
-        h.NoActiveHeistMessage=_heistMessageBoxes[3].Text; h.MaximumParticipantsMessage=_heistMessageBoxes[4].Text;
-        h.NotEnoughParticipantsMessage=_heistMessageBoxes[5].Text; h.EvaluationMessage=_heistMessageBoxes[6].Text;
-        h.SuccessMessage=_heistMessageBoxes[7].Text; h.FailureMessage=_heistMessageBoxes[8].Text;
+        var defaults = new HeistConfig();
+        h.StartMessage=ReadHeistMessage(_heistMessageBoxes[0], defaults.StartMessage); h.JoinMessage=ReadHeistMessage(_heistMessageBoxes[1], defaults.JoinMessage); h.AlreadyJoinedMessage=ReadHeistMessage(_heistMessageBoxes[2], defaults.AlreadyJoinedMessage);
+        h.NoActiveHeistMessage=ReadHeistMessage(_heistMessageBoxes[3], defaults.NoActiveHeistMessage); h.MaximumParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[4], defaults.MaximumParticipantsMessage);
+        h.NotEnoughParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[5], defaults.NotEnoughParticipantsMessage); h.EvaluationMessage=ReadHeistMessage(_heistMessageBoxes[6], defaults.EvaluationMessage);
+        h.SuccessMessage=ReadHeistMessage(_heistMessageBoxes[7], defaults.SuccessMessage); h.FailureMessage=ReadHeistMessage(_heistMessageBoxes[8], defaults.FailureMessage);
         ReadCustomCommandSettings(config.Commands);
     }
 
@@ -307,3 +317,4 @@ public sealed partial class MainForm
     private async Task ExportCommandsAsync(){using var dialog=new SaveFileDialog{Filter="Textdatei (*.txt)|*.txt|JSON (*.json)|*.json",FileName="raidclip-commands.txt"};
         if(dialog.ShowDialog(this)!=DialogResult.OK)return;await _commandRegistry.ExportAsync(dialog.FileName,Path.GetExtension(dialog.FileName).Equals(".json",StringComparison.OrdinalIgnoreCase),CancellationToken.None);AppendLog("Command-Liste exportiert: "+dialog.FileName);}
 }
+

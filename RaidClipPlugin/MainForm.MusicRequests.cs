@@ -499,7 +499,7 @@ public sealed partial class MainForm
     {
         try
         {
-            var config = _configurationService.Load();
+            var config = _configurationService.LoadForEditing();
             ReadMusicRequestSettings(config);
             _configurationService.SaveMusicRequestSettings(config.MusicRequests);
 
@@ -534,7 +534,7 @@ public sealed partial class MainForm
             AppendLog(
                 "Musikwunsch-Einstellungen konnten nicht gespeichert werden: " +
                 exception.Message);
-            SetSpotifyStatus("Einstellungen ungültig", ErrorColor);
+            SetSpotifyStatus("Fehler: " + exception.Message, ErrorColor);
             SetOverallStatus("Musikwunsch-Einstellungsfehler", ErrorColor);
             ShowSection("music");
         }
@@ -583,7 +583,7 @@ public sealed partial class MainForm
 
     private MusicRequestConfig ReadSpotifyConnectionSettings()
     {
-        var config = _configurationService.Load();
+        var config = _configurationService.LoadForEditing();
         ReadMusicRequestSettings(config);
         return config.MusicRequests;
     }
@@ -654,7 +654,7 @@ public sealed partial class MainForm
     {
         try
         {
-            var config = _configurationService.Load();
+            var config = _configurationService.LoadForEditing();
             ReadMusicRequestSettings(config);
             if (!string.IsNullOrWhiteSpace(_twitchChannelBox.Text))
             {
@@ -995,3 +995,4 @@ public sealed partial class MainForm
         UpdateSpotifyStatus();
     }
 }
+
