@@ -33,6 +33,14 @@ public sealed class ConfigurationService
 
     public AppConfig Load()
     {
+        var appConfig = LoadForEditing();
+        ValidateTechnicalSettings(appConfig);
+        return appConfig;
+    }
+
+
+    public AppConfig LoadForEditing()
+    {
         IConfiguration configuration = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("Config/config.template.json", optional: false)
@@ -62,7 +70,6 @@ public sealed class ConfigurationService
 
         ApplySavedGuiSettings(appConfig);
         Normalize(appConfig);
-        ValidateTechnicalSettings(appConfig);
         return appConfig;
     }
 
@@ -70,7 +77,6 @@ public sealed class ConfigurationService
     public void SaveGuiSettings(AppConfig config)
     {
         Normalize(config);
-        ValidateTechnicalSettings(config);
         ValidateGuiSettings(config);
 
 
@@ -463,8 +469,7 @@ public sealed class ConfigurationService
             .Select(id => id.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-        config.Chat.RaidMessageTemplate =
-            (config.Chat.RaidMessageTemplate ?? "").Trim();
+        config.Chat.RaidMessageTemplate = NormalizeTextOrDefault(config.Chat.RaidMessageTemplate, new ChatConfig().RaidMessageTemplate);
         config.Update.SkippedVersion =
             (config.Update.SkippedVersion ?? "").Trim();
         config.StreamCheck ??= new StreamCheckConfig();
@@ -481,7 +486,10 @@ public sealed class ConfigurationService
         config.ModuleHealth.RestartWindowMinutes = Math.Clamp(
             config.ModuleHealth.RestartWindowMinutes, 1, 60);
         config.LiveChat = LiveChatService.NormalizeConfig(config.LiveChat);
+        config.Heist ??= new HeistConfig();
         config.Duel ??= new DuelConfig();
+        FillEmptyStringPropertiesFromDefaults(config.Heist);
+        FillEmptyStringPropertiesFromDefaults(config.Duel);
         NormalizeClipSettings(config.ClipCommand, config.DiscordClips);
         NormalizeGiveawaySettings(config.Giveaways);
         config.StreamCheck.DisabledChecks =
@@ -568,7 +576,7 @@ public sealed class ConfigurationService
             .Select(range =>
             {
                 var clone = CloneRange(range);
-                clone.ChatText = (clone.ChatText ?? "").Trim();
+                var fallbackText = clone.From switch { <= 31 => MinigameConfig.CreateDefaultRanges()[0].ChatText, <= 50 => MinigameConfig.CreateDefaultRanges()[1].ChatText, <= 70 => MinigameConfig.CreateDefaultRanges()[2].ChatText, _ => MinigameConfig.CreateDefaultRanges()[3].ChatText }; clone.ChatText = NormalizeTextOrDefault(clone.ChatText, fallbackText);
                 return clone;
             })
             .ToList();
@@ -1035,10 +1043,34 @@ public sealed class ConfigurationService
         heist.FailureMessage = NormalizeTextOrDefault(heist.FailureMessage, defaults.FailureMessage);
     }
 
+    private static void FillEmptyStringPropertiesFromDefaults<T>(T target)
+        where T : class, new()
+    {
+        var defaults = new T();
+        foreach (var property in typeof(T).GetProperties())
+        {
+            if (property.PropertyType != typeof(string) ||
+                !property.CanRead || !property.CanWrite)
+            {
+                continue;
+            }
+
+            var current = property.GetValue(target) as string;
+            var fallback = property.GetValue(defaults) as string ?? "";
+            property.SetValue(
+                target,
+                string.IsNullOrWhiteSpace(current)
+                    ? fallback
+                    : current.Trim());
+        }
+    }
+
     private static void NormalizeMusicRequests(MusicRequestConfig config)
     {
         config.ChatMessages ??= new MusicRequestChatMessages();
         config.ModeratorCommands ??= new MusicModeratorCommands();
+        FillEmptyStringPropertiesFromDefaults(config.ChatMessages);
+        FillEmptyStringPropertiesFromDefaults(config.ModeratorCommands);
         config.SpotifyClientId = (config.SpotifyClientId ?? "").Trim();
         config.RedirectUri = (config.RedirectUri ?? "").Trim();
         config.SelectedRewardId = (config.SelectedRewardId ?? "").Trim();
@@ -1342,18 +1374,18 @@ public sealed class ConfigurationService
         clip.AllowedRoles ??= new ClipAllowedRolesConfig();
         clip.ChatMessages ??= new ClipChatMessages();
         var defaultMessages = new ClipChatMessages();
-        clip.ChatMessages.Starting ??= defaultMessages.Starting;
-        clip.ChatMessages.Success ??= defaultMessages.Success;
-        clip.ChatMessages.SuccessDiscord ??= defaultMessages.SuccessDiscord;
-        clip.ChatMessages.Cooldown ??= defaultMessages.Cooldown;
-        clip.ChatMessages.Offline ??= defaultMessages.Offline;
-        clip.ChatMessages.Forbidden ??= defaultMessages.Forbidden;
-        clip.ChatMessages.TwitchError ??= defaultMessages.TwitchError;
-        clip.ChatMessages.PartialDiscord ??= defaultMessages.PartialDiscord;
-        clip.ChatMessages.QueueFull ??= defaultMessages.QueueFull;
-        clip.ChatMessages.Busy ??= defaultMessages.Busy;
-        clip.ChatMessages.LimitReached ??= defaultMessages.LimitReached;
-        clip.ChatMessages.MissingScope ??= defaultMessages.MissingScope;
+        clip.ChatMessages.Starting = NormalizeClipChatMessage(clip.ChatMessages.Starting, defaultMessages.Starting);
+        clip.ChatMessages.Success = NormalizeClipChatMessage(clip.ChatMessages.Success, defaultMessages.Success);
+        clip.ChatMessages.SuccessDiscord = NormalizeClipChatMessage(clip.ChatMessages.SuccessDiscord, defaultMessages.SuccessDiscord);
+        clip.ChatMessages.Cooldown = NormalizeClipChatMessage(clip.ChatMessages.Cooldown, defaultMessages.Cooldown);
+        clip.ChatMessages.Offline = NormalizeClipChatMessage(clip.ChatMessages.Offline, defaultMessages.Offline);
+        clip.ChatMessages.Forbidden = NormalizeClipChatMessage(clip.ChatMessages.Forbidden, defaultMessages.Forbidden);
+        clip.ChatMessages.TwitchError = NormalizeClipChatMessage(clip.ChatMessages.TwitchError, defaultMessages.TwitchError);
+        clip.ChatMessages.PartialDiscord = NormalizeClipChatMessage(clip.ChatMessages.PartialDiscord, defaultMessages.PartialDiscord);
+        clip.ChatMessages.QueueFull = NormalizeClipChatMessage(clip.ChatMessages.QueueFull, defaultMessages.QueueFull);
+        clip.ChatMessages.Busy = NormalizeClipChatMessage(clip.ChatMessages.Busy, defaultMessages.Busy);
+        clip.ChatMessages.LimitReached = NormalizeClipChatMessage(clip.ChatMessages.LimitReached, defaultMessages.LimitReached);
+        clip.ChatMessages.MissingScope = NormalizeClipChatMessage(clip.ChatMessages.MissingScope, defaultMessages.MissingScope);
         clip.Command = NormalizeCommand(clip.Command, "!clip");
         clip.Aliases = (clip.Aliases ?? new List<string>())
             .Where(value => !string.IsNullOrWhiteSpace(value))
@@ -1467,3 +1499,4 @@ public sealed class ConfigurationService
         public ModuleHealthConfig? ModuleHealth { get; set; }
     }
 }
+

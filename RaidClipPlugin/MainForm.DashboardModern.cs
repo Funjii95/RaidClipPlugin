@@ -72,7 +72,7 @@ public sealed partial class MainForm
 
         foreach (var button in new[] { _updateButton, _changelogButton, _installUpdateButton, _skipUpdateButton })
         {
-            CompactDashboardButton(button, button == _updateButton ? 164 : 142);
+            CompactDashboardButton(button, button == _updateButton ? 198 : 142);
             button.Dock = DockStyle.None;
             button.Height = 34;
             button.MinimumSize = new Size(button.Width, 34);
@@ -173,8 +173,8 @@ public sealed partial class MainForm
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 236));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 128));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 146));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
         main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         main.Controls.Add(dashboardHeader, 0, 0);
         main.Controls.Add(CreateHeroStatusCard(), 0, 1);
@@ -205,7 +205,7 @@ public sealed partial class MainForm
         text.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         text.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         text.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        text.Controls.Add(new Label { Text = "RaidClipPlugin", Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 15F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
+        text.Controls.Add(new Label { Text = "RaidClipPlugin", Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 12.5F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
         _overallStatusLabel.Dock = DockStyle.Fill;
         _overallStatusLabel.AutoSize = false;
         _overallStatusLabel.TextAlign = ContentAlignment.MiddleLeft;
@@ -313,14 +313,14 @@ public sealed partial class MainForm
     {
         var panel = CreateCardPanel(color, new Padding(10, 8, 10, 8));
         panel.Margin = new Padding(5, 0, 5, 0);
-        panel.MinimumSize = new Size(112, 76);
+        panel.MinimumSize = new Size(112, 72);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 34));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 34));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 32));
-        layout.Controls.Add(new Label { Text = icon, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 15F, FontStyle.Bold), ForeColor = color, TextAlign = ContentAlignment.MiddleCenter, AutoEllipsis = true }, 0, 0);
-        layout.Controls.Add(new Label { Text = value, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 15F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.MiddleCenter, AutoEllipsis = true }, 0, 1);
-        layout.Controls.Add(new Label { Text = label, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 8.2F), ForeColor = MutedTextColor, TextAlign = ContentAlignment.TopCenter, AutoEllipsis = true }, 0, 2);
+        layout.Controls.Add(new Label { Text = icon, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 13.5F, FontStyle.Bold), ForeColor = color, TextAlign = ContentAlignment.MiddleCenter, AutoEllipsis = true }, 0, 0);
+        layout.Controls.Add(new Label { Text = value, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 12.5F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.MiddleCenter, AutoEllipsis = true }, 0, 1);
+        layout.Controls.Add(new Label { Text = label, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 7.8F), ForeColor = MutedTextColor, TextAlign = ContentAlignment.TopCenter, AutoEllipsis = true }, 0, 2);
         panel.Controls.Add(layout);
         return panel;
     }
@@ -432,3 +432,4 @@ public sealed partial class MainForm
         }
     }
 }
+

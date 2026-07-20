@@ -4978,7 +4978,7 @@ private enum CloseChoice
     {
         try
         {
-            var config = _configurationService.Load();
+            var config = _configurationService.LoadForEditing();
             SelectUiTheme(config.UiTheme);
             ApplyUiTheme(config.UiTheme);
             _twitchChannelBox.Text = config.Twitch.BroadcasterLogin;
@@ -5144,7 +5144,7 @@ private enum CloseChoice
 
     private AppConfig ReadSettingsFromControls()
     {
-        var config = _configurationService.Load();
+        var config = _configurationService.LoadForEditing();
         config.UiTheme = ThemeKeyFromSelection();
         config.Twitch.BroadcasterLogin = _twitchChannelBox.Text
             .Trim()
@@ -5972,6 +5972,7 @@ private enum CloseChoice
         base.OnFormClosing(e);
     }
 }
+
 
 
 
