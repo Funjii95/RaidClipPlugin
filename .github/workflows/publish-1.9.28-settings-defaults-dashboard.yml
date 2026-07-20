@@ -217,7 +217,7 @@ jobs:
                   {
                       SettingsLock.Release();
                   }
-    }
+              }
           
           
               private static void ApplySavedGuiSettings
