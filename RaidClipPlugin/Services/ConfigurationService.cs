@@ -10,6 +10,8 @@ namespace RaidClipPlugin.Services;
 
 public sealed class ConfigurationService
 {
+    private static readonly SemaphoreSlim SettingsLock = new(1, 1);
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -103,6 +105,7 @@ public sealed class ConfigurationService
             AutoFilterEnabled = config.Moderation.AutoFilterEnabled,
             WhitelistModsAndVips = config.Moderation.WhitelistModsAndVips,
             ModerationTimeoutSeconds = config.Moderation.TimeoutSeconds,
+            Moderation = config.Moderation,
             LiveChat = config.LiveChat,
             BlockedWords = config.Moderation.BlockedWords,
             MinigameEnabled = config.Minigame.Enabled,
@@ -129,8 +132,10 @@ public sealed class ConfigurationService
             StreamCheck = config.StreamCheck,
             ClipCommand = config.ClipCommand,
             DiscordClips = config.DiscordClips,
+            AutoDiscordClipPoster = config.AutoDiscordClipPoster,
             Giveaways = config.Giveaways,
-            ModuleHealth = config.ModuleHealth
+            ModuleHealth = config.ModuleHealth,
+            Update = config.Update
         };
 
 
@@ -220,14 +225,77 @@ public sealed class ConfigurationService
 
     private static void WriteSettingsFile(GuiSettings settings)
     {
-        var path = UserSettingsPath;
-        var json = JsonSerializer.Serialize(settings, JsonOptions);
-        var tempPath = path + ".tmp";
-        File.WriteAllText(tempPath, json, new System.Text.UTF8Encoding(false));
-        File.Copy(tempPath, path, true);
-        File.Delete(tempPath);
-        _ = JsonSerializer.Deserialize<GuiSettings>(File.ReadAllText(path, System.Text.Encoding.UTF8), JsonOptions) ?? throw new InvalidOperationException("Einstellungen wurden geschrieben, konnten aber nicht geprüft werden.");
-        Console.WriteLine("💾 Einstellungen gespeichert: " + path);
+        SettingsLock.Wait();
+        try
+        {
+            var path = UserSettingsPath;
+            var directory = Path.GetDirectoryName(path)!;
+            Directory.CreateDirectory(directory);
+            settings.Minigame ??= new MinigameConfig();
+            settings.MusicRequests ??= new MusicRequestConfig();
+            settings.Moderation ??= new ModerationConfig();
+            settings.AutoDiscordClipPoster ??= new AutoDiscordClipPosterConfig();
+            settings.Update ??= new UpdateConfig();
+            settings.ModuleHealth ??= new ModuleHealthConfig();
+            var json = JsonSerializer.Serialize(settings, JsonOptions);
+            var tempPath = Path.Combine(
+                directory,
+                "settings." + Guid.NewGuid().ToString("N") + ".tmp");
+            var backupPath = path + ".bak";
+
+            try
+            {
+                using (var stream = new FileStream(
+                           tempPath,
+                           FileMode.CreateNew,
+                           FileAccess.Write,
+                           FileShare.None,
+                           4096,
+                           FileOptions.WriteThrough))
+                using (var writer = new StreamWriter(
+                           stream,
+                           new System.Text.UTF8Encoding(false)))
+                {
+                    writer.Write(json);
+                    writer.Flush();
+                    stream.Flush(true);
+                }
+
+                if (File.Exists(path))
+                    File.Copy(path, backupPath, true);
+
+                File.Copy(tempPath, path, true);
+
+                var verified = JsonSerializer.Deserialize<GuiSettings>(
+                    File.ReadAllText(path, System.Text.Encoding.UTF8),
+                    JsonOptions) ??
+                    throw new InvalidOperationException(
+                        "Einstellungen wurden geschrieben, konnten aber nicht geprüft werden.");
+                if (verified.Minigame is null ||
+                    verified.MusicRequests is null ||
+                    verified.Moderation is null ||
+                    verified.AutoDiscordClipPoster is null)
+                    throw new InvalidOperationException(
+                        "Einstellungen wurden geschrieben, aber wichtige Bereiche fehlen.");
+
+                Console.WriteLine("💾 Einstellungen gespeichert: " + path);
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(tempPath))
+                        File.Delete(tempPath);
+                }
+                catch
+                {
+                }
+            }
+        }
+        finally
+        {
+            SettingsLock.Release();
+        }
     }
 
 
@@ -450,6 +518,12 @@ public sealed class ConfigurationService
                 config.Giveaways = settings.Giveaways;
             if (settings.ModuleHealth is not null)
                 config.ModuleHealth = settings.ModuleHealth;
+            if (settings.Moderation is not null)
+                config.Moderation = settings.Moderation;
+            if (settings.AutoDiscordClipPoster is not null)
+                config.AutoDiscordClipPoster = settings.AutoDiscordClipPoster;
+            if (settings.Update is not null)
+                config.Update = settings.Update;
         }
         catch (Exception exception)
         {
@@ -1519,8 +1593,12 @@ public sealed class ConfigurationService
         public DiscordClipsConfig? DiscordClips { get; set; }
         public GiveawayConfig? Giveaways { get; set; }
         public ModuleHealthConfig? ModuleHealth { get; set; }
+        public ModerationConfig? Moderation { get; set; }
+        public AutoDiscordClipPosterConfig? AutoDiscordClipPoster { get; set; }
+        public UpdateConfig? Update { get; set; }
     }
 }
+
 
 
 
