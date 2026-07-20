@@ -1,4 +1,4 @@
-name: Publish 1.9.28 Settings Defaults Dashboard Fix
+﻿name: Publish 1.9.28 Settings Defaults Dashboard Fix
 
 on:
   workflow_dispatch:
@@ -46,48 +46,48 @@ jobs:
 
           if ($config -notmatch 'LoadForEditing\(') {
             $newLoad = @'
-    public AppConfig Load()
-    {
-        var appConfig = LoadForEditing();
-        ValidateTechnicalSettings(appConfig);
-        return appConfig;
-    }
-
-
-    public AppConfig LoadForEditing()
-    {
-        IConfiguration configuration = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("Config/config.template.json", optional: false)
-            .Build();
-
-
-        var appConfig = new AppConfig();
-        configuration.Bind(appConfig);
-
-
-        var credentials = new TwitchCredentialStore().Load();
-        appConfig.Twitch.ClientId = credentials.ClientId;
-        appConfig.Twitch.ClientSecret = credentials.ClientSecret;
-
-
-        if (string.IsNullOrWhiteSpace(appConfig.Twitch.BroadcasterLogin))
-        {
-            appConfig.Twitch.BroadcasterLogin = "Funjii";
-        }
-
-
-        if (string.IsNullOrWhiteSpace(appConfig.OBS.Host))
-        {
-            appConfig.OBS.Host = "127.0.0.1";
-        }
-
-
-        ApplySavedGuiSettings(appConfig);
-        Normalize(appConfig);
-        return appConfig;
-    }
-'@
+              public AppConfig Load()
+              {
+                  var appConfig = LoadForEditing();
+                  ValidateTechnicalSettings(appConfig);
+                  return appConfig;
+              }
+          
+          
+              public AppConfig LoadForEditing()
+              {
+                  IConfiguration configuration = new ConfigurationBuilder()
+                      .SetBasePath(AppContext.BaseDirectory)
+                      .AddJsonFile("Config/config.template.json", optional: false)
+                      .Build();
+          
+          
+                  var appConfig = new AppConfig();
+                  configuration.Bind(appConfig);
+          
+          
+                  var credentials = new TwitchCredentialStore().Load();
+                  appConfig.Twitch.ClientId = credentials.ClientId;
+                  appConfig.Twitch.ClientSecret = credentials.ClientSecret;
+          
+          
+                  if (string.IsNullOrWhiteSpace(appConfig.Twitch.BroadcasterLogin))
+                  {
+                      appConfig.Twitch.BroadcasterLogin = "Funjii";
+                  }
+          
+          
+                  if (string.IsNullOrWhiteSpace(appConfig.OBS.Host))
+                  {
+                      appConfig.OBS.Host = "127.0.0.1";
+                  }
+          
+          
+                  ApplySavedGuiSettings(appConfig);
+                  Normalize(appConfig);
+                  return appConfig;
+              }
+          '@
             $config = [regex]::Replace(
               $config,
               '    public AppConfig Load\(\)\s*\{.*?ValidateTechnicalSettings\(appConfig\);\s*return appConfig;\s*\}',
@@ -112,34 +112,34 @@ jobs:
 
           if ($config -notmatch 'FillEmptyStringPropertiesFromDefaults') {
             $helpers = @'
-    private static string NormalizeTextOrDefault(string? value, string fallback) =>
-        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-
-
-    private static void FillEmptyStringPropertiesFromDefaults<T>(T target)
-        where T : class, new()
-    {
-        var defaults = new T();
-        foreach (var property in typeof(T).GetProperties())
-        {
-            if (property.PropertyType != typeof(string) ||
-                !property.CanRead || !property.CanWrite)
-            {
-                continue;
-            }
-
-            var current = property.GetValue(target) as string;
-            var fallback = property.GetValue(defaults) as string ?? "";
-            property.SetValue(
-                target,
-                string.IsNullOrWhiteSpace(current)
-                    ? fallback
-                    : current.Trim());
-        }
-    }
-
-
-'@
+              private static string NormalizeTextOrDefault(string? value, string fallback) =>
+                  string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+          
+          
+              private static void FillEmptyStringPropertiesFromDefaults<T>(T target)
+                  where T : class, new()
+              {
+                  var defaults = new T();
+                  foreach (var property in typeof(T).GetProperties())
+                  {
+                      if (property.PropertyType != typeof(string) ||
+                          !property.CanRead || !property.CanWrite)
+                      {
+                          continue;
+                      }
+          
+                      var current = property.GetValue(target) as string;
+                      var fallback = property.GetValue(defaults) as string ?? "";
+                      property.SetValue(
+                          target,
+                          string.IsNullOrWhiteSpace(current)
+                              ? fallback
+                              : current.Trim());
+                  }
+              }
+          
+          
+          '@
             $config = $config.Replace(
               '    private static void NormalizeMusicRequests(MusicRequestConfig config)',
               $helpers + '    private static void NormalizeMusicRequests(MusicRequestConfig config)')
@@ -165,19 +165,19 @@ jobs:
 
           if ($config -notmatch 'NormalizeClipChatMessage') {
             $clipHelper = @'
-    private static ClipChatMessage NormalizeClipChatMessage(
-        ClipChatMessage? message,
-        ClipChatMessage fallback)
-    {
-        return message is null
-            ? fallback
-            : new ClipChatMessage(
-                message.Enabled,
-                NormalizeTextOrDefault(message.Text, fallback.Text));
-    }
-
-
-'@
+              private static ClipChatMessage NormalizeClipChatMessage(
+                  ClipChatMessage? message,
+                  ClipChatMessage fallback)
+              {
+                  return message is null
+                      ? fallback
+                      : new ClipChatMessage(
+                          message.Enabled,
+                          NormalizeTextOrDefault(message.Text, fallback.Text));
+              }
+          
+          
+          '@
             $config = $config.Replace(
               '    private static List<string> NormalizeUsers(List<string>? users) =>',
               $clipHelper + '    private static List<string> NormalizeUsers(List<string>? users) =>')
@@ -202,16 +202,16 @@ jobs:
             '$1var config = _configurationService.LoadForEditing();',
             [System.Text.RegularExpressions.RegexOptions]::Singleline)
           $main = $main.Replace(
-            "SetMinigameStatus(""Einstellungen ungültig"", ErrorColor);`r`n                ShowSection(""minigame"");",
+            "SetMinigameStatus(""Einstellungen ungÃ¼ltig"", ErrorColor);`r`n                ShowSection(""minigame"");",
             'SetMinigameStatus("Fehler: " + exception.Message, ErrorColor);')
           $main = $main.Replace(
-            "SetSpotifyStatus(""Einstellungen ungültig"", ErrorColor);`r`n                ShowSection(""music"");",
+            "SetSpotifyStatus(""Einstellungen ungÃ¼ltig"", ErrorColor);`r`n                ShowSection(""music"");",
             'SetSpotifyStatus("Fehler: " + exception.Message, ErrorColor);')
           $main = $main.Replace(
-            "SetMinigameStatus(""Einstellungen ungültig"", ErrorColor);`n                ShowSection(""minigame"");",
+            "SetMinigameStatus(""Einstellungen ungÃ¼ltig"", ErrorColor);`n                ShowSection(""minigame"");",
             'SetMinigameStatus("Fehler: " + exception.Message, ErrorColor);')
           $main = $main.Replace(
-            "SetSpotifyStatus(""Einstellungen ungültig"", ErrorColor);`n                ShowSection(""music"");",
+            "SetSpotifyStatus(""Einstellungen ungÃ¼ltig"", ErrorColor);`n                ShowSection(""music"");",
             'SetSpotifyStatus("Fehler: " + exception.Message, ErrorColor);')
           Set-Content -Path $mainPath -Value $main -Encoding UTF8
 
@@ -271,7 +271,7 @@ jobs:
           $manifest = [ordered]@{
             latestVersion = $env:VERSION
             downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
-            changelog = "Hotfix 1.9.28: Einstellungen speichern wieder zuverlässig, leere Heist-/Duel-/Musikwunsch-Standardtexte werden automatisch repariert, und die Dashboard-Statistik-/Update-Bereiche sind besser lesbar."
+            changelog = "Hotfix 1.9.28: Einstellungen speichern wieder zuverlÃ¤ssig, leere Heist-/Duel-/Musikwunsch-Standardtexte werden automatisch repariert, und die Dashboard-Statistik-/Update-Bereiche sind besser lesbar."
             sha256 = $sha
           }
           $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
@@ -283,17 +283,17 @@ jobs:
         run: |
           $tag = "v$env:VERSION"
           $notes = @"
-          Hotfix 1.9.28
-
-          - Speichern nutzt jetzt den GUI-Ladeweg und wird nicht mehr durch technische Twitch-/OAuth-Daten blockiert.
-          - Leere Standardtexte für Raid, Heist, Duel, Clip-Command, Gamble und Musikwünsche werden beim Laden repariert.
-          - Minigame-/Musikwunsch-Speicherfehler springen nicht mehr automatisch in andere Reiter, sondern zeigen die echte Fehlermeldung.
-          - Dashboard: Statistik-Karten und Update-Button sind weniger abgeschnitten.
-          - ZIP, Installer und update.json werden veröffentlicht.
-          "@
-          git tag -f $tag
-          git push origin $tag --force
-          gh release delete $tag -y --cleanup-tag 2>$null || $true
-          $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
-          if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
-          gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
+                    Hotfix 1.9.28
+          
+                    - Speichern nutzt jetzt den GUI-Ladeweg und wird nicht mehr durch technische Twitch-/OAuth-Daten blockiert.
+                    - Leere Standardtexte fÃ¼r Raid, Heist, Duel, Clip-Command, Gamble und MusikwÃ¼nsche werden beim Laden repariert.
+                    - Minigame-/Musikwunsch-Speicherfehler springen nicht mehr automatisch in andere Reiter, sondern zeigen die echte Fehlermeldung.
+                    - Dashboard: Statistik-Karten und Update-Button sind weniger abgeschnitten.
+                    - ZIP, Installer und update.json werden verÃ¶ffentlicht.
+                    "@
+                    git tag -f $tag
+                    git push origin $tag --force
+                    gh release delete $tag -y --cleanup-tag 2>$null || $true
+                    $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
+                    if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
+                    gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
