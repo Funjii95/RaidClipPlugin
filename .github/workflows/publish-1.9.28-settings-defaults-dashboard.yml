@@ -144,84 +144,84 @@ jobs:
             $config,
             '    private static void WriteSettingsFile\(GuiSettings settings\)\s*\{.*?\n    \}\s*\n\s*private static void ApplySavedGuiSettings',
             @'
-    private static void WriteSettingsFile(GuiSettings settings)
-    {
-        SettingsLock.Wait();
-        try
-        {
-            var path = UserSettingsPath;
-            var directory = Path.GetDirectoryName(path)!;
-            Directory.CreateDirectory(directory);
-            settings.Minigame ??= new MinigameConfig();
-            settings.MusicRequests ??= new MusicRequestConfig();
-            settings.Moderation ??= new ModerationConfig();
-            settings.AutoDiscordClipPoster ??= new AutoDiscordClipPosterConfig();
-            settings.Update ??= new UpdateConfig();
-            settings.ModuleHealth ??= new ModuleHealthConfig();
-            var json = JsonSerializer.Serialize(settings, JsonOptions);
-            var tempPath = Path.Combine(
-                directory,
-                "settings." + Guid.NewGuid().ToString("N") + ".tmp");
-            var backupPath = path + ".bak";
-
-            try
-            {
-                using (var stream = new FileStream(
-                           tempPath,
-                           FileMode.CreateNew,
-                           FileAccess.Write,
-                           FileShare.None,
-                           4096,
-                           FileOptions.WriteThrough))
-                using (var writer = new StreamWriter(
-                           stream,
-                           new System.Text.UTF8Encoding(false)))
-                {
-                    writer.Write(json);
-                    writer.Flush();
-                    stream.Flush(true);
-                }
-
-                if (File.Exists(path))
-                    File.Copy(path, backupPath, true);
-
-                File.Copy(tempPath, path, true);
-
-                var verified = JsonSerializer.Deserialize<GuiSettings>(
-                    File.ReadAllText(path, System.Text.Encoding.UTF8),
-                    JsonOptions) ??
-                    throw new InvalidOperationException(
-                        "Einstellungen wurden geschrieben, konnten aber nicht geprüft werden.");
-                if (verified.Minigame is null ||
-                    verified.MusicRequests is null ||
-                    verified.Moderation is null ||
-                    verified.AutoDiscordClipPoster is null)
-                    throw new InvalidOperationException(
-                        "Einstellungen wurden geschrieben, aber wichtige Bereiche fehlen.");
-
-                Console.WriteLine("💾 Einstellungen gespeichert: " + path);
-            }
-            finally
-            {
-                try
-                {
-                    if (File.Exists(tempPath))
-                        File.Delete(tempPath);
-                }
-                catch
-                {
-                }
-            }
-        }
-        finally
-        {
-            SettingsLock.Release();
-        }
+              private static void WriteSettingsFile(GuiSettings settings)
+              {
+                  SettingsLock.Wait();
+                  try
+                  {
+                      var path = UserSettingsPath;
+                      var directory = Path.GetDirectoryName(path)!;
+                      Directory.CreateDirectory(directory);
+                      settings.Minigame ??= new MinigameConfig();
+                      settings.MusicRequests ??= new MusicRequestConfig();
+                      settings.Moderation ??= new ModerationConfig();
+                      settings.AutoDiscordClipPoster ??= new AutoDiscordClipPosterConfig();
+                      settings.Update ??= new UpdateConfig();
+                      settings.ModuleHealth ??= new ModuleHealthConfig();
+                      var json = JsonSerializer.Serialize(settings, JsonOptions);
+                      var tempPath = Path.Combine(
+                          directory,
+                          "settings." + Guid.NewGuid().ToString("N") + ".tmp");
+                      var backupPath = path + ".bak";
+          
+                      try
+                      {
+                          using (var stream = new FileStream(
+                                     tempPath,
+                                     FileMode.CreateNew,
+                                     FileAccess.Write,
+                                     FileShare.None,
+                                     4096,
+                                     FileOptions.WriteThrough))
+                          using (var writer = new StreamWriter(
+                                     stream,
+                                     new System.Text.UTF8Encoding(false)))
+                          {
+                              writer.Write(json);
+                              writer.Flush();
+                              stream.Flush(true);
+                          }
+          
+                          if (File.Exists(path))
+                              File.Copy(path, backupPath, true);
+          
+                          File.Copy(tempPath, path, true);
+          
+                          var verified = JsonSerializer.Deserialize<GuiSettings>(
+                              File.ReadAllText(path, System.Text.Encoding.UTF8),
+                              JsonOptions) ??
+                              throw new InvalidOperationException(
+                                  "Einstellungen wurden geschrieben, konnten aber nicht geprüft werden.");
+                          if (verified.Minigame is null ||
+                              verified.MusicRequests is null ||
+                              verified.Moderation is null ||
+                              verified.AutoDiscordClipPoster is null)
+                              throw new InvalidOperationException(
+                                  "Einstellungen wurden geschrieben, aber wichtige Bereiche fehlen.");
+          
+                          Console.WriteLine("💾 Einstellungen gespeichert: " + path);
+                      }
+                      finally
+                      {
+                          try
+                          {
+                              if (File.Exists(tempPath))
+                                  File.Delete(tempPath);
+                          }
+                          catch
+                          {
+                          }
+                      }
+                  }
+                  finally
+                  {
+                      SettingsLock.Release();
+                  }
     }
-
-
-    private static void ApplySavedGuiSettings
-'@,
+          
+          
+              private static void ApplySavedGuiSettings
+          '@,
             [System.Text.RegularExpressions.RegexOptions]::Singleline)
           $config = $config.Replace(
             '            ModerationTimeoutSeconds = config.Moderation.TimeoutSeconds,',
