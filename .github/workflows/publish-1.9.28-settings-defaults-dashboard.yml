@@ -1,4 +1,4 @@
-﻿name: Publish 1.9.28 Settings Defaults Dashboard Fix
+﻿name: Publish 1.9.29 Settings Persistence Heist Defaults Fix
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
   actions: read
 
 env:
-  VERSION: '1.9.28'
+  VERSION: '1.9.29'
 
 jobs:
   release:
@@ -197,6 +197,14 @@ jobs:
             '(private AppConfig ReadSettingsFromControls\(\)\s*\{\s*)var config = _configurationService\.Load\(\);',
             '$1var config = _configurationService.LoadForEditing();',
             [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          $main = [regex]::Replace(
+            $main,
+            '(private async void SaveMinigameSettingsFromControls\(\)\s*\{.*?try\s*\{\s*)var config = _configurationService\.Load\(\);',
+            '$1var config = _configurationService.LoadForEditing();',
+            [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          $main = $main.Replace(
+            'SetMinigameStatus("Einstellungen ungültig", ErrorColor);',
+            'SetMinigameStatus("Fehler: " + exception.Message, ErrorColor);')
           $main = $main.Replace(
             "SetMinigameStatus(""Einstellungen ungÃ¼ltig"", ErrorColor);`r`n                ShowSection(""minigame"");",
             'SetMinigameStatus("Fehler: " + exception.Message, ErrorColor);')
@@ -210,6 +218,56 @@ jobs:
             "SetSpotifyStatus(""Einstellungen ungÃ¼ltig"", ErrorColor);`n                ShowSection(""music"");",
             'SetSpotifyStatus("Fehler: " + exception.Message, ErrorColor);')
           Set-Content -Path $mainPath -Value $main -Encoding UTF8
+
+          $musicPath = 'RaidClipPlugin/MainForm.MusicRequests.cs'
+          $music = Get-Content -Raw -Encoding UTF8 $musicPath
+          $music = [regex]::Replace(
+            $music,
+            '(private void SaveMusicRequestSettingsFromControls\(\)\s*\{.*?try\s*\{\s*)var config = _configurationService\.Load\(\);',
+            '$1var config = _configurationService.LoadForEditing();',
+            [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          $music = [regex]::Replace(
+            $music,
+            '(private MusicRequestConfig ReadSpotifyConnectionSettings\(\)\s*\{\s*)var config = _configurationService\.Load\(\);',
+            '$1var config = _configurationService.LoadForEditing();',
+            [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          $music = [regex]::Replace(
+            $music,
+            '(private async Task RefreshMusicRewardsAsync\(\)\s*\{.*?try\s*\{\s*)var config = _configurationService\.Load\(\);',
+            '$1var config = _configurationService.LoadForEditing();',
+            [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          $music = $music.Replace(
+            'SetSpotifyStatus("Einstellungen ungültig", ErrorColor);',
+            'SetSpotifyStatus("Fehler: " + exception.Message, ErrorColor);')
+          Set-Content -Path $musicPath -Value $music -Encoding UTF8
+
+          $heistPath = 'RaidClipPlugin/MainForm.HeistCommands.cs'
+          $heist = Get-Content -Raw -Encoding UTF8 $heistPath
+          if ($heist -notmatch 'private static string ReadHeistMessage') {
+            $helper = "    private static string ReadHeistMessage(TextBox box, string fallback) =>`r`n        string.IsNullOrWhiteSpace(box.Text) ? fallback : box.Text.Trim();`r`n`r`n`r`n    private static string HeistTextOrDefault(string? value, string fallback) =>`r`n        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();`r`n`r`n`r`n"
+            $heist = $heist.Replace(
+              '    private void ReadHeistCommandsSettings(AppConfig config)',
+              $helper + '    private void ReadHeistCommandsSettings(AppConfig config)')
+          }
+          $heist = $heist.Replace(
+            '        var values = new[] { h.StartMessage,h.JoinMessage,h.AlreadyJoinedMessage,h.NoActiveHeistMessage,h.MaximumParticipantsMessage,
+            h.NotEnoughParticipantsMessage,h.EvaluationMessage,h.SuccessMessage,h.FailureMessage };
+        for(var i=0;i<values.Length;i++)_heistMessageBoxes[i].Text=values[i];',
+            '        var defaults = new HeistConfig();
+        var values = new[] { HeistTextOrDefault(h.StartMessage,defaults.StartMessage),HeistTextOrDefault(h.JoinMessage,defaults.JoinMessage),HeistTextOrDefault(h.AlreadyJoinedMessage,defaults.AlreadyJoinedMessage),HeistTextOrDefault(h.NoActiveHeistMessage,defaults.NoActiveHeistMessage),HeistTextOrDefault(h.MaximumParticipantsMessage,defaults.MaximumParticipantsMessage),
+            HeistTextOrDefault(h.NotEnoughParticipantsMessage,defaults.NotEnoughParticipantsMessage),HeistTextOrDefault(h.EvaluationMessage,defaults.EvaluationMessage),HeistTextOrDefault(h.SuccessMessage,defaults.SuccessMessage),HeistTextOrDefault(h.FailureMessage,defaults.FailureMessage) };
+        for(var i=0;i<values.Length;i++)_heistMessageBoxes[i].Text=values[i];')
+          $heist = $heist.Replace(
+            '        h.StartMessage=_heistMessageBoxes[0].Text; h.JoinMessage=_heistMessageBoxes[1].Text; h.AlreadyJoinedMessage=_heistMessageBoxes[2].Text;
+        h.NoActiveHeistMessage=_heistMessageBoxes[3].Text; h.MaximumParticipantsMessage=_heistMessageBoxes[4].Text;
+        h.NotEnoughParticipantsMessage=_heistMessageBoxes[5].Text; h.EvaluationMessage=_heistMessageBoxes[6].Text;
+        h.SuccessMessage=_heistMessageBoxes[7].Text; h.FailureMessage=_heistMessageBoxes[8].Text;',
+            '        var defaults = new HeistConfig();
+        h.StartMessage=ReadHeistMessage(_heistMessageBoxes[0], defaults.StartMessage); h.JoinMessage=ReadHeistMessage(_heistMessageBoxes[1], defaults.JoinMessage); h.AlreadyJoinedMessage=ReadHeistMessage(_heistMessageBoxes[2], defaults.AlreadyJoinedMessage);
+        h.NoActiveHeistMessage=ReadHeistMessage(_heistMessageBoxes[3], defaults.NoActiveHeistMessage); h.MaximumParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[4], defaults.MaximumParticipantsMessage);
+        h.NotEnoughParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[5], defaults.NotEnoughParticipantsMessage); h.EvaluationMessage=ReadHeistMessage(_heistMessageBoxes[6], defaults.EvaluationMessage);
+        h.SuccessMessage=ReadHeistMessage(_heistMessageBoxes[7], defaults.SuccessMessage); h.FailureMessage=ReadHeistMessage(_heistMessageBoxes[8], defaults.FailureMessage);')
+          Set-Content -Path $heistPath -Value $heist -Encoding UTF8
 
           $dashPath = 'RaidClipPlugin/MainForm.DashboardModern.cs'
           if (Test-Path $dashPath) {
@@ -234,11 +292,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/MainForm.cs RaidClipPlugin/MainForm.DashboardModern.cs RaidClipPlugin/RaidClipPlugin.csproj
+          git add RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/MainForm.cs RaidClipPlugin/MainForm.MusicRequests.cs RaidClipPlugin/MainForm.HeistCommands.cs RaidClipPlugin/MainForm.DashboardModern.cs RaidClipPlugin/RaidClipPlugin.csproj
           if (git diff --cached --quiet) {
             echo "No source changes to commit."
           } else {
-            git commit -m "Fix settings persistence and restore default messages for 1.9.28"
+            git commit -m "Fix settings persistence and restore Heist defaults for 1.9.29"
             git push
           }
 
@@ -267,7 +325,7 @@ jobs:
           $manifest = [ordered]@{
             latestVersion = $env:VERSION
             downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
-            changelog = "Hotfix 1.9.28: Einstellungen speichern wieder zuverlÃ¤ssig, leere Heist-/Duel-/Musikwunsch-Standardtexte werden automatisch repariert, und die Dashboard-Statistik-/Update-Bereiche sind besser lesbar."
+            changelog = "Hotfix 1.9.29: Minigame- und Musikwunsch-Speicherwege nutzen den GUI-Ladeweg, leere Heist-Texte werden in der UI und beim Speichern auf Standardwerte repariert."
             sha256 = $sha
           }
           $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
@@ -279,12 +337,12 @@ jobs:
         run: |
           $tag = "v$env:VERSION"
           $notes = @(
-            "Hotfix 1.9.28",
+            "Hotfix 1.9.29",
             "",
-            "- Speichern nutzt jetzt den GUI-Ladeweg und wird nicht mehr durch technische Twitch-/OAuth-Daten blockiert.",
-            "- Leere Standardtexte fuer Raid, Heist, Duel, Clip-Command, Gamble und Musikwünsche werden beim Laden repariert.",
-            "- Minigame-/Musikwunsch-Speicherfehler springen nicht mehr automatisch in andere Reiter, sondern zeigen die echte Fehlermeldung.",
-            "- Dashboard: Statistik-Karten und Update-Button sind weniger abgeschnitten.",
+            "- Minigame-Speichern nutzt jetzt den GUI-Ladeweg statt den technischen Start-Ladeweg.",
+            "- Musikwunsch-Speichern, Spotify-Verbindung und Belohnungen nutzen jetzt ebenfalls den GUI-Ladeweg.",
+            "- Leere Heist-Texte werden beim Anzeigen und Speichern durch Standardtexte ersetzt.",
+            "- Speicherfehler zeigen die konkrete Fehlermeldung in der Modulstatus-Zeile.",
             "- ZIP, Installer und update.json werden veröffentlicht."
           ) -join [Environment]::NewLine
           git tag -f $tag
@@ -293,5 +351,6 @@ jobs:
           $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
           if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
           gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
+
 
 
