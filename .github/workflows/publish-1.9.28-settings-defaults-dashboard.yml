@@ -110,7 +110,7 @@ jobs:
             'config\.LiveChat = LiveChatService\.NormalizeConfig\(config\.LiveChat\);\s*config\.Duel \?\?= new DuelConfig\(\);',
             "config.LiveChat = LiveChatService.NormalizeConfig(config.LiveChat);`r`n        config.Heist ??= new HeistConfig();`r`n        config.Duel ??= new DuelConfig();`r`n        FillEmptyStringPropertiesFromDefaults(config.Heist);`r`n        FillEmptyStringPropertiesFromDefaults(config.Duel);")
 
-          if ($config -notmatch 'FillEmptyStringPropertiesFromDefaults') {
+          if ($config -notmatch 'private static void FillEmptyStringPropertiesFromDefaults') {
             $helpers = @'
               private static string NormalizeTextOrDefault(string? value, string fallback) =>
                   string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
@@ -163,7 +163,7 @@ jobs:
               "        clip.ChatMessages.$name = NormalizeClipChatMessage(clip.ChatMessages.$name, defaultMessages.$name);")
           }
 
-          if ($config -notmatch 'NormalizeClipChatMessage') {
+          if ($config -notmatch 'private static ClipChatMessage NormalizeClipChatMessage') {
             $clipHelper = @'
               private static ClipChatMessage NormalizeClipChatMessage(
                   ClipChatMessage? message,
@@ -297,3 +297,4 @@ jobs:
                     $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
                     if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
                     gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
+
