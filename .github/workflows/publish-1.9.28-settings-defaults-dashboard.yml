@@ -1,4 +1,4 @@
-﻿name: Publish 1.9.31 Real Settings Persistence Fix
+﻿name: Publish 1.9.32 Full Settings Persistence Fix
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
   actions: read
 
 env:
-  VERSION: '1.9.31'
+  VERSION: '1.9.32'
 
 jobs:
   release:
@@ -129,12 +129,115 @@ jobs:
             '\s*ValidateMusicRequestSettings\(musicRequests\);',
             '',
             [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          if ($config -notmatch 'SettingsLock') {
+            $config = $config.Replace(
+              '    private static readonly JsonSerializerOptions JsonOptions = new()',
+              '    private static readonly SemaphoreSlim SettingsLock = new(1, 1);' + "`r`n`r`n" + '    private static readonly JsonSerializerOptions JsonOptions = new()')
+          }
           if ($config -notmatch 'private static void WriteSettingsFile') {
             $settingsHelper = "    private static void WriteSettingsFile(GuiSettings settings)`r`n    {`r`n        var path = UserSettingsPath;`r`n        var json = JsonSerializer.Serialize(settings, JsonOptions);`r`n        var tempPath = path + "".tmp"";`r`n        File.WriteAllText(tempPath, json, new System.Text.UTF8Encoding(false));`r`n        File.Copy(tempPath, path, true);`r`n        File.Delete(tempPath);`r`n        _ = JsonSerializer.Deserialize<GuiSettings>(File.ReadAllText(path, System.Text.Encoding.UTF8), JsonOptions) ?? throw new InvalidOperationException(""Einstellungen wurden geschrieben, konnten aber nicht geprüft werden."");`r`n        Console.WriteLine(""💾 Einstellungen gespeichert: "" + path);`r`n    }`r`n`r`n`r`n"
             $config = $config.Replace(
               '    private static void ApplySavedGuiSettings(AppConfig config)',
               $settingsHelper + '    private static void ApplySavedGuiSettings(AppConfig config)')
           }
+          $config = [regex]::Replace(
+            $config,
+            '    private static void WriteSettingsFile\(GuiSettings settings\)\s*\{.*?\n    \}\s*\n\s*private static void ApplySavedGuiSettings',
+            @'
+    private static void WriteSettingsFile(GuiSettings settings)
+    {
+        SettingsLock.Wait();
+        try
+        {
+            var path = UserSettingsPath;
+            var directory = Path.GetDirectoryName(path)!;
+            Directory.CreateDirectory(directory);
+            settings.Minigame ??= new MinigameConfig();
+            settings.MusicRequests ??= new MusicRequestConfig();
+            settings.Moderation ??= new ModerationConfig();
+            settings.AutoDiscordClipPoster ??= new AutoDiscordClipPosterConfig();
+            settings.Update ??= new UpdateConfig();
+            settings.ModuleHealth ??= new ModuleHealthConfig();
+            var json = JsonSerializer.Serialize(settings, JsonOptions);
+            var tempPath = Path.Combine(
+                directory,
+                "settings." + Guid.NewGuid().ToString("N") + ".tmp");
+            var backupPath = path + ".bak";
+
+            try
+            {
+                using (var stream = new FileStream(
+                           tempPath,
+                           FileMode.CreateNew,
+                           FileAccess.Write,
+                           FileShare.None,
+                           4096,
+                           FileOptions.WriteThrough))
+                using (var writer = new StreamWriter(
+                           stream,
+                           new System.Text.UTF8Encoding(false)))
+                {
+                    writer.Write(json);
+                    writer.Flush();
+                    stream.Flush(true);
+                }
+
+                if (File.Exists(path))
+                    File.Copy(path, backupPath, true);
+
+                File.Copy(tempPath, path, true);
+
+                var verified = JsonSerializer.Deserialize<GuiSettings>(
+                    File.ReadAllText(path, System.Text.Encoding.UTF8),
+                    JsonOptions) ??
+                    throw new InvalidOperationException(
+                        "Einstellungen wurden geschrieben, konnten aber nicht geprüft werden.");
+                if (verified.Minigame is null ||
+                    verified.MusicRequests is null ||
+                    verified.Moderation is null ||
+                    verified.AutoDiscordClipPoster is null)
+                    throw new InvalidOperationException(
+                        "Einstellungen wurden geschrieben, aber wichtige Bereiche fehlen.");
+
+                Console.WriteLine("💾 Einstellungen gespeichert: " + path);
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(tempPath))
+                        File.Delete(tempPath);
+                }
+                catch
+                {
+                }
+            }
+        }
+        finally
+        {
+            SettingsLock.Release();
+        }
+    }
+
+
+    private static void ApplySavedGuiSettings
+'@,
+            [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          $config = $config.Replace(
+            '            ModerationTimeoutSeconds = config.Moderation.TimeoutSeconds,',
+            "            ModerationTimeoutSeconds = config.Moderation.TimeoutSeconds,`r`n            Moderation = config.Moderation,")
+          $config = $config.Replace(
+            '            DiscordClips = config.DiscordClips,',
+            "            DiscordClips = config.DiscordClips,`r`n            AutoDiscordClipPoster = config.AutoDiscordClipPoster,")
+          $config = $config.Replace(
+            '            ModuleHealth = config.ModuleHealth',
+            "            ModuleHealth = config.ModuleHealth,`r`n            Update = config.Update")
+          $config = $config.Replace(
+            '            if (settings.ModuleHealth is not null)' + "`r`n" + '                config.ModuleHealth = settings.ModuleHealth;',
+            '            if (settings.ModuleHealth is not null)' + "`r`n" + '                config.ModuleHealth = settings.ModuleHealth;' + "`r`n" + '            if (settings.Moderation is not null)' + "`r`n" + '                config.Moderation = settings.Moderation;' + "`r`n" + '            if (settings.AutoDiscordClipPoster is not null)' + "`r`n" + '                config.AutoDiscordClipPoster = settings.AutoDiscordClipPoster;' + "`r`n" + '            if (settings.Update is not null)' + "`r`n" + '                config.Update = settings.Update;')
+          $config = $config.Replace(
+            '        public ModuleHealthConfig? ModuleHealth { get; set; }',
+            '        public ModuleHealthConfig? ModuleHealth { get; set; }' + "`r`n" + '        public ModerationConfig? Moderation { get; set; }' + "`r`n" + '        public AutoDiscordClipPosterConfig? AutoDiscordClipPoster { get; set; }' + "`r`n" + '        public UpdateConfig? Update { get; set; }')
 
           $config = [regex]::Replace(
             $config,
@@ -345,7 +448,7 @@ jobs:
           if (git diff --cached --quiet) {
             echo "No source changes to commit."
           } else {
-            git commit -m "Fix real settings persistence for 1.9.31"
+            git commit -m "Fix full settings persistence for 1.9.32"
             git push
           }
 
@@ -374,7 +477,7 @@ jobs:
           $manifest = [ordered]@{
             latestVersion = $env:VERSION
             downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
-            changelog = "Hotfix 1.9.31: Einstellungen werden robust gespeichert, nicht mehr durch andere Module blockiert und direkt nach dem Schreiben verifiziert."
+            changelog = "Hotfix 1.9.32: Alle GUI-Einstellungsbereiche werden vollständig gespeichert, robust geschrieben und nach dem Schreiben verifiziert."
             sha256 = $sha
           }
           $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
@@ -386,12 +489,13 @@ jobs:
         run: |
           $tag = "v$env:VERSION"
           $notes = @(
-            "Hotfix 1.9.31",
+            "Hotfix 1.9.32",
             "",
-            "- Zentrale GUI-Einstellungen werden nicht mehr durch fremde Modulvalidierungen blockiert.",
-            "- settings.json wird atomar geschrieben und direkt nach dem Speichern verifiziert.",
-            "- Der echte Speicherpfad wird im Log ausgegeben.",
-            "- Minigame-, Musik- und andere Checkboxen bleiben nach Neustart erhalten.",
+            "- Auto Discord Clip Poster wird jetzt gespeichert und nach Neustart geladen.",
+            "- Moderation wird vollständig gespeichert, inklusive Linkfilter, Permit und User-/Domainlisten.",
+            "- settings.json wird mit Lock, eindeutiger Temp-Datei, Backup und Verifikation geschrieben.",
+            "- Alte settings.json-Dateien werden um fehlende neue Bereiche ergänzt.",
+            "- Musikwunsch- und Heist-Standardtexte werden bei leeren Feldern wiederhergestellt.",
             "- ZIP, Installer und update.json werden veröffentlicht."
           ) -join [Environment]::NewLine
           git tag -f $tag
@@ -400,6 +504,7 @@ jobs:
           $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
           if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
           gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
+
 
 
 
