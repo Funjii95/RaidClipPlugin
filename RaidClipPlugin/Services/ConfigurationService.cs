@@ -134,9 +134,7 @@ public sealed class ConfigurationService
         };
 
 
-        File.WriteAllText(
-            UserSettingsPath,
-            JsonSerializer.Serialize(settings, JsonOptions));
+        WriteSettingsFile(settings);
     }
 
 
@@ -190,9 +188,7 @@ public sealed class ConfigurationService
         settings.MusicRequests = musicRequests;
 
 
-        File.WriteAllText(
-            UserSettingsPath,
-            JsonSerializer.Serialize(settings, JsonOptions));
+        WriteSettingsFile(settings);
     }
 
 
@@ -201,7 +197,6 @@ public sealed class ConfigurationService
         ArgumentNullException.ThrowIfNull(musicRequests);
 
         NormalizeMusicRequests(musicRequests);
-        ValidateMusicRequestSettings(musicRequests);
 
         GuiSettings settings;
         try
@@ -220,9 +215,7 @@ public sealed class ConfigurationService
 
         settings.MusicRequests = musicRequests;
 
-        File.WriteAllText(
-            UserSettingsPath,
-            JsonSerializer.Serialize(settings, JsonOptions));
+        WriteSettingsFile(settings);
     }
 
     private static void WriteSettingsFile(GuiSettings settings)
@@ -1082,6 +1075,7 @@ public sealed class ConfigurationService
         config.ChatMessages ??= new MusicRequestChatMessages();
         config.ModeratorCommands ??= new MusicModeratorCommands();
         FillEmptyStringPropertiesFromDefaults(config.ChatMessages);
+        NormalizeMusicRequestChatMessages(config.ChatMessages);
         FillEmptyStringPropertiesFromDefaults(config.ModeratorCommands);
         config.SpotifyClientId = (config.SpotifyClientId ?? "").Trim();
         config.RedirectUri = (config.RedirectUri ?? "").Trim();
@@ -1121,6 +1115,22 @@ public sealed class ConfigurationService
             : normalized;
     }
 
+
+    private static void NormalizeMusicRequestChatMessages(
+        MusicRequestChatMessages messages)
+    {
+        var defaults = new MusicRequestChatMessages();
+        messages.Queued = NormalizeTextOrDefault(messages.Queued, defaults.Queued);
+        messages.Playing = NormalizeTextOrDefault(messages.Playing, defaults.Playing);
+        messages.NotFound = NormalizeTextOrDefault(messages.NotFound, defaults.NotFound);
+        messages.NoDevice = NormalizeTextOrDefault(messages.NoDevice, defaults.NoDevice);
+        messages.TooLong = NormalizeTextOrDefault(messages.TooLong, defaults.TooLong);
+        messages.ExplicitBlocked = NormalizeTextOrDefault(messages.ExplicitBlocked, defaults.ExplicitBlocked);
+        messages.Cooldown = NormalizeTextOrDefault(messages.Cooldown, defaults.Cooldown);
+        messages.QueueFull = NormalizeTextOrDefault(messages.QueueFull, defaults.QueueFull);
+        messages.Blacklisted = NormalizeTextOrDefault(messages.Blacklisted, defaults.Blacklisted);
+        messages.InvalidInput = NormalizeTextOrDefault(messages.InvalidInput, defaults.InvalidInput);
+    }
 
     public static void ValidateMusicRequestSettings(MusicRequestConfig config)
     {
@@ -1511,6 +1521,7 @@ public sealed class ConfigurationService
         public ModuleHealthConfig? ModuleHealth { get; set; }
     }
 }
+
 
 
 
