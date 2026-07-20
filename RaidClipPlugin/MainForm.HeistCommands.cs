@@ -318,3 +318,4 @@ public sealed partial class MainForm
         if(dialog.ShowDialog(this)!=DialogResult.OK)return;await _commandRegistry.ExportAsync(dialog.FileName,Path.GetExtension(dialog.FileName).Equals(".json",StringComparison.OrdinalIgnoreCase),CancellationToken.None);AppendLog("Command-Liste exportiert: "+dialog.FileName);}
 }
 
+

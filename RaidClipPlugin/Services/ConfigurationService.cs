@@ -77,7 +77,6 @@ public sealed class ConfigurationService
     public void SaveGuiSettings(AppConfig config)
     {
         Normalize(config);
-        ValidateGuiSettings(config);
 
 
         var settings = new GuiSettings
@@ -225,6 +224,19 @@ public sealed class ConfigurationService
             UserSettingsPath,
             JsonSerializer.Serialize(settings, JsonOptions));
     }
+
+    private static void WriteSettingsFile(GuiSettings settings)
+    {
+        var path = UserSettingsPath;
+        var json = JsonSerializer.Serialize(settings, JsonOptions);
+        var tempPath = path + ".tmp";
+        File.WriteAllText(tempPath, json, new System.Text.UTF8Encoding(false));
+        File.Copy(tempPath, path, true);
+        File.Delete(tempPath);
+        _ = JsonSerializer.Deserialize<GuiSettings>(File.ReadAllText(path, System.Text.Encoding.UTF8), JsonOptions) ?? throw new InvalidOperationException("Einstellungen wurden geschrieben, konnten aber nicht geprüft werden.");
+        Console.WriteLine("💾 Einstellungen gespeichert: " + path);
+    }
+
 
     private static void ApplySavedGuiSettings(AppConfig config)
     {
@@ -1499,6 +1511,7 @@ public sealed class ConfigurationService
         public ModuleHealthConfig? ModuleHealth { get; set; }
     }
 }
+
 
 
 
