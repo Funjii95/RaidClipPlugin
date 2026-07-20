@@ -1,0 +1,299 @@
+name: Publish 1.9.28 Settings Defaults Dashboard Fix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  VERSION: '1.9.28'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: preview
+
+      - name: Repair settings persistence, default messages and dashboard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:VERSION
+
+          $csprojPath = 'RaidClipPlugin/RaidClipPlugin.csproj'
+          $project = Get-Content -Raw -Encoding UTF8 $csprojPath
+          $project = [regex]::Replace($project, '<Version>[^<]+</Version>', "<Version>$version</Version>")
+          $project = [regex]::Replace($project, '<FileVersion>[^<]+</FileVersion>', "<FileVersion>$version.0</FileVersion>")
+          if ($project -match '<AssemblyVersion>') {
+            $project = [regex]::Replace($project, '<AssemblyVersion>[^<]+</AssemblyVersion>', "<AssemblyVersion>$version.0</AssemblyVersion>")
+          }
+          Set-Content -Path $csprojPath -Value $project -Encoding UTF8
+
+          $configPath = 'RaidClipPlugin/Services/ConfigurationService.cs'
+          $config = Get-Content -Raw -Encoding UTF8 $configPath
+
+          if ($config -notmatch 'LoadForEditing\(') {
+            $newLoad = @'
+    public AppConfig Load()
+    {
+        var appConfig = LoadForEditing();
+        ValidateTechnicalSettings(appConfig);
+        return appConfig;
+    }
+
+
+    public AppConfig LoadForEditing()
+    {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("Config/config.template.json", optional: false)
+            .Build();
+
+
+        var appConfig = new AppConfig();
+        configuration.Bind(appConfig);
+
+
+        var credentials = new TwitchCredentialStore().Load();
+        appConfig.Twitch.ClientId = credentials.ClientId;
+        appConfig.Twitch.ClientSecret = credentials.ClientSecret;
+
+
+        if (string.IsNullOrWhiteSpace(appConfig.Twitch.BroadcasterLogin))
+        {
+            appConfig.Twitch.BroadcasterLogin = "Funjii";
+        }
+
+
+        if (string.IsNullOrWhiteSpace(appConfig.OBS.Host))
+        {
+            appConfig.OBS.Host = "127.0.0.1";
+        }
+
+
+        ApplySavedGuiSettings(appConfig);
+        Normalize(appConfig);
+        return appConfig;
+    }
+'@
+            $config = [regex]::Replace(
+              $config,
+              '    public AppConfig Load\(\)\s*\{.*?ValidateTechnicalSettings\(appConfig\);\s*return appConfig;\s*\}',
+              $newLoad,
+              [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          }
+
+          $config = [regex]::Replace(
+            $config,
+            '        Normalize\(config\);\s*ValidateTechnicalSettings\(config\);\s*ValidateGuiSettings\(config\);',
+            "        Normalize(config);`r`n        ValidateGuiSettings(config);")
+
+          $config = [regex]::Replace(
+            $config,
+            'config\.Chat\.RaidMessageTemplate\s*=\s*\(config\.Chat\.RaidMessageTemplate \?\? ""\)\.Trim\(\);',
+            'config.Chat.RaidMessageTemplate = NormalizeTextOrDefault(config.Chat.RaidMessageTemplate, new ChatConfig().RaidMessageTemplate);')
+
+          $config = [regex]::Replace(
+            $config,
+            'config\.LiveChat = LiveChatService\.NormalizeConfig\(config\.LiveChat\);\s*config\.Duel \?\?= new DuelConfig\(\);',
+            "config.LiveChat = LiveChatService.NormalizeConfig(config.LiveChat);`r`n        config.Heist ??= new HeistConfig();`r`n        config.Duel ??= new DuelConfig();`r`n        FillEmptyStringPropertiesFromDefaults(config.Heist);`r`n        FillEmptyStringPropertiesFromDefaults(config.Duel);")
+
+          if ($config -notmatch 'FillEmptyStringPropertiesFromDefaults') {
+            $helpers = @'
+    private static string NormalizeTextOrDefault(string? value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+
+
+    private static void FillEmptyStringPropertiesFromDefaults<T>(T target)
+        where T : class, new()
+    {
+        var defaults = new T();
+        foreach (var property in typeof(T).GetProperties())
+        {
+            if (property.PropertyType != typeof(string) ||
+                !property.CanRead || !property.CanWrite)
+            {
+                continue;
+            }
+
+            var current = property.GetValue(target) as string;
+            var fallback = property.GetValue(defaults) as string ?? "";
+            property.SetValue(
+                target,
+                string.IsNullOrWhiteSpace(current)
+                    ? fallback
+                    : current.Trim());
+        }
+    }
+
+
+'@
+            $config = $config.Replace(
+              '    private static void NormalizeMusicRequests(MusicRequestConfig config)',
+              $helpers + '    private static void NormalizeMusicRequests(MusicRequestConfig config)')
+          }
+
+          if ($config -notmatch 'FillEmptyStringPropertiesFromDefaults\(config\.ChatMessages\)') {
+            $config = $config.Replace(
+              "        config.ChatMessages ??= new MusicRequestChatMessages();`r`n        config.ModeratorCommands ??= new MusicModeratorCommands();",
+              "        config.ChatMessages ??= new MusicRequestChatMessages();`r`n        config.ModeratorCommands ??= new MusicModeratorCommands();`r`n        FillEmptyStringPropertiesFromDefaults(config.ChatMessages);`r`n        FillEmptyStringPropertiesFromDefaults(config.ModeratorCommands);")
+            $config = $config.Replace(
+              "        config.ChatMessages ??= new MusicRequestChatMessages();`n        config.ModeratorCommands ??= new MusicModeratorCommands();",
+              "        config.ChatMessages ??= new MusicRequestChatMessages();`n        config.ModeratorCommands ??= new MusicModeratorCommands();`n        FillEmptyStringPropertiesFromDefaults(config.ChatMessages);`n        FillEmptyStringPropertiesFromDefaults(config.ModeratorCommands);")
+          }
+
+          $clipMessageNames = @(
+            'Starting','Success','SuccessDiscord','Cooldown','Offline','Forbidden',
+            'TwitchError','PartialDiscord','QueueFull','Busy','LimitReached','MissingScope')
+          foreach ($name in $clipMessageNames) {
+            $config = $config.Replace(
+              "        clip.ChatMessages.$name ??= defaultMessages.$name;",
+              "        clip.ChatMessages.$name = NormalizeClipChatMessage(clip.ChatMessages.$name, defaultMessages.$name);")
+          }
+
+          if ($config -notmatch 'NormalizeClipChatMessage') {
+            $clipHelper = @'
+    private static ClipChatMessage NormalizeClipChatMessage(
+        ClipChatMessage? message,
+        ClipChatMessage fallback)
+    {
+        return message is null
+            ? fallback
+            : new ClipChatMessage(
+                message.Enabled,
+                NormalizeTextOrDefault(message.Text, fallback.Text));
+    }
+
+
+'@
+            $config = $config.Replace(
+              '    private static List<string> NormalizeUsers(List<string>? users) =>',
+              $clipHelper + '    private static List<string> NormalizeUsers(List<string>? users) =>')
+          }
+
+          $config = $config.Replace(
+            'clone.ChatText = (clone.ChatText ?? "").Trim();',
+            'var fallbackText = clone.From switch { <= 31 => MinigameConfig.CreateDefaultRanges()[0].ChatText, <= 50 => MinigameConfig.CreateDefaultRanges()[1].ChatText, <= 70 => MinigameConfig.CreateDefaultRanges()[2].ChatText, _ => MinigameConfig.CreateDefaultRanges()[3].ChatText }; clone.ChatText = NormalizeTextOrDefault(clone.ChatText, fallbackText);')
+
+          Set-Content -Path $configPath -Value $config -Encoding UTF8
+
+          $mainPath = 'RaidClipPlugin/MainForm.cs'
+          $main = Get-Content -Raw -Encoding UTF8 $mainPath
+          $main = [regex]::Replace(
+            $main,
+            '(private void LoadSettingsIntoControls\(\)\s*\{\s*try\s*\{\s*)var config = _configurationService\.Load\(\);',
+            '$1var config = _configurationService.LoadForEditing();',
+            [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          $main = [regex]::Replace(
+            $main,
+            '(private AppConfig ReadSettingsFromControls\(\)\s*\{\s*)var config = _configurationService\.Load\(\);',
+            '$1var config = _configurationService.LoadForEditing();',
+            [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          $main = $main.Replace(
+            "SetMinigameStatus(""Einstellungen ungültig"", ErrorColor);`r`n                ShowSection(""minigame"");",
+            'SetMinigameStatus("Fehler: " + exception.Message, ErrorColor);')
+          $main = $main.Replace(
+            "SetSpotifyStatus(""Einstellungen ungültig"", ErrorColor);`r`n                ShowSection(""music"");",
+            'SetSpotifyStatus("Fehler: " + exception.Message, ErrorColor);')
+          $main = $main.Replace(
+            "SetMinigameStatus(""Einstellungen ungültig"", ErrorColor);`n                ShowSection(""minigame"");",
+            'SetMinigameStatus("Fehler: " + exception.Message, ErrorColor);')
+          $main = $main.Replace(
+            "SetSpotifyStatus(""Einstellungen ungültig"", ErrorColor);`n                ShowSection(""music"");",
+            'SetSpotifyStatus("Fehler: " + exception.Message, ErrorColor);')
+          Set-Content -Path $mainPath -Value $main -Encoding UTF8
+
+          $dashPath = 'RaidClipPlugin/MainForm.DashboardModern.cs'
+          if (Test-Path $dashPath) {
+            $dash = Get-Content -Raw -Encoding UTF8 $dashPath
+            $dash = $dash.Replace('button == _updateButton ? 164 : 142', 'button == _updateButton ? 198 : 142')
+            $dash = $dash.Replace('button == _updateButton ? 164 : 142', 'button == _updateButton ? 198 : 142')
+            $dash = $dash.Replace('main.RowStyles.Add(new RowStyle(SizeType.Absolute, 128));', 'main.RowStyles.Add(new RowStyle(SizeType.Absolute, 146));')
+            $dash = $dash.Replace('main.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));', 'main.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));')
+            $dash = $dash.Replace('panel.MinimumSize = new Size(112, 76);', 'panel.MinimumSize = new Size(112, 72);')
+            $dash = $dash.Replace('Font = new Font("Segoe UI", 15F, FontStyle.Bold), ForeColor = color', 'Font = new Font("Segoe UI", 13.5F, FontStyle.Bold), ForeColor = color')
+            $dash = $dash.Replace('Font = new Font("Segoe UI", 15F, FontStyle.Bold), ForeColor = TextColor', 'Font = new Font("Segoe UI", 12.5F, FontStyle.Bold), ForeColor = TextColor')
+            $dash = $dash.Replace('Font = new Font("Segoe UI", 8.2F), ForeColor = MutedTextColor', 'Font = new Font("Segoe UI", 7.8F), ForeColor = MutedTextColor')
+            Set-Content -Path $dashPath -Value $dash -Encoding UTF8
+          }
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit source changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/MainForm.cs RaidClipPlugin/MainForm.DashboardModern.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            echo "No source changes to commit."
+          } else {
+            git commit -m "Fix settings persistence and restore default messages for 1.9.28"
+            git push
+          }
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
+          $iscc = Join-Path (Join-Path $programFilesX86 'Inno Setup 6') 'ISCC.exe'
+          if (Test-Path 'RaidClipPlugin/Installer/RaidClipPlugin.iss') {
+            & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin/Installer/RaidClipPlugin.iss"
+            Copy-Item "RaidClipPlugin/installer-output/RaidClipPlugin-Setup-$env:VERSION.exe" "RaidClipPluginSetup-$env:VERSION.exe" -Force
+          }
+
+      - name: Create update manifest
+        shell: pwsh
+        run: |
+          $zip = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
+            changelog = "Hotfix 1.9.28: Einstellungen speichern wieder zuverlässig, leere Heist-/Duel-/Musikwunsch-Standardtexte werden automatisch repariert, und die Dashboard-Statistik-/Update-Bereiche sind besser lesbar."
+            sha256 = $sha
+          }
+          $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v$env:VERSION"
+          $notes = @"
+          Hotfix 1.9.28
+
+          - Speichern nutzt jetzt den GUI-Ladeweg und wird nicht mehr durch technische Twitch-/OAuth-Daten blockiert.
+          - Leere Standardtexte für Raid, Heist, Duel, Clip-Command, Gamble und Musikwünsche werden beim Laden repariert.
+          - Minigame-/Musikwunsch-Speicherfehler springen nicht mehr automatisch in andere Reiter, sondern zeigen die echte Fehlermeldung.
+          - Dashboard: Statistik-Karten und Update-Button sind weniger abgeschnitten.
+          - ZIP, Installer und update.json werden veröffentlicht.
+          "@
+          git tag -f $tag
+          git push origin $tag --force
+          gh release delete $tag -y --cleanup-tag 2>$null || $true
+          $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
+          if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
+          gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
