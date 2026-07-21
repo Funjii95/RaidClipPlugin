@@ -540,6 +540,9 @@ public sealed class ChatMinigameService : IDisposable
 
             if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
             {
+                Console.WriteLine(
+                    $"Command {command} ignoriert: in der Commands-Rechteverwaltung deaktiviert. " +
+                    "Wenn das nicht gewollt ist, Minigame speichern oder Command-Haken prüfen.");
                 return;
             }
 

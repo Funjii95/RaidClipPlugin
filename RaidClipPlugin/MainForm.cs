@@ -2529,6 +2529,8 @@ private enum CloseChoice
             var config = ReadSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
             _activeConfig = config;
+            _commandRegistry.Update(config);
+            RefreshCommandGrid();
             SetConnectionSettingsEditingEnabled(false);
             _resetPointsButton.Enabled = false;
             _importMinigameButton.Enabled = false;
@@ -2820,13 +2822,11 @@ private enum CloseChoice
                     _minigame.HeistStatusChanged += OnHeistStatusChanged;
                     _minigame.DuelStatusChanged += OnDuelStatusChanged;
                                         _chatModeration.MessageReceived += message =>
-          {
-              if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
-                  return Task.CompletedTask;
-              return _minigame.ProcessMessageAsync(
-                  message,
-                  cancellationToken);
-          };
+                    {
+                        return _minigame.ProcessMessageAsync(
+                            message,
+                            cancellationToken);
+                    };
                     _minigameRunCts = CancellationTokenSource
                         .CreateLinkedTokenSource(cancellationToken);
                     _minigameTask = _minigame.RunAsync(
@@ -5512,6 +5512,7 @@ private enum CloseChoice
         config.Minigame.DailyWinLimitEnabled = _dailyWinCheck.Checked;
         config.Minigame.DailyWinLimit = decimal.ToInt64(_dailyWinControl.Value);
 
+        SyncMinigameCommandOverrides(config);
         AppendSaveDebug(
             "Minigame-Werte aus GUI gelesen: Währung=" +
             config.Minigame.CurrencySingular + "/" +
@@ -5520,7 +5521,48 @@ private enum CloseChoice
             ", Lurker=" + config.Minigame.LurkerPointsPerInterval +
             ", IntervallMin=" + config.Minigame.IntervalMinutes +
             ", MinBet=" + config.Minigame.MinimumBet +
-            ", MaxBet=" + config.Minigame.MaximumBet);
+            ", MaxBet=" + config.Minigame.MaximumBet +
+            ", CommandGamble=" + config.Commands.IsCommandEnabled("casino.gamble"));
+    }
+
+
+    private static void SyncMinigameCommandOverrides(AppConfig config)
+    {
+        static void Set(CommandsConfig commands, string id, bool enabled)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return;
+            commands.CommandEnabledOverrides[id] = enabled;
+        }
+
+        config.Commands.CommandEnabledOverrides ??=
+            new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        var pointsEnabled = config.Minigame.PointsEnabled;
+        Set(config.Commands, "points.de", pointsEnabled && config.Minigame.PointsCommandPunkteEnabled);
+        Set(config.Commands, "points.en", pointsEnabled && config.Minigame.PointsCommandPointsEnabled);
+        Set(config.Commands, "points.perlen", pointsEnabled && config.Minigame.PointsCommandPerlenEnabled);
+        Set(config.Commands, "points.custom", pointsEnabled && !string.IsNullOrWhiteSpace(config.Minigame.CustomPointsCommand));
+        Set(config.Commands, "points.daily", pointsEnabled && config.Minigame.DailyEnabled);
+        Set(config.Commands, "points.top", pointsEnabled && config.Minigame.LeaderboardEnabled);
+        Set(config.Commands, "points.profile", pointsEnabled && config.Minigame.ProfileEnabled);
+        Set(config.Commands, "points.give", pointsEnabled);
+        Set(config.Commands, "points.add", pointsEnabled);
+        Set(config.Commands, "points.remove", pointsEnabled);
+        Set(config.Commands, "points.lurk", pointsEnabled);
+
+        var gamesEnabled = config.Minigame.Enabled;
+        Set(config.Commands, "casino.gamble", gamesEnabled && config.Minigame.GambleEnabled);
+        Set(config.Commands, "casino.jackpot", gamesEnabled && config.Minigame.JackpotEnabled);
+        Set(config.Commands, "casino.coinflip", gamesEnabled && config.Minigame.CoinflipEnabled);
+        Set(config.Commands, "casino.slots", gamesEnabled && config.Minigame.SlotsEnabled);
+        Set(config.Commands, "casino.roulette", gamesEnabled && config.Minigame.RouletteEnabled);
+
+        Set(config.Commands, "heist.start", config.Heist.Enabled);
+        Set(config.Commands, "heist.join", config.Heist.Enabled);
+        Set(config.Commands, "duel.challenge", config.Duel.Enabled);
+        Set(config.Commands, "duel.accept", config.Duel.Enabled);
+        Set(config.Commands, "duel.deny", config.Duel.Enabled);
     }
 
     private async void SaveMinigameSettingsFromControls()

@@ -681,6 +681,47 @@ public sealed class ConfigurationService
     }
 
 
+    private static void SynchronizeMinigameCommandOverrides(AppConfig config)
+    {
+        static void Set(CommandsConfig commands, string id, bool enabled)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return;
+            commands.CommandEnabledOverrides[id] = enabled;
+        }
+
+        config.Commands ??= new CommandsConfig();
+        config.Commands.CommandEnabledOverrides ??=
+            new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        var pointsEnabled = config.Minigame.PointsEnabled;
+        Set(config.Commands, "points.de", pointsEnabled && config.Minigame.PointsCommandPunkteEnabled);
+        Set(config.Commands, "points.en", pointsEnabled && config.Minigame.PointsCommandPointsEnabled);
+        Set(config.Commands, "points.perlen", pointsEnabled && config.Minigame.PointsCommandPerlenEnabled);
+        Set(config.Commands, "points.custom", pointsEnabled && !string.IsNullOrWhiteSpace(config.Minigame.CustomPointsCommand));
+        Set(config.Commands, "points.daily", pointsEnabled && config.Minigame.DailyEnabled);
+        Set(config.Commands, "points.top", pointsEnabled && config.Minigame.LeaderboardEnabled);
+        Set(config.Commands, "points.profile", pointsEnabled && config.Minigame.ProfileEnabled);
+        Set(config.Commands, "points.give", pointsEnabled);
+        Set(config.Commands, "points.add", pointsEnabled);
+        Set(config.Commands, "points.remove", pointsEnabled);
+        Set(config.Commands, "points.lurk", pointsEnabled);
+
+        var gamesEnabled = config.Minigame.Enabled;
+        Set(config.Commands, "casino.gamble", gamesEnabled && config.Minigame.GambleEnabled);
+        Set(config.Commands, "casino.jackpot", gamesEnabled && config.Minigame.JackpotEnabled);
+        Set(config.Commands, "casino.coinflip", gamesEnabled && config.Minigame.CoinflipEnabled);
+        Set(config.Commands, "casino.slots", gamesEnabled && config.Minigame.SlotsEnabled);
+        Set(config.Commands, "casino.roulette", gamesEnabled && config.Minigame.RouletteEnabled);
+
+        Set(config.Commands, "heist.start", config.Heist.Enabled);
+        Set(config.Commands, "heist.join", config.Heist.Enabled);
+        Set(config.Commands, "duel.challenge", config.Duel.Enabled);
+        Set(config.Commands, "duel.accept", config.Duel.Enabled);
+        Set(config.Commands, "duel.deny", config.Duel.Enabled);
+    }
+
+
     private static void Normalize(AppConfig config)
     {
         config.UiTheme = (config.UiTheme ?? "RaidRed").Trim();
@@ -782,6 +823,11 @@ public sealed class ConfigurationService
             .Where(item => !string.IsNullOrWhiteSpace(item.Key))
             .ToDictionary(item => item.Key.Trim(), item =>
                 CommandRegistry.ParseRole(item.Value).ToString(), StringComparer.OrdinalIgnoreCase);
+        config.Commands.CommandEnabledOverrides = (config.Commands.CommandEnabledOverrides ??
+            new Dictionary<string, bool>())
+            .Where(item => !string.IsNullOrWhiteSpace(item.Key))
+            .ToDictionary(item => item.Key.Trim(), item => item.Value, StringComparer.OrdinalIgnoreCase);
+        SynchronizeMinigameCommandOverrides(config);
         config.Commands.CustomCommands ??= new List<CustomChatCommandConfig>();
         foreach (var custom in config.Commands.CustomCommands)
         {
