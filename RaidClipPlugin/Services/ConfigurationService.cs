@@ -324,14 +324,36 @@ public sealed class ConfigurationService
     }
 
 
+    private static void AppendSettingsDebug(string message)
+    {
+        try
+        {
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RaidClipPlugin");
+            Directory.CreateDirectory(directory);
+            File.AppendAllText(
+                Path.Combine(directory, "save-debug.log"),
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}",
+                new System.Text.UTF8Encoding(false));
+        }
+        catch
+        {
+        }
+    }
+
     private static void WriteSettingsFile(GuiSettings settings)
     {
-        SettingsLock.Wait();
+        if (!SettingsLock.Wait(TimeSpan.FromSeconds(10)))
+        {
+            throw new InvalidOperationException("Einstellungen konnten nicht gespeichert werden, weil ein anderer Speichervorgang blockiert. Bitte App neu starten und erneut speichern.");
+        }
         try
         {
             var path = UserSettingsPath;
             var directory = Path.GetDirectoryName(path)!;
             Directory.CreateDirectory(directory);
+            AppendSettingsDebug("WriteSettingsFile Start: " + path);
             MergeMissingSettings(settings, path);
             EnsureRequiredSettingsSections(settings);
             var json = JsonSerializer.Serialize(settings, JsonOptions);
@@ -375,8 +397,14 @@ public sealed class ConfigurationService
                     throw new InvalidOperationException(
                         "Einstellungen wurden geschrieben, aber wichtige Bereiche fehlen.");
 
+                AppendSettingsDebug("WriteSettingsFile Erfolg: " + path + " Bytes=" + json.Length);
                 Console.WriteLine("💾 Einstellungen gespeichert: " + path);
   }
+            catch (Exception exception)
+            {
+                AppendSettingsDebug("WriteSettingsFile Fehler: " + exception.GetType().Name + " - " + exception.Message);
+                throw;
+            }
             finally
             {
                 try

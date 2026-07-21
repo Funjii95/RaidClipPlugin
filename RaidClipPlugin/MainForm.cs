@@ -5370,6 +5370,7 @@ private enum CloseChoice
 
     private async void SaveMinigameSettingsFromControls()
     {
+        AppendSaveDebug("Minigame-Speichern geklickt.");
         if (_settingsSaveBusy)
         {
             AppendLog("Speichern läuft bereits. Bitte kurz warten …");
@@ -5381,13 +5382,14 @@ private enum CloseChoice
 
         try
         {
+            AppendSaveDebug("Minigame-Speichern startet.");
             var config = _configurationService.LoadForEditing();
             ReadMinigameSettings(config);
             ReadHeistCommandsSettings(config);
             ReadDuelSettings(config);
             _configurationService.SaveGuiSettings(config);
             ApplyRuntimeSettings(config);
-            AppendLog("Minigame-Einstellungen wurden gespeichert.");
+            AppendSaveDebug("Minigame-Einstellungen wurden gespeichert.");
             SetMinigameStatus("Einstellungen gespeichert", ActiveColor);
             SetOverallStatus("Einstellungen gespeichert", ActiveColor);
             _commandRegistry.Update(config);
@@ -5395,7 +5397,7 @@ private enum CloseChoice
         }
         catch (Exception exception)
         {
-            AppendLog("Minigame-Einstellungen konnten nicht gespeichert werden: " + exception.Message);
+            AppendSaveDebug("Minigame-Einstellungen konnten nicht gespeichert werden: " + exception.Message);
             SetOverallStatus("Einstellungsfehler", ErrorColor);
             SetMinigameStatus("Fehler: " + exception.Message, ErrorColor);
             ShowSection("minigame");
@@ -5409,6 +5411,7 @@ private enum CloseChoice
 
     private async void SaveSettingsFromControls()
     {
+        AppendSaveDebug("Allgemeines Speichern geklickt.");
         if (_settingsSaveBusy)
         {
             AppendLog("Speichern läuft bereits. Bitte kurz warten …");
@@ -5420,16 +5423,17 @@ private enum CloseChoice
 
         try
         {
+            AppendSaveDebug("Allgemeines Speichern startet.");
             var config = ReadSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
-            await _discordCredentialStore.SaveAsync(_discordCredentials);
+            _ = _discordCredentialStore.SaveAsync(_discordCredentials);
             ApplyRuntimeSettings(config);
-            AppendLog("Einstellungen wurden gespeichert.");
+            AppendSaveDebug("Einstellungen wurden gespeichert.");
             SetOverallStatus("Einstellungen gespeichert", ActiveColor);
         }
         catch (Exception exception)
         {
-            AppendLog(
+            AppendSaveDebug(
                 "Einstellungen konnten nicht gespeichert werden: " +
                 exception.Message);
             SetOverallStatus("Einstellungsfehler", ErrorColor);
@@ -5627,6 +5631,27 @@ private enum CloseChoice
         {
             _historyList.Items.RemoveAt(_historyList.Items.Count - 1);
         }
+    }
+
+    private void AppendSaveDebug(string message)
+    {
+        var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}";
+        try
+        {
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RaidClipPlugin");
+            Directory.CreateDirectory(directory);
+            File.AppendAllText(
+                Path.Combine(directory, "save-debug.log"),
+                line + Environment.NewLine,
+                new System.Text.UTF8Encoding(false));
+        }
+        catch
+        {
+        }
+
+        AppendLog(message);
     }
 
     private void AppendLog(string message)

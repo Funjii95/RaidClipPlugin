@@ -497,8 +497,10 @@ public sealed partial class MainForm
 
     private void SaveMusicRequestSettingsFromControls()
     {
+        AppendSaveDebug("Musikwunsch-Speichern geklickt.");
         try
         {
+            AppendSaveDebug("Musikwunsch-Speichern startet.");
             var config = _configurationService.LoadForEditing();
             ReadMusicRequestSettings(config);
             _configurationService.SaveGuiSettings(config);
@@ -519,7 +521,7 @@ public sealed partial class MainForm
             EnsureSpotify(config.MusicRequests);
             SetSpotifyStatus("Einstellungen gespeichert", ActiveColor);
             SetOverallStatus("Musikwunsch-Einstellungen gespeichert", ActiveColor);
-            AppendLog("Musikwunsch-Einstellungen wurden gespeichert.");
+            AppendSaveDebug("Musikwunsch-Einstellungen wurden gespeichert.");
 
 
             if (restartRequired)
@@ -531,7 +533,7 @@ public sealed partial class MainForm
         }
         catch (Exception exception)
         {
-            AppendLog(
+            AppendSaveDebug(
                 "Musikwunsch-Einstellungen konnten nicht gespeichert werden: " +
                 exception.Message);
             SetSpotifyStatus("Fehler: " + exception.Message, ErrorColor);
