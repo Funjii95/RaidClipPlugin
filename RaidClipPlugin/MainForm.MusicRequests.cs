@@ -495,6 +495,7 @@ public sealed partial class MainForm
     }
 
 
+
     private void SaveMusicRequestSettingsFromControls()
     {
         AppendSaveDebug("Musikwunsch-Speichern geklickt.");
@@ -503,26 +504,31 @@ public sealed partial class MainForm
             AppendSaveDebug("Musikwunsch-Speichern startet.");
             var config = _configurationService.LoadForEditing();
             ReadMusicRequestSettings(config);
-            _configurationService.SaveGuiSettings(config);
+            _configurationService.SaveMusicRequestSettings(config.MusicRequests);
 
+            var verified = _configurationService.LoadForEditing();
+            VerifyMusicRequestSettingsPersisted(config.MusicRequests, verified.MusicRequests);
+            AppendSaveDebug(
+                "Musikwunsch-Nachladeprüfung erfolgreich: Aktiv=" + verified.MusicRequests.Enabled +
+                ", ClientIdLen=" + (verified.MusicRequests.SpotifyClientId?.Length ?? 0) +
+                ", RewardId=" + verified.MusicRequests.SelectedRewardId +
+                ", SongCommand=" + verified.MusicRequests.ModeratorCommands.Song +
+                ", QueuedTextLen=" + (verified.MusicRequests.ChatMessages.Queued?.Length ?? 0));
 
             var restartRequired = _activeConfig is not null &&
-                _activeConfig.MusicRequests.Enabled != config.MusicRequests.Enabled;
-
+                _activeConfig.MusicRequests.Enabled != verified.MusicRequests.Enabled;
 
             if (_activeConfig is not null)
             {
-                _activeConfig.MusicRequests = config.MusicRequests;
+                _activeConfig.MusicRequests = verified.MusicRequests;
             }
 
-
-            _musicRequests?.UpdateConfig(config.MusicRequests);
-            _spotify?.UpdateConfig(config.MusicRequests);
-            EnsureSpotify(config.MusicRequests);
+            _musicRequests?.UpdateConfig(verified.MusicRequests);
+            _spotify?.UpdateConfig(verified.MusicRequests);
+            EnsureSpotify(verified.MusicRequests);
             SetSpotifyStatus("Einstellungen gespeichert", ActiveColor);
             SetOverallStatus("Musikwunsch-Einstellungen gespeichert", ActiveColor);
             AppendSaveDebug("Musikwunsch-Einstellungen wurden gespeichert.");
-
 
             if (restartRequired)
             {
@@ -542,6 +548,66 @@ public sealed partial class MainForm
         }
     }
 
+
+
+    private static void VerifyMusicRequestSettingsPersisted(MusicRequestConfig expected, MusicRequestConfig actual)
+    {
+        static bool SameList(IReadOnlyList<string> left, IReadOnlyList<string> right) =>
+            left.SequenceEqual(right, StringComparer.OrdinalIgnoreCase);
+
+        var expectedMessages = expected.ChatMessages;
+        var actualMessages = actual.ChatMessages;
+        var expectedCommands = expected.ModeratorCommands;
+        var actualCommands = actual.ModeratorCommands;
+
+        if (expected.Enabled != actual.Enabled ||
+            !string.Equals(expected.SpotifyClientId, actual.SpotifyClientId, StringComparison.Ordinal) ||
+            !string.Equals(expected.SelectedRewardId, actual.SelectedRewardId, StringComparison.Ordinal) ||
+            !string.Equals(expected.SelectedRewardName, actual.SelectedRewardName, StringComparison.Ordinal) ||
+            expected.PlaybackMode != actual.PlaybackMode ||
+            !string.Equals(expected.SelectedDeviceId, actual.SelectedDeviceId, StringComparison.Ordinal) ||
+            expected.UseActiveDevice != actual.UseActiveDevice ||
+            expected.ActivateSelectedDevice != actual.ActivateSelectedDevice ||
+            expected.MaximumTrackDurationMinutes != actual.MaximumTrackDurationMinutes ||
+            expected.MaximumQueueLength != actual.MaximumQueueLength ||
+            expected.UserCooldownMinutes != actual.UserCooldownMinutes ||
+            expected.MaximumRequestsPerUser != actual.MaximumRequestsPerUser ||
+            expected.AllowExplicitTracks != actual.AllowExplicitTracks ||
+            expected.AllowDuplicateTracks != actual.AllowDuplicateTracks ||
+            expected.AllowSpotifyLinks != actual.AllowSpotifyLinks ||
+            expected.AllowTextSearch != actual.AllowTextSearch ||
+            expected.AutoFulfillRedemptions != actual.AutoFulfillRedemptions ||
+            expected.AutoCancelRejectedRedemptions != actual.AutoCancelRejectedRedemptions ||
+            !SameList(expected.UserBlacklist, actual.UserBlacklist) ||
+            !SameList(expected.ArtistBlacklist, actual.ArtistBlacklist) ||
+            !SameList(expected.TrackBlacklist, actual.TrackBlacklist) ||
+            !SameList(expected.SongTitleBlacklist, actual.SongTitleBlacklist) ||
+            !SameList(expected.BlockedTitleTerms, actual.BlockedTitleTerms) ||
+            !string.Equals(expectedMessages.Queued, actualMessages.Queued, StringComparison.Ordinal) ||
+            !string.Equals(expectedMessages.Playing, actualMessages.Playing, StringComparison.Ordinal) ||
+            !string.Equals(expectedMessages.NotFound, actualMessages.NotFound, StringComparison.Ordinal) ||
+            !string.Equals(expectedMessages.NoDevice, actualMessages.NoDevice, StringComparison.Ordinal) ||
+            !string.Equals(expectedMessages.TooLong, actualMessages.TooLong, StringComparison.Ordinal) ||
+            !string.Equals(expectedMessages.ExplicitBlocked, actualMessages.ExplicitBlocked, StringComparison.Ordinal) ||
+            !string.Equals(expectedMessages.Cooldown, actualMessages.Cooldown, StringComparison.Ordinal) ||
+            !string.Equals(expectedMessages.QueueFull, actualMessages.QueueFull, StringComparison.Ordinal) ||
+            !string.Equals(expectedMessages.Blacklisted, actualMessages.Blacklisted, StringComparison.Ordinal) ||
+            expectedCommands.SongEnabled != actualCommands.SongEnabled ||
+            expectedCommands.SkipEnabled != actualCommands.SkipEnabled ||
+            expectedCommands.QueueEnabled != actualCommands.QueueEnabled ||
+            expectedCommands.RemoveEnabled != actualCommands.RemoveEnabled ||
+            expectedCommands.PauseEnabled != actualCommands.PauseEnabled ||
+            expectedCommands.ResumeEnabled != actualCommands.ResumeEnabled ||
+            !string.Equals(expectedCommands.Song, actualCommands.Song, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expectedCommands.Skip, actualCommands.Skip, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expectedCommands.Queue, actualCommands.Queue, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expectedCommands.Remove, actualCommands.Remove, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expectedCommands.Pause, actualCommands.Pause, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expectedCommands.Resume, actualCommands.Resume, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Musikwunsch-Einstellungen wurden geschrieben, aber beim Nachladen nicht bestätigt.");
+        }
+    }
 
     private static void ApplyMusicMessageDefaults(MusicRequestChatMessages messages)
     {
