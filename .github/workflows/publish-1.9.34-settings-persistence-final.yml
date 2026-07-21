@@ -1,4 +1,4 @@
-name: Publish 1.9.36 Settings Save Repair
+﻿name: Publish 1.9.36 Settings Save Repair
 
 on:
   push:
@@ -34,101 +34,80 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          @'
-          from pathlib import Path
-          import re
-
-          version = "1.9.36"
-
-          def write(path, text):
-              Path(path).write_text(text, encoding="utf-8")
-
-          csproj_path = Path("RaidClipPlugin/RaidClipPlugin.csproj")
-          csproj = csproj_path.read_text(encoding="utf-8")
-          csproj = re.sub(r"<Version>[^<]+</Version>", f"<Version>{version}</Version>", csproj)
-          csproj = re.sub(r"<FileVersion>[^<]+</FileVersion>", f"<FileVersion>{version}.0</FileVersion>", csproj)
-          if re.search(r"<AssemblyVersion>[^<]+</AssemblyVersion>", csproj):
-              csproj = re.sub(r"<AssemblyVersion>[^<]+</AssemblyVersion>", f"<AssemblyVersion>{version}.0</AssemblyVersion>", csproj)
-          else:
-              csproj = csproj.replace(
-                  f"<FileVersion>{version}.0</FileVersion>",
-                  f"<FileVersion>{version}.0</FileVersion>\n    <AssemblyVersion>{version}.0</AssemblyVersion>")
-          write(csproj_path, csproj)
-
-          config_path = Path("RaidClipPlugin/Services/ConfigurationService.cs")
-          text = config_path.read_text(encoding="utf-8")
-
-          if "private static void ValidateCommandsSettings(AppConfig config)" not in text:
-              text = text.replace(
-                  "    public static void ValidateDuelSettings(DuelConfig duel)\n    {\n        var commands = new[] { duel.DuelCommand, duel.AcceptCommand, duel.DenyCommand };",
-                  "    public static void ValidateDuelSettings(DuelConfig duel)\n    {\n        if (!duel.Enabled)\n        {\n            return;\n        }\n\n        var commands = new[] { duel.DuelCommand, duel.AcceptCommand, duel.DenyCommand };")
-
-              text = text.replace(
-                  "    public static void ValidateHeistAndCommands(AppConfig config)\n    {\n        var heist = config.Heist;\n        if (heist.MinimumParticipants < 3)",
-                  "    public static void ValidateHeistAndCommands(AppConfig config)\n    {\n        var heist = config.Heist;\n        if (!heist.Enabled)\n        {\n            ValidateCommandsSettings(config);\n            return;\n        }\n\n        if (heist.MinimumParticipants < 3)")
-
-              text = text.replace(
-                  "\n\n        var commands = config.Commands;\n        if (string.IsNullOrWhiteSpace(commands.Command))",
-                  "\n\n        ValidateCommandsSettings(config);\n    }\n\n    private static void ValidateCommandsSettings(AppConfig config)\n    {\n        var commands = config.Commands;\n        if (string.IsNullOrWhiteSpace(commands.Command))",
-                  1)
-
-              text = text.replace(
-                  "    public static void ValidateGiveawaySettings(GiveawayConfig config)\n    {\n        if (string.IsNullOrWhiteSpace(config.Title) ||",
-                  "    public static void ValidateGiveawaySettings(GiveawayConfig config)\n    {\n        if (!config.Enabled)\n        {\n            return;\n        }\n\n        if (string.IsNullOrWhiteSpace(config.Title) ||")
-
-          music_old = '''        var musicCommands = new[]
-        {
-            (config.MusicRequests.ModeratorCommands.SongEnabled,
-                config.MusicRequests.ModeratorCommands.Song),
-            (config.MusicRequests.ModeratorCommands.SkipEnabled,
-                config.MusicRequests.ModeratorCommands.Skip),
-            (config.MusicRequests.ModeratorCommands.QueueEnabled,
-                config.MusicRequests.ModeratorCommands.Queue),
-            (config.MusicRequests.ModeratorCommands.RemoveEnabled,
-                config.MusicRequests.ModeratorCommands.Remove),
-            (config.MusicRequests.ModeratorCommands.PauseEnabled,
-                config.MusicRequests.ModeratorCommands.Pause),
-            (config.MusicRequests.ModeratorCommands.ResumeEnabled,
-                config.MusicRequests.ModeratorCommands.Resume)
-        }.Where(item => item.Item1).Select(item => item.Item2);'''
-          music_new = '''        IEnumerable<string> musicCommands = config.MusicRequests.Enabled
-            ? new[]
-              {
-                  (config.MusicRequests.ModeratorCommands.SongEnabled,
-                      config.MusicRequests.ModeratorCommands.Song),
-                  (config.MusicRequests.ModeratorCommands.SkipEnabled,
-                      config.MusicRequests.ModeratorCommands.Skip),
-                  (config.MusicRequests.ModeratorCommands.QueueEnabled,
-                      config.MusicRequests.ModeratorCommands.Queue),
-                  (config.MusicRequests.ModeratorCommands.RemoveEnabled,
-                      config.MusicRequests.ModeratorCommands.Remove),
-                  (config.MusicRequests.ModeratorCommands.PauseEnabled,
-                      config.MusicRequests.ModeratorCommands.Pause),
-                  (config.MusicRequests.ModeratorCommands.ResumeEnabled,
-                      config.MusicRequests.ModeratorCommands.Resume)
-              }.Where(item => item.Item1).Select(item => item.Item2)
-            : Enumerable.Empty<string>();'''
-          if music_old in text:
-              text = text.replace(music_old, music_new)
-
-          clip_old = '''        var clipCommands = new[] { config.ClipCommand.Command }
-            .Concat(config.ClipCommand.Aliases);'''
-          clip_new = '''        IEnumerable<string> clipCommands = config.ClipCommand.Enabled
-            ? new[] { config.ClipCommand.Command }
-                .Concat(config.ClipCommand.Aliases)
-            : Enumerable.Empty<string>();'''
-          if clip_old in text:
-              text = text.replace(clip_old, clip_new)
-
-          giveaway_old = "        var giveawayCommands = GetGiveawayCommands(config.Giveaways);"
-          giveaway_new = '''        var giveawayCommands = config.Giveaways.Enabled
-            ? GetGiveawayCommands(config.Giveaways)
-            : Enumerable.Empty<string>();'''
-          if giveaway_old in text:
-              text = text.replace(giveaway_old, giveaway_new)
-
-          config_path.write_text(text, encoding="utf-8")
-          '@ | Set-Content -Path patch-settings-save.py -Encoding UTF8
+          $encoded = @'
+          ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKdmVyc2lvbiA9ICIxLjkuMzYiCgpkZWYgd3JpdGUocGF0aCwgdGV4
+          dCk6CiAgICBQYXRoKHBhdGgpLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9InV0Zi04IikKCmNzcHJval9wYXRoID0gUGF0aCgi
+          UmFpZENsaXBQbHVnaW4vUmFpZENsaXBQbHVnaW4uY3Nwcm9qIikKY3Nwcm9qID0gY3Nwcm9qX3BhdGgucmVhZF90ZXh0KGVuY29k
+          aW5nPSJ1dGYtOCIpCmNzcHJvaiA9IHJlLnN1YihyIjxWZXJzaW9uPltePF0rPC9WZXJzaW9uPiIsIGYiPFZlcnNpb24+e3ZlcnNp
+          b259PC9WZXJzaW9uPiIsIGNzcHJvaikKY3Nwcm9qID0gcmUuc3ViKHIiPEZpbGVWZXJzaW9uPltePF0rPC9GaWxlVmVyc2lvbj4i
+          LCBmIjxGaWxlVmVyc2lvbj57dmVyc2lvbn0uMDwvRmlsZVZlcnNpb24+IiwgY3Nwcm9qKQppZiByZS5zZWFyY2gociI8QXNzZW1i
+          bHlWZXJzaW9uPltePF0rPC9Bc3NlbWJseVZlcnNpb24+IiwgY3Nwcm9qKToKICAgIGNzcHJvaiA9IHJlLnN1YihyIjxBc3NlbWJs
+          eVZlcnNpb24+W148XSs8L0Fzc2VtYmx5VmVyc2lvbj4iLCBmIjxBc3NlbWJseVZlcnNpb24+e3ZlcnNpb259LjA8L0Fzc2VtYmx5
+          VmVyc2lvbj4iLCBjc3Byb2opCmVsc2U6CiAgICBjc3Byb2ogPSBjc3Byb2oucmVwbGFjZSgKICAgICAgICBmIjxGaWxlVmVyc2lv
+          bj57dmVyc2lvbn0uMDwvRmlsZVZlcnNpb24+IiwKICAgICAgICBmIjxGaWxlVmVyc2lvbj57dmVyc2lvbn0uMDwvRmlsZVZlcnNp
+          b24+XG4gICAgPEFzc2VtYmx5VmVyc2lvbj57dmVyc2lvbn0uMDwvQXNzZW1ibHlWZXJzaW9uPiIpCndyaXRlKGNzcHJval9wYXRo
+          LCBjc3Byb2opCgpjb25maWdfcGF0aCA9IFBhdGgoIlJhaWRDbGlwUGx1Z2luL1NlcnZpY2VzL0NvbmZpZ3VyYXRpb25TZXJ2aWNl
+          LmNzIikKdGV4dCA9IGNvbmZpZ19wYXRoLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQoKaWYgInByaXZhdGUgc3RhdGljIHZv
+          aWQgVmFsaWRhdGVDb21tYW5kc1NldHRpbmdzKEFwcENvbmZpZyBjb25maWcpIiBub3QgaW4gdGV4dDoKICAgIHRleHQgPSB0ZXh0
+          LnJlcGxhY2UoCiAgICAgICAgIiAgICBwdWJsaWMgc3RhdGljIHZvaWQgVmFsaWRhdGVEdWVsU2V0dGluZ3MoRHVlbENvbmZpZyBk
+          dWVsKVxuICAgIHtcbiAgICAgICAgdmFyIGNvbW1hbmRzID0gbmV3W10geyBkdWVsLkR1ZWxDb21tYW5kLCBkdWVsLkFjY2VwdENv
+          bW1hbmQsIGR1ZWwuRGVueUNvbW1hbmQgfTsiLAogICAgICAgICIgICAgcHVibGljIHN0YXRpYyB2b2lkIFZhbGlkYXRlRHVlbFNl
+          dHRpbmdzKER1ZWxDb25maWcgZHVlbClcbiAgICB7XG4gICAgICAgIGlmICghZHVlbC5FbmFibGVkKVxuICAgICAgICB7XG4gICAg
+          ICAgICAgICByZXR1cm47XG4gICAgICAgIH1cblxuICAgICAgICB2YXIgY29tbWFuZHMgPSBuZXdbXSB7IGR1ZWwuRHVlbENvbW1h
+          bmQsIGR1ZWwuQWNjZXB0Q29tbWFuZCwgZHVlbC5EZW55Q29tbWFuZCB9OyIpCgogICAgdGV4dCA9IHRleHQucmVwbGFjZSgKICAg
+          ICAgICAiICAgIHB1YmxpYyBzdGF0aWMgdm9pZCBWYWxpZGF0ZUhlaXN0QW5kQ29tbWFuZHMoQXBwQ29uZmlnIGNvbmZpZylcbiAg
+          ICB7XG4gICAgICAgIHZhciBoZWlzdCA9IGNvbmZpZy5IZWlzdDtcbiAgICAgICAgaWYgKGhlaXN0Lk1pbmltdW1QYXJ0aWNpcGFu
+          dHMgPCAzKSIsCiAgICAgICAgIiAgICBwdWJsaWMgc3RhdGljIHZvaWQgVmFsaWRhdGVIZWlzdEFuZENvbW1hbmRzKEFwcENvbmZp
+          ZyBjb25maWcpXG4gICAge1xuICAgICAgICB2YXIgaGVpc3QgPSBjb25maWcuSGVpc3Q7XG4gICAgICAgIGlmICghaGVpc3QuRW5h
+          YmxlZClcbiAgICAgICAge1xuICAgICAgICAgICAgVmFsaWRhdGVDb21tYW5kc1NldHRpbmdzKGNvbmZpZyk7XG4gICAgICAgICAg
+          ICByZXR1cm47XG4gICAgICAgIH1cblxuICAgICAgICBpZiAoaGVpc3QuTWluaW11bVBhcnRpY2lwYW50cyA8IDMpIikKCiAgICB0
+          ZXh0ID0gdGV4dC5yZXBsYWNlKAogICAgICAgICJcblxuICAgICAgICB2YXIgY29tbWFuZHMgPSBjb25maWcuQ29tbWFuZHM7XG4g
+          ICAgICAgIGlmIChzdHJpbmcuSXNOdWxsT3JXaGl0ZVNwYWNlKGNvbW1hbmRzLkNvbW1hbmQpKSIsCiAgICAgICAgIlxuXG4gICAg
+          ICAgIFZhbGlkYXRlQ29tbWFuZHNTZXR0aW5ncyhjb25maWcpO1xuICAgIH1cblxuICAgIHByaXZhdGUgc3RhdGljIHZvaWQgVmFs
+          aWRhdGVDb21tYW5kc1NldHRpbmdzKEFwcENvbmZpZyBjb25maWcpXG4gICAge1xuICAgICAgICB2YXIgY29tbWFuZHMgPSBjb25m
+          aWcuQ29tbWFuZHM7XG4gICAgICAgIGlmIChzdHJpbmcuSXNOdWxsT3JXaGl0ZVNwYWNlKGNvbW1hbmRzLkNvbW1hbmQpKSIsCiAg
+          ICAgICAgMSkKCiAgICB0ZXh0ID0gdGV4dC5yZXBsYWNlKAogICAgICAgICIgICAgcHVibGljIHN0YXRpYyB2b2lkIFZhbGlkYXRl
+          R2l2ZWF3YXlTZXR0aW5ncyhHaXZlYXdheUNvbmZpZyBjb25maWcpXG4gICAge1xuICAgICAgICBpZiAoc3RyaW5nLklzTnVsbE9y
+          V2hpdGVTcGFjZShjb25maWcuVGl0bGUpIHx8IiwKICAgICAgICAiICAgIHB1YmxpYyBzdGF0aWMgdm9pZCBWYWxpZGF0ZUdpdmVh
+          d2F5U2V0dGluZ3MoR2l2ZWF3YXlDb25maWcgY29uZmlnKVxuICAgIHtcbiAgICAgICAgaWYgKCFjb25maWcuRW5hYmxlZClcbiAg
+          ICAgICAge1xuICAgICAgICAgICAgcmV0dXJuO1xuICAgICAgICB9XG5cbiAgICAgICAgaWYgKHN0cmluZy5Jc051bGxPcldoaXRl
+          U3BhY2UoY29uZmlnLlRpdGxlKSB8fCIpCgptdXNpY19vbGQgPSAnJycgICAgICAgIHZhciBtdXNpY0NvbW1hbmRzID0gbmV3W10K
+          ICAgICAgICB7CiAgKGNvbmZpZy5NdXNpY1JlcXVlc3RzLk1vZGVyYXRvckNvbW1hbmRzLlNvbmdFbmFibGVkLAogICAgICBjb25m
+          aWcuTXVzaWNSZXF1ZXN0cy5Nb2RlcmF0b3JDb21tYW5kcy5Tb25nKSwKICAoY29uZmlnLk11c2ljUmVxdWVzdHMuTW9kZXJhdG9y
+          Q29tbWFuZHMuU2tpcEVuYWJsZWQsCiAgICAgIGNvbmZpZy5NdXNpY1JlcXVlc3RzLk1vZGVyYXRvckNvbW1hbmRzLlNraXApLAog
+          IChjb25maWcuTXVzaWNSZXF1ZXN0cy5Nb2RlcmF0b3JDb21tYW5kcy5RdWV1ZUVuYWJsZWQsCiAgICAgIGNvbmZpZy5NdXNpY1Jl
+          cXVlc3RzLk1vZGVyYXRvckNvbW1hbmRzLlF1ZXVlKSwKICAoY29uZmlnLk11c2ljUmVxdWVzdHMuTW9kZXJhdG9yQ29tbWFuZHMu
+          UmVtb3ZlRW5hYmxlZCwKICAgICAgY29uZmlnLk11c2ljUmVxdWVzdHMuTW9kZXJhdG9yQ29tbWFuZHMuUmVtb3ZlKSwKICAoY29u
+          ZmlnLk11c2ljUmVxdWVzdHMuTW9kZXJhdG9yQ29tbWFuZHMuUGF1c2VFbmFibGVkLAogICAgICBjb25maWcuTXVzaWNSZXF1ZXN0
+          cy5Nb2RlcmF0b3JDb21tYW5kcy5QYXVzZSksCiAgKGNvbmZpZy5NdXNpY1JlcXVlc3RzLk1vZGVyYXRvckNvbW1hbmRzLlJlc3Vt
+          ZUVuYWJsZWQsCiAgICAgIGNvbmZpZy5NdXNpY1JlcXVlc3RzLk1vZGVyYXRvckNvbW1hbmRzLlJlc3VtZSkKICAgICAgICB9Lldo
+          ZXJlKGl0ZW0gPT4gaXRlbS5JdGVtMSkuU2VsZWN0KGl0ZW0gPT4gaXRlbS5JdGVtMik7JycnCm11c2ljX25ldyA9ICcnJyAgICAg
+          ICAgSUVudW1lcmFibGU8c3RyaW5nPiBtdXNpY0NvbW1hbmRzID0gY29uZmlnLk11c2ljUmVxdWVzdHMuRW5hYmxlZAogID8gbmV3
+          W10KICAgIHsKICAgICAgICAoY29uZmlnLk11c2ljUmVxdWVzdHMuTW9kZXJhdG9yQ29tbWFuZHMuU29uZ0VuYWJsZWQsCiAgICAg
+          ICAgICAgIGNvbmZpZy5NdXNpY1JlcXVlc3RzLk1vZGVyYXRvckNvbW1hbmRzLlNvbmcpLAogICAgICAgIChjb25maWcuTXVzaWNS
+          ZXF1ZXN0cy5Nb2RlcmF0b3JDb21tYW5kcy5Ta2lwRW5hYmxlZCwKICAgICAgICAgICAgY29uZmlnLk11c2ljUmVxdWVzdHMuTW9k
+          ZXJhdG9yQ29tbWFuZHMuU2tpcCksCiAgICAgICAgKGNvbmZpZy5NdXNpY1JlcXVlc3RzLk1vZGVyYXRvckNvbW1hbmRzLlF1ZXVl
+          RW5hYmxlZCwKICAgICAgICAgICAgY29uZmlnLk11c2ljUmVxdWVzdHMuTW9kZXJhdG9yQ29tbWFuZHMuUXVldWUpLAogICAgICAg
+          IChjb25maWcuTXVzaWNSZXF1ZXN0cy5Nb2RlcmF0b3JDb21tYW5kcy5SZW1vdmVFbmFibGVkLAogICAgICAgICAgICBjb25maWcu
+          TXVzaWNSZXF1ZXN0cy5Nb2RlcmF0b3JDb21tYW5kcy5SZW1vdmUpLAogICAgICAgIChjb25maWcuTXVzaWNSZXF1ZXN0cy5Nb2Rl
+          cmF0b3JDb21tYW5kcy5QYXVzZUVuYWJsZWQsCiAgICAgICAgICAgIGNvbmZpZy5NdXNpY1JlcXVlc3RzLk1vZGVyYXRvckNvbW1h
+          bmRzLlBhdXNlKSwKICAgICAgICAoY29uZmlnLk11c2ljUmVxdWVzdHMuTW9kZXJhdG9yQ29tbWFuZHMuUmVzdW1lRW5hYmxlZCwK
+          ICAgICAgICAgICAgY29uZmlnLk11c2ljUmVxdWVzdHMuTW9kZXJhdG9yQ29tbWFuZHMuUmVzdW1lKQogICAgfS5XaGVyZShpdGVt
+          ID0+IGl0ZW0uSXRlbTEpLlNlbGVjdChpdGVtID0+IGl0ZW0uSXRlbTIpCiAgOiBFbnVtZXJhYmxlLkVtcHR5PHN0cmluZz4oKTsn
+          JycKaWYgbXVzaWNfb2xkIGluIHRleHQ6CiAgICB0ZXh0ID0gdGV4dC5yZXBsYWNlKG11c2ljX29sZCwgbXVzaWNfbmV3KQoKY2xp
+          cF9vbGQgPSAnJycgICAgICAgIHZhciBjbGlwQ29tbWFuZHMgPSBuZXdbXSB7IGNvbmZpZy5DbGlwQ29tbWFuZC5Db21tYW5kIH0K
+          ICAuQ29uY2F0KGNvbmZpZy5DbGlwQ29tbWFuZC5BbGlhc2VzKTsnJycKY2xpcF9uZXcgPSAnJycgICAgICAgIElFbnVtZXJhYmxl
+          PHN0cmluZz4gY2xpcENvbW1hbmRzID0gY29uZmlnLkNsaXBDb21tYW5kLkVuYWJsZWQKICA/IG5ld1tdIHsgY29uZmlnLkNsaXBD
+          b21tYW5kLkNvbW1hbmQgfQogICAgICAuQ29uY2F0KGNvbmZpZy5DbGlwQ29tbWFuZC5BbGlhc2VzKQogIDogRW51bWVyYWJsZS5F
+          bXB0eTxzdHJpbmc+KCk7JycnCmlmIGNsaXBfb2xkIGluIHRleHQ6CiAgICB0ZXh0ID0gdGV4dC5yZXBsYWNlKGNsaXBfb2xkLCBj
+          bGlwX25ldykKCmdpdmVhd2F5X29sZCA9ICIgICAgICAgIHZhciBnaXZlYXdheUNvbW1hbmRzID0gR2V0R2l2ZWF3YXlDb21tYW5k
+          cyhjb25maWcuR2l2ZWF3YXlzKTsiCmdpdmVhd2F5X25ldyA9ICcnJyAgICAgICAgdmFyIGdpdmVhd2F5Q29tbWFuZHMgPSBjb25m
+          aWcuR2l2ZWF3YXlzLkVuYWJsZWQKICA/IEdldEdpdmVhd2F5Q29tbWFuZHMoY29uZmlnLkdpdmVhd2F5cykKICA6IEVudW1lcmFi
+          bGUuRW1wdHk8c3RyaW5nPigpOycnJwppZiBnaXZlYXdheV9vbGQgaW4gdGV4dDoKICAgIHRleHQgPSB0ZXh0LnJlcGxhY2UoZ2l2
+          ZWF3YXlfb2xkLCBnaXZlYXdheV9uZXcpCgpjb25maWdfcGF0aC53cml0ZV90ZXh0KHRleHQsIGVuY29kaW5nPSJ1dGYtOCIpCg==
+          '@
+          $encoded = $encoded -replace '\s', ''
+          [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($encoded)) | Set-Content -Path patch-settings-save.py -Encoding UTF8
           python patch-settings-save.py
 
       - name: Build
