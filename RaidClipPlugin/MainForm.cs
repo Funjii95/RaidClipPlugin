@@ -4976,6 +4976,8 @@ private enum CloseChoice
         try
         {
             var config = _configurationService.LoadForEditing();
+            AppendSaveDebug("Einstellungen werden geladen. Minigame=" + config.Minigame.Enabled + ", Points=" + config.Minigame.PointsEnabled + ", Music=" + config.MusicRequests.Enabled);
+            ApplySavedCriticalSettingsToControls(config);
             SelectUiTheme(config.UiTheme);
             ApplyUiTheme(config.UiTheme);
             _twitchChannelBox.Text = config.Twitch.BroadcasterLogin;
@@ -5133,9 +5135,53 @@ private enum CloseChoice
         }
         catch (Exception exception)
         {
-            AppendLog(
+            AppendSaveDebug(
                 "Einstellungen konnten nicht geladen werden: " +
                 exception.Message);
+        }
+    }
+
+    private void ApplySavedCriticalSettingsToControls(AppConfig config)
+    {
+        try
+        {
+            _minigameEnabledCheck.Checked = config.Minigame.Enabled;
+            _pointsEnabledCheck.Checked = config.Minigame.PointsEnabled;
+            _gambleEnabledCheck.Checked = config.Minigame.GambleEnabled;
+            _coinflipEnabledCheck.Checked = config.Minigame.CoinflipEnabled;
+            _slotsEnabledCheck.Checked = config.Minigame.SlotsEnabled;
+            _rouletteEnabledCheck.Checked = config.Minigame.RouletteEnabled;
+            _jackpotEnabledCheck.Checked = config.Minigame.JackpotEnabled;
+            _maximumAccountCheck.Checked = config.Minigame.MaximumAccountEnabled;
+            _dailyGamesCheck.Checked = config.Minigame.DailyGambleLimitEnabled;
+            _dailyLossCheck.Checked = config.Minigame.DailyLossLimitEnabled;
+            _dailyWinCheck.Checked = config.Minigame.DailyWinLimitEnabled;
+            _chatPointsCheck.Checked = config.Minigame.ChatPointsEnabled;
+            _followPointsCheck.Checked = config.Minigame.FollowPointsEnabled;
+            _subPointsCheck.Checked = config.Minigame.SubPointsEnabled;
+            _raidPointsCheck.Checked = config.Minigame.RaidPointsEnabled;
+            _rewardPointsCheck.Checked = config.Minigame.ChannelRewardPointsEnabled;
+            _dailyCheck.Checked = config.Minigame.DailyEnabled;
+            _leaderboardCheck.Checked = config.Minigame.LeaderboardEnabled;
+            _profileCheck.Checked = config.Minigame.ProfileEnabled;
+            _historyEnabledCheck.Checked = config.Minigame.HistoryEnabled;
+
+            _musicEnabledCheck.Checked = config.MusicRequests.Enabled;
+            _autoUpdateCheck.Checked = config.Update.Enabled;
+            _sendRaidMessageCheck.Checked = config.Chat.SendRaidMessage;
+            _sendShoutoutCheck.Checked = config.Chat.SendShoutout;
+            _moderationEnabledCheck.Checked = config.Moderation.Enabled;
+            _chatLogCheck.Checked = config.Moderation.ShowMessagesInLog;
+            _autoFilterCheck.Checked = config.Moderation.AutoFilterEnabled;
+            _modVipWhitelistCheck.Checked = config.Moderation.WhitelistModsAndVips;
+            _healthcheckEnabledCheck.Checked = config.ModuleHealth.Enabled;
+            _healthAutoRestartCheck.Checked = config.ModuleHealth.AutoRestartEnabled;
+            _gambleHealthcheckCheck.Checked = config.ModuleHealth.GambleHealthcheckEnabled;
+            AppendSaveDebug("Kritische gespeicherte Einstellungen wurden in die GUI übernommen. Minigame=" + config.Minigame.Enabled + ", Music=" + config.MusicRequests.Enabled);
+        }
+        catch (Exception exception)
+        {
+            AppendSaveDebug("Kritische gespeicherte Einstellungen konnten nicht übernommen werden: " + exception.Message);
         }
     }
 
