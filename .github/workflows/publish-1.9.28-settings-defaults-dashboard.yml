@@ -228,15 +228,6 @@ jobs:
           '@,
             [System.Text.RegularExpressions.RegexOptions]::Singleline)
           $config = $config.Replace(
-            '            ModerationTimeoutSeconds = config.Moderation.TimeoutSeconds,',
-            "            ModerationTimeoutSeconds = config.Moderation.TimeoutSeconds,`r`n            Moderation = config.Moderation,")
-          $config = $config.Replace(
-            '            DiscordClips = config.DiscordClips,',
-            "            DiscordClips = config.DiscordClips,`r`n            AutoDiscordClipPoster = config.AutoDiscordClipPoster,")
-          $config = $config.Replace(
-            '            ModuleHealth = config.ModuleHealth',
-            "            ModuleHealth = config.ModuleHealth,`r`n            Update = config.Update")
-          $config = $config.Replace(
             '            if (settings.ModuleHealth is not null)' + "`r`n" + '                config.ModuleHealth = settings.ModuleHealth;',
             '            if (settings.ModuleHealth is not null)' + "`r`n" + '                config.ModuleHealth = settings.ModuleHealth;' + "`r`n" + '            if (settings.Moderation is not null)' + "`r`n" + '                config.Moderation = settings.Moderation;' + "`r`n" + '            if (settings.AutoDiscordClipPoster is not null)' + "`r`n" + '                config.AutoDiscordClipPoster = settings.AutoDiscordClipPoster;' + "`r`n" + '            if (settings.Update is not null)' + "`r`n" + '                config.Update = settings.Update;')
           if ($config -notmatch 'public ModerationConfig\? Moderation') {
