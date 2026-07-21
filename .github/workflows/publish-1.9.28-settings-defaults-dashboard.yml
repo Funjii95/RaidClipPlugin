@@ -1,4 +1,4 @@
-﻿name: Publish 1.9.32 Full Settings Persistence Fix
+﻿name: Publish 1.9.33 Scoped Settings Save Fix
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
   actions: read
 
 env:
-  VERSION: '1.9.32'
+  VERSION: '1.9.33'
 
 jobs:
   release:
@@ -51,7 +51,7 @@ jobs:
                   var appConfig = LoadForEditing();
                   ValidateTechnicalSettings(appConfig);
                   return appConfig;
-              }
+    }
           
           
               public AppConfig LoadForEditing()
@@ -74,19 +74,19 @@ jobs:
                   if (string.IsNullOrWhiteSpace(appConfig.Twitch.BroadcasterLogin))
                   {
                       appConfig.Twitch.BroadcasterLogin = "Funjii";
-                  }
+        }
           
           
                   if (string.IsNullOrWhiteSpace(appConfig.OBS.Host))
                   {
                       appConfig.OBS.Host = "127.0.0.1";
-                  }
+        }
           
           
                   ApplySavedGuiSettings(appConfig);
                   Normalize(appConfig);
                   return appConfig;
-              }
+    }
           '@
             $config = [regex]::Replace(
               $config,
@@ -180,7 +180,7 @@ jobs:
                               writer.Write(json);
                               writer.Flush();
                               stream.Flush(true);
-                          }
+                }
           
                           if (File.Exists(path))
                               File.Copy(path, backupPath, true);
@@ -200,24 +200,24 @@ jobs:
                                   "Einstellungen wurden geschrieben, aber wichtige Bereiche fehlen.");
           
                           Console.WriteLine("💾 Einstellungen gespeichert: " + path);
-                      }
+            }
                       finally
                       {
                           try
                           {
                               if (File.Exists(tempPath))
                                   File.Delete(tempPath);
-                          }
+                }
                           catch
                           {
-                          }
-                      }
-                  }
+                }
+            }
+        }
                   finally
                   {
                       SettingsLock.Release();
-                  }
-              }
+        }
+    }
           
           
               private static void ApplySavedGuiSettings
@@ -261,7 +261,7 @@ jobs:
                           !property.CanRead || !property.CanWrite)
                       {
                           continue;
-                      }
+            }
           
                       var current = property.GetValue(target) as string;
                       var fallback = property.GetValue(defaults) as string ?? "";
@@ -270,8 +270,8 @@ jobs:
                           string.IsNullOrWhiteSpace(current)
                               ? fallback
                               : current.Trim());
-                  }
-              }
+        }
+    }
           
           
           '@
@@ -309,7 +309,7 @@ jobs:
                       : new ClipChatMessage(
                           message.Enabled,
                           NormalizeTextOrDefault(message.Text, fallback.Text));
-              }
+    }
           
           
           '@
@@ -336,6 +336,79 @@ jobs:
             '(private AppConfig ReadSettingsFromControls\(\)\s*\{\s*)var config = _configurationService\.Load\(\);',
             '$1var config = _configurationService.LoadForEditing();',
             [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          if ($main -notmatch 'ReadGeneralSettingsFromControls') {
+            $generalReader = @'
+              private AppConfig ReadGeneralSettingsFromControls()
+              {
+                  var config = _configurationService.LoadForEditing();
+                  config.UiTheme = ThemeKeyFromSelection();
+                  config.Twitch.BroadcasterLogin = _twitchChannelBox.Text
+                      .Trim()
+                      .TrimStart('@');
+                  config.OBS.Host = _obsHostBox.Text.Trim();
+                  config.OBS.Port = decimal.ToInt32(_obsPortControl.Value);
+                  config.OBS.Password = _obsPasswordBox.Text;
+                  config.Twitch.ClipLookbackDays =
+                      decimal.ToInt32(_lookbackControl.Value);
+                  config.Twitch.ClipRetryAttempts =
+                      decimal.ToInt32(_retryControl.Value);
+                  config.Player.DurationSeconds =
+                      decimal.ToInt32(_durationControl.Value);
+                  config.Player.VolumePercent =
+                      decimal.ToInt32(_volumeControl.Value);
+                  config.Twitch.RaidCooldownMinutes =
+                      decimal.ToInt32(_cooldownControl.Value);
+                  config.Twitch.RaidDelaySeconds =
+                      decimal.ToInt32(_raidDelayControl.Value);
+                  config.Player.BlacklistedClipIds = _blacklistBox.Text
+                                .Split(
+                          new[] { ',', ';', '\r', '\n' },
+                          StringSplitOptions.RemoveEmptyEntries)
+                      .Select(id => id.Trim())
+                      .Where(id => id.Length > 0)
+                      .Distinct(StringComparer.OrdinalIgnoreCase)
+                      .ToList();
+                  config.Chat.SendRaidMessage = _sendRaidMessageCheck.Checked;
+                  config.Chat.SendShoutout = _sendShoutoutCheck.Checked;
+                  config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
+                  config.Update.Enabled = _autoUpdateCheck.Checked;
+                  config.Moderation.Enabled = _moderationEnabledCheck.Checked;
+                  config.Moderation.ShowMessagesInLog = _chatLogCheck.Checked;
+                  config.Moderation.AutoFilterEnabled = _autoFilterCheck.Checked;
+                  config.Moderation.WhitelistModsAndVips =
+                                _modVipWhitelistCheck.Checked;
+                  config.Moderation.TimeoutSeconds =
+                      decimal.ToInt32(_moderationTimeoutControl.Value);
+                  config.Moderation.BlockedWords = _blockedWordsBox.Text
+                                .Split(
+                          new[] { ',', ';', '\r', '\n' },
+                          StringSplitOptions.RemoveEmptyEntries)
+                      .Select(word => word.Trim())
+                      .Where(word => word.Length > 0)
+                      .Distinct(StringComparer.OrdinalIgnoreCase)
+                      .ToList();
+                  ReadModerationCenterSettings(config);
+                  config.ModuleHealth.Enabled = _healthcheckEnabledCheck.Checked;
+                  config.ModuleHealth.AutoRestartEnabled = _healthAutoRestartCheck.Checked;
+                  config.ModuleHealth.GambleHealthcheckEnabled = _gambleHealthcheckCheck.Checked;
+                  config.ModuleHealth.IntervalSeconds =
+                      decimal.ToInt32(_healthIntervalControl.Value);
+                  config.ModuleHealth.MaxRestartAttempts =
+                      decimal.ToInt32(_healthMaxRestartsControl.Value);
+                  config.ModuleHealth.RestartCooldownSeconds =
+                      decimal.ToInt32(_healthRestartCooldownControl.Value);
+                  return config;
+              }
+          
+          
+          '@
+            $main = $main.Replace(
+              '    private AppConfig ReadSettingsFromControls()',
+              $generalReader + '    private AppConfig ReadSettingsFromControls()')
+          }
+          $main = $main.Replace(
+            '            var config = ReadSettingsFromControls();',
+            '            var config = ReadGeneralSettingsFromControls();')
           $main = [regex]::Replace(
             $main,
             '(private async void SaveMinigameSettingsFromControls\(\)\s*\{.*?try\s*\{\s*)var config = _configurationService\.Load\(\);',
@@ -402,7 +475,7 @@ jobs:
                   messages.QueueFull = NormalizeTextOrDefault(messages.QueueFull, defaults.QueueFull);
                   messages.Blacklisted = NormalizeTextOrDefault(messages.Blacklisted, defaults.Blacklisted);
                   messages.InvalidInput = NormalizeTextOrDefault(messages.InvalidInput, defaults.InvalidInput);
-              }
+    }
           
           
           '@
@@ -448,7 +521,7 @@ jobs:
           if (git diff --cached --quiet) {
             echo "No source changes to commit."
           } else {
-            git commit -m "Fix full settings persistence for 1.9.32"
+            git commit -m "Fix scoped settings save for 1.9.33"
             git push
           }
 
@@ -477,7 +550,7 @@ jobs:
           $manifest = [ordered]@{
             latestVersion = $env:VERSION
             downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
-            changelog = "Hotfix 1.9.32: Alle GUI-Einstellungsbereiche werden vollständig gespeichert, robust geschrieben und nach dem Schreiben verifiziert."
+            changelog = "Hotfix 1.9.33: Allgemeines Speichern überschreibt Spezialmodule nicht mehr mit Default-Controlwerten."
             sha256 = $sha
           }
           $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
@@ -489,8 +562,10 @@ jobs:
         run: |
           $tag = "v$env:VERSION"
           $notes = @(
-            "Hotfix 1.9.32",
+            "Hotfix 1.9.33",
             "",
+            "- Allgemeines Speichern liest nur noch allgemeine GUI-Felder.",
+            "- Spezialmodule wie Minigame, Musikwünsche, Heist, Duel, Clips, Giveaways und Auto-Poster werden nicht mehr durch Default-Controlwerte überschrieben.",
             "- Auto Discord Clip Poster wird jetzt gespeichert und nach Neustart geladen.",
             "- Moderation wird vollständig gespeichert, inklusive Linkfilter, Permit und User-/Domainlisten.",
             "- settings.json wird mit Lock, eindeutiger Temp-Datei, Backup und Verifikation geschrieben.",
@@ -504,6 +579,9 @@ jobs:
           $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
           if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
           gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
+
+
+
 
 
 
