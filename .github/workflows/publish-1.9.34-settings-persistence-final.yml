@@ -1,4 +1,4 @@
-name: Publish 1.9.44 Heist Save Fix
+﻿name: Publish 1.9.45 Heist Duel Persistence Fix
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   actions: read
 
 env:
-  VERSION: '1.9.44'
+  VERSION: '1.9.45'
 
 jobs:
   release:
@@ -30,97 +30,261 @@ jobs:
           dotnet-version: '10.0.x'
           dotnet-quality: preview
 
-      - name: Patch Heist dedicated save path
+      - name: Patch Heist and Duel save paths
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $encoded = @'
-          CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAppbXBvcnQgcmUKClZFUlNJT049JzEuOS40NCcKCmRlZiByZWFkKHApOiByZXR1cm4g
-          UGF0aChwKS5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04LXNpZycpCmRlZiB3cml0ZShwLHQpOiBQYXRoKHApLndyaXRlX3RleHQo
-          dCwgZW5jb2Rpbmc9J3V0Zi04JykKZGVmIHJlcXVpcmUoYyxtKToKICAgIGlmIG5vdCBjOiByYWlzZSBTeXN0ZW1FeGl0KG0pCgpj
-          c3Byb2o9J1JhaWRDbGlwUGx1Z2luL1JhaWRDbGlwUGx1Z2luLmNzcHJvaicKdGV4dD1yZWFkKGNzcHJvaikKdGV4dD1yZS5zdWIo
-          cic8VmVyc2lvbj5bXjxdKzwvVmVyc2lvbj4nLCBmJzxWZXJzaW9uPntWRVJTSU9OfTwvVmVyc2lvbj4nLCB0ZXh0KQp0ZXh0PXJl
-          LnN1YihyJzxGaWxlVmVyc2lvbj5bXjxdKzwvRmlsZVZlcnNpb24+JywgZic8RmlsZVZlcnNpb24+e1ZFUlNJT059LjA8L0ZpbGVW
-          ZXJzaW9uPicsIHRleHQpCnRleHQ9cmUuc3ViKHInPEFzc2VtYmx5VmVyc2lvbj5bXjxdKzwvQXNzZW1ibHlWZXJzaW9uPicsIGYn
-          PEFzc2VtYmx5VmVyc2lvbj57VkVSU0lPTn0uMDwvQXNzZW1ibHlWZXJzaW9uPicsIHRleHQpCndyaXRlKGNzcHJvaix0ZXh0KQoK
-          cGF0aD0nUmFpZENsaXBQbHVnaW4vTWFpbkZvcm0uSGVpc3RDb21tYW5kcy5jcycKdGV4dD1yZWFkKHBhdGgpCnRleHQ9dGV4dC5y
-          ZXBsYWNlKCdfaGVpc3RTYXZlQnV0dG9uLkNsaWNrICs9IChfLCBfKSA9PiBTYXZlTWluaWdhbWVTZXR0aW5nc0Zyb21Db250cm9s
-          cygpOycsICdfaGVpc3RTYXZlQnV0dG9uLkNsaWNrICs9IChfLCBfKSA9PiBTYXZlSGVpc3RTZXR0aW5nc0Zyb21Db250cm9scygp
-          OycpCnRleHQ9dGV4dC5yZXBsYWNlKCdwcml2YXRlIHZvaWQgUmVhZEhlaXN0Q29tbWFuZHNTZXR0aW5ncyhBcHBDb25maWcgY29u
-          ZmlnKVxuICAgIHsnLCAncHJpdmF0ZSB2b2lkIFJlYWRIZWlzdENvbW1hbmRzU2V0dGluZ3MoQXBwQ29uZmlnIGNvbmZpZywgYm9v
-          bCBpbmNsdWRlQ3VzdG9tQ29tbWFuZHMgPSB0cnVlKVxuICAgIHsnKQp0ZXh0PXRleHQucmVwbGFjZSgnJycgICAgICAgIFJlYWRD
-          dXN0b21Db21tYW5kU2V0dGluZ3MoY29uZmlnLkNvbW1hbmRzKTsKICAgICAgICBTeW5jTWluaWdhbWVDb21tYW5kT3ZlcnJpZGVz
-          KGNvbmZpZyk7JycnLCAnJycgICAgICAgIGlmIChpbmNsdWRlQ3VzdG9tQ29tbWFuZHMpCiAgICAgICAgICAgIFJlYWRDdXN0b21D
-          b21tYW5kU2V0dGluZ3MoY29uZmlnLkNvbW1hbmRzKTsKICAgICAgICBTeW5jTWluaWdhbWVDb21tYW5kT3ZlcnJpZGVzKGNvbmZp
-          Zyk7JycnKQppZiAncHJpdmF0ZSBhc3luYyB2b2lkIFNhdmVIZWlzdFNldHRpbmdzRnJvbUNvbnRyb2xzKCknIG5vdCBpbiB0ZXh0
-          OgogICAgbWFya2VyPScnJyAgICBwcml2YXRlIHZvaWQgT25IZWlzdFN0YXR1c0NoYW5nZWQoSGVpc3RTdGF0dXMgc3RhdHVzKQog
-          ICAgeycnJwogICAgbWV0aG9kPScnJyAgICBwcml2YXRlIGFzeW5jIHZvaWQgU2F2ZUhlaXN0U2V0dGluZ3NGcm9tQ29udHJvbHMo
-          KQogICAgewogICAgICAgIEFwcGVuZFNhdmVEZWJ1ZygiSGVpc3QtU3BlaWNoZXJuIGdla2xpY2t0LiIpOwogICAgICAgIGlmIChf
-          c2V0dGluZ3NTYXZlQnVzeSkKICAgICAgICB7CiAgICAgICAgICAgIEFwcGVuZExvZygiU3BlaWNoZXJuIGw/dWZ0IGJlcmVpdHMu
-          IEJpdHRlIGt1cnogd2FydGVuID8iKTsKICAgICAgICAgICAgcmV0dXJuOwogICAgICAgIH0KCiAgICAgICAgX3NldHRpbmdzU2F2
-          ZUJ1c3kgPSB0cnVlOwogICAgICAgIFNldFNldHRpbmdzQ29udHJvbHNFbmFibGVkKGZhbHNlKTsKCiAgICAgICAgdHJ5CiAgICAg
-          ICAgewogICAgICAgICAgICBBcHBlbmRTYXZlRGVidWcoIkhlaXN0LVNwZWljaGVybiBzdGFydGV0LiIpOwogICAgICAgICAgICB2
-          YXIgY29uZmlnID0gX2NvbmZpZ3VyYXRpb25TZXJ2aWNlLkxvYWRGb3JFZGl0aW5nKCk7CiAgICAgICAgICAgIFJlYWRIZWlzdENv
-          bW1hbmRzU2V0dGluZ3MoY29uZmlnLCBpbmNsdWRlQ3VzdG9tQ29tbWFuZHM6IGZhbHNlKTsKICAgICAgICAgICAgX2NvbmZpZ3Vy
-          YXRpb25TZXJ2aWNlLlNhdmVHdWlTZXR0aW5ncyhjb25maWcpOwogICAgICAgICAgICBBcHBseVJ1bnRpbWVTZXR0aW5ncyhjb25m
-          aWcpOwogICAgICAgICAgICBBcHBlbmRTYXZlRGVidWcoCiAgICAgICAgICAgICAgICAiSGVpc3QtRWluc3RlbGx1bmdlbiB3dXJk
-          ZW4gZ2VzcGVpY2hlcnQ6IEFrdGl2PSIgKyBjb25maWcuSGVpc3QuRW5hYmxlZCArCiAgICAgICAgICAgICAgICAiLCBTdGFydD0i
-          ICsgY29uZmlnLkhlaXN0LlN0YXJ0Q29tbWFuZCArCiAgICAgICAgICAgICAgICAiLCBKb2luPSIgKyBjb25maWcuSGVpc3QuSm9p
-          bkNvbW1hbmQgKwogICAgICAgICAgICAgICAgIiwgQ29tbWFuZEhlaXN0PSIgKyBjb25maWcuQ29tbWFuZHMuSXNDb21tYW5kRW5h
-          YmxlZCgiaGVpc3Quc3RhcnQiKSk7CiAgICAgICAgICAgIFNldE1pbmlnYW1lU3RhdHVzKCJIZWlzdC1FaW5zdGVsbHVuZ2VuIGdl
-          c3BlaWNoZXJ0IiwgQWN0aXZlQ29sb3IpOwogICAgICAgICAgICBTZXRPdmVyYWxsU3RhdHVzKCJFaW5zdGVsbHVuZ2VuIGdlc3Bl
-          aWNoZXJ0IiwgQWN0aXZlQ29sb3IpOwogICAgICAgICAgICBfY29tbWFuZFJlZ2lzdHJ5LlVwZGF0ZShjb25maWcpOwogICAgICAg
-          ICAgICBSZWZyZXNoQ29tbWFuZEdyaWQoKTsKICAgICAgICB9CiAgICAgICAgY2F0Y2ggKEV4Y2VwdGlvbiBleGNlcHRpb24pCiAg
-          ICAgICAgewogICAgICAgICAgICBBcHBlbmRTYXZlRGVidWcoIkhlaXN0LUVpbnN0ZWxsdW5nZW4ga29ubnRlbiBuaWNodCBnZXNw
-          ZWljaGVydCB3ZXJkZW46ICIgKyBleGNlcHRpb24uTWVzc2FnZSk7CiAgICAgICAgICAgIFNldE92ZXJhbGxTdGF0dXMoIkVpbnN0
-          ZWxsdW5nc2ZlaGxlciIsIEVycm9yQ29sb3IpOwogICAgICAgICAgICBTZXRNaW5pZ2FtZVN0YXR1cygiSGVpc3QtRmVobGVyOiAi
-          ICsgZXhjZXB0aW9uLk1lc3NhZ2UsIEVycm9yQ29sb3IpOwogICAgICAgICAgICBTaG93U2VjdGlvbigibWluaWdhbWUiKTsKICAg
-          ICAgICB9CiAgICAgICAgZmluYWxseQogICAgICAgIHsKICAgICAgICAgICAgU2V0U2V0dGluZ3NDb250cm9sc0VuYWJsZWQodHJ1
-          ZSk7CiAgICAgICAgICAgIF9zZXR0aW5nc1NhdmVCdXN5ID0gZmFsc2U7CiAgICAgICAgfQogICAgfQoKJycnCiAgICByZXF1aXJl
-          KG1hcmtlciBpbiB0ZXh0LCAnT25IZWlzdFN0YXR1c0NoYW5nZWQgbWFya2VyIG1pc3NpbmcnKQogICAgdGV4dD10ZXh0LnJlcGxh
-          Y2UobWFya2VyLCBtZXRob2QrbWFya2VyKQpyZXF1aXJlKCdTYXZlSGVpc3RTZXR0aW5nc0Zyb21Db250cm9scycgaW4gdGV4dCwg
-          J1NhdmVIZWlzdCBtZXRob2QgbWlzc2luZycpCnJlcXVpcmUoJ2luY2x1ZGVDdXN0b21Db21tYW5kczogZmFsc2UnIGluIHRleHQs
-          ICdIZWlzdCBkZWRpY2F0ZWQgc2F2ZSBtYXJrZXIgbWlzc2luZycpCndyaXRlKHBhdGgsdGV4dCkKCnBhdGg9J1JhaWRDbGlwUGx1
-          Z2luL1NlcnZpY2VzL0NvbmZpZ3VyYXRpb25TZXJ2aWNlLmNzJwp0ZXh0PXJlYWQocGF0aCkKb2xkPScnJyAgICAgICAgc2V0dGlu
-          Z3MuTWluaWdhbWUgPz89IG5ldyBNaW5pZ2FtZUNvbmZpZygpOwogICAgICAgIHNldHRpbmdzLk11c2ljUmVxdWVzdHMgPz89IG5l
-          dyBNdXNpY1JlcXVlc3RDb25maWcoKTsKICAgICAgICBzZXR0aW5ncy5Nb2RlcmF0aW9uID8/PSBuZXcgTW9kZXJhdGlvbkNvbmZp
-          ZygpOwogICAgICAgIHNldHRpbmdzLkF1dG9EaXNjb3JkQ2xpcFBvc3RlciA/Pz0gbmV3IEF1dG9EaXNjb3JkQ2xpcFBvc3RlckNv
-          bmZpZygpOwogICAgICAgIHNldHRpbmdzLlVwZGF0ZSA/Pz0gbmV3IFVwZGF0ZUNvbmZpZygpOwogICAgICAgIHNldHRpbmdzLk1v
-          ZHVsZUhlYWx0aCA/Pz0gbmV3IE1vZHVsZUhlYWx0aENvbmZpZygpOycnJwpuZXc9JycnICAgICAgICBzZXR0aW5ncy5NaW5pZ2Ft
-          ZSA/Pz0gbmV3IE1pbmlnYW1lQ29uZmlnKCk7CiAgICAgICAgc2V0dGluZ3MuSGVpc3QgPz89IG5ldyBIZWlzdENvbmZpZygpOwog
-          ICAgICAgIHNldHRpbmdzLkR1ZWwgPz89IG5ldyBEdWVsQ29uZmlnKCk7CiAgICAgICAgc2V0dGluZ3MuQ29tbWFuZHMgPz89IG5l
-          dyBDb21tYW5kc0NvbmZpZygpOwogICAgICAgIHNldHRpbmdzLk11c2ljUmVxdWVzdHMgPz89IG5ldyBNdXNpY1JlcXVlc3RDb25m
-          aWcoKTsKICAgICAgICBzZXR0aW5ncy5Nb2RlcmF0aW9uID8/PSBuZXcgTW9kZXJhdGlvbkNvbmZpZygpOwogICAgICAgIHNldHRp
-          bmdzLkxpdmVDaGF0ID8/PSBuZXcgTGl2ZUNoYXRDb25maWcoKTsKICAgICAgICBzZXR0aW5ncy5TdHJlYW1DaGVjayA/Pz0gbmV3
-          IFN0cmVhbUNoZWNrQ29uZmlnKCk7CiAgICAgICAgc2V0dGluZ3MuQ2xpcENvbW1hbmQgPz89IG5ldyBDbGlwQ29tbWFuZENvbmZp
-          ZygpOwogICAgICAgIHNldHRpbmdzLkRpc2NvcmRDbGlwcyA/Pz0gbmV3IERpc2NvcmRDbGlwc0NvbmZpZygpOwogICAgICAgIHNl
-          dHRpbmdzLkF1dG9EaXNjb3JkQ2xpcFBvc3RlciA/Pz0gbmV3IEF1dG9EaXNjb3JkQ2xpcFBvc3RlckNvbmZpZygpOwogICAgICAg
-          IHNldHRpbmdzLkdpdmVhd2F5cyA/Pz0gbmV3IEdpdmVhd2F5Q29uZmlnKCk7CiAgICAgICAgc2V0dGluZ3MuVXBkYXRlID8/PSBu
-          ZXcgVXBkYXRlQ29uZmlnKCk7CiAgICAgICAgc2V0dGluZ3MuTW9kdWxlSGVhbHRoID8/PSBuZXcgTW9kdWxlSGVhbHRoQ29uZmln
-          KCk7JycnCnJlcXVpcmUob2xkIGluIHRleHQsICdFbnN1cmVSZXF1aXJlZFNldHRpbmdzU2VjdGlvbnMgYmxvY2sgbWlzc2luZycp
-          CnRleHQ9dGV4dC5yZXBsYWNlKG9sZCxuZXcpCm9sZF92ZXJpZnk9JycnICAgICAgICAgICAgICAgIGlmICh2ZXJpZmllZC5NaW5p
-          Z2FtZSBpcyBudWxsIHx8CiAgICAgICAgICAgICAgICAgICAgdmVyaWZpZWQuTXVzaWNSZXF1ZXN0cyBpcyBudWxsIHx8CiAgICAg
-          ICAgICAgICAgICAgICAgdmVyaWZpZWQuTW9kZXJhdGlvbiBpcyBudWxsIHx8CiAgICAgICAgICAgICAgICAgICAgdmVyaWZpZWQu
-          QXV0b0Rpc2NvcmRDbGlwUG9zdGVyIGlzIG51bGwpJycnCm5ld192ZXJpZnk9JycnICAgICAgICAgICAgICAgIGlmICh2ZXJpZmll
-          ZC5NaW5pZ2FtZSBpcyBudWxsIHx8CiAgICAgICAgICAgICAgICAgICAgdmVyaWZpZWQuSGVpc3QgaXMgbnVsbCB8fAogICAgICAg
-          ICAgICAgICAgICAgIHZlcmlmaWVkLkR1ZWwgaXMgbnVsbCB8fAogICAgICAgICAgICAgICAgICAgIHZlcmlmaWVkLkNvbW1hbmRz
-          IGlzIG51bGwgfHwKICAgICAgICAgICAgICAgICAgICB2ZXJpZmllZC5NdXNpY1JlcXVlc3RzIGlzIG51bGwgfHwKICAgICAgICAg
-          ICAgICAgICAgICB2ZXJpZmllZC5Nb2RlcmF0aW9uIGlzIG51bGwgfHwKICAgICAgICAgICAgICAgICAgICB2ZXJpZmllZC5BdXRv
-          RGlzY29yZENsaXBQb3N0ZXIgaXMgbnVsbCknJycKaWYgb2xkX3ZlcmlmeSBpbiB0ZXh0OgogICAgdGV4dD10ZXh0LnJlcGxhY2Uo
-          b2xkX3ZlcmlmeSxuZXdfdmVyaWZ5KQppZiAnU3BlaWNoZXJlIEhlaXN0LVdlcnRlJyBub3QgaW4gdGV4dDoKICAgIHRleHQ9dGV4
-          dC5yZXBsYWNlKCcnJyAgICAgICAgV3JpdGVTZXR0aW5nc0ZpbGUoc2V0dGluZ3MpOycnJywgJycnICAgICAgICBDb25zb2xlLldy
-          aXRlTGluZSgKICAgICAgICAgICAgIj8/IFNwZWljaGVyZSBIZWlzdC1XZXJ0ZTogQWt0aXY9IiArIGNvbmZpZy5IZWlzdC5FbmFi
-          bGVkICsKICAgICAgICAgICAgIiBTdGFydD0iICsgY29uZmlnLkhlaXN0LlN0YXJ0Q29tbWFuZCArCiAgICAgICAgICAgICIgSm9p
-          bj0iICsgY29uZmlnLkhlaXN0LkpvaW5Db21tYW5kICsKICAgICAgICAgICAgIiBDb21tYW5kSGVpc3Q9IiArIGNvbmZpZy5Db21t
-          YW5kcy5Jc0NvbW1hbmRFbmFibGVkKCJoZWlzdC5zdGFydCIpKTsKCgogICAgICAgIFdyaXRlU2V0dGluZ3NGaWxlKHNldHRpbmdz
-          KTsnJycsIDEpCnJlcXVpcmUoJ3NldHRpbmdzLkhlaXN0ID8/PSBuZXcgSGVpc3RDb25maWcoKTsnIGluIHRleHQsICdIZWlzdCBy
-          ZXF1aXJlZCBzZXR0aW5nIG1pc3NpbmcnKQpyZXF1aXJlKCdTcGVpY2hlcmUgSGVpc3QtV2VydGUnIGluIHRleHQsICdIZWlzdCBk
-          ZWJ1ZyBtaXNzaW5nJykKd3JpdGUocGF0aCx0ZXh0KQoKcHJpbnQoJ0hlaXN0IGRlZGljYXRlZCBzYXZlIHBhdGNoIGFwcGxpZWQn
-          LCBWRVJTSU9OKQo=
-          '@
-          $script = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($encoded -replace '\s','')))
-          Set-Content -Path patch-heist-save.py -Value $script -Encoding UTF8
-          python patch-heist-save.py
+          @'
+          from pathlib import Path
+          import re
+
+          VERSION = '1.9.45'
+
+          def read(path):
+              return Path(path).read_text(encoding='utf-8-sig')
+
+          def write(path, text):
+              Path(path).write_text(text, encoding='utf-8')
+
+          def require(condition, message):
+              if not condition:
+                  raise SystemExit(message)
+
+          csproj = 'RaidClipPlugin/RaidClipPlugin.csproj'
+          text = read(csproj)
+          text = re.sub(r'<Version>[^<]+</Version>', f'<Version>{VERSION}</Version>', text)
+          text = re.sub(r'<FileVersion>[^<]+</FileVersion>', f'<FileVersion>{VERSION}.0</FileVersion>', text)
+          text = re.sub(r'<AssemblyVersion>[^<]+</AssemblyVersion>', f'<AssemblyVersion>{VERSION}.0</AssemblyVersion>', text)
+          write(csproj, text)
+
+          duel_path = 'RaidClipPlugin/MainForm.Duel.cs'
+          text = read(duel_path)
+          text = text.replace('_duelSaveButton.Click += (_, _) => SaveMinigameSettingsFromControls();', '_duelSaveButton.Click += (_, _) => SaveDuelSettingsFromControls();')
+          if 'private async void SaveDuelSettingsFromControls()' not in text:
+              marker = '    private void OnDuelStatusChanged(DuelStatus status)\n'
+              method = '''    private static void VerifyDuelSettingsPersisted(DuelConfig expected, DuelConfig actual)
+    {
+        if (expected.Enabled != actual.Enabled ||
+            !string.Equals(expected.DuelCommand, actual.DuelCommand, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expected.AcceptCommand, actual.AcceptCommand, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expected.DenyCommand, actual.DenyCommand, StringComparison.OrdinalIgnoreCase) ||
+            expected.MinimumBet != actual.MinimumBet ||
+            expected.MaximumBet != actual.MaximumBet ||
+            expected.RequestTimeoutSeconds != actual.RequestTimeoutSeconds ||
+            expected.UserCooldownSeconds != actual.UserCooldownSeconds ||
+            expected.GlobalCooldownSeconds != actual.GlobalCooldownSeconds ||
+            expected.AllowAllIn != actual.AllowAllIn ||
+            expected.AllowEveryone != actual.AllowEveryone ||
+            expected.AllowFollowers != actual.AllowFollowers ||
+            expected.AllowSubscribers != actual.AllowSubscribers ||
+            expected.AllowVips != actual.AllowVips ||
+            expected.AllowModerators != actual.AllowModerators ||
+            expected.FairMode != actual.FairMode ||
+            expected.ChallengerWinChancePercent != actual.ChallengerWinChancePercent ||
+            expected.SendRequestMessage != actual.SendRequestMessage ||
+            expected.SendResultMessage != actual.SendResultMessage ||
+            expected.SendDenyMessage != actual.SendDenyMessage ||
+            expected.SendTimeoutMessage != actual.SendTimeoutMessage ||
+            expected.TimeoutLoserEnabled != actual.TimeoutLoserEnabled ||
+            expected.LoserTimeoutSeconds != actual.LoserTimeoutSeconds ||
+            !string.Equals(expected.LoserTimeoutReason, actual.LoserTimeoutReason, StringComparison.Ordinal) ||
+            !string.Equals(expected.DuelRequestMessage, actual.DuelRequestMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.DuelAcceptedMessage, actual.DuelAcceptedMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.DuelWinMessage, actual.DuelWinMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.DuelDeniedMessage, actual.DuelDeniedMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.DuelTimeoutMessage, actual.DuelTimeoutMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.NotEnoughPointsChallengerMessage, actual.NotEnoughPointsChallengerMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.NotEnoughPointsTargetMessage, actual.NotEnoughPointsTargetMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.SelfDuelMessage, actual.SelfDuelMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.NoPendingDuelMessage, actual.NoPendingDuelMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.WrongTargetMessage, actual.WrongTargetMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.AlreadyPendingDuelMessage, actual.AlreadyPendingDuelMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.InvalidBetMessage, actual.InvalidBetMessage, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Duel-Einstellungen wurden geschrieben, aber beim Nachladen nicht bestätigt.");
+        }
+    }
+
+
+    private async void SaveDuelSettingsFromControls()
+    {
+        AppendSaveDebug("Duel-Speichern geklickt.");
+        if (_settingsSaveBusy)
+        {
+            AppendLog("Speichern läuft bereits. Bitte kurz warten …");
+            return;
+        }
+
+        _settingsSaveBusy = true;
+        SetSettingsControlsEnabled(false);
+
+        try
+        {
+            AppendSaveDebug("Duel-Speichern startet.");
+            var config = _configurationService.LoadForEditing();
+            ReadDuelSettings(config);
+            _configurationService.SaveGuiSettings(config);
+            var verified = _configurationService.LoadForEditing();
+            VerifyDuelSettingsPersisted(config.Duel, verified.Duel);
+            AppendSaveDebug("Duel-Nachladeprüfung erfolgreich: Aktiv=" + verified.Duel.Enabled + ", Command=" + verified.Duel.DuelCommand + ", Accept=" + verified.Duel.AcceptCommand + ", Deny=" + verified.Duel.DenyCommand + ", WinTextLen=" + (verified.Duel.DuelWinMessage?.Length ?? 0));
+            ApplyRuntimeSettings(verified);
+            AppendSaveDebug("Duel-Einstellungen wurden gespeichert: Aktiv=" + verified.Duel.Enabled + ", Command=" + verified.Duel.DuelCommand + ", Accept=" + verified.Duel.AcceptCommand + ", Deny=" + verified.Duel.DenyCommand + ", CommandDuel=" + verified.Commands.IsCommandEnabled("duel.challenge"));
+            SetMinigameStatus("Duel-Einstellungen gespeichert", ActiveColor);
+            SetOverallStatus("Einstellungen gespeichert", ActiveColor);
+            _commandRegistry.Update(verified);
+            RefreshCommandGrid();
+        }
+        catch (Exception exception)
+        {
+            AppendSaveDebug("Duel-Einstellungen konnten nicht gespeichert werden: " + exception.Message);
+            SetOverallStatus("Einstellungsfehler", ErrorColor);
+            SetMinigameStatus("Duel-Fehler: " + exception.Message, ErrorColor);
+            ShowSection("minigame");
+        }
+        finally
+        {
+            SetSettingsControlsEnabled(true);
+            _settingsSaveBusy = false;
+        }
+    }
+
+
+'''
+              require(marker in text, 'Duel status marker missing')
+              text = text.replace(marker, method + marker)
+          require('SaveDuelSettingsFromControls' in text, 'Duel save method missing')
+          write(duel_path, text)
+
+          heist_path = 'RaidClipPlugin/MainForm.HeistCommands.cs'
+          text = read(heist_path)
+          text = text.replace('_heistSaveButton.Click += (_, _) => SaveSettingsFromControls();', '_heistSaveButton.Click += (_, _) => SaveHeistSettingsFromControls();')
+          text = text.replace('_heistSaveButton.Click += (_, _) => SaveMinigameSettingsFromControls();', '_heistSaveButton.Click += (_, _) => SaveHeistSettingsFromControls();')
+          text = text.replace('private void ReadHeistCommandsSettings(AppConfig config)\n    {', 'private void ReadHeistCommandsSettings(AppConfig config, bool includeCustomCommands = true)\n    {')
+          text = text.replace('        var h=config.Heist; h.Enabled=_heistEnabledCheck.Checked; h.StartCommand=_heistStartCommandBox.Text;\n        h.JoinCommand=_heistJoinCommandBox.Text; h.MinimumParticipants=(int)_heistMinimumControl.Value;', '        var defaults = new HeistConfig();\n        var h=config.Heist; h.Enabled=_heistEnabledCheck.Checked; h.StartCommand=ReadHeistCommand(_heistStartCommandBox, defaults.StartCommand);\n        h.JoinCommand=ReadHeistCommand(_heistJoinCommandBox, defaults.JoinCommand); h.MinimumParticipants=(int)_heistMinimumControl.Value;')
+          text = text.replace('        ReadCustomCommandSettings(config.Commands);\n        SyncMinigameCommandOverrides(config);', '        if (includeCustomCommands)\n            ReadCustomCommandSettings(config.Commands);\n        SyncMinigameCommandOverrides(config);')
+          text = text.replace('        ReadCustomCommandSettings(config.Commands);\n    }', '        if (includeCustomCommands)\n            ReadCustomCommandSettings(config.Commands);\n        SyncMinigameCommandOverrides(config);\n        AppendSaveDebug("Heist-Werte aus GUI gelesen: Aktiv=" + h.Enabled + ", Start=" + h.StartCommand + ", Join=" + h.JoinCommand + ", Min=" + h.MinimumParticipants + ", Max=" + h.MaximumParticipants + ", CommandHeist=" + config.Commands.IsCommandEnabled("heist.start"));\n    }')
+          if 'private static void VerifyHeistSettingsPersisted' not in text:
+              marker = '    private void OnHeistStatusChanged(HeistStatus status)\n'
+              helper = '''    private static void VerifyHeistSettingsPersisted(HeistConfig expected, HeistConfig actual)
+    {
+        if (expected.Enabled != actual.Enabled ||
+            !string.Equals(expected.StartCommand, actual.StartCommand, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expected.JoinCommand, actual.JoinCommand, StringComparison.OrdinalIgnoreCase) ||
+            expected.MinimumParticipants != actual.MinimumParticipants ||
+            expected.MaximumParticipants != actual.MaximumParticipants ||
+            expected.JoinDurationSeconds != actual.JoinDurationSeconds ||
+            expected.SuccessChancePercent != actual.SuccessChancePercent ||
+            expected.GlobalCooldownMinutes != actual.GlobalCooldownMinutes ||
+            expected.UserCooldownMinutes != actual.UserCooldownMinutes ||
+            expected.ApplyGlobalCooldownOnCancelledHeist != actual.ApplyGlobalCooldownOnCancelledHeist ||
+            expected.AllowEveryone != actual.AllowEveryone ||
+            expected.AllowFollowers != actual.AllowFollowers ||
+            expected.AllowSubscribers != actual.AllowSubscribers ||
+            expected.AllowVips != actual.AllowVips ||
+            expected.AllowModerators != actual.AllowModerators ||
+            expected.SendParticipantJoinMessages != actual.SendParticipantJoinMessages ||
+            expected.SendCountdownMessages != actual.SendCountdownMessages ||
+            expected.SendResultMessages != actual.SendResultMessages ||
+            expected.ResetJackpotAfterSuccess != actual.ResetJackpotAfterSuccess ||
+            !string.Equals(expected.StartMessage, actual.StartMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.JoinMessage, actual.JoinMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.AlreadyJoinedMessage, actual.AlreadyJoinedMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.NoActiveHeistMessage, actual.NoActiveHeistMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.MaximumParticipantsMessage, actual.MaximumParticipantsMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.NotEnoughParticipantsMessage, actual.NotEnoughParticipantsMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.EvaluationMessage, actual.EvaluationMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.SuccessMessage, actual.SuccessMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.FailureMessage, actual.FailureMessage, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Heist-Einstellungen wurden geschrieben, aber beim Nachladen nicht bestätigt.");
+        }
+    }
+
+
+    private async void SaveHeistSettingsFromControls()
+    {
+        AppendSaveDebug("Heist-Speichern geklickt.");
+        if (_settingsSaveBusy)
+        {
+            AppendLog("Speichern läuft bereits. Bitte kurz warten …");
+            return;
+        }
+
+        _settingsSaveBusy = true;
+        SetSettingsControlsEnabled(false);
+
+        try
+        {
+            AppendSaveDebug("Heist-Speichern startet.");
+            var config = _configurationService.LoadForEditing();
+            ReadHeistCommandsSettings(config, includeCustomCommands: false);
+            _configurationService.SaveGuiSettings(config);
+            var verified = _configurationService.LoadForEditing();
+            VerifyHeistSettingsPersisted(config.Heist, verified.Heist);
+            AppendSaveDebug("Heist-Nachladeprüfung erfolgreich: Aktiv=" + verified.Heist.Enabled + ", Start=" + verified.Heist.StartCommand + ", Join=" + verified.Heist.JoinCommand + ", SuccessTextLen=" + (verified.Heist.SuccessMessage?.Length ?? 0));
+            ApplyRuntimeSettings(verified);
+            AppendSaveDebug("Heist-Einstellungen wurden gespeichert: Aktiv=" + verified.Heist.Enabled + ", Start=" + verified.Heist.StartCommand + ", Join=" + verified.Heist.JoinCommand + ", CommandHeist=" + verified.Commands.IsCommandEnabled("heist.start"));
+            SetMinigameStatus("Heist-Einstellungen gespeichert", ActiveColor);
+            SetOverallStatus("Einstellungen gespeichert", ActiveColor);
+            _commandRegistry.Update(verified);
+            RefreshCommandGrid();
+        }
+        catch (Exception exception)
+        {
+            AppendSaveDebug("Heist-Einstellungen konnten nicht gespeichert werden: " + exception.Message);
+            SetOverallStatus("Einstellungsfehler", ErrorColor);
+            SetMinigameStatus("Heist-Fehler: " + exception.Message, ErrorColor);
+            ShowSection("minigame");
+        }
+        finally
+        {
+            SetSettingsControlsEnabled(true);
+            _settingsSaveBusy = false;
+        }
+    }
+
+
+'''
+              require(marker in text, 'Heist status marker missing')
+              text = text.replace(marker, helper + marker)
+          old = '''            _configurationService.SaveGuiSettings(config);
+            ApplyRuntimeSettings(config);
+            AppendSaveDebug(
+                "Heist-Einstellungen wurden gespeichert: Aktiv=" + config.Heist.Enabled +
+                ", Start=" + config.Heist.StartCommand +
+                ", Join=" + config.Heist.JoinCommand +
+                ", CommandHeist=" + config.Commands.IsCommandEnabled("heist.start"));
+            SetMinigameStatus("Heist-Einstellungen gespeichert", ActiveColor);
+            SetOverallStatus("Einstellungen gespeichert", ActiveColor);
+            _commandRegistry.Update(config);
+            RefreshCommandGrid();'''
+          new = '''            _configurationService.SaveGuiSettings(config);
+            var verified = _configurationService.LoadForEditing();
+            VerifyHeistSettingsPersisted(config.Heist, verified.Heist);
+            AppendSaveDebug(
+                "Heist-Nachladeprüfung erfolgreich: Aktiv=" + verified.Heist.Enabled +
+                ", Start=" + verified.Heist.StartCommand +
+                ", Join=" + verified.Heist.JoinCommand +
+                ", SuccessTextLen=" + (verified.Heist.SuccessMessage?.Length ?? 0));
+            ApplyRuntimeSettings(verified);
+            AppendSaveDebug(
+                "Heist-Einstellungen wurden gespeichert: Aktiv=" + verified.Heist.Enabled +
+                ", Start=" + verified.Heist.StartCommand +
+                ", Join=" + verified.Heist.JoinCommand +
+                ", CommandHeist=" + verified.Commands.IsCommandEnabled("heist.start"));
+            SetMinigameStatus("Heist-Einstellungen gespeichert", ActiveColor);
+            SetOverallStatus("Einstellungen gespeichert", ActiveColor);
+            _commandRegistry.Update(verified);
+            RefreshCommandGrid();'''
+          if old in text:
+              text = text.replace(old, new)
+          require('SaveHeistSettingsFromControls' in text, 'Heist save method missing')
+          require('ReadHeistCommandsSettings(config, includeCustomCommands: false)' in text, 'Heist scoped read missing')
+          write(heist_path, text)
+
+          print('Persistence patch applied for', VERSION)
+          '@ | Set-Content -Path patch-persistence-1945.py -Encoding UTF8
+          python patch-persistence-1945.py
 
       - name: Build
         shell: pwsh
@@ -131,11 +295,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add RaidClipPlugin/MainForm.HeistCommands.cs RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/RaidClipPlugin.csproj
+          git add RaidClipPlugin/MainForm.HeistCommands.cs RaidClipPlugin/MainForm.Duel.cs RaidClipPlugin/RaidClipPlugin.csproj
           if (git diff --cached --quiet) {
             echo "No source changes to commit."
           } else {
-            git commit -m "Fix Heist dedicated settings save for 1.9.44"
+            git commit -m "Fix Heist and Duel settings persistence for 1.9.45"
             git push
           }
 
@@ -164,7 +328,7 @@ jobs:
           $manifest = [ordered]@{
             latestVersion = $env:VERSION
             downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
-            changelog = "Hotfix 1.9.44: Heist speichert ?ber eigenen Speicherpfad, unabh?ngig von Minigame-/Custom-Command-Validierung. Pflichtbereiche in settings.json werden vollst?ndig sichergestellt."
+            changelog = "Hotfix 1.9.45: Heist und Duel speichern über eigene Pfade und prüfen nach dem Schreiben, ob Texte und Werte korrekt aus settings.json geladen werden."
             sha256 = $sha
           }
           $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
@@ -178,12 +342,11 @@ jobs:
           $notes = @(
             "Hotfix $env:VERSION",
             "",
-            "- Heist-Speichern nutzt jetzt einen eigenen Speicherpfad.",
-            "- Heist wird nicht mehr durch ung?ltige Minigame- oder Custom-Command-Felder blockiert.",
-            "- settings.json garantiert jetzt Heist, Duel und Commands als Pflichtbereiche.",
-            "- save-debug.log enth?lt Heist-Speicherwerte zur Kontrolle.",
+            "- Duel speichert jetzt über einen eigenen Speicherpfad.",
+            "- Heist und Duel verifizieren nach dem Speichern Haken, Commands, Werte und Chattexte durch echtes Nachladen aus settings.json.",
+            "- Wenn Persistenz fehlschlägt, landet eine klare Meldung im save-debug.log.",
             "",
-            "Test: Heist aktivieren, speichern, App schlie?en, neu ?ffnen. Der Haken und die Heist-Texte m?ssen erhalten bleiben."
+            "Test: Heist/Duel Text ändern, speichern, App schließen, neu öffnen. Text und Haken müssen erhalten bleiben."
           ) -join [Environment]::NewLine
           git tag -f $tag
           git push origin $tag --force
