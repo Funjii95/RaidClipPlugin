@@ -5166,6 +5166,105 @@ private enum CloseChoice
             _profileCheck.Checked = config.Minigame.ProfileEnabled;
             _historyEnabledCheck.Checked = config.Minigame.HistoryEnabled;
 
+            _pointsCommandPunkteCheck.Checked = config.Minigame.PointsCommandPunkteEnabled;
+            _pointsCommandPointsCheck.Checked = config.Minigame.PointsCommandPointsEnabled;
+            _pointsCommandPerlenCheck.Checked = config.Minigame.PointsCommandPerlenEnabled;
+            _currencySingularBox.Text = config.Minigame.CurrencySingular;
+            _currencyPluralBox.Text = config.Minigame.CurrencyPlural;
+            _customPointsCommandBox.Text = config.Minigame.CustomPointsCommand;
+            _slotSymbolsBox.Text = config.Minigame.SlotSymbols;
+            _pointsBlacklistList.Items.Clear();
+            foreach (var entry in config.Minigame.PointsBlacklist
+                         .Where(item => !string.IsNullOrWhiteSpace(item))
+                         .Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                _pointsBlacklistList.Items.Add(entry);
+            }
+
+            SetNumericValue(_pointsPerIntervalControl, config.Minigame.PointsPerInterval);
+            SetNumericValue(_lurkerPointsPerIntervalControl, config.Minigame.LurkerPointsPerInterval);
+            SetNumericValue(_pointsIntervalControl, config.Minigame.IntervalMinutes);
+            SetNumericValue(_minimumPointsControl, config.Minigame.MinimumPoints);
+            SetNumericValue(_pointsCommandCooldownControl, config.Minigame.PointsCommandCooldownSeconds);
+            SetNumericValue(_gambleCooldownControl, config.Minigame.GambleCooldownSeconds);
+            SetNumericValue(_globalCommandCooldownControl, config.Minigame.GlobalCommandCooldownSeconds);
+            SetNumericValue(_minimumBetControl, config.Minigame.MinimumBet);
+            SetNumericValue(_maximumBetControl, config.Minigame.MaximumBet);
+            SetNumericValue(_chatPointsControl, config.Minigame.ChatMessagePoints);
+            SetNumericValue(_chatPointsCooldownControl, config.Minigame.ChatMessagePointsCooldownSeconds);
+            SetNumericValue(_followPointsControl, config.Minigame.FollowPoints);
+            SetNumericValue(_subPointsControl, config.Minigame.SubPoints);
+            SetNumericValue(_raidPointsControl, config.Minigame.RaidPoints);
+            SetNumericValue(_rewardPointsControl, config.Minigame.ChannelRewardPoints);
+            SetNumericValue(_dailyPointsControl, config.Minigame.DailyBonusPoints);
+            SetNumericValue(_maximumTopControl, config.Minigame.MaximumTopEntries);
+            SetNumericValue(_leaderboardCooldownControl, config.Minigame.LeaderboardCooldownSeconds);
+            SetNumericValue(_profileCooldownControl, config.Minigame.ProfileCooldownSeconds);
+            SetNumericValue(_historyLimitControl, config.Minigame.HistoryLimit);
+            SetNumericValue(_coinflipMinControl, config.Minigame.CoinflipMinimumBet);
+            SetNumericValue(_coinflipMaxControl, config.Minigame.CoinflipMaximumBet);
+            SetNumericValue(_coinflipCooldownControl, config.Minigame.CoinflipCooldownSeconds);
+            SetNumericValue(_slotsMinControl, config.Minigame.SlotsMinimumBet);
+            SetNumericValue(_slotsMaxControl, config.Minigame.SlotsMaximumBet);
+            SetNumericValue(_slotsCooldownControl, config.Minigame.SlotsCooldownSeconds);
+            SetNumericValue(_rouletteMinControl, config.Minigame.RouletteMinimumBet);
+            SetNumericValue(_rouletteMaxControl, config.Minigame.RouletteMaximumBet);
+            SetNumericValue(_rouletteCooldownControl, config.Minigame.RouletteCooldownSeconds);
+            SetNumericValue(_jackpotStartControl, config.Minigame.JackpotStartValue);
+            SetNumericValue(_maximumAccountControl, config.Minigame.MaximumAccountPoints);
+            SetNumericValue(_dailyGamesControl, config.Minigame.DailyGambleLimit);
+            SetNumericValue(_dailyLossControl, config.Minigame.DailyLossLimit);
+            SetNumericValue(_dailyWinControl, config.Minigame.DailyWinLimit);
+
+            _coinflipMultiplierControl.Value = Math.Clamp(
+                config.Minigame.CoinflipMultiplier,
+                _coinflipMultiplierControl.Minimum,
+                _coinflipMultiplierControl.Maximum);
+            _slotsThreeControl.Value = Math.Clamp(
+                config.Minigame.SlotsThreeMultiplier,
+                _slotsThreeControl.Minimum,
+                _slotsThreeControl.Maximum);
+            _slotsTwoControl.Value = Math.Clamp(
+                config.Minigame.SlotsTwoMultiplier,
+                _slotsTwoControl.Minimum,
+                _slotsTwoControl.Maximum);
+            _slotsSevenControl.Value = Math.Clamp(
+                config.Minigame.SlotsSevenMultiplier,
+                _slotsSevenControl.Minimum,
+                _slotsSevenControl.Maximum);
+            _rouletteEvenMoneyControl.Value = Math.Clamp(
+                config.Minigame.RouletteEvenMoneyMultiplier,
+                _rouletteEvenMoneyControl.Minimum,
+                _rouletteEvenMoneyControl.Maximum);
+            _rouletteNumberControl.Value = Math.Clamp(
+                config.Minigame.RouletteNumberMultiplier,
+                _rouletteNumberControl.Minimum,
+                _rouletteNumberControl.Maximum);
+            _jackpotContributionControl.Value = Math.Clamp(
+                config.Minigame.JackpotContributionPercent,
+                _jackpotContributionControl.Minimum,
+                _jackpotContributionControl.Maximum);
+
+            var defaultRanges = MinigameConfig.CreateDefaultRanges();
+            for (var index = 0; index < _gambleFromControls.Length; index++)
+            {
+                var range = index < config.Minigame.GambleRanges.Count
+                    ? config.Minigame.GambleRanges[index]
+                    : defaultRanges[index];
+                SetNumericValue(_gambleFromControls[index], range.From);
+                SetNumericValue(_gambleToControls[index], range.To);
+                _gambleMultiplierControls[index].Value = Math.Clamp(
+                    range.Multiplier,
+                    _gambleMultiplierControls[index].Minimum,
+                    _gambleMultiplierControls[index].Maximum);
+                _gambleTextBoxes[index].Text = range.ChatText;
+            }
+
+            UpdateCurrencyPreview();
+            if (_minigameTopList.Columns.Count >= 3)
+                _minigameTopList.Columns[2].Text = config.Minigame.CurrencyPlural;
+
+
             _musicEnabledCheck.Checked = config.MusicRequests.Enabled;
             _autoUpdateCheck.Checked = config.Update.Enabled;
             _sendRaidMessageCheck.Checked = config.Chat.SendRaidMessage;
