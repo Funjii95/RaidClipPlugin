@@ -5177,7 +5177,7 @@ private enum CloseChoice
             _healthcheckEnabledCheck.Checked = config.ModuleHealth.Enabled;
             _healthAutoRestartCheck.Checked = config.ModuleHealth.AutoRestartEnabled;
             _gambleHealthcheckCheck.Checked = config.ModuleHealth.GambleHealthcheckEnabled;
-            AppendSaveDebug("Kritische gespeicherte Einstellungen wurden in die GUI übernommen. Minigame=" + config.Minigame.Enabled + ", Music=" + config.MusicRequests.Enabled);
+            AppendSaveDebug("Gespeicherte Einstellungen wurden in die GUI übernommen. Minigame=" + config.Minigame.Enabled + ", Punkte=" + config.Minigame.PointsEnabled + ", Währung=" + config.Minigame.CurrencySingular + "/" + config.Minigame.CurrencyPlural + ", PunkteIntervall=" + config.Minigame.PointsPerInterval + ", Music=" + config.MusicRequests.Enabled);
         }
         catch (Exception exception)
         {
@@ -5412,6 +5412,16 @@ private enum CloseChoice
         config.Minigame.DailyLossLimit = decimal.ToInt64(_dailyLossControl.Value);
         config.Minigame.DailyWinLimitEnabled = _dailyWinCheck.Checked;
         config.Minigame.DailyWinLimit = decimal.ToInt64(_dailyWinControl.Value);
+
+        AppendSaveDebug(
+            "Minigame-Werte aus GUI gelesen: Währung=" +
+            config.Minigame.CurrencySingular + "/" +
+            config.Minigame.CurrencyPlural +
+            ", PunkteIntervall=" + config.Minigame.PointsPerInterval +
+            ", Lurker=" + config.Minigame.LurkerPointsPerInterval +
+            ", IntervallMin=" + config.Minigame.IntervalMinutes +
+            ", MinBet=" + config.Minigame.MinimumBet +
+            ", MaxBet=" + config.Minigame.MaximumBet);
     }
 
     private async void SaveMinigameSettingsFromControls()

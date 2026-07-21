@@ -139,6 +139,17 @@ public sealed class ConfigurationService
         };
 
 
+        Console.WriteLine(
+            "💾 Speichere Minigame-Werte: " +
+            config.Minigame.CurrencySingular + "/" +
+            config.Minigame.CurrencyPlural +
+            " PunkteIntervall=" + config.Minigame.PointsPerInterval +
+            " Lurker=" + config.Minigame.LurkerPointsPerInterval +
+            " IntervallMin=" + config.Minigame.IntervalMinutes +
+            " MinBet=" + config.Minigame.MinimumBet +
+            " MaxBet=" + config.Minigame.MaximumBet);
+
+
         WriteSettingsFile(settings);
     }
 
