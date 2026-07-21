@@ -259,7 +259,7 @@ public sealed class ConfigurationService
                     writer.Write(json);
                     writer.Flush();
                     stream.Flush(true);
-                }
+      }
 
                 if (File.Exists(path))
                     File.Copy(path, backupPath, true);
@@ -279,24 +279,24 @@ public sealed class ConfigurationService
                         "Einstellungen wurden geschrieben, aber wichtige Bereiche fehlen.");
 
                 Console.WriteLine("💾 Einstellungen gespeichert: " + path);
-            }
+  }
             finally
             {
                 try
                 {
                     if (File.Exists(tempPath))
                         File.Delete(tempPath);
-                }
+      }
                 catch
                 {
-                }
-            }
-        }
+      }
+  }
+}
         finally
         {
             SettingsLock.Release();
-        }
-    }
+}
+}
 
 
     private static void ApplySavedGuiSettings(AppConfig config)
@@ -518,6 +518,12 @@ public sealed class ConfigurationService
                 config.Giveaways = settings.Giveaways;
             if (settings.ModuleHealth is not null)
                 config.ModuleHealth = settings.ModuleHealth;
+            if (settings.Moderation is not null)
+                config.Moderation = settings.Moderation;
+            if (settings.AutoDiscordClipPoster is not null)
+                config.AutoDiscordClipPoster = settings.AutoDiscordClipPoster;
+            if (settings.Update is not null)
+                config.Update = settings.Update;
             if (settings.Moderation is not null)
                 config.Moderation = settings.Moderation;
             if (settings.AutoDiscordClipPoster is not null)
@@ -1598,6 +1604,7 @@ public sealed class ConfigurationService
         public UpdateConfig? Update { get; set; }
     }
 }
+
 
 
 

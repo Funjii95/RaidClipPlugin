@@ -2459,7 +2459,7 @@ private enum CloseChoice
 
         try
         {
-            var config = ReadSettingsFromControls();
+            var config = ReadGeneralSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
 
             var obs = _obs;
@@ -2526,7 +2526,7 @@ private enum CloseChoice
 
         try
         {
-            var config = ReadSettingsFromControls();
+            var config = ReadGeneralSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
             _activeConfig = config;
             SetConnectionSettingsEditingEnabled(false);
@@ -4185,7 +4185,7 @@ private enum CloseChoice
                 Title = "Minigame-Daten exportieren"
             };
             if (dialog.ShowDialog(this) != DialogResult.OK) return;
-            var config = ReadSettingsFromControls();
+            var config = ReadGeneralSettingsFromControls();
             await _viewerPoints.ExportAsync(
                 dialog.FileName, config.Minigame,
                 _shutdown?.Token ?? CancellationToken.None);
@@ -4212,7 +4212,7 @@ private enum CloseChoice
                     "Minigame-Daten importieren", MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question) != DialogResult.Yes) return;
 
-            var config = ReadSettingsFromControls();
+            var config = ReadGeneralSettingsFromControls();
             var settings = await _viewerPoints.ImportAsync(
                 dialog.FileName, config.Minigame,
                 _shutdown?.Token ?? CancellationToken.None);
@@ -4275,7 +4275,7 @@ private enum CloseChoice
 
         try
         {
-            var config = ReadSettingsFromControls();
+            var config = ReadGeneralSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
 
             TwitchSession? session = null;
@@ -4868,7 +4868,7 @@ private enum CloseChoice
 
         try
         {
-            var config = ReadSettingsFromControls();
+            var config = ReadGeneralSettingsFromControls();
             config.Update.SkippedVersion = update.DisplayVersion;
             _configurationService.SaveGuiSettings(config);
             ShowSkippedVersion(update.DisplayVersion);
@@ -5142,6 +5142,68 @@ private enum CloseChoice
         }
     }
 
+    private AppConfig ReadGeneralSettingsFromControls()
+    {
+        var config = _configurationService.LoadForEditing();
+        config.UiTheme = ThemeKeyFromSelection();
+        config.Twitch.BroadcasterLogin = _twitchChannelBox.Text
+            .Trim()
+            .TrimStart('@');
+        config.OBS.Host = _obsHostBox.Text.Trim();
+        config.OBS.Port = decimal.ToInt32(_obsPortControl.Value);
+        config.OBS.Password = _obsPasswordBox.Text;
+        config.Twitch.ClipLookbackDays =
+            decimal.ToInt32(_lookbackControl.Value);
+        config.Twitch.ClipRetryAttempts =
+            decimal.ToInt32(_retryControl.Value);
+        config.Player.DurationSeconds =
+            decimal.ToInt32(_durationControl.Value);
+        config.Player.VolumePercent =
+            decimal.ToInt32(_volumeControl.Value);
+        config.Twitch.RaidCooldownMinutes =
+            decimal.ToInt32(_cooldownControl.Value);
+        config.Twitch.RaidDelaySeconds =
+            decimal.ToInt32(_raidDelayControl.Value);
+        config.Player.BlacklistedClipIds = _blacklistBox.Text
+                      .Split(
+                new[] { ',', ';', '\r', '\n' },
+                StringSplitOptions.RemoveEmptyEntries)
+            .Select(id => id.Trim())
+            .Where(id => id.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        config.Chat.SendRaidMessage = _sendRaidMessageCheck.Checked;
+        config.Chat.SendShoutout = _sendShoutoutCheck.Checked;
+        config.Chat.RaidMessageTemplate = _chatTemplateBox.Text.Trim();
+        config.Update.Enabled = _autoUpdateCheck.Checked;
+        config.Moderation.Enabled = _moderationEnabledCheck.Checked;
+        config.Moderation.ShowMessagesInLog = _chatLogCheck.Checked;
+        config.Moderation.AutoFilterEnabled = _autoFilterCheck.Checked;
+        config.Moderation.WhitelistModsAndVips =
+                      _modVipWhitelistCheck.Checked;
+        config.Moderation.TimeoutSeconds =
+            decimal.ToInt32(_moderationTimeoutControl.Value);
+        config.Moderation.BlockedWords = _blockedWordsBox.Text
+                      .Split(
+                new[] { ',', ';', '\r', '\n' },
+                StringSplitOptions.RemoveEmptyEntries)
+            .Select(word => word.Trim())
+            .Where(word => word.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        ReadModerationCenterSettings(config);
+        config.ModuleHealth.Enabled = _healthcheckEnabledCheck.Checked;
+        config.ModuleHealth.AutoRestartEnabled = _healthAutoRestartCheck.Checked;
+        config.ModuleHealth.GambleHealthcheckEnabled = _gambleHealthcheckCheck.Checked;
+        config.ModuleHealth.IntervalSeconds =
+            decimal.ToInt32(_healthIntervalControl.Value);
+        config.ModuleHealth.MaxRestartAttempts =
+            decimal.ToInt32(_healthMaxRestartsControl.Value);
+        config.ModuleHealth.RestartCooldownSeconds =
+            decimal.ToInt32(_healthRestartCooldownControl.Value);
+        return config;
+    }
+
     private AppConfig ReadSettingsFromControls()
     {
         var config = _configurationService.LoadForEditing();
@@ -5359,7 +5421,7 @@ private enum CloseChoice
 
         try
         {
-            var config = ReadSettingsFromControls();
+            var config = ReadGeneralSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
             await _discordCredentialStore.SaveAsync(_discordCredentials);
             ApplyRuntimeSettings(config);
@@ -5972,6 +6034,7 @@ private enum CloseChoice
         base.OnFormClosing(e);
     }
 }
+
 
 
 
