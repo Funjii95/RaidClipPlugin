@@ -179,7 +179,7 @@ public sealed class ConfigurationService
         {
             settings = File.Exists(UserSettingsPath)
                 ? JsonSerializer.Deserialize<GuiSettings>(
-                      File.ReadAllText(UserSettingsPath),
+                      File.ReadAllText(UserSettingsPath, System.Text.Encoding.UTF8),
                       JsonOptions) ??
                   new GuiSettings()
                 : new GuiSettings();
@@ -208,7 +208,7 @@ public sealed class ConfigurationService
         {
             settings = File.Exists(UserSettingsPath)
                 ? JsonSerializer.Deserialize<GuiSettings>(
-                      File.ReadAllText(UserSettingsPath),
+                      File.ReadAllText(UserSettingsPath, System.Text.Encoding.UTF8),
                       JsonOptions) ??
                   new GuiSettings()
                 : new GuiSettings();
@@ -223,6 +223,107 @@ public sealed class ConfigurationService
         WriteSettingsFile(settings);
     }
 
+
+    private static GuiSettings? TryReadSettingsFile(string path)
+    {
+        try
+        {
+            return File.Exists(path)
+                ? JsonSerializer.Deserialize<GuiSettings>(
+                    File.ReadAllText(path, System.Text.Encoding.UTF8),
+                    JsonOptions)
+                : null;
+        }
+        catch (Exception exception) when (
+            exception is IOException ||
+            exception is UnauthorizedAccessException ||
+            exception is JsonException)
+        {
+            Console.WriteLine(
+                "⚠️ Bestehende settings.json konnte nicht gelesen werden: " +
+                exception.Message);
+            return null;
+        }
+    }
+
+
+    private static void MergeMissingSettings(GuiSettings target, string path)
+    {
+        var existing = TryReadSettingsFile(path);
+        if (existing is null)
+        {
+            return;
+        }
+
+        target.UiTheme ??= existing.UiTheme;
+        target.TwitchChannel ??= existing.TwitchChannel;
+        target.ObsHost ??= existing.ObsHost;
+        target.ObsPort ??= existing.ObsPort;
+        target.ObsPassword ??= existing.ObsPassword;
+        target.ClipLookbackDays ??= existing.ClipLookbackDays;
+        target.RetryAttempts ??= existing.RetryAttempts;
+        target.MaxClipDurationSeconds ??= existing.MaxClipDurationSeconds;
+        target.VolumePercent ??= existing.VolumePercent;
+        target.RaidCooldownMinutes ??= existing.RaidCooldownMinutes;
+        target.RaidDelaySeconds ??= existing.RaidDelaySeconds;
+        target.BlacklistedClipIds ??= existing.BlacklistedClipIds;
+        target.SendRaidMessage ??= existing.SendRaidMessage;
+        target.SendShoutout ??= existing.SendShoutout;
+        target.RaidMessageTemplate ??= existing.RaidMessageTemplate;
+        target.AutoUpdateEnabled ??= existing.AutoUpdateEnabled;
+        target.SkippedUpdateVersion ??= existing.SkippedUpdateVersion;
+        target.ModerationEnabled ??= existing.ModerationEnabled;
+        target.ShowChatMessagesInLog ??= existing.ShowChatMessagesInLog;
+        target.AutoFilterEnabled ??= existing.AutoFilterEnabled;
+        target.WhitelistModsAndVips ??= existing.WhitelistModsAndVips;
+        target.ModerationTimeoutSeconds ??= existing.ModerationTimeoutSeconds;
+        target.BlockedWords ??= existing.BlockedWords;
+        target.MinigameEnabled ??= existing.MinigameEnabled;
+        target.PointsEnabled ??= existing.PointsEnabled;
+        target.PointsPerInterval ??= existing.PointsPerInterval;
+        target.PointsIntervalMinutes ??= existing.PointsIntervalMinutes;
+        target.MinimumPoints ??= existing.MinimumPoints;
+        target.PointsCommandCooldownSeconds ??= existing.PointsCommandCooldownSeconds;
+        target.GambleEnabled ??= existing.GambleEnabled;
+        target.GambleCooldownSeconds ??= existing.GambleCooldownSeconds;
+        target.GlobalCommandCooldownSeconds ??= existing.GlobalCommandCooldownSeconds;
+        target.MinimumBet ??= existing.MinimumBet;
+        target.MaximumBet ??= existing.MaximumBet;
+        target.GambleRanges ??= existing.GambleRanges;
+        target.LiveChat ??= existing.LiveChat;
+        target.Minigame ??= existing.Minigame;
+        target.Heist ??= existing.Heist;
+        target.Duel ??= existing.Duel;
+        target.Commands ??= existing.Commands;
+        target.MusicRequests ??= existing.MusicRequests;
+        target.StreamCheck ??= existing.StreamCheck;
+        target.ClipCommand ??= existing.ClipCommand;
+        target.DiscordClips ??= existing.DiscordClips;
+        target.AutoDiscordClipPoster ??= existing.AutoDiscordClipPoster;
+        target.Giveaways ??= existing.Giveaways;
+        target.ModuleHealth ??= existing.ModuleHealth;
+        target.Moderation ??= existing.Moderation;
+        target.Update ??= existing.Update;
+    }
+
+
+    private static void EnsureRequiredSettingsSections(GuiSettings settings)
+    {
+        settings.Minigame ??= new MinigameConfig();
+        settings.MusicRequests ??= new MusicRequestConfig();
+        settings.Moderation ??= new ModerationConfig();
+        settings.AutoDiscordClipPoster ??= new AutoDiscordClipPosterConfig();
+        settings.Update ??= new UpdateConfig();
+        settings.ModuleHealth ??= new ModuleHealthConfig();
+
+        if (string.IsNullOrWhiteSpace(settings.Update.ManifestUrl))
+        {
+            settings.Update.ManifestUrl =
+                "https://github.com/Funjii95/RaidClipPlugin/releases/latest/download/update.json";
+        }
+    }
+
+
     private static void WriteSettingsFile(GuiSettings settings)
     {
         SettingsLock.Wait();
@@ -231,12 +332,8 @@ public sealed class ConfigurationService
             var path = UserSettingsPath;
             var directory = Path.GetDirectoryName(path)!;
             Directory.CreateDirectory(directory);
-            settings.Minigame ??= new MinigameConfig();
-            settings.MusicRequests ??= new MusicRequestConfig();
-            settings.Moderation ??= new ModerationConfig();
-            settings.AutoDiscordClipPoster ??= new AutoDiscordClipPosterConfig();
-            settings.Update ??= new UpdateConfig();
-            settings.ModuleHealth ??= new ModuleHealthConfig();
+            MergeMissingSettings(settings, path);
+            EnsureRequiredSettingsSections(settings);
             var json = JsonSerializer.Serialize(settings, JsonOptions);
             var tempPath = Path.Combine(
                 directory,
@@ -310,7 +407,7 @@ public sealed class ConfigurationService
         try
         {
             var settings = JsonSerializer.Deserialize<GuiSettings>(
-                File.ReadAllText(UserSettingsPath),
+                File.ReadAllText(UserSettingsPath, System.Text.Encoding.UTF8),
                 JsonOptions);
 
 
@@ -523,13 +620,35 @@ public sealed class ConfigurationService
             if (settings.AutoDiscordClipPoster is not null)
                 config.AutoDiscordClipPoster = settings.AutoDiscordClipPoster;
             if (settings.Update is not null)
-                config.Update = settings.Update;
+            {
+                if (!string.IsNullOrWhiteSpace(settings.Update.ManifestUrl))
+                {
+                    config.Update = settings.Update;
+                }
+                else
+                {
+                    config.Update.Enabled = settings.Update.Enabled;
+                    config.Update.SkippedVersion =
+                        settings.Update.SkippedVersion ?? "";
+                }
+            }
             if (settings.Moderation is not null)
                 config.Moderation = settings.Moderation;
             if (settings.AutoDiscordClipPoster is not null)
                 config.AutoDiscordClipPoster = settings.AutoDiscordClipPoster;
             if (settings.Update is not null)
-                config.Update = settings.Update;
+            {
+                if (!string.IsNullOrWhiteSpace(settings.Update.ManifestUrl))
+                {
+                    config.Update = settings.Update;
+                }
+                else
+                {
+                    config.Update.Enabled = settings.Update.Enabled;
+                    config.Update.SkippedVersion =
+                        settings.Update.SkippedVersion ?? "";
+                }
+            }
         }
         catch (Exception exception)
         {
