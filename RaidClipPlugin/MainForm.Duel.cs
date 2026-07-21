@@ -107,7 +107,7 @@ public sealed partial class MainForm
 
     private void InitializeDuelEvents()
     {
-        _duelSaveButton.Click += (_, _) => SaveMinigameSettingsFromControls();
+        _duelSaveButton.Click += (_, _) => SaveDuelSettingsFromControls();
         _duelDefaultsButton.Click += (_, _) => LoadDuelSettings(new DuelConfig());
         _duelCancelButton.Click += async (_, _) =>
         {
@@ -236,6 +236,98 @@ public sealed partial class MainForm
             ", CommandDuel=" + config.Commands.IsCommandEnabled("duel.challenge"));
     }
 
+
+
+    private static void VerifyDuelSettingsPersisted(DuelConfig expected, DuelConfig actual)
+    {
+        if (expected.Enabled != actual.Enabled ||
+            !string.Equals(expected.DuelCommand, actual.DuelCommand, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expected.AcceptCommand, actual.AcceptCommand, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expected.DenyCommand, actual.DenyCommand, StringComparison.OrdinalIgnoreCase) ||
+            expected.MinimumBet != actual.MinimumBet ||
+            expected.MaximumBet != actual.MaximumBet ||
+            expected.RequestTimeoutSeconds != actual.RequestTimeoutSeconds ||
+            expected.UserCooldownSeconds != actual.UserCooldownSeconds ||
+            expected.GlobalCooldownSeconds != actual.GlobalCooldownSeconds ||
+            expected.AllowAllIn != actual.AllowAllIn ||
+            expected.AllowEveryone != actual.AllowEveryone ||
+            expected.AllowFollowers != actual.AllowFollowers ||
+            expected.AllowSubscribers != actual.AllowSubscribers ||
+            expected.AllowVips != actual.AllowVips ||
+            expected.AllowModerators != actual.AllowModerators ||
+            expected.FairMode != actual.FairMode ||
+            expected.ChallengerWinChancePercent != actual.ChallengerWinChancePercent ||
+            expected.SendRequestMessage != actual.SendRequestMessage ||
+            expected.SendResultMessage != actual.SendResultMessage ||
+            expected.SendDenyMessage != actual.SendDenyMessage ||
+            expected.SendTimeoutMessage != actual.SendTimeoutMessage ||
+            expected.TimeoutLoserEnabled != actual.TimeoutLoserEnabled ||
+            expected.LoserTimeoutSeconds != actual.LoserTimeoutSeconds ||
+            !string.Equals(expected.LoserTimeoutReason, actual.LoserTimeoutReason, StringComparison.Ordinal) ||
+            !string.Equals(expected.DuelRequestMessage, actual.DuelRequestMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.DuelAcceptedMessage, actual.DuelAcceptedMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.DuelWinMessage, actual.DuelWinMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.DuelDeniedMessage, actual.DuelDeniedMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.DuelTimeoutMessage, actual.DuelTimeoutMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.NotEnoughPointsChallengerMessage, actual.NotEnoughPointsChallengerMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.NotEnoughPointsTargetMessage, actual.NotEnoughPointsTargetMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.SelfDuelMessage, actual.SelfDuelMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.NoPendingDuelMessage, actual.NoPendingDuelMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.WrongTargetMessage, actual.WrongTargetMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.AlreadyPendingDuelMessage, actual.AlreadyPendingDuelMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.InvalidBetMessage, actual.InvalidBetMessage, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Duel-Einstellungen wurden geschrieben, aber beim Nachladen nicht bestätigt.");
+        }
+    }
+
+    private void SaveDuelSettingsFromControls()
+    {
+        AppendSaveDebug("Duel-Speichern geklickt.");
+        if (_settingsSaveBusy)
+        {
+            AppendLog("Speichern läuft bereits. Bitte kurz warten …");
+            return;
+        }
+
+        _settingsSaveBusy = true;
+        SetSettingsControlsEnabled(false);
+
+        try
+        {
+            AppendSaveDebug("Duel-Speichern startet.");
+            var config = _configurationService.LoadForEditing();
+            ReadDuelSettings(config);
+            _configurationService.SaveGuiSettings(config);
+
+            var verified = _configurationService.LoadForEditing();
+            VerifyDuelSettingsPersisted(config.Duel, verified.Duel);
+            AppendSaveDebug(
+                "Duel-Nachladeprüfung erfolgreich: Aktiv=" + verified.Duel.Enabled +
+                ", Command=" + verified.Duel.DuelCommand +
+                ", Accept=" + verified.Duel.AcceptCommand +
+                ", Deny=" + verified.Duel.DenyCommand +
+                ", WinTextLen=" + (verified.Duel.DuelWinMessage?.Length ?? 0));
+
+            ApplyRuntimeSettings(verified);
+            SetMinigameStatus("Duel-Einstellungen gespeichert", ActiveColor);
+            SetOverallStatus("Einstellungen gespeichert", ActiveColor);
+            _commandRegistry.Update(verified);
+            RefreshCommandGrid();
+        }
+        catch (Exception exception)
+        {
+            AppendSaveDebug("Duel-Einstellungen konnten nicht gespeichert werden: " + exception.Message);
+            SetOverallStatus("Einstellungsfehler", ErrorColor);
+            SetMinigameStatus("Duel-Fehler: " + exception.Message, ErrorColor);
+            ShowSection("minigame");
+        }
+        finally
+        {
+            SetSettingsControlsEnabled(true);
+            _settingsSaveBusy = false;
+        }
+    }
 
     private void OnDuelStatusChanged(DuelStatus status)
     {

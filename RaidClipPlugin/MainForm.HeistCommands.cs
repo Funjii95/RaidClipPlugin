@@ -247,12 +247,13 @@ public sealed partial class MainForm
             ", CommandHeist=" + config.Commands.IsCommandEnabled("heist.start"));
     }
 
+
     private async void SaveHeistSettingsFromControls()
     {
         AppendSaveDebug("Heist-Speichern geklickt.");
         if (_settingsSaveBusy)
         {
-            AppendLog("Speichern l?uft bereits. Bitte kurz warten ?");
+            AppendLog("Speichern läuft bereits. Bitte kurz warten …");
             return;
         }
 
@@ -265,15 +266,19 @@ public sealed partial class MainForm
             var config = _configurationService.LoadForEditing();
             ReadHeistCommandsSettings(config, includeCustomCommands: false);
             _configurationService.SaveGuiSettings(config);
-            ApplyRuntimeSettings(config);
+
+            var verified = _configurationService.LoadForEditing();
+            VerifyHeistSettingsPersisted(config.Heist, verified.Heist);
             AppendSaveDebug(
-                "Heist-Einstellungen wurden gespeichert: Aktiv=" + config.Heist.Enabled +
-                ", Start=" + config.Heist.StartCommand +
-                ", Join=" + config.Heist.JoinCommand +
-                ", CommandHeist=" + config.Commands.IsCommandEnabled("heist.start"));
+                "Heist-Nachladeprüfung erfolgreich: Aktiv=" + verified.Heist.Enabled +
+                ", Start=" + verified.Heist.StartCommand +
+                ", Join=" + verified.Heist.JoinCommand +
+                ", SuccessTextLen=" + (verified.Heist.SuccessMessage?.Length ?? 0));
+
+            ApplyRuntimeSettings(verified);
             SetMinigameStatus("Heist-Einstellungen gespeichert", ActiveColor);
             SetOverallStatus("Einstellungen gespeichert", ActiveColor);
-            _commandRegistry.Update(config);
+            _commandRegistry.Update(verified);
             RefreshCommandGrid();
         }
         catch (Exception exception)
@@ -287,6 +292,42 @@ public sealed partial class MainForm
         {
             SetSettingsControlsEnabled(true);
             _settingsSaveBusy = false;
+        }
+    }
+
+
+    private static void VerifyHeistSettingsPersisted(HeistConfig expected, HeistConfig actual)
+    {
+        if (expected.Enabled != actual.Enabled ||
+            !string.Equals(expected.StartCommand, actual.StartCommand, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(expected.JoinCommand, actual.JoinCommand, StringComparison.OrdinalIgnoreCase) ||
+            expected.MinimumParticipants != actual.MinimumParticipants ||
+            expected.MaximumParticipants != actual.MaximumParticipants ||
+            expected.JoinDurationSeconds != actual.JoinDurationSeconds ||
+            expected.SuccessChancePercent != actual.SuccessChancePercent ||
+            expected.GlobalCooldownMinutes != actual.GlobalCooldownMinutes ||
+            expected.UserCooldownMinutes != actual.UserCooldownMinutes ||
+            expected.ApplyGlobalCooldownOnCancelledHeist != actual.ApplyGlobalCooldownOnCancelledHeist ||
+            expected.AllowEveryone != actual.AllowEveryone ||
+            expected.AllowFollowers != actual.AllowFollowers ||
+            expected.AllowSubscribers != actual.AllowSubscribers ||
+            expected.AllowVips != actual.AllowVips ||
+            expected.AllowModerators != actual.AllowModerators ||
+            expected.SendParticipantJoinMessages != actual.SendParticipantJoinMessages ||
+            expected.SendCountdownMessages != actual.SendCountdownMessages ||
+            expected.SendResultMessages != actual.SendResultMessages ||
+            expected.ResetJackpotAfterSuccess != actual.ResetJackpotAfterSuccess ||
+            !string.Equals(expected.StartMessage, actual.StartMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.JoinMessage, actual.JoinMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.AlreadyJoinedMessage, actual.AlreadyJoinedMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.NoActiveHeistMessage, actual.NoActiveHeistMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.MaximumParticipantsMessage, actual.MaximumParticipantsMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.NotEnoughParticipantsMessage, actual.NotEnoughParticipantsMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.EvaluationMessage, actual.EvaluationMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.SuccessMessage, actual.SuccessMessage, StringComparison.Ordinal) ||
+            !string.Equals(expected.FailureMessage, actual.FailureMessage, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Heist-Einstellungen wurden geschrieben, aber beim Nachladen nicht bestätigt.");
         }
     }
 
