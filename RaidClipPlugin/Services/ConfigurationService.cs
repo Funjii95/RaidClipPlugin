@@ -71,14 +71,14 @@ public sealed class ConfigurationService
 
 
         ApplySavedGuiSettings(appConfig);
-        Normalize(appConfig);
+        Normalize(appConfig, synchronizeCommandOverrides: false);
         return appConfig;
     }
 
 
     public void SaveGuiSettings(AppConfig config)
     {
-        Normalize(config);
+        Normalize(config, synchronizeCommandOverrides: true);
 
 
         var settings = new GuiSettings
@@ -740,7 +740,9 @@ public sealed class ConfigurationService
     }
 
 
-    private static void Normalize(AppConfig config)
+    private static void Normalize(
+        AppConfig config,
+        bool synchronizeCommandOverrides = false)
     {
         config.UiTheme = (config.UiTheme ?? "RaidRed").Trim();
         if (config.UiTheme is not ("RaidRed" or "NeonGreen" or "TwitchPurple"))
@@ -845,7 +847,10 @@ public sealed class ConfigurationService
             new Dictionary<string, bool>())
             .Where(item => !string.IsNullOrWhiteSpace(item.Key))
             .ToDictionary(item => item.Key.Trim(), item => item.Value, StringComparer.OrdinalIgnoreCase);
-        SynchronizeMinigameCommandOverrides(config);
+        if (synchronizeCommandOverrides)
+        {
+            SynchronizeMinigameCommandOverrides(config);
+        }
         config.Commands.CustomCommands ??= new List<CustomChatCommandConfig>();
         foreach (var custom in config.Commands.CustomCommands)
         {
