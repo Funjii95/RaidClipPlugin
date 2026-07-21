@@ -189,9 +189,14 @@ public sealed partial class MainForm
         RefreshCommandGrid();
     }
 
+    private static string ReadHeistCommand(TextBox box, string fallback) =>
+        string.IsNullOrWhiteSpace(box.Text) ? fallback : box.Text.Trim();
+
+
     private void LoadHeistSettings(HeistConfig h)
     {
-        _heistEnabledCheck.Checked = h.Enabled; _heistStartCommandBox.Text = h.StartCommand; _heistJoinCommandBox.Text = h.JoinCommand;
+        var commandDefaults = new HeistConfig();
+        _heistEnabledCheck.Checked = h.Enabled; _heistStartCommandBox.Text = HeistTextOrDefault(h.StartCommand, commandDefaults.StartCommand); _heistJoinCommandBox.Text = HeistTextOrDefault(h.JoinCommand, commandDefaults.JoinCommand);
         SetNumericValue(_heistMinimumControl, h.MinimumParticipants); SetNumericValue(_heistMaximumControl, h.MaximumParticipants);
         SetNumericValue(_heistDurationControl, h.JoinDurationSeconds); SetNumericValue(_heistChanceControl, h.SuccessChancePercent);
         SetNumericValue(_heistGlobalCooldownControl, h.GlobalCooldownMinutes); SetNumericValue(_heistUserCooldownControl, h.UserCooldownMinutes);
@@ -200,7 +205,7 @@ public sealed partial class MainForm
         _heistVipsCheck.Checked = h.AllowVips; _heistModeratorsCheck.Checked = h.AllowModerators;
         _heistJoinMessagesCheck.Checked = h.SendParticipantJoinMessages; _heistCountdownMessagesCheck.Checked = h.SendCountdownMessages;
         _heistResultMessagesCheck.Checked = h.SendResultMessages; _heistResetJackpotCheck.Checked = h.ResetJackpotAfterSuccess;
-        var defaults = new HeistConfig();
+        var defaults = commandDefaults;
         var values = new[] { HeistTextOrDefault(h.StartMessage,defaults.StartMessage),HeistTextOrDefault(h.JoinMessage,defaults.JoinMessage),HeistTextOrDefault(h.AlreadyJoinedMessage,defaults.AlreadyJoinedMessage),HeistTextOrDefault(h.NoActiveHeistMessage,defaults.NoActiveHeistMessage),HeistTextOrDefault(h.MaximumParticipantsMessage,defaults.MaximumParticipantsMessage),
             HeistTextOrDefault(h.NotEnoughParticipantsMessage,defaults.NotEnoughParticipantsMessage),HeistTextOrDefault(h.EvaluationMessage,defaults.EvaluationMessage),HeistTextOrDefault(h.SuccessMessage,defaults.SuccessMessage),HeistTextOrDefault(h.FailureMessage,defaults.FailureMessage) };
         for(var i=0;i<values.Length;i++)_heistMessageBoxes[i].Text=values[i];
@@ -216,8 +221,9 @@ public sealed partial class MainForm
 
     private void ReadHeistCommandsSettings(AppConfig config)
     {
-        var h=config.Heist; h.Enabled=_heistEnabledCheck.Checked; h.StartCommand=_heistStartCommandBox.Text;
-        h.JoinCommand=_heistJoinCommandBox.Text; h.MinimumParticipants=(int)_heistMinimumControl.Value;
+        var defaults = new HeistConfig();
+        var h=config.Heist; h.Enabled=_heistEnabledCheck.Checked; h.StartCommand=ReadHeistCommand(_heistStartCommandBox, defaults.StartCommand);
+        h.JoinCommand=ReadHeistCommand(_heistJoinCommandBox, defaults.JoinCommand); h.MinimumParticipants=(int)_heistMinimumControl.Value;
         h.MaximumParticipants=(int)_heistMaximumControl.Value; h.JoinDurationSeconds=(int)_heistDurationControl.Value;
         h.SuccessChancePercent=(int)_heistChanceControl.Value; h.GlobalCooldownMinutes=(int)_heistGlobalCooldownControl.Value;
         h.UserCooldownMinutes=(int)_heistUserCooldownControl.Value; h.ApplyGlobalCooldownOnCancelledHeist=_heistCancelledCooldownCheck.Checked;
@@ -225,12 +231,19 @@ public sealed partial class MainForm
         h.AllowVips=_heistVipsCheck.Checked; h.AllowModerators=_heistModeratorsCheck.Checked;
         h.SendParticipantJoinMessages=_heistJoinMessagesCheck.Checked; h.SendCountdownMessages=_heistCountdownMessagesCheck.Checked;
         h.SendResultMessages=_heistResultMessagesCheck.Checked; h.ResetJackpotAfterSuccess=_heistResetJackpotCheck.Checked;
-        var defaults = new HeistConfig();
         h.StartMessage=ReadHeistMessage(_heistMessageBoxes[0], defaults.StartMessage); h.JoinMessage=ReadHeistMessage(_heistMessageBoxes[1], defaults.JoinMessage); h.AlreadyJoinedMessage=ReadHeistMessage(_heistMessageBoxes[2], defaults.AlreadyJoinedMessage);
         h.NoActiveHeistMessage=ReadHeistMessage(_heistMessageBoxes[3], defaults.NoActiveHeistMessage); h.MaximumParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[4], defaults.MaximumParticipantsMessage);
         h.NotEnoughParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[5], defaults.NotEnoughParticipantsMessage); h.EvaluationMessage=ReadHeistMessage(_heistMessageBoxes[6], defaults.EvaluationMessage);
         h.SuccessMessage=ReadHeistMessage(_heistMessageBoxes[7], defaults.SuccessMessage); h.FailureMessage=ReadHeistMessage(_heistMessageBoxes[8], defaults.FailureMessage);
         ReadCustomCommandSettings(config.Commands);
+        SyncMinigameCommandOverrides(config);
+        AppendSaveDebug(
+            "Heist-Werte aus GUI gelesen: Aktiv=" + h.Enabled +
+            ", Start=" + h.StartCommand +
+            ", Join=" + h.JoinCommand +
+            ", Min=" + h.MinimumParticipants +
+            ", Max=" + h.MaximumParticipants +
+            ", CommandHeist=" + config.Commands.IsCommandEnabled("heist.start"));
     }
 
     private void OnHeistStatusChanged(HeistStatus status)

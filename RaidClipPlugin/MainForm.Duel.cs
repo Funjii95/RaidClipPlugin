@@ -129,12 +129,19 @@ public sealed partial class MainForm
     }
 
 
+    private static string UseDuelText(string? value, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+
     private void LoadDuelSettings(DuelConfig duel)
     {
+        var defaults = new DuelConfig();
         _duelEnabledCheck.Checked = duel.Enabled;
-        _duelCommandBox.Text = duel.DuelCommand;
-        _duelAcceptCommandBox.Text = duel.AcceptCommand;
-        _duelDenyCommandBox.Text = duel.DenyCommand;
+        _duelCommandBox.Text = UseDuelText(duel.DuelCommand, defaults.DuelCommand);
+        _duelAcceptCommandBox.Text = UseDuelText(duel.AcceptCommand, defaults.AcceptCommand);
+        _duelDenyCommandBox.Text = UseDuelText(duel.DenyCommand, defaults.DenyCommand);
         SetNumericValue(_duelMinimumBetControl, duel.MinimumBet);
         SetNumericValue(_duelMaximumBetControl, duel.MaximumBet);
         SetNumericValue(_duelTimeoutControl, duel.RequestTimeoutSeconds);
@@ -155,24 +162,36 @@ public sealed partial class MainForm
         _duelTimeoutMessagesCheck.Checked = duel.SendTimeoutMessage;
         _duelLoserTimeoutCheck.Checked = duel.TimeoutLoserEnabled;
         SetNumericValue(_duelLoserTimeoutSecondsControl, duel.LoserTimeoutSeconds);
-        _duelLoserTimeoutReasonBox.Text = duel.LoserTimeoutReason;
+        _duelLoserTimeoutReasonBox.Text = UseDuelText(duel.LoserTimeoutReason, defaults.LoserTimeoutReason);
         _duelLoserTimeoutSecondsControl.Enabled = duel.TimeoutLoserEnabled;
         _duelLoserTimeoutReasonBox.Enabled = duel.TimeoutLoserEnabled;
-        var values = new[] { duel.DuelRequestMessage, duel.DuelAcceptedMessage, duel.DuelWinMessage,
-            duel.DuelDeniedMessage, duel.DuelTimeoutMessage, duel.NotEnoughPointsChallengerMessage,
-            duel.NotEnoughPointsTargetMessage, duel.SelfDuelMessage, duel.NoPendingDuelMessage,
-            duel.WrongTargetMessage, duel.AlreadyPendingDuelMessage, duel.InvalidBetMessage };
+        var values = new[]
+        {
+            UseDuelText(duel.DuelRequestMessage, defaults.DuelRequestMessage),
+            UseDuelText(duel.DuelAcceptedMessage, defaults.DuelAcceptedMessage),
+            UseDuelText(duel.DuelWinMessage, defaults.DuelWinMessage),
+            UseDuelText(duel.DuelDeniedMessage, defaults.DuelDeniedMessage),
+            UseDuelText(duel.DuelTimeoutMessage, defaults.DuelTimeoutMessage),
+            UseDuelText(duel.NotEnoughPointsChallengerMessage, defaults.NotEnoughPointsChallengerMessage),
+            UseDuelText(duel.NotEnoughPointsTargetMessage, defaults.NotEnoughPointsTargetMessage),
+            UseDuelText(duel.SelfDuelMessage, defaults.SelfDuelMessage),
+            UseDuelText(duel.NoPendingDuelMessage, defaults.NoPendingDuelMessage),
+            UseDuelText(duel.WrongTargetMessage, defaults.WrongTargetMessage),
+            UseDuelText(duel.AlreadyPendingDuelMessage, defaults.AlreadyPendingDuelMessage),
+            UseDuelText(duel.InvalidBetMessage, defaults.InvalidBetMessage)
+        };
         for (var i = 0; i < values.Length; i++) _duelMessageBoxes[i].Text = values[i];
     }
 
 
     private void ReadDuelSettings(AppConfig config)
     {
+        var defaults = new DuelConfig();
         var duel = config.Duel;
         duel.Enabled = _duelEnabledCheck.Checked;
-        duel.DuelCommand = _duelCommandBox.Text;
-        duel.AcceptCommand = _duelAcceptCommandBox.Text;
-        duel.DenyCommand = _duelDenyCommandBox.Text;
+        duel.DuelCommand = UseDuelText(_duelCommandBox.Text, defaults.DuelCommand);
+        duel.AcceptCommand = UseDuelText(_duelAcceptCommandBox.Text, defaults.AcceptCommand);
+        duel.DenyCommand = UseDuelText(_duelDenyCommandBox.Text, defaults.DenyCommand);
         duel.MinimumBet = decimal.ToInt64(_duelMinimumBetControl.Value);
         duel.MaximumBet = decimal.ToInt64(_duelMaximumBetControl.Value);
         duel.RequestTimeoutSeconds = (int)_duelTimeoutControl.Value;
@@ -192,19 +211,29 @@ public sealed partial class MainForm
         duel.SendTimeoutMessage = _duelTimeoutMessagesCheck.Checked;
         duel.TimeoutLoserEnabled = _duelLoserTimeoutCheck.Checked;
         duel.LoserTimeoutSeconds = (int)_duelLoserTimeoutSecondsControl.Value;
-        duel.LoserTimeoutReason = _duelLoserTimeoutReasonBox.Text;
-        duel.DuelRequestMessage = _duelMessageBoxes[0].Text;
-        duel.DuelAcceptedMessage = _duelMessageBoxes[1].Text;
-        duel.DuelWinMessage = _duelMessageBoxes[2].Text;
-        duel.DuelDeniedMessage = _duelMessageBoxes[3].Text;
-        duel.DuelTimeoutMessage = _duelMessageBoxes[4].Text;
-        duel.NotEnoughPointsChallengerMessage = _duelMessageBoxes[5].Text;
-        duel.NotEnoughPointsTargetMessage = _duelMessageBoxes[6].Text;
-        duel.SelfDuelMessage = _duelMessageBoxes[7].Text;
-        duel.NoPendingDuelMessage = _duelMessageBoxes[8].Text;
-        duel.WrongTargetMessage = _duelMessageBoxes[9].Text;
-        duel.AlreadyPendingDuelMessage = _duelMessageBoxes[10].Text;
-        duel.InvalidBetMessage = _duelMessageBoxes[11].Text;
+        duel.LoserTimeoutReason = UseDuelText(_duelLoserTimeoutReasonBox.Text, defaults.LoserTimeoutReason);
+        duel.DuelRequestMessage = UseDuelText(_duelMessageBoxes[0].Text, defaults.DuelRequestMessage);
+        duel.DuelAcceptedMessage = UseDuelText(_duelMessageBoxes[1].Text, defaults.DuelAcceptedMessage);
+        duel.DuelWinMessage = UseDuelText(_duelMessageBoxes[2].Text, defaults.DuelWinMessage);
+        duel.DuelDeniedMessage = UseDuelText(_duelMessageBoxes[3].Text, defaults.DuelDeniedMessage);
+        duel.DuelTimeoutMessage = UseDuelText(_duelMessageBoxes[4].Text, defaults.DuelTimeoutMessage);
+        duel.NotEnoughPointsChallengerMessage = UseDuelText(_duelMessageBoxes[5].Text, defaults.NotEnoughPointsChallengerMessage);
+        duel.NotEnoughPointsTargetMessage = UseDuelText(_duelMessageBoxes[6].Text, defaults.NotEnoughPointsTargetMessage);
+        duel.SelfDuelMessage = UseDuelText(_duelMessageBoxes[7].Text, defaults.SelfDuelMessage);
+        duel.NoPendingDuelMessage = UseDuelText(_duelMessageBoxes[8].Text, defaults.NoPendingDuelMessage);
+        duel.WrongTargetMessage = UseDuelText(_duelMessageBoxes[9].Text, defaults.WrongTargetMessage);
+        duel.AlreadyPendingDuelMessage = UseDuelText(_duelMessageBoxes[10].Text, defaults.AlreadyPendingDuelMessage);
+        duel.InvalidBetMessage = UseDuelText(_duelMessageBoxes[11].Text, defaults.InvalidBetMessage);
+
+        SyncMinigameCommandOverrides(config);
+        AppendSaveDebug(
+            "Duel-Werte aus GUI gelesen: Aktiv=" + duel.Enabled +
+            ", Command=" + duel.DuelCommand +
+            ", Accept=" + duel.AcceptCommand +
+            ", Deny=" + duel.DenyCommand +
+            ", Min=" + duel.MinimumBet +
+            ", Max=" + duel.MaximumBet +
+            ", CommandDuel=" + config.Commands.IsCommandEnabled("duel.challenge"));
     }
 
 
