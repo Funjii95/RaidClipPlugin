@@ -1,0 +1,267 @@
+name: Publish 1.9.34 Settings Persistence Final
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-1.9.34-settings-persistence-final.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  VERSION: '1.9.34'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: preview
+
+      - name: Patch settings persistence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:VERSION
+
+          $csprojPath = 'RaidClipPlugin/RaidClipPlugin.csproj'
+          $project = Get-Content -Raw -Encoding UTF8 $csprojPath
+          $project = [regex]::Replace($project, '<Version>[^<]+</Version>', "<Version>$version</Version>")
+          $project = [regex]::Replace($project, '<FileVersion>[^<]+</FileVersion>', "<FileVersion>$version.0</FileVersion>")
+          if ($project -match '<AssemblyVersion>') {
+            $project = [regex]::Replace($project, '<AssemblyVersion>[^<]+</AssemblyVersion>', "<AssemblyVersion>$version.0</AssemblyVersion>")
+          }
+          Set-Content -Path $csprojPath -Value $project -Encoding UTF8
+
+          $path = 'RaidClipPlugin/Services/ConfigurationService.cs'
+          $text = Get-Content -Raw -Encoding UTF8 $path
+
+          if ($text -notmatch 'private static GuiSettings\? TryReadSettingsFile') {
+            $helper = @'
+    private static GuiSettings? TryReadSettingsFile(string path)
+    {
+        try
+        {
+            return File.Exists(path)
+                ? JsonSerializer.Deserialize<GuiSettings>(
+                    File.ReadAllText(path, System.Text.Encoding.UTF8),
+                    JsonOptions)
+                : null;
+        }
+        catch (Exception exception) when (
+            exception is IOException ||
+            exception is UnauthorizedAccessException ||
+            exception is JsonException)
+        {
+            Console.WriteLine(
+                "⚠️ Bestehende settings.json konnte nicht gelesen werden: " +
+                exception.Message);
+            return null;
+        }
+    }
+
+
+    private static void MergeMissingSettings(GuiSettings target, string path)
+    {
+        var existing = TryReadSettingsFile(path);
+        if (existing is null)
+        {
+            return;
+        }
+
+        target.UiTheme ??= existing.UiTheme;
+        target.TwitchChannel ??= existing.TwitchChannel;
+        target.ObsHost ??= existing.ObsHost;
+        target.ObsPort ??= existing.ObsPort;
+        target.ObsPassword ??= existing.ObsPassword;
+        target.ClipLookbackDays ??= existing.ClipLookbackDays;
+        target.RetryAttempts ??= existing.RetryAttempts;
+        target.MaxClipDurationSeconds ??= existing.MaxClipDurationSeconds;
+        target.VolumePercent ??= existing.VolumePercent;
+        target.RaidCooldownMinutes ??= existing.RaidCooldownMinutes;
+        target.RaidDelaySeconds ??= existing.RaidDelaySeconds;
+        target.BlacklistedClipIds ??= existing.BlacklistedClipIds;
+        target.SendRaidMessage ??= existing.SendRaidMessage;
+        target.SendShoutout ??= existing.SendShoutout;
+        target.RaidMessageTemplate ??= existing.RaidMessageTemplate;
+        target.AutoUpdateEnabled ??= existing.AutoUpdateEnabled;
+        target.SkippedUpdateVersion ??= existing.SkippedUpdateVersion;
+        target.ModerationEnabled ??= existing.ModerationEnabled;
+        target.ShowChatMessagesInLog ??= existing.ShowChatMessagesInLog;
+        target.AutoFilterEnabled ??= existing.AutoFilterEnabled;
+        target.WhitelistModsAndVips ??= existing.WhitelistModsAndVips;
+        target.ModerationTimeoutSeconds ??= existing.ModerationTimeoutSeconds;
+        target.BlockedWords ??= existing.BlockedWords;
+        target.MinigameEnabled ??= existing.MinigameEnabled;
+        target.PointsEnabled ??= existing.PointsEnabled;
+        target.PointsPerInterval ??= existing.PointsPerInterval;
+        target.PointsIntervalMinutes ??= existing.PointsIntervalMinutes;
+        target.MinimumPoints ??= existing.MinimumPoints;
+        target.PointsCommandCooldownSeconds ??= existing.PointsCommandCooldownSeconds;
+        target.GambleEnabled ??= existing.GambleEnabled;
+        target.GambleCooldownSeconds ??= existing.GambleCooldownSeconds;
+        target.GlobalCommandCooldownSeconds ??= existing.GlobalCommandCooldownSeconds;
+        target.MinimumBet ??= existing.MinimumBet;
+        target.MaximumBet ??= existing.MaximumBet;
+        target.GambleRanges ??= existing.GambleRanges;
+        target.LiveChat ??= existing.LiveChat;
+        target.Minigame ??= existing.Minigame;
+        target.Heist ??= existing.Heist;
+        target.Duel ??= existing.Duel;
+        target.Commands ??= existing.Commands;
+        target.MusicRequests ??= existing.MusicRequests;
+        target.StreamCheck ??= existing.StreamCheck;
+        target.ClipCommand ??= existing.ClipCommand;
+        target.DiscordClips ??= existing.DiscordClips;
+        target.AutoDiscordClipPoster ??= existing.AutoDiscordClipPoster;
+        target.Giveaways ??= existing.Giveaways;
+        target.ModuleHealth ??= existing.ModuleHealth;
+        target.Moderation ??= existing.Moderation;
+        target.Update ??= existing.Update;
+    }
+
+
+    private static void EnsureRequiredSettingsSections(GuiSettings settings)
+    {
+        settings.Minigame ??= new MinigameConfig();
+        settings.MusicRequests ??= new MusicRequestConfig();
+        settings.Moderation ??= new ModerationConfig();
+        settings.AutoDiscordClipPoster ??= new AutoDiscordClipPosterConfig();
+        settings.Update ??= new UpdateConfig();
+        settings.ModuleHealth ??= new ModuleHealthConfig();
+
+        if (string.IsNullOrWhiteSpace(settings.Update.ManifestUrl))
+        {
+            settings.Update.ManifestUrl =
+                "https://github.com/Funjii95/RaidClipPlugin/releases/latest/download/update.json";
+        }
+    }
+
+
+'@
+            $text = $text.Replace('    private static void WriteSettingsFile(GuiSettings settings)', $helper + '    private static void WriteSettingsFile(GuiSettings settings)')
+          }
+
+          $oldDefaults = @'
+            settings.Minigame ??= new MinigameConfig();
+            settings.MusicRequests ??= new MusicRequestConfig();
+            settings.Moderation ??= new ModerationConfig();
+            settings.AutoDiscordClipPoster ??= new AutoDiscordClipPosterConfig();
+            settings.Update ??= new UpdateConfig();
+            settings.ModuleHealth ??= new ModuleHealthConfig();
+'@
+          $newDefaults = @'
+            MergeMissingSettings(settings, path);
+            EnsureRequiredSettingsSections(settings);
+'@
+          $text = $text.Replace($oldDefaults, $newDefaults)
+
+          $oldUpdateApply = @'
+            if (settings.Update is not null)
+                config.Update = settings.Update;
+'@
+          $newUpdateApply = @'
+            if (settings.Update is not null)
+            {
+                if (!string.IsNullOrWhiteSpace(settings.Update.ManifestUrl))
+                {
+                    config.Update = settings.Update;
+                }
+                else
+                {
+                    config.Update.Enabled = settings.Update.Enabled;
+                    config.Update.SkippedVersion =
+                        settings.Update.SkippedVersion ?? "";
+                }
+            }
+'@
+          $text = $text.Replace($oldUpdateApply, $newUpdateApply)
+
+          $text = [regex]::Replace(
+            $text,
+            'File\.ReadAllText\(UserSettingsPath\)',
+            'File.ReadAllText(UserSettingsPath, System.Text.Encoding.UTF8)')
+
+          Set-Content -Path $path -Value $text -Encoding UTF8
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
+
+      - name: Commit source changes
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/RaidClipPlugin.csproj
+          if (git diff --cached --quiet) {
+            echo "No source changes to commit."
+          } else {
+            git commit -m "Fix settings persistence merge for 1.9.34"
+            git push
+          }
+
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish RaidClipPlugin/RaidClipPlugin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o RaidClipPlugin/publish
+          Compress-Archive -Path RaidClipPlugin/publish/* -DestinationPath "RaidClipPlugin-$env:VERSION-win-x64.zip" -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
+          $iscc = Join-Path (Join-Path $programFilesX86 'Inno Setup 6') 'ISCC.exe'
+          if (Test-Path 'RaidClipPlugin/Installer/RaidClipPlugin.iss') {
+            & $iscc "/DMyAppVersion=$env:VERSION" "RaidClipPlugin/Installer/RaidClipPlugin.iss"
+            Copy-Item "RaidClipPlugin/installer-output/RaidClipPlugin-Setup-$env:VERSION.exe" "RaidClipPluginSetup-$env:VERSION.exe" -Force
+          }
+
+      - name: Create update manifest
+        shell: pwsh
+        run: |
+          $zip = "RaidClipPlugin-$env:VERSION-win-x64.zip"
+          $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = [ordered]@{
+            latestVersion = $env:VERSION
+            downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
+            changelog = "Hotfix 1.9.34: Einstellungen werden beim Speichern gemerged statt durch Teilmodule mit Defaults überschrieben. Alte leere Update-Sektionen löschen nicht mehr die Manifest-URL."
+            sha256 = $sha
+          }
+          $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v$env:VERSION"
+          $notes = @(
+            "Hotfix 1.9.34",
+            "",
+            "- Einstellungen werden vor dem Schreiben mit der bestehenden settings.json zusammengeführt.",
+            "- Einzelne Modul-Speicherbuttons überschreiben andere Bereiche nicht mehr mit Defaults.",
+            "- Alte leere Update-Konfigurationen entfernen die Auto-Update-Manifest-URL nicht mehr.",
+            "- settings.json wird weiter atomar geschrieben, verifiziert und mit Backup versehen.",
+            "",
+            "Manueller Test: Haken setzen, speichern, App schließen, neu öffnen. Der Haken muss bestehen bleiben."
+          ) -join [Environment]::NewLine
+          git tag -f $tag
+          git push origin $tag --force
+          gh release delete $tag -y --cleanup-tag 2>$null || $true
+          $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
+          if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
+          gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
