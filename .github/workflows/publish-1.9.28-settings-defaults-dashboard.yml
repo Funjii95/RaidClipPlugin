@@ -51,7 +51,7 @@ jobs:
                   var appConfig = LoadForEditing();
                   ValidateTechnicalSettings(appConfig);
                   return appConfig;
-    }
+          }
           
           
               public AppConfig LoadForEditing()
@@ -74,19 +74,19 @@ jobs:
                   if (string.IsNullOrWhiteSpace(appConfig.Twitch.BroadcasterLogin))
                   {
                       appConfig.Twitch.BroadcasterLogin = "Funjii";
-        }
+          }
           
           
                   if (string.IsNullOrWhiteSpace(appConfig.OBS.Host))
                   {
                       appConfig.OBS.Host = "127.0.0.1";
-        }
+          }
           
           
                   ApplySavedGuiSettings(appConfig);
                   Normalize(appConfig);
                   return appConfig;
-    }
+          }
           '@
             $config = [regex]::Replace(
               $config,
@@ -212,12 +212,12 @@ jobs:
                           {
                 }
             }
-        }
+          }
                   finally
                   {
                       SettingsLock.Release();
-        }
-    }
+          }
+          }
           
           
               private static void ApplySavedGuiSettings
@@ -270,8 +270,8 @@ jobs:
                           string.IsNullOrWhiteSpace(current)
                               ? fallback
                               : current.Trim());
-        }
-    }
+          }
+          }
           
           
           '@
@@ -309,7 +309,7 @@ jobs:
                       : new ClipChatMessage(
                           message.Enabled,
                           NormalizeTextOrDefault(message.Text, fallback.Text));
-    }
+          }
           
           
           '@
@@ -475,7 +475,7 @@ jobs:
                   messages.QueueFull = NormalizeTextOrDefault(messages.QueueFull, defaults.QueueFull);
                   messages.Blacklisted = NormalizeTextOrDefault(messages.Blacklisted, defaults.Blacklisted);
                   messages.InvalidInput = NormalizeTextOrDefault(messages.InvalidInput, defaults.InvalidInput);
-    }
+          }
           
           
           '@
