@@ -1,6 +1,10 @@
 ﻿name: Publish 1.9.33 Scoped Settings Save Fix
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-1.9.28-settings-defaults-dashboard.yml'
   workflow_dispatch:
 
 permissions:
@@ -579,6 +583,7 @@ jobs:
           $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
           if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
           gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
+
 
 
 
