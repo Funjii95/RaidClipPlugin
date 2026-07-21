@@ -118,7 +118,7 @@ jobs:
           bGFjZShvbGRfdXBkYXRlLCBuZXdfdXBkYXRlKQp0ZXh0ID0gcmUuc3ViKAogICAgcidGaWxlXC5SZWFkQWxsVGV4dFwoVXNlclNldHRpbmdzUG
           F0aFwpJywKICAgICdGaWxlLlJlYWRBbGxUZXh0KFVzZXJTZXR0aW5nc1BhdGgsIFN5c3RlbS5UZXh0LkVuY29kaW5nLlVURjgpJywKICAgIHRl
           eHQpCgpwYXRoLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9J3V0Zi04JykK
-'@
+          '@
           $script = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($encoded -replace '\s','')))
           Set-Content -Path patch-settings.py -Value $script -Encoding UTF8
           python patch-settings.py
