@@ -165,7 +165,7 @@ public sealed partial class MainForm
     private void InitializeHeistCommandEvents()
     {
         _commandsNavButton.Click += (_, _) => ShowSection("commands");
-        _heistSaveButton.Click += (_, _) => SaveMinigameSettingsFromControls();
+        _heistSaveButton.Click += (_, _) => SaveHeistSettingsFromControls();
         _heistDefaultsButton.Click += (_, _) => LoadHeistSettings(new HeistConfig());
         _heistTestButton.Click += async (_, _) => { if (_minigame is null) AppendLog("Test-Heist benötigt eine aktive Plugin-Verbindung."); else await _minigame.RunTestHeistAsync(_shutdown?.Token ?? CancellationToken.None); };
         _heistCancelButton.Click += async (_, _) => { if (_minigame is not null) await _minigame.CancelHeistAsync(_shutdown?.Token ?? CancellationToken.None); };
@@ -219,7 +219,7 @@ public sealed partial class MainForm
         string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
 
-    private void ReadHeistCommandsSettings(AppConfig config)
+    private void ReadHeistCommandsSettings(AppConfig config, bool includeCustomCommands = true)
     {
         var defaults = new HeistConfig();
         var h=config.Heist; h.Enabled=_heistEnabledCheck.Checked; h.StartCommand=ReadHeistCommand(_heistStartCommandBox, defaults.StartCommand);
@@ -235,7 +235,8 @@ public sealed partial class MainForm
         h.NoActiveHeistMessage=ReadHeistMessage(_heistMessageBoxes[3], defaults.NoActiveHeistMessage); h.MaximumParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[4], defaults.MaximumParticipantsMessage);
         h.NotEnoughParticipantsMessage=ReadHeistMessage(_heistMessageBoxes[5], defaults.NotEnoughParticipantsMessage); h.EvaluationMessage=ReadHeistMessage(_heistMessageBoxes[6], defaults.EvaluationMessage);
         h.SuccessMessage=ReadHeistMessage(_heistMessageBoxes[7], defaults.SuccessMessage); h.FailureMessage=ReadHeistMessage(_heistMessageBoxes[8], defaults.FailureMessage);
-        ReadCustomCommandSettings(config.Commands);
+        if (includeCustomCommands)
+            ReadCustomCommandSettings(config.Commands);
         SyncMinigameCommandOverrides(config);
         AppendSaveDebug(
             "Heist-Werte aus GUI gelesen: Aktiv=" + h.Enabled +
@@ -244,6 +245,49 @@ public sealed partial class MainForm
             ", Min=" + h.MinimumParticipants +
             ", Max=" + h.MaximumParticipants +
             ", CommandHeist=" + config.Commands.IsCommandEnabled("heist.start"));
+    }
+
+    private async void SaveHeistSettingsFromControls()
+    {
+        AppendSaveDebug("Heist-Speichern geklickt.");
+        if (_settingsSaveBusy)
+        {
+            AppendLog("Speichern l?uft bereits. Bitte kurz warten ?");
+            return;
+        }
+
+        _settingsSaveBusy = true;
+        SetSettingsControlsEnabled(false);
+
+        try
+        {
+            AppendSaveDebug("Heist-Speichern startet.");
+            var config = _configurationService.LoadForEditing();
+            ReadHeistCommandsSettings(config, includeCustomCommands: false);
+            _configurationService.SaveGuiSettings(config);
+            ApplyRuntimeSettings(config);
+            AppendSaveDebug(
+                "Heist-Einstellungen wurden gespeichert: Aktiv=" + config.Heist.Enabled +
+                ", Start=" + config.Heist.StartCommand +
+                ", Join=" + config.Heist.JoinCommand +
+                ", CommandHeist=" + config.Commands.IsCommandEnabled("heist.start"));
+            SetMinigameStatus("Heist-Einstellungen gespeichert", ActiveColor);
+            SetOverallStatus("Einstellungen gespeichert", ActiveColor);
+            _commandRegistry.Update(config);
+            RefreshCommandGrid();
+        }
+        catch (Exception exception)
+        {
+            AppendSaveDebug("Heist-Einstellungen konnten nicht gespeichert werden: " + exception.Message);
+            SetOverallStatus("Einstellungsfehler", ErrorColor);
+            SetMinigameStatus("Heist-Fehler: " + exception.Message, ErrorColor);
+            ShowSection("minigame");
+        }
+        finally
+        {
+            SetSettingsControlsEnabled(true);
+            _settingsSaveBusy = false;
+        }
     }
 
     private void OnHeistStatusChanged(HeistStatus status)

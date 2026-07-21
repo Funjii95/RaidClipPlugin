@@ -150,6 +150,13 @@ public sealed class ConfigurationService
             " MaxBet=" + config.Minigame.MaximumBet);
 
 
+        Console.WriteLine(
+            "?? Speichere Heist-Werte: Aktiv=" + config.Heist.Enabled +
+            " Start=" + config.Heist.StartCommand +
+            " Join=" + config.Heist.JoinCommand +
+            " CommandHeist=" + config.Commands.IsCommandEnabled("heist.start"));
+
+
         WriteSettingsFile(settings);
     }
 
@@ -321,9 +328,17 @@ public sealed class ConfigurationService
     private static void EnsureRequiredSettingsSections(GuiSettings settings)
     {
         settings.Minigame ??= new MinigameConfig();
+        settings.Heist ??= new HeistConfig();
+        settings.Duel ??= new DuelConfig();
+        settings.Commands ??= new CommandsConfig();
         settings.MusicRequests ??= new MusicRequestConfig();
         settings.Moderation ??= new ModerationConfig();
+        settings.LiveChat ??= new LiveChatConfig();
+        settings.StreamCheck ??= new StreamCheckConfig();
+        settings.ClipCommand ??= new ClipCommandConfig();
+        settings.DiscordClips ??= new DiscordClipsConfig();
         settings.AutoDiscordClipPoster ??= new AutoDiscordClipPosterConfig();
+        settings.Giveaways ??= new GiveawayConfig();
         settings.Update ??= new UpdateConfig();
         settings.ModuleHealth ??= new ModuleHealthConfig();
 
@@ -402,6 +417,9 @@ public sealed class ConfigurationService
                     throw new InvalidOperationException(
                         "Einstellungen wurden geschrieben, konnten aber nicht geprüft werden.");
                 if (verified.Minigame is null ||
+                    verified.Heist is null ||
+                    verified.Duel is null ||
+                    verified.Commands is null ||
                     verified.MusicRequests is null ||
                     verified.Moderation is null ||
                     verified.AutoDiscordClipPoster is null)
