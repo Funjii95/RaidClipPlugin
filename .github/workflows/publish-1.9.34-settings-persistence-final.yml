@@ -1,4 +1,4 @@
-name: Publish 1.9.35 Auto Update Recovery
+name: Publish 1.9.36 Settings Save Repair
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   actions: read
 
 env:
-  VERSION: '1.9.35'
+  VERSION: '1.9.36'
 
 jobs:
   release:
@@ -30,55 +30,106 @@ jobs:
           dotnet-version: '10.0.x'
           dotnet-quality: preview
 
-      - name: Patch auto update recovery
+      - name: Patch settings persistence
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $encoded = @'
-          CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAppbXBvcnQgcmUKCnZlcnNpb24gPSAnMS45LjM1JwoKY3Nwcm9qID0gUGF0aCgnUmFpZENsaXBQbH
-          VnaW4vUmFpZENsaXBQbHVnaW4uY3Nwcm9qJykKcHJvamVjdCA9IGNzcHJvai5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykKcHJvamVjdCA9
-          IHJlLnN1YihyJzxWZXJzaW9uPltePF0rPC9WZXJzaW9uPicsIGYnPFZlcnNpb24+e3ZlcnNpb259PC9WZXJzaW9uPicsIHByb2plY3QpCnByb2
-          plY3QgPSByZS5zdWIocic8RmlsZVZlcnNpb24+W148XSs8L0ZpbGVWZXJzaW9uPicsIGYnPEZpbGVWZXJzaW9uPnt2ZXJzaW9ufS4wPC9GaWxl
-          VmVyc2lvbj4nLCBwcm9qZWN0KQppZiByZS5zZWFyY2gocic8QXNzZW1ibHlWZXJzaW9uPltePF0rPC9Bc3NlbWJseVZlcnNpb24+JywgcHJvam
-          VjdCk6CiAgICBwcm9qZWN0ID0gcmUuc3ViKHInPEFzc2VtYmx5VmVyc2lvbj5bXjxdKzwvQXNzZW1ibHlWZXJzaW9uPicsIGYnPEFzc2VtYmx5
-          VmVyc2lvbj57dmVyc2lvbn0uMDwvQXNzZW1ibHlWZXJzaW9uPicsIHByb2plY3QpCmVsc2U6CiAgICBwcm9qZWN0ID0gcHJvamVjdC5yZXBsYW
-          NlKAogICAgICAgIGYnPEZpbGVWZXJzaW9uPnt2ZXJzaW9ufS4wPC9GaWxlVmVyc2lvbj4nLAogICAgICAgIGYnPEZpbGVWZXJzaW9uPnt2ZXJz
-          aW9ufS4wPC9GaWxlVmVyc2lvbj5cbiAgICA8QXNzZW1ibHlWZXJzaW9uPnt2ZXJzaW9ufS4wPC9Bc3NlbWJseVZlcnNpb24+JykKY3Nwcm9qLn
-          dyaXRlX3RleHQocHJvamVjdCwgZW5jb2Rpbmc9J3V0Zi04JykKCnVwZGF0ZV9wYXRoID0gUGF0aCgnUmFpZENsaXBQbHVnaW4vU2VydmljZXMv
-          VXBkYXRlU2VydmljZS5jcycpCnVwZGF0ZSA9IHVwZGF0ZV9wYXRoLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgnKQppZiAncHVibGljIGNvbn
-          N0IHN0cmluZyBEZWZhdWx0TWFuaWZlc3RVcmwnIG5vdCBpbiB1cGRhdGU6CiAgICB1cGRhdGUgPSB1cGRhdGUucmVwbGFjZSgKICAgICAgICAn
-          ICAgIHByaXZhdGUgY29uc3Qgc3RyaW5nIEFwcEV4ZWN1dGFibGVOYW1lID0gIlJhaWRDbGlwUGx1Z2luLmV4ZSI7JywKICAgICAgICAnICAgIH
-          B1YmxpYyBjb25zdCBzdHJpbmcgRGVmYXVsdE1hbmlmZXN0VXJsID1cbiAgICAgICAgImh0dHBzOi8vZ2l0aHViLmNvbS9GdW5qaWk5NS9SYWlk
-          Q2xpcFBsdWdpbi9yZWxlYXNlcy9sYXRlc3QvZG93bmxvYWQvdXBkYXRlLmpzb24iO1xuXG4gICAgcHJpdmF0ZSBjb25zdCBzdHJpbmcgQXBwRX
-          hlY3V0YWJsZU5hbWUgPSAiUmFpZENsaXBQbHVnaW4uZXhlIjsnKQp1cGRhdGVfcGF0aC53cml0ZV90ZXh0KHVwZGF0ZSwgZW5jb2Rpbmc9J3V0
-          Zi04JykKCm1haW5fcGF0aCA9IFBhdGgoJ1JhaWRDbGlwUGx1Z2luL01haW5Gb3JtLmNzJykKbWFpbiA9IG1haW5fcGF0aC5yZWFkX3RleHQoZW
-          5jb2Rpbmc9J3V0Zi04JykKb2xkID0gJycnICAgICAgICAgICAgaWYgKHN0cmluZy5Jc051bGxPcldoaXRlU3BhY2UoY29uZmlnLlVwZGF0ZS5N
-          YW5pZmVzdFVybCkpCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIF9hdmFpbGFibGVVcGRhdGUgPSBudWxsOwogICAgICAgICAgICAgIC
-          AgU2hvd0N1cnJlbnRWZXJzaW9uKCk7CgogICAgICAgICAgICAgICAgaWYgKCFzaWxlbnQpCiAgICAgICAgICAgICAgICB7CiAgICAgICAgICAg
-          ICAgICAgICAgQXBwZW5kTG9nKAogICAgICAgICAgICAgICAgICAgICAgICAiQXV0by1VcGRhdGUgaXN0IG5vY2ggbmljaHQgbWl0IGRlciBHaX
-          RIdWItdXBkYXRlLmpzb24gIiArCiAgICAgICAgICAgICAgICAgICAgICAgICJ2ZXJidW5kZW4uIFRyYWdlIGRpZSBSZWxlYXNlLUFzc2V0LUFk
-          cmVzc2UgaW4gIiArCiAgICAgICAgICAgICAgICAgICAgICAgICJDb25maWcvY29uZmlnLnRlbXBsYXRlLmpzb24gZWluLiIpOwogICAgICAgIC
-          AgICAgICAgfQogICAgICAgICAgICAgICAgcmV0dXJuOwogICAgICAgICAgICB9CgogICAgICAgICAgICBfYXZhaWxhYmxlVXBkYXRlID0gYXdh
-          aXQgX3VwZGF0ZVNlcnZpY2UuQ2hlY2tBc3luYygKICAgICAgICAgICAgICAgIGNvbmZpZy5VcGRhdGUuTWFuaWZlc3RVcmwsCiAgICAgICAgIC
-          AgICAgICBDYW5jZWxsYXRpb25Ub2tlbi5Ob25lKTsKJycnCm5ldyA9ICcnJyAgICAgICAgICAgIHZhciBtYW5pZmVzdFVybCA9IHN0cmluZy5J
-          c051bGxPcldoaXRlU3BhY2UoY29uZmlnLlVwZGF0ZS5NYW5pZmVzdFVybCkKICAgICAgICAgICAgICAgID8gVXBkYXRlU2VydmljZS5EZWZhdW
-          x0TWFuaWZlc3RVcmwKICAgICAgICAgICAgICAgIDogY29uZmlnLlVwZGF0ZS5NYW5pZmVzdFVybC5UcmltKCk7CgogICAgICAgICAgICBpZiAo
-          c3RyaW5nLklzTnVsbE9yV2hpdGVTcGFjZShjb25maWcuVXBkYXRlLk1hbmlmZXN0VXJsKSkKICAgICAgICAgICAgewogICAgICAgICAgICAgIC
-          AgY29uZmlnLlVwZGF0ZS5NYW5pZmVzdFVybCA9IG1hbmlmZXN0VXJsOwogICAgICAgICAgICAgICAgX2NvbmZpZ3VyYXRpb25TZXJ2aWNlLlNh
-          dmVHdWlTZXR0aW5ncyhjb25maWcpOwogICAgICAgICAgICAgICAgQXBwZW5kTG9nKAogICAgICAgICAgICAgICAgICAgICJBdXRvLVVwZGF0ZS
-          1BZHJlc3NlIHdhciBsZWVyIHVuZCB3dXJkZSBhdXRvbWF0aXNjaCByZXBhcmllcnQuIik7CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIF9h
-          dmFpbGFibGVVcGRhdGUgPSBhd2FpdCBfdXBkYXRlU2VydmljZS5DaGVja0FzeW5jKAogICAgICAgICAgICAgICAgbWFuaWZlc3RVcmwsCiAgIC
-          AgICAgICAgICAgICBDYW5jZWxsYXRpb25Ub2tlbi5Ob25lKTsKJycnCmlmIG9sZCBub3QgaW4gbWFpbjoKICAgIHJhaXNlIFN5c3RlbUV4aXQo
-          J1VwZGF0ZSBjaGVjayBibG9jayBub3QgZm91bmQnKQptYWluID0gbWFpbi5yZXBsYWNlKG9sZCwgbmV3KQptYWluX3BhdGgud3JpdGVfdGV4dC
-          htYWluLCBlbmNvZGluZz0ndXRmLTgnKQoKY29uZmlnX3BhdGggPSBQYXRoKCdSYWlkQ2xpcFBsdWdpbi9TZXJ2aWNlcy9Db25maWd1cmF0aW9u
-          U2VydmljZS5jcycpCmNvbmZpZyA9IGNvbmZpZ19wYXRoLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgnKQpjb25maWcgPSBjb25maWcucmVwbG
-          FjZSgKICAgICciaHR0cHM6Ly9naXRodWIuY29tL0Z1bmppaTk1L1JhaWRDbGlwUGx1Z2luL3JlbGVhc2VzL2xhdGVzdC9kb3dubG9hZC91cGRh
-          dGUuanNvbiI7JywKICAgICdVcGRhdGVTZXJ2aWNlLkRlZmF1bHRNYW5pZmVzdFVybDsnKQpjb25maWdfcGF0aC53cml0ZV90ZXh0KGNvbmZpZy
-          wgZW5jb2Rpbmc9J3V0Zi04JykK
-          '@
-          $script = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($encoded -replace '\s','')))
-          Set-Content -Path patch-auto-update.py -Value $script -Encoding UTF8
-          python patch-auto-update.py
+          @'
+          from pathlib import Path
+          import re
+
+          version = "1.9.36"
+
+          def write(path, text):
+              Path(path).write_text(text, encoding="utf-8")
+
+          csproj_path = Path("RaidClipPlugin/RaidClipPlugin.csproj")
+          csproj = csproj_path.read_text(encoding="utf-8")
+          csproj = re.sub(r"<Version>[^<]+</Version>", f"<Version>{version}</Version>", csproj)
+          csproj = re.sub(r"<FileVersion>[^<]+</FileVersion>", f"<FileVersion>{version}.0</FileVersion>", csproj)
+          if re.search(r"<AssemblyVersion>[^<]+</AssemblyVersion>", csproj):
+              csproj = re.sub(r"<AssemblyVersion>[^<]+</AssemblyVersion>", f"<AssemblyVersion>{version}.0</AssemblyVersion>", csproj)
+          else:
+              csproj = csproj.replace(
+                  f"<FileVersion>{version}.0</FileVersion>",
+                  f"<FileVersion>{version}.0</FileVersion>\n    <AssemblyVersion>{version}.0</AssemblyVersion>")
+          write(csproj_path, csproj)
+
+          config_path = Path("RaidClipPlugin/Services/ConfigurationService.cs")
+          text = config_path.read_text(encoding="utf-8")
+
+          if "private static void ValidateCommandsSettings(AppConfig config)" not in text:
+              text = text.replace(
+                  "    public static void ValidateDuelSettings(DuelConfig duel)\n    {\n        var commands = new[] { duel.DuelCommand, duel.AcceptCommand, duel.DenyCommand };",
+                  "    public static void ValidateDuelSettings(DuelConfig duel)\n    {\n        if (!duel.Enabled)\n        {\n            return;\n        }\n\n        var commands = new[] { duel.DuelCommand, duel.AcceptCommand, duel.DenyCommand };")
+
+              text = text.replace(
+                  "    public static void ValidateHeistAndCommands(AppConfig config)\n    {\n        var heist = config.Heist;\n        if (heist.MinimumParticipants < 3)",
+                  "    public static void ValidateHeistAndCommands(AppConfig config)\n    {\n        var heist = config.Heist;\n        if (!heist.Enabled)\n        {\n            ValidateCommandsSettings(config);\n            return;\n        }\n\n        if (heist.MinimumParticipants < 3)")
+
+              text = text.replace(
+                  "\n\n        var commands = config.Commands;\n        if (string.IsNullOrWhiteSpace(commands.Command))",
+                  "\n\n        ValidateCommandsSettings(config);\n    }\n\n    private static void ValidateCommandsSettings(AppConfig config)\n    {\n        var commands = config.Commands;\n        if (string.IsNullOrWhiteSpace(commands.Command))",
+                  1)
+
+              text = text.replace(
+                  "    public static void ValidateGiveawaySettings(GiveawayConfig config)\n    {\n        if (string.IsNullOrWhiteSpace(config.Title) ||",
+                  "    public static void ValidateGiveawaySettings(GiveawayConfig config)\n    {\n        if (!config.Enabled)\n        {\n            return;\n        }\n\n        if (string.IsNullOrWhiteSpace(config.Title) ||")
+
+          music_old = '''        var musicCommands = new[]
+        {
+            (config.MusicRequests.ModeratorCommands.SongEnabled,
+                config.MusicRequests.ModeratorCommands.Song),
+            (config.MusicRequests.ModeratorCommands.SkipEnabled,
+                config.MusicRequests.ModeratorCommands.Skip),
+            (config.MusicRequests.ModeratorCommands.QueueEnabled,
+                config.MusicRequests.ModeratorCommands.Queue),
+            (config.MusicRequests.ModeratorCommands.RemoveEnabled,
+                config.MusicRequests.ModeratorCommands.Remove),
+            (config.MusicRequests.ModeratorCommands.PauseEnabled,
+                config.MusicRequests.ModeratorCommands.Pause),
+            (config.MusicRequests.ModeratorCommands.ResumeEnabled,
+                config.MusicRequests.ModeratorCommands.Resume)
+        }.Where(item => item.Item1).Select(item => item.Item2);'''
+          music_new = '''        IEnumerable<string> musicCommands = config.MusicRequests.Enabled
+            ? new[]
+              {
+                  (config.MusicRequests.ModeratorCommands.SongEnabled,
+                      config.MusicRequests.ModeratorCommands.Song),
+                  (config.MusicRequests.ModeratorCommands.SkipEnabled,
+                      config.MusicRequests.ModeratorCommands.Skip),
+                  (config.MusicRequests.ModeratorCommands.QueueEnabled,
+                      config.MusicRequests.ModeratorCommands.Queue),
+                  (config.MusicRequests.ModeratorCommands.RemoveEnabled,
+                      config.MusicRequests.ModeratorCommands.Remove),
+                  (config.MusicRequests.ModeratorCommands.PauseEnabled,
+                      config.MusicRequests.ModeratorCommands.Pause),
+                  (config.MusicRequests.ModeratorCommands.ResumeEnabled,
+                      config.MusicRequests.ModeratorCommands.Resume)
+              }.Where(item => item.Item1).Select(item => item.Item2)
+            : Enumerable.Empty<string>();'''
+          if music_old in text:
+              text = text.replace(music_old, music_new)
+
+          clip_old = '''        var clipCommands = new[] { config.ClipCommand.Command }
+            .Concat(config.ClipCommand.Aliases);'''
+          clip_new = '''        IEnumerable<string> clipCommands = config.ClipCommand.Enabled
+            ? new[] { config.ClipCommand.Command }
+                .Concat(config.ClipCommand.Aliases)
+            : Enumerable.Empty<string>();'''
+          if clip_old in text:
+              text = text.replace(clip_old, clip_new)
+
+          giveaway_old = "        var giveawayCommands = GetGiveawayCommands(config.Giveaways);"
+          giveaway_new = '''        var giveawayCommands = config.Giveaways.Enabled
+            ? GetGiveawayCommands(config.Giveaways)
+            : Enumerable.Empty<string>();'''
+          if giveaway_old in text:
+              text = text.replace(giveaway_old, giveaway_new)
+
+          config_path.write_text(text, encoding="utf-8")
+          '@ | Set-Content -Path patch-settings-save.py -Encoding UTF8
+          python patch-settings-save.py
 
       - name: Build
         shell: pwsh
@@ -89,11 +140,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add RaidClipPlugin/Services/UpdateService.cs RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/MainForm.cs RaidClipPlugin/RaidClipPlugin.csproj
+          git add RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/RaidClipPlugin.csproj
           if (git diff --cached --quiet) {
             echo "No source changes to commit."
           } else {
-            git commit -m "Fix auto update fallback for 1.9.35"
+            git commit -m "Fix settings persistence validation for 1.9.36"
             git push
           }
 
@@ -122,7 +173,7 @@ jobs:
           $manifest = [ordered]@{
             latestVersion = $env:VERSION
             downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
-            changelog = "Hotfix 1.9.35: Auto-Update repariert eine leer gespeicherte Manifest-URL automatisch und nutzt einen festen GitHub-Fallback."
+            changelog = "Hotfix 1.9.36: Einstellungen speichern wieder zuverlässig. Deaktivierte Module blockieren das Speichern nicht mehr, alte leere Standardtexte werden repariert."
             sha256 = $sha
           }
           $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
@@ -134,13 +185,14 @@ jobs:
         run: |
           $tag = "v$env:VERSION"
           $notes = @(
-            "Hotfix 1.9.35",
+            "Hotfix 1.9.36",
             "",
-            "- Auto-Update nutzt einen festen GitHub-Fallback, wenn die gespeicherte Manifest-URL leer ist.",
-            "- Die leere Update-Adresse wird beim Prüfen automatisch repariert und gespeichert.",
-            "- AssemblyVersion wird explizit gesetzt, damit der Versionsvergleich stabil bleibt.",
+            "- Einstellungen werden beim Speichern nicht mehr durch deaktivierte/kaputte Module blockiert.",
+            "- Heist, Duel und Giveaway validieren nur noch hart, wenn sie aktiv sind.",
+            "- Command-Kollisionsprüfung ignoriert deaktivierte Musik-, Clip- und Giveaway-Commands.",
+            "- Leere Standardtexte werden beim Normalisieren weiter repariert.",
             "",
-            "Hinweis: Installationen, deren Auto-Update bereits durch eine leere Manifest-URL blockiert ist, brauchen einmalig eine manuelle Installation."
+            "Bitte nach Installation einmal eine Einstellung ändern, speichern, App schließen und neu öffnen."
           ) -join [Environment]::NewLine
           git tag -f $tag
           git push origin $tag --force
