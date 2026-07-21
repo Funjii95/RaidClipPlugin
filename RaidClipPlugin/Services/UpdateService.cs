@@ -8,6 +8,9 @@ namespace RaidClipPlugin.Services;
 
 public sealed class UpdateService
 {
+    public const string DefaultManifestUrl =
+        "https://github.com/Funjii95/RaidClipPlugin/releases/latest/download/update.json";
+
     private const string AppExecutableName = "RaidClipPlugin.exe";
 
     private static readonly HttpClient Http = CreateHttpClient();

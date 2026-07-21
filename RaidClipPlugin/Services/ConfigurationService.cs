@@ -319,7 +319,7 @@ public sealed class ConfigurationService
         if (string.IsNullOrWhiteSpace(settings.Update.ManifestUrl))
         {
             settings.Update.ManifestUrl =
-                "https://github.com/Funjii95/RaidClipPlugin/releases/latest/download/update.json";
+                UpdateService.DefaultManifestUrl;
         }
     }
 

@@ -4736,23 +4736,20 @@ private enum CloseChoice
         {
             var config = _configurationService.Load();
 
+            var manifestUrl = string.IsNullOrWhiteSpace(config.Update.ManifestUrl)
+                ? UpdateService.DefaultManifestUrl
+                : config.Update.ManifestUrl.Trim();
+
             if (string.IsNullOrWhiteSpace(config.Update.ManifestUrl))
             {
-                _availableUpdate = null;
-                ShowCurrentVersion();
-
-                if (!silent)
-                {
-                    AppendLog(
-                        "Auto-Update ist noch nicht mit der GitHub-update.json " +
-                        "verbunden. Trage die Release-Asset-Adresse in " +
-                        "Config/config.template.json ein.");
-                }
-                return;
+                config.Update.ManifestUrl = manifestUrl;
+                _configurationService.SaveGuiSettings(config);
+                AppendLog(
+                    "Auto-Update-Adresse war leer und wurde automatisch repariert.");
             }
 
             _availableUpdate = await _updateService.CheckAsync(
-                config.Update.ManifestUrl,
+                manifestUrl,
                 CancellationToken.None);
 
             if (_availableUpdate is null)
