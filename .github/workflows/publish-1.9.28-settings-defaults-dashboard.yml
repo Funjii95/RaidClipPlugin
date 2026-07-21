@@ -239,8 +239,14 @@ jobs:
           $config = $config.Replace(
             '            if (settings.ModuleHealth is not null)' + "`r`n" + '                config.ModuleHealth = settings.ModuleHealth;',
             '            if (settings.ModuleHealth is not null)' + "`r`n" + '                config.ModuleHealth = settings.ModuleHealth;' + "`r`n" + '            if (settings.Moderation is not null)' + "`r`n" + '                config.Moderation = settings.Moderation;' + "`r`n" + '            if (settings.AutoDiscordClipPoster is not null)' + "`r`n" + '                config.AutoDiscordClipPoster = settings.AutoDiscordClipPoster;' + "`r`n" + '            if (settings.Update is not null)' + "`r`n" + '                config.Update = settings.Update;')
+          if ($config -notmatch 'public ModerationConfig\? Moderation') {
+            $config = $config.Replace(
+              '        public ModuleHealthConfig? ModuleHealth { get; set; }',
+              '        public ModuleHealthConfig? ModuleHealth { get; set; }' + "`r`n" + '        public ModerationConfig? Moderation { get; set; }' + "`r`n" + '        public AutoDiscordClipPosterConfig? AutoDiscordClipPoster { get; set; }' + "`r`n" + '        public UpdateConfig? Update { get; set; }')
+          }
+          $duplicateGuiSettingsProps = '        public ModuleHealthConfig? ModuleHealth { get; set; }' + "`r`n" + '        public ModerationConfig? Moderation { get; set; }' + "`r`n" + '        public AutoDiscordClipPosterConfig? AutoDiscordClipPoster { get; set; }' + "`r`n" + '        public UpdateConfig? Update { get; set; }' + "`r`n" + '        public ModerationConfig? Moderation { get; set; }' + "`r`n" + '        public AutoDiscordClipPosterConfig? AutoDiscordClipPoster { get; set; }' + "`r`n" + '        public UpdateConfig? Update { get; set; }'
           $config = $config.Replace(
-            '        public ModuleHealthConfig? ModuleHealth { get; set; }',
+            $duplicateGuiSettingsProps,
             '        public ModuleHealthConfig? ModuleHealth { get; set; }' + "`r`n" + '        public ModerationConfig? Moderation { get; set; }' + "`r`n" + '        public AutoDiscordClipPosterConfig? AutoDiscordClipPoster { get; set; }' + "`r`n" + '        public UpdateConfig? Update { get; set; }')
 
           $config = [regex]::Replace(
