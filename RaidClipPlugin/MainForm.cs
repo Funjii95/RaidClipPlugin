@@ -2459,7 +2459,7 @@ private enum CloseChoice
 
         try
         {
-            var config = ReadGeneralSettingsFromControls();
+            var config = ReadSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
 
             var obs = _obs;
@@ -2526,7 +2526,7 @@ private enum CloseChoice
 
         try
         {
-            var config = ReadGeneralSettingsFromControls();
+            var config = ReadSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
             _activeConfig = config;
             SetConnectionSettingsEditingEnabled(false);
@@ -4185,7 +4185,7 @@ private enum CloseChoice
                 Title = "Minigame-Daten exportieren"
             };
             if (dialog.ShowDialog(this) != DialogResult.OK) return;
-            var config = ReadGeneralSettingsFromControls();
+            var config = ReadSettingsFromControls();
             await _viewerPoints.ExportAsync(
                 dialog.FileName, config.Minigame,
                 _shutdown?.Token ?? CancellationToken.None);
@@ -4212,7 +4212,7 @@ private enum CloseChoice
                     "Minigame-Daten importieren", MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question) != DialogResult.Yes) return;
 
-            var config = ReadGeneralSettingsFromControls();
+            var config = ReadSettingsFromControls();
             var settings = await _viewerPoints.ImportAsync(
                 dialog.FileName, config.Minigame,
                 _shutdown?.Token ?? CancellationToken.None);
@@ -4275,7 +4275,7 @@ private enum CloseChoice
 
         try
         {
-            var config = ReadGeneralSettingsFromControls();
+            var config = ReadSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
 
             TwitchSession? session = null;
@@ -4865,7 +4865,7 @@ private enum CloseChoice
 
         try
         {
-            var config = ReadGeneralSettingsFromControls();
+            var config = ReadSettingsFromControls();
             config.Update.SkippedVersion = update.DisplayVersion;
             _configurationService.SaveGuiSettings(config);
             ShowSkippedVersion(update.DisplayVersion);
@@ -5405,7 +5405,9 @@ private enum CloseChoice
             SetSettingsControlsEnabled(true);
             _settingsSaveBusy = false;
         }
-    }    private async void SaveSettingsFromControls()
+    }
+
+    private async void SaveSettingsFromControls()
     {
         if (_settingsSaveBusy)
         {
@@ -5418,7 +5420,7 @@ private enum CloseChoice
 
         try
         {
-            var config = ReadGeneralSettingsFromControls();
+            var config = ReadSettingsFromControls();
             _configurationService.SaveGuiSettings(config);
             await _discordCredentialStore.SaveAsync(_discordCredentials);
             ApplyRuntimeSettings(config);

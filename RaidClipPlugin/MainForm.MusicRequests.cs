@@ -501,7 +501,7 @@ public sealed partial class MainForm
         {
             var config = _configurationService.LoadForEditing();
             ReadMusicRequestSettings(config);
-            _configurationService.SaveMusicRequestSettings(config.MusicRequests);
+            _configurationService.SaveGuiSettings(config);
 
 
             var restartRequired = _activeConfig is not null &&

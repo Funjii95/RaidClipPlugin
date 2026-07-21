@@ -632,23 +632,6 @@ public sealed class ConfigurationService
                         settings.Update.SkippedVersion ?? "";
                 }
             }
-            if (settings.Moderation is not null)
-                config.Moderation = settings.Moderation;
-            if (settings.AutoDiscordClipPoster is not null)
-                config.AutoDiscordClipPoster = settings.AutoDiscordClipPoster;
-            if (settings.Update is not null)
-            {
-                if (!string.IsNullOrWhiteSpace(settings.Update.ManifestUrl))
-                {
-                    config.Update = settings.Update;
-                }
-                else
-                {
-                    config.Update.Enabled = settings.Update.Enabled;
-                    config.Update.SkippedVersion =
-                        settings.Update.SkippedVersion ?? "";
-                }
-            }
         }
         catch (Exception exception)
         {
@@ -904,27 +887,31 @@ public sealed class ConfigurationService
         if (config.Minigame.PointsCommandPerlenEnabled) pointCommands.Add("!perlen");
         if (!string.IsNullOrWhiteSpace(config.Minigame.CustomPointsCommand))
             pointCommands.Add(config.Minigame.CustomPointsCommand);
-        var musicCommands = new[]
-        {
-            (config.MusicRequests.ModeratorCommands.SongEnabled,
-                config.MusicRequests.ModeratorCommands.Song),
-            (config.MusicRequests.ModeratorCommands.SkipEnabled,
-                config.MusicRequests.ModeratorCommands.Skip),
-            (config.MusicRequests.ModeratorCommands.QueueEnabled,
-                config.MusicRequests.ModeratorCommands.Queue),
-            (config.MusicRequests.ModeratorCommands.RemoveEnabled,
-                config.MusicRequests.ModeratorCommands.Remove),
-            (config.MusicRequests.ModeratorCommands.PauseEnabled,
-                config.MusicRequests.ModeratorCommands.Pause),
-            (config.MusicRequests.ModeratorCommands.ResumeEnabled,
-                config.MusicRequests.ModeratorCommands.Resume)
-        }.Where(item => item.Item1).Select(item => item.Item2);
+        IEnumerable<string> musicCommands = config.MusicRequests.Enabled
+            ? new[]
+              {
+                  (config.MusicRequests.ModeratorCommands.SongEnabled,
+                      config.MusicRequests.ModeratorCommands.Song),
+                  (config.MusicRequests.ModeratorCommands.SkipEnabled,
+                      config.MusicRequests.ModeratorCommands.Skip),
+                  (config.MusicRequests.ModeratorCommands.QueueEnabled,
+                      config.MusicRequests.ModeratorCommands.Queue),
+                  (config.MusicRequests.ModeratorCommands.RemoveEnabled,
+                      config.MusicRequests.ModeratorCommands.Remove),
+                  (config.MusicRequests.ModeratorCommands.PauseEnabled,
+                      config.MusicRequests.ModeratorCommands.Pause),
+                  (config.MusicRequests.ModeratorCommands.ResumeEnabled,
+                      config.MusicRequests.ModeratorCommands.Resume)
+              }.Where(item => item.Item1).Select(item => item.Item2)
+            : Enumerable.Empty<string>();
         if (pointCommands.Intersect(musicCommands,
                 StringComparer.OrdinalIgnoreCase).Any())
             throw new InvalidOperationException(
                 "Ein Musik-Command kollidiert mit einem Punkte-Command.");
-        var clipCommands = new[] { config.ClipCommand.Command }
-            .Concat(config.ClipCommand.Aliases);
+        IEnumerable<string> clipCommands = config.ClipCommand.Enabled
+            ? new[] { config.ClipCommand.Command }
+                .Concat(config.ClipCommand.Aliases)
+            : Enumerable.Empty<string>();
         if (clipCommands.Intersect(pointCommands.Concat(musicCommands),
                 StringComparer.OrdinalIgnoreCase).Any())
             throw new InvalidOperationException(
