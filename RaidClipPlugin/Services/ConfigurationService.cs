@@ -929,7 +929,9 @@ public sealed class ConfigurationService
                 StringComparer.OrdinalIgnoreCase).Any())
             throw new InvalidOperationException(
                 "Ein Clip-Command kollidiert mit einem bestehenden Chat-Command.");
-        var giveawayCommands = GetGiveawayCommands(config.Giveaways);
+        var giveawayCommands = config.Giveaways.Enabled
+  ? GetGiveawayCommands(config.Giveaways)
+  : Enumerable.Empty<string>();
         if (giveawayCommands.Intersect(
                 pointCommands.Concat(musicCommands).Concat(clipCommands),
                 StringComparer.OrdinalIgnoreCase).Any())
@@ -948,6 +950,11 @@ public sealed class ConfigurationService
 
     public static void ValidateDuelSettings(DuelConfig duel)
     {
+        if (!duel.Enabled)
+        {
+            return;
+        }
+
         var commands = new[] { duel.DuelCommand, duel.AcceptCommand, duel.DenyCommand };
         if (commands.Any(string.IsNullOrWhiteSpace) ||
             commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() != commands.Length)
@@ -976,6 +983,12 @@ public sealed class ConfigurationService
     public static void ValidateHeistAndCommands(AppConfig config)
     {
         var heist = config.Heist;
+        if (!heist.Enabled)
+        {
+            ValidateCommandsSettings(config);
+            return;
+        }
+
         if (heist.MinimumParticipants < 3)
             throw new InvalidOperationException("Der Heist benötigt mindestens 3 Teilnehmer.");
         if (heist.MaximumParticipants < heist.MinimumParticipants || heist.MaximumParticipants > 500)
@@ -998,6 +1011,11 @@ public sealed class ConfigurationService
             throw new InvalidOperationException("Alle Heist-Chatnachrichten müssen ausgefüllt sein.");
 
 
+        ValidateCommandsSettings(config);
+    }
+
+    private static void ValidateCommandsSettings(AppConfig config)
+    {
         var commands = config.Commands;
         if (string.IsNullOrWhiteSpace(commands.Command))
             throw new InvalidOperationException("Der Commands-Command darf nicht leer sein.");
@@ -1496,6 +1514,11 @@ public sealed class ConfigurationService
 
     public static void ValidateGiveawaySettings(GiveawayConfig config)
     {
+        if (!config.Enabled)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(config.Title) ||
             string.IsNullOrWhiteSpace(config.Prize))
             throw new InvalidOperationException(
