@@ -1,4 +1,4 @@
-name: Publish 1.9.47 Settings Load Repair
+﻿name: Publish 1.9.48 Navigation Systemstatus
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   actions: read
 
 env:
-  VERSION: '1.9.47'
+  VERSION: '1.9.48'
 
 jobs:
   release:
@@ -41,6 +41,199 @@ jobs:
           Set-Content -Path patch-settings-load-1947.py -Value $script -Encoding UTF8
           python patch-settings-load-1947.py
 
+
+      - name: Patch navigation and system status UI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = @'
+          from pathlib import Path
+          import re
+
+          VERSION = "1.9.48"
+
+          def read(path):
+              return Path(path).read_text(encoding="utf-8-sig")
+
+          def write(path, text):
+              Path(path).write_text(text, encoding="utf-8")
+
+          def require(condition, message):
+              if not condition:
+                  raise SystemExit(message)
+
+          def replace_method(text, signature, body):
+              start = text.find(signature)
+              require(start >= 0, f"Method not found: {signature}")
+              brace = text.find("{", start)
+              require(brace >= 0, f"Brace not found: {signature}")
+              depth = 0
+              end = None
+              for index in range(brace, len(text)):
+                  char = text[index]
+                  if char == "{":
+                      depth += 1
+                  elif char == "}":
+                      depth -= 1
+                      if depth == 0:
+                          end = index + 1
+                          break
+              require(end is not None, f"Method end not found: {signature}")
+              return text[:start] + body.rstrip() + text[end:]
+
+          csproj = "RaidClipPlugin/RaidClipPlugin.csproj"
+          text = read(csproj)
+          text = re.sub(r"<Version>[^<]+</Version>", f"<Version>{VERSION}</Version>", text)
+          text = re.sub(r"<FileVersion>[^<]+</FileVersion>", f"<FileVersion>{VERSION}.0</FileVersion>", text)
+          text = re.sub(r"<AssemblyVersion>[^<]+</AssemblyVersion>", f"<AssemblyVersion>{VERSION}.0</AssemblyVersion>", text)
+          write(csproj, text)
+
+          heist_path = "RaidClipPlugin/MainForm.HeistCommands.cs"
+          text = read(heist_path)
+          text = text.replace(
+              'private readonly Button _commandsNavButton = CreateNavigationTile("◉  Punkte", "Commands und Berechtigungen");',
+              'private readonly Button _commandsNavButton = CreateNavigationTile("⌨  Commands", "Alle Chat-Befehle und Berechtigungen");')
+          text = text.replace(
+              'private readonly Button _commandsNavButton = CreateNavigationTile("⌨  Commands", "Alle Chat-Befehle und Berechtigungen");',
+              'private readonly Button _commandsNavButton = CreateNavigationTile("⌨  Commands", "Alle Chat-Befehle und Berechtigungen");')
+          text = text.replace(
+              'private readonly TextBox _commandSearchBox = new() { Width = 240, PlaceholderText = "Command oder Beschreibung suchen" };',
+              'private readonly TextBox _commandSearchBox = new() { Width = 310, PlaceholderText = "Command oder Beschreibung suchen" };')
+          text = text.replace(
+              'var filters = new FlowLayoutPanel { AutoSize = true, AutoScroll = true,\n            WrapContents = true, Padding = new Padding(0, 4, 0, 4) };',
+              'var filters = new FlowLayoutPanel { AutoSize = false, AutoScroll = false,\n            Dock = DockStyle.Fill, Height = 88, WrapContents = true,\n            Padding = new Padding(0, 8, 0, 6), Margin = new Padding(0) };')
+          text = text.replace(
+              'layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));\n        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));',
+              'layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));\n        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));')
+
+          overview_body = r"""
+          private Control BuildCommandOverviewPanel(Control filters)
+          {
+              if (filters is FlowLayoutPanel filterFlow)
+              {
+                  filterFlow.AutoSize = false;
+                  filterFlow.AutoScroll = false;
+                  filterFlow.Dock = DockStyle.Fill;
+                  filterFlow.Height = 92;
+                  filterFlow.MinimumSize = new Size(0, 88);
+                  filterFlow.WrapContents = true;
+                  filterFlow.Padding = new Padding(0, 8, 0, 6);
+                  filterFlow.Margin = new Padding(0);
+              }
+
+              var filterHost = new Panel
+              {
+                  Dock = DockStyle.Fill,
+                  Padding = new Padding(10, 8, 10, 6),
+                  MinimumSize = new Size(0, 104),
+                  BackColor = BackgroundColor
+              };
+              filterHost.Controls.Add(filters);
+
+              _commandsGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
+              _commandsGrid.RowTemplate.Height = 28;
+              _commandsGrid.AllowUserToResizeRows = false;
+              _commandsGrid.ScrollBars = ScrollBars.Both;
+              _commandsGrid.Dock = DockStyle.Fill;
+
+              var panel = new TableLayoutPanel
+              {
+                  Dock = DockStyle.Fill,
+                  ColumnCount = 1,
+                  RowCount = 2,
+                  Padding = new Padding(10, 8, 10, 10),
+                  BackColor = BackgroundColor
+              };
+              panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+              panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+              panel.Controls.Add(filterHost, 0, 0);
+              panel.Controls.Add(_commandsGrid, 0, 1);
+              return panel;
+          }
+          """
+
+          if "private Control BuildCommandOverviewPanel(Control filters)" in text:
+              text = replace_method(text, "    private Control BuildCommandOverviewPanel(Control filters)", overview_body)
+          else:
+              marker = "    private void InitializeHeistCommandEvents()"
+              require(marker in text, "InitializeHeistCommandEvents marker missing")
+              text = text.replace(marker, overview_body + "\n\n" + marker)
+
+          require('"⌨  Commands"' in text, "Commands navigation label was not patched")
+          require("BuildCommandOverviewPanel" in text, "Command overview layout missing")
+          write(heist_path, text)
+
+          main_path = "RaidClipPlugin/MainForm.cs"
+          text = read(main_path)
+          text = text.replace(
+              'private readonly Button _systemStatusNavButton = CreateNavigationTile(\n        "◈  Systemprüfung",\n        "Dienste und Recovery");',
+              'private readonly Button _systemStatusNavButton = CreateNavigationTile(\n        "🩺  Systemprüfung",\n        "Dienste und Recovery");')
+
+          text = text.replace(
+              '        if (statuses.Count == 0)\n        {\n            _moduleHealthSummaryLabel.Text = "Systemstatus: Healthcheck deaktiviert";\n            _moduleHealthSummaryLabel.ForeColor = DisabledStatusColor;\n            _moduleHealthOverallDot.DotColor = DisabledStatusColor;\n            _moduleHealthLastCheckLabel.Text = "Letzte Prüfung: –";\n            _moduleHealthGrid.Controls.Clear();\n            _moduleHealthCards.Clear();\n            return;\n        }',
+              '        if (statuses.Count == 0)\n        {\n            _moduleHealthSummaryLabel.Text = "Systemstatus: Noch nicht geprüft";\n            _moduleHealthSummaryLabel.ForeColor = UnknownStatusColor;\n            _moduleHealthOverallDot.DotColor = UnknownStatusColor;\n            _moduleHealthLastCheckLabel.Text = "Letzte Prüfung: –";\n            UpdateModuleHealthGrid(CreateInitialModuleHealthViewModels());\n            return;\n        }')
+
+          initial_models = r"""
+          private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels()
+          {
+              var checkedAt = DateTime.Now;
+              var modules = new[]
+              {
+                  "Twitch API",
+                  "Twitch Chat",
+                  "Twitch EventSub",
+                  "OBS Studio",
+                  "Lokaler Player",
+                  "Clip Playback",
+                  "Commands",
+                  "Punkte-System",
+                  "Minigame",
+                  "Gamble",
+                  "Jackpot",
+                  "Updater"
+              };
+
+              return modules.Select(module => new ModuleHealthViewModel(
+                      module,
+                      GetModuleHealthGroup(module),
+                      ModuleHealthViewState.Unknown,
+                      "Noch nicht geprüft",
+                      "Klicke auf „Jetzt prüfen“, um den aktuellen Status abzufragen.",
+                      true,
+                      checkedAt))
+                  .ToList();
+          }
+          """
+          if "private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels()" not in text:
+              marker = "    private ModuleHealthViewModel CreateModuleHealthViewModel("
+              require(marker in text, "CreateModuleHealthViewModel marker missing")
+              text = text.replace(marker, initial_models + "\n\n" + marker)
+
+          text = text.replace(
+              '            "OBS" or "Twitch EventSub" or "Twitch Chat" or "Discord" =>\n                "Verbindungen",',
+              '            "OBS" or "OBS Studio" or "Twitch API" or "Twitch EventSub" or\n                "Twitch Chat" or "Discord" =>\n                "Verbindungen",')
+          text = text.replace(
+              '            "LocalPlayer" or "Clip Playback" or "Discord Clip-Command" or\n                "Auto Discord Clip Poster" => "Clip-System",',
+              '            "LocalPlayer" or "Lokaler Player" or "Clip Playback" or\n                "Discord Clip-Command" or "Auto Discord Clip Poster" => "Clip-System",')
+          text = text.replace(
+              '            "Commands" or "Punkte" or "Minigame" or "Gamble" or "Jackpot" or\n                "Giveaway" => "Bot-Funktionen",',
+              '            "Commands" or "Punkte" or "Punkte-System" or "Minigame" or\n                "Gamble" or "Jackpot" or "Giveaway" => "Bot-Funktionen",')
+
+          if "UpdateModuleHealthDisplay(Array.Empty<ModuleHealthStatus>());" not in text[text.find("private void BuildSystemStatusPage()"):text.find("private void BuildLayout()")]:
+              text = text.replace(
+                  '        _systemStatusPage.Controls.Add(layout);\n    }\n\n    private void BuildLayout()',
+                  '        _systemStatusPage.Controls.Add(layout);\n        UpdateModuleHealthDisplay(Array.Empty<ModuleHealthStatus>());\n    }\n\n    private void BuildLayout()')
+
+          require("CreateInitialModuleHealthViewModels" in text, "Initial system status models missing")
+          require("Systemstatus: Noch nicht geprüft" in text, "Initial system status summary missing")
+          write(main_path, text)
+
+          print("Navigation/Systemstatus patch applied for", VERSION)
+          '@
+          Set-Content -Path patch-navigation-systemstatus-1948.py -Value $script -Encoding UTF8
+          python patch-navigation-systemstatus-1948.py
+
+
       - name: Build
         shell: pwsh
         run: dotnet build RaidClipPlugin/RaidClipPlugin.csproj -c Release
@@ -50,11 +243,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/RaidClipPlugin.csproj
+          git add RaidClipPlugin/MainForm.cs RaidClipPlugin/MainForm.HeistCommands.cs RaidClipPlugin/Services/ConfigurationService.cs RaidClipPlugin/RaidClipPlugin.csproj
           if (git diff --cached --quiet) {
             echo "No source changes to commit."
           } else {
-            git commit -m "Repair settings loading and command persistence for 1.9.47"
+            git commit -m "Fix navigation labels and system status for 1.9.48"
             git push
           }
 
@@ -83,7 +276,7 @@ jobs:
           $manifest = [ordered]@{
             latestVersion = $env:VERSION
             downloadUrl = "https://github.com/Funjii95/RaidClipPlugin/releases/download/v$env:VERSION/$zip"
-            changelog = "Hotfix 1.9.47: Einstellungen werden sektionenweise geladen, damit ein Fehler nicht mehr Heist/Duel/Music verhindert. Command-Haken werden beim reinen Laden nicht mehr automatisch überschrieben."
+            changelog = "Hotfix 1.9.48: Commands-Reiter ist wieder eindeutig als Commands beschriftet, die obere Commands-Zeile hat mehr Platz und die Systemprüfung zeigt sofort sichtbare Module statt leerer Fläche."
             sha256 = $sha
           }
           $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path update.json -Encoding UTF8
@@ -97,16 +290,15 @@ jobs:
           $notes = @(
             "Hotfix $env:VERSION",
             "",
-            "- GUI-Einstellungen werden jetzt sektionenweise geladen.",
-            "- Ein Fehler in einer Sektion bricht nicht mehr das Laden von Heist, Duel, Musikwünschen oder anderen Seiten ab.",
-            "- Command-Haken werden beim reinen Laden nicht mehr automatisch durch Modulzustände überschrieben.",
-            "- Synchronisierung von Minigame/Heist/Duel-Commands passiert weiterhin beim Speichern.",
+            "- Sidebar: Commands heißt wieder Commands und nicht Punkte.",
+            "- Commands-Reiter: obere Filter-/Button-Zeile bekommt mehr Platz und schneidet nicht mehr ab.",
+            "- Systemprüfung: Seite zeigt sofort Basis-Module und ist nicht mehr leer, auch vor dem ersten Healthcheck.",
             "",
-            "Test: Haken, Heist-Text, Duel-Text und Musikwunsch-Werte ändern, speichern, App schließen und neu öffnen."
-          ) -join [Environment]::NewLine
+            "Test: Commands öffnen, obere Filterzeile prüfen, Systemprüfung öffnen und Jetzt prüfen ausführen."          ) -join [Environment]::NewLine
           git tag -f $tag
           git push origin $tag --force
           gh release delete $tag -y --cleanup-tag 2>$null || $true
           $assets = @("RaidClipPlugin-$env:VERSION-win-x64.zip", "update.json")
           if (Test-Path "RaidClipPluginSetup-$env:VERSION.exe") { $assets += "RaidClipPluginSetup-$env:VERSION.exe" }
           gh release create $tag @assets --title "RaidClipPlugin $env:VERSION" --notes $notes
+
