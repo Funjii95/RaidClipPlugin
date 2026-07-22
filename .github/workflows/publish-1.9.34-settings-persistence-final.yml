@@ -112,9 +112,12 @@ jobs:
           text = text.replace(
               'layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));\n        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));',
               'layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));\n        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));')
+          text = text.replace(
+              'BuildCommandOverviewPanel(filters)',
+              'BuildCommandsOverviewLayout(filters)')
 
           overview_body = r"""
-          private Control BuildCommandOverviewPanel(Control filters)
+          private Control BuildCommandsOverviewLayout(Control filters)
           {
               if (filters is FlowLayoutPanel filterFlow)
               {
@@ -159,13 +162,14 @@ jobs:
           }
           """
 
-          text = remove_methods_named(text, "BuildCommandOverviewPanel")
-          marker = "    private void InitializeHeistCommandEvents()"
-          require(marker in text, "InitializeHeistCommandEvents marker missing")
-          text = text.replace(marker, overview_body + "\n\n" + marker)
+          if "private Control BuildCommandsOverviewLayout(Control filters)" not in text:
+              marker = "    private void InitializeHeistCommandEvents()"
+              require(marker in text, "InitializeHeistCommandEvents marker missing")
+              text = text.replace(marker, overview_body + "\n\n" + marker)
 
           require('"⌨  Commands"' in text, "Commands navigation label was not patched")
-          require("BuildCommandOverviewPanel" in text, "Command overview layout missing")
+          require("BuildCommandsOverviewLayout(filters)" in text, "Command overview layout was not wired")
+          require("private Control BuildCommandsOverviewLayout(Control filters)" in text, "Command overview layout missing")
           write(heist_path, text)
 
           main_path = "RaidClipPlugin/MainForm.cs"
