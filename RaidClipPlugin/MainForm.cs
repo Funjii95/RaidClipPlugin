@@ -659,7 +659,7 @@ public sealed partial class MainForm : Form
         "Punkte, Spiele und Jackpot");
 
     private readonly Button _systemStatusNavButton = CreateNavigationTile(
-        "◈  Systemprüfung",
+        "🩺  Systemprüfung",
         "Dienste und Recovery");
 
     private readonly Panel _minigamePage = new()
@@ -1509,6 +1509,7 @@ private enum CloseChoice
         layout.Controls.Add(header, 0, 0);
         layout.Controls.Add(tabs, 0, 1);
         _systemStatusPage.Controls.Add(layout);
+        UpdateModuleHealthDisplay(Array.Empty<ModuleHealthStatus>());
     }
 
     private void BuildLayout()
@@ -3627,12 +3628,11 @@ private enum CloseChoice
 
         if (statuses.Count == 0)
         {
-            _moduleHealthSummaryLabel.Text = "Systemstatus: Healthcheck deaktiviert";
-            _moduleHealthSummaryLabel.ForeColor = DisabledStatusColor;
-            _moduleHealthOverallDot.DotColor = DisabledStatusColor;
+            _moduleHealthSummaryLabel.Text = "Systemstatus: Noch nicht geprüft";
+            _moduleHealthSummaryLabel.ForeColor = UnknownStatusColor;
+            _moduleHealthOverallDot.DotColor = UnknownStatusColor;
             _moduleHealthLastCheckLabel.Text = "Letzte Prüfung: –";
-            _moduleHealthGrid.Controls.Clear();
-            _moduleHealthCards.Clear();
+            UpdateModuleHealthGrid(CreateInitialModuleHealthViewModels());
             return;
         }
 
@@ -3648,6 +3648,38 @@ private enum CloseChoice
         _moduleHealthLastCheckLabel.Text =
             "Letzte Prüfung: " + checkedAt.ToString("HH:mm:ss");
     }
+
+
+private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels()
+{
+    var checkedAt = DateTime.Now;
+    var modules = new[]
+    {
+        "Twitch API",
+        "Twitch Chat",
+        "Twitch EventSub",
+        "OBS Studio",
+        "Lokaler Player",
+        "Clip Playback",
+        "Commands",
+        "Punkte-System",
+        "Minigame",
+        "Gamble",
+        "Jackpot",
+        "Updater"
+    };
+
+    return modules.Select(module => new ModuleHealthViewModel(
+            module,
+            GetModuleHealthGroup(module),
+            ModuleHealthViewState.Unknown,
+            "Noch nicht geprüft",
+            "Klicke auf „Jetzt prüfen“, um den aktuellen Status abzufragen.",
+            true,
+            checkedAt))
+        .ToList();
+}
+
 
     private ModuleHealthViewModel CreateModuleHealthViewModel(
         ModuleHealthStatus status,
@@ -3712,12 +3744,13 @@ private enum CloseChoice
     {
         return moduleName switch
         {
-            "OBS" or "Twitch EventSub" or "Twitch Chat" or "Discord" =>
+            "OBS" or "OBS Studio" or "Twitch API" or "Twitch EventSub" or
+                "Twitch Chat" or "Discord" =>
                 "Verbindungen",
-            "LocalPlayer" or "Clip Playback" or "Discord Clip-Command" or
-                "Auto Discord Clip Poster" => "Clip-System",
-            "Commands" or "Punkte" or "Minigame" or "Gamble" or "Jackpot" or
-                "Giveaway" => "Bot-Funktionen",
+            "LocalPlayer" or "Lokaler Player" or "Clip Playback" or
+                "Discord Clip-Command" or "Auto Discord Clip Poster" => "Clip-System",
+            "Commands" or "Punkte" or "Punkte-System" or "Minigame" or
+                "Gamble" or "Jackpot" or "Giveaway" => "Bot-Funktionen",
             "Spotify/Musikwunsch" => "Musik",
             _ => "Weitere Module"
         };
@@ -4985,6 +5018,7 @@ private enum CloseChoice
                 exception.Message);
         }
     }
+
 
 
     private void LoadSettingsIntoControls()

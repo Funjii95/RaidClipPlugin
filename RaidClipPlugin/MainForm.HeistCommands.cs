@@ -8,11 +8,11 @@ public sealed partial class MainForm
 {
     private readonly CommandRegistry _commandRegistry = new();
     private readonly Panel _commandsPage = new() { Dock = DockStyle.Fill, Visible = false };
-    private readonly Button _commandsNavButton = CreateNavigationTile("◉  Punkte", "Commands und Berechtigungen");
+    private readonly Button _commandsNavButton = CreateNavigationTile("⌨  Commands", "Alle Chat-Befehle und Berechtigungen");
     private readonly DataGridView _commandsGrid = new() { Dock = DockStyle.Fill, ReadOnly = false, AllowUserToAddRows = false,
         AllowUserToDeleteRows = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false,
         AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells, BackgroundColor = SurfaceColor };
-    private readonly TextBox _commandSearchBox = new() { Width = 240, PlaceholderText = "Command oder Beschreibung suchen" };
+    private readonly TextBox _commandSearchBox = new() { Width = 310, PlaceholderText = "Command oder Beschreibung suchen" };
     private readonly ComboBox _commandModuleFilter = new() { Width = 170, DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly ComboBox _commandActiveFilter = new() { Width = 130, DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly ComboBox _commandRoleFilter = new() { Width = 150, DropDownStyle = ComboBoxStyle.DropDownList };
@@ -115,8 +115,9 @@ public sealed partial class MainForm
             ForeColor = TextColor, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft };
         var subtitle = new Label { Text = "Chat-Befehle, Custom Commands und frei wählbare Berechtigungen",
             AutoSize = true, ForeColor = MutedTextColor };
-        var filters = new FlowLayoutPanel { AutoSize = true, AutoScroll = true,
-            WrapContents = true, Padding = new Padding(0, 4, 0, 4) };
+        var filters = new FlowLayoutPanel { AutoSize = false, AutoScroll = false,
+            Dock = DockStyle.Fill, Height = 88, WrapContents = true,
+            Padding = new Padding(0, 8, 0, 6), Margin = new Padding(0) };
         _commandActiveFilter.Items.AddRange(new object[] { "Alle", "Aktiv", "Inaktiv" }); _commandActiveFilter.SelectedIndex = 0;
         _commandRoleFilter.Items.AddRange(new object[] { "Alle Rollen", "Zuschauer", "Follower", "Subscriber", "VIP", "Moderator", "Broadcaster" }); _commandRoleFilter.SelectedIndex = 0;
         _commandModuleFilter.Items.Add("Alle Module"); _commandModuleFilter.SelectedIndex = 0;
@@ -141,12 +142,12 @@ public sealed partial class MainForm
             _commandsGrid.Columns.Add(new DataGridViewTextBoxColumn
                 { Name = column, HeaderText = column, ReadOnly = true });
         var tabs = new TabControl { Dock = DockStyle.Fill };
-        AddMinigameTab(tabs, "Übersicht & Rechte", BuildCommandOverviewPanel(filters));
+        AddMinigameTab(tabs, "Übersicht & Rechte", BuildCommandsOverviewLayout(filters));
         AddMinigameTab(tabs, "Custom Commands", BuildCustomCommandsPanel());
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3,
             ColumnCount = 1, Padding = new Padding(20) };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(header, 0, 0); layout.Controls.Add(subtitle, 0, 1);
         layout.Controls.Add(tabs, 0, 2);
@@ -161,6 +162,52 @@ public sealed partial class MainForm
             AppendLog("Command-Liste konnte nicht mit Standardwerten vorbereitet werden: " + exception.Message);
         }
     }
+
+
+private Control BuildCommandsOverviewLayout(Control filters)
+{
+    if (filters is FlowLayoutPanel filterFlow)
+    {
+        filterFlow.AutoSize = false;
+        filterFlow.AutoScroll = false;
+        filterFlow.Dock = DockStyle.Fill;
+        filterFlow.Height = 92;
+        filterFlow.MinimumSize = new Size(0, 88);
+        filterFlow.WrapContents = true;
+        filterFlow.Padding = new Padding(0, 8, 0, 6);
+        filterFlow.Margin = new Padding(0);
+    }
+
+    var filterHost = new Panel
+    {
+        Dock = DockStyle.Fill,
+        Padding = new Padding(10, 8, 10, 6),
+        MinimumSize = new Size(0, 104),
+        BackColor = BackgroundColor
+    };
+    filterHost.Controls.Add(filters);
+
+    _commandsGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
+    _commandsGrid.RowTemplate.Height = 28;
+    _commandsGrid.AllowUserToResizeRows = false;
+    _commandsGrid.ScrollBars = ScrollBars.Both;
+    _commandsGrid.Dock = DockStyle.Fill;
+
+    var panel = new TableLayoutPanel
+    {
+        Dock = DockStyle.Fill,
+        ColumnCount = 1,
+        RowCount = 2,
+        Padding = new Padding(10, 8, 10, 10),
+        BackColor = BackgroundColor
+    };
+    panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+    panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+    panel.Controls.Add(filterHost, 0, 0);
+    panel.Controls.Add(_commandsGrid, 0, 1);
+    return panel;
+}
+
 
     private void InitializeHeistCommandEvents()
     {
