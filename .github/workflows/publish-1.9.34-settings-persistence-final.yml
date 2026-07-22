@@ -62,24 +62,31 @@ jobs:
               if not condition:
                   raise SystemExit(message)
 
-          def replace_method(text, signature, body):
-              start = text.find(signature)
-              require(start >= 0, f"Method not found: {signature}")
-              brace = text.find("{", start)
-              require(brace >= 0, f"Brace not found: {signature}")
-              depth = 0
-              end = None
-              for index in range(brace, len(text)):
-                  char = text[index]
-                  if char == "{":
-                      depth += 1
-                  elif char == "}":
-                      depth -= 1
-                      if depth == 0:
-                          end = index + 1
-                          break
-              require(end is not None, f"Method end not found: {signature}")
-              return text[:start] + body.rstrip() + text[end:]
+          def remove_methods_named(text, method_name):
+              needle = method_name + "("
+              while True:
+                  name_index = text.find(needle)
+                  if name_index < 0:
+                      return text
+                  start = text.rfind("\n", 0, name_index) + 1
+                  brace = text.find("{", name_index)
+                  require(brace >= 0, f"Brace not found for {method_name}")
+                  depth = 0
+                  end = None
+                  for index in range(brace, len(text)):
+                      char = text[index]
+                      if char == "{":
+                          depth += 1
+                      elif char == "}":
+                          depth -= 1
+                          if depth == 0:
+                              end = index + 1
+                              break
+                  require(end is not None, f"Method end not found for {method_name}")
+                  while end < len(text) and text[end] in "\r\n":
+                      end += 1
+                  text = text[:start] + text[end:]
+
 
           csproj = "RaidClipPlugin/RaidClipPlugin.csproj"
           text = read(csproj)
@@ -152,12 +159,10 @@ jobs:
           }
           """
 
-          if "private Control BuildCommandOverviewPanel(Control filters)" in text:
-              text = replace_method(text, "    private Control BuildCommandOverviewPanel(Control filters)", overview_body)
-          else:
-              marker = "    private void InitializeHeistCommandEvents()"
-              require(marker in text, "InitializeHeistCommandEvents marker missing")
-              text = text.replace(marker, overview_body + "\n\n" + marker)
+          text = remove_methods_named(text, "BuildCommandOverviewPanel")
+          marker = "    private void InitializeHeistCommandEvents()"
+          require(marker in text, "InitializeHeistCommandEvents marker missing")
+          text = text.replace(marker, overview_body + "\n\n" + marker)
 
           require('"⌨  Commands"' in text, "Commands navigation label was not patched")
           require("BuildCommandOverviewPanel" in text, "Command overview layout missing")
