@@ -57,7 +57,13 @@ public sealed partial class MainForm
 
     private Control BuildCustomCommandsPanel()
     {
-        var tabs = new TabControl { Dock = DockStyle.Fill, Name = "CustomCommandTabs" };
+        var tabs = new TabControl
+        {
+            Dock = DockStyle.Fill,
+            Name = "CustomCommandTabs",
+            Padding = new Point(18, 8),
+            ItemSize = new Size(0, 38)
+        };
         var editor = new TabPage("Commands verwalten")
             { BackColor = SurfaceColor, ForeColor = TextColor };
         editor.Controls.Add(BuildCustomCommandsEditorPanel());
@@ -83,7 +89,7 @@ public sealed partial class MainForm
         var buttons = new FlowLayoutPanel
         {
             Name = "CustomCommandImportToolbar", Dock = DockStyle.Fill,
-            AutoScroll = true, WrapContents = true, Padding = new Padding(3)
+            AutoScroll = false, WrapContents = true, Padding = new Padding(2, 3, 2, 2)
         };
         buttons.Controls.AddRange(new Control[]
         {
@@ -91,21 +97,26 @@ public sealed partial class MainForm
             _customImportRecheckButton, _customImportApplyButton,
             _customImportSafeButton
         });
+        foreach (Control control in buttons.Controls)
+        {
+            control.Margin = new Padding(4, 3, 8, 3);
+            if (control is Button button) button.Height = 30;
+        }
         var upper = new TableLayoutPanel
         {
             Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
             Padding = new Padding(4)
         };
-        upper.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        upper.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
         upper.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        upper.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        upper.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         upper.Controls.Add(hint, 0, 0);
         upper.Controls.Add(_customImportTextBox, 0, 1);
         upper.Controls.Add(buttons, 0, 2);
         var split = new SplitContainer
         {
             Dock = DockStyle.Fill, Orientation = Orientation.Horizontal,
-            Size = new Size(900, 600), SplitterDistance = 210, Panel1MinSize = 150, Panel2MinSize = 220
+            Size = new Size(900, 600), SplitterDistance = 250, Panel1MinSize = 190, Panel2MinSize = 180
         };
         split.Panel1.Controls.Add(upper);
         var previewLayout = new TableLayoutPanel
@@ -114,7 +125,7 @@ public sealed partial class MainForm
             MinimumSize = new Size(320, 220)
         };
         previewLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        previewLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 86));
+        previewLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
         previewLayout.Controls.Add(_customImportGrid, 0, 0);
         previewLayout.Controls.Add(_customImportDetailsBox, 0, 1);
         split.Panel2.Controls.Add(previewLayout);
