@@ -78,13 +78,13 @@ public sealed class CommandRegistry
         Add("casino.jackpot", "!jackpot", null, "casino", "Casino", "Jackpot",
             "Zeigt den aktuellen Jackpot.", "!jackpot", "!jackpot", m.Enabled && m.JackpotEnabled, order:41);
         Add("casino.coinflip", "!coinflip", null, "casino", "Casino", "Coinflip",
-            "Wirft eine Münze.", "!coinflip <kopf|zahl> <Betrag>", "!coinflip kopf 100",
+            "Wirft eine Münze.", "!coinflip <kopf|zahl> <Betrag|all>", "!coinflip kopf all",
             m.Enabled && m.CoinflipEnabled, userCooldown:m.CoinflipCooldownSeconds, cost:m.CoinflipMinimumBet, order:42);
         Add("casino.slots", "!slots", null, "casino", "Casino", "Slots",
-            "Spielt am Spielautomaten.", "!slots <Betrag>", "!slots 100",
+            "Spielt am Spielautomaten.", "!slots <Betrag|all>", "!slots all",
             m.Enabled && m.SlotsEnabled, userCooldown:m.SlotsCooldownSeconds, cost:m.SlotsMinimumBet, order:43);
         Add("casino.roulette", "!roulette", null, "casino", "Casino", "Roulette",
-            "Setzt Punkte beim Roulette.", "!roulette <Tipp> <Betrag>", "!roulette rot 100",
+            "Setzt Punkte beim Roulette.", "!roulette <Tipp> <Betrag|all>", "!roulette rot all",
             m.Enabled && m.RouletteEnabled, userCooldown:m.RouletteCooldownSeconds, cost:m.RouletteMinimumBet, order:44);
 
         Add("heist.start", config.Heist.StartCommand, null, "heist", "Heist", "Heist starten",
