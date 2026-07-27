@@ -1115,7 +1115,17 @@ private enum CloseChoice
                     break;
 
                 case Label label:
-                    if (ReferenceEquals(label, _obsIndicator) ||
+                    if (label.Tag is Color labelAccentColor)
+                    {
+                        label.BackColor = Color.Transparent;
+                        label.ForeColor = labelAccentColor;
+                    }
+                    else if (label.Tag is string labelTag && labelTag.Equals("ThemeAccent", StringComparison.OrdinalIgnoreCase))
+                    {
+                        label.BackColor = Color.Transparent;
+                        label.ForeColor = AccentColor;
+                    }
+                    else if (ReferenceEquals(label, _obsIndicator) ||
                         ReferenceEquals(label, _twitchIndicator) ||
                         ReferenceEquals(label, _eventSubIndicator) ||
                         ReferenceEquals(label, _playerIndicator))
@@ -1519,7 +1529,8 @@ private enum CloseChoice
             Text = "Raid Clip",
             AutoSize = true,
             Font = new Font("Segoe UI", 20F, FontStyle.Bold),
-            ForeColor = Color.White,
+            ForeColor = AccentColor,
+            Tag = "ThemeAccent",
             Margin = Padding.Empty
         };
         var titleAccent = new Label
@@ -1528,6 +1539,7 @@ private enum CloseChoice
             AutoSize = true,
             Font = new Font("Segoe UI", 20F, FontStyle.Bold),
             ForeColor = AccentColor,
+            Tag = "ThemeAccent",
             Margin = Padding.Empty
         };
         var titleRow = new FlowLayoutPanel
