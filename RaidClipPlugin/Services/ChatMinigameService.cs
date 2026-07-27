@@ -178,6 +178,20 @@ public sealed class ChatMinigameService : IDisposable
         return (long)Math.Floor(value);
     }
 
+    private string FormatUserTemplate(string template, ChatMessage message)
+    {
+        var safeTemplate = string.IsNullOrWhiteSpace(template)
+            ? "@{username} ist jetzt im Lurk und erhält weiterhin Anwesenheitspunkte."
+            : template;
+
+        return safeTemplate
+            .Replace("{username}", message.UserName, StringComparison.OrdinalIgnoreCase)
+            .Replace("{user}", message.UserName, StringComparison.OrdinalIgnoreCase)
+            .Replace("{login}", message.UserName, StringComparison.OrdinalIgnoreCase)
+            .Replace("{currencySingular}", _config.CurrencySingular, StringComparison.OrdinalIgnoreCase)
+            .Replace("{currencyPlural}", _config.CurrencyPlural, StringComparison.OrdinalIgnoreCase);
+    }
+
     private bool IsPointsBlacklisted(string? login, string? displayName = null)
     {
         static string NormalizeName(string? value) =>
@@ -606,8 +620,8 @@ public sealed class ChatMinigameService : IDisposable
 
                 await TrySendChatAsync(
                     command == "!lurk"
-                        ? $"@{message.UserName} ist jetzt im Lurk und erhält weiterhin Anwesenheitspunkte."
-                        : $"@{message.UserName} ist zurück und erhält wieder normale Anwesenheitspunkte.",
+                        ? FormatUserTemplate(_config.LurkMessage, message)
+                        : FormatUserTemplate(_config.UnlurkMessage, message),
                     cancellationToken);
                 return;
             }
