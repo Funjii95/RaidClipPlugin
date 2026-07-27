@@ -136,8 +136,8 @@ public sealed partial class MainForm
 
     private Control CreateDashboardActionBar(Control actions)
     {
-        var host = new TableLayoutPanel { Dock = DockStyle.Top, Height = 54, ColumnCount = 6, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 2, 0, 0) };
-        host.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        var host = new TableLayoutPanel { Dock = DockStyle.Top, Height = 70, ColumnCount = 6, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 2, 0, 8) };
+        host.RowStyles.Add(new RowStyle(SizeType.Absolute, 66));
         foreach (var percent in new[] { 15, 18, 18, 24, 13, 12 }) host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, percent));
         if (actions is FlowLayoutPanel flow)
         {
@@ -150,9 +150,9 @@ public sealed partial class MainForm
       var child = orderedControls[index];
       child.Dock = DockStyle.None;
       child.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
-      child.Margin = new Padding(5, 8, 5, 0);
+      child.Margin = new Padding(5, 8, 5, 8);
       if (child is Button button) { button.AutoSize = false; button.Height = 38; button.MaximumSize = new Size(0, 38); button.Padding = new Padding(6, 0, 6, 0); button.AutoEllipsis = true; }
-      else if (child is TextBox textBox) { textBox.AutoSize = false; textBox.Height = 30; textBox.MaximumSize = new Size(0, 30); textBox.Margin = new Padding(5, 12, 5, 0); }
+      else if (child is TextBox textBox) { textBox.AutoSize = false; textBox.Height = 30; textBox.MaximumSize = new Size(0, 30); textBox.Margin = new Padding(5, 12, 5, 8); }
       host.Controls.Add(child, index, 0);
   }
         }
@@ -175,7 +175,7 @@ public sealed partial class MainForm
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 118));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 214));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 160));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
         main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         main.Controls.Add(dashboardHeader, 0, 0);
         main.Controls.Add(CreateHeroStatusCard(), 0, 1);
