@@ -115,7 +115,7 @@ public sealed partial class MainForm
         var accent = GetServiceAccent(service);
         var card = CreateCardPanel(accent, new Padding(14, 12, 14, 12));
         card.Margin = new Padding(6, 0, 6, 0);
-        card.MinimumSize = new Size(150, 84);
+        card.MinimumSize = new Size(142, 76);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 54));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -136,8 +136,8 @@ public sealed partial class MainForm
 
     private Control CreateDashboardActionBar(Control actions)
     {
-        var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        host.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        var host = new TableLayoutPanel { Dock = DockStyle.Top, Height = 54, ColumnCount = 6, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 2, 0, 0) };
+        host.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
         foreach (var percent in new[] { 15, 18, 18, 24, 13, 12 }) host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, percent));
         if (actions is FlowLayoutPanel flow)
         {
@@ -148,10 +148,11 @@ public sealed partial class MainForm
   for (var index = 0; index < orderedControls.Length; index++)
   {
       var child = orderedControls[index];
-      child.Dock = DockStyle.Fill;
-      child.Margin = new Padding(5, 4, 5, 4);
+      child.Dock = DockStyle.None;
+      child.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+      child.Margin = new Padding(5, 8, 5, 0);
       if (child is Button button) { button.AutoSize = false; button.Height = 38; button.MaximumSize = new Size(0, 38); button.Padding = new Padding(6, 0, 6, 0); button.AutoEllipsis = true; }
-      else if (child is TextBox textBox) { textBox.AutoSize = false; textBox.Height = 30; textBox.Margin = new Padding(5, 6, 5, 4); }
+      else if (child is TextBox textBox) { textBox.AutoSize = false; textBox.Height = 30; textBox.MaximumSize = new Size(0, 30); textBox.Margin = new Padding(5, 12, 5, 0); }
       host.Controls.Add(child, index, 0);
   }
         }
@@ -169,17 +170,19 @@ public sealed partial class MainForm
         var page = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(26, 22, 26, 22), BackColor = BackgroundColor, Margin = Padding.Empty };
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
-        var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
+        var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 236));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 130));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 226));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
         main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         main.Controls.Add(dashboardHeader, 0, 0);
         main.Controls.Add(CreateHeroStatusCard(), 0, 1);
         main.Controls.Add(CreateDashboardSection("Module & Verbindungen", CreateModuleGrid()), 0, 2);
         main.Controls.Add(CreateDashboardSection("Heutige Statistiken", CreateDashboardStatsGrid()), 0, 3);
         main.Controls.Add(dashboardActions, 0, 4);
+        main.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = BackgroundColor, Margin = Padding.Empty }, 0, 5);
         var side = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = BackgroundColor, Margin = Padding.Empty, Padding = Padding.Empty };
         side.RowStyles.Add(new RowStyle(SizeType.Absolute, 270));
         side.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -252,9 +255,9 @@ public sealed partial class MainForm
 
     private Control CreateModuleInfoCard(string title, string status, string icon, Color color)
     {
-        var card = CreateCardPanel(color, new Padding(10, 8, 10, 8));
+        var card = CreateCardPanel(color, new Padding(10, 6, 10, 6));
         card.Margin = new Padding(5, 4, 5, 4);
-        card.MinimumSize = new Size(150, 78);
+        card.MinimumSize = new Size(142, 70);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 46));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
