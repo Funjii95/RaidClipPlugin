@@ -201,14 +201,14 @@ public sealed partial class MainForm
         AddMinigameTab(settingsTabs, "Admin", chance);
         AddMinigameTab(settingsTabs, "Chattexte", messages);
 
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false, Padding = new Padding(2, 2, 2, 1) };
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false, Padding = new Padding(4, 4, 4, 4) };
         foreach (var control in new Control[] { _giveawayStartButton, _giveawayPauseButton, _giveawayResumeButton,
             _giveawayDrawButton, _giveawayAdditionalButton, _giveawayRerollButton, _giveawayEndButton,
             _giveawayCancelButton, _giveawayResetButton, _giveawayCopyButton, _giveawaySaveButton,
             _giveawayRuntimeLabel })
         {
-            control.Margin = new Padding(3, 2, 5, 2);
-            if (control is Button button) button.Height = 28;
+            control.Margin = new Padding(4, 3, 6, 3);
+            if (control is Button button) button.Height = 34;
             actions.Controls.Add(control);
         }
 
@@ -235,7 +235,7 @@ public sealed partial class MainForm
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, Padding = new Padding(20) };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
         layout.Controls.Add(header, 0, 0); layout.Controls.Add(settingsTabs, 0, 1);
         layout.Controls.Add(actions, 0, 2); layout.Controls.Add(participantPanel, 0, 3);
