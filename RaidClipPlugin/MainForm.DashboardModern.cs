@@ -174,7 +174,7 @@ public sealed partial class MainForm
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 118));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 214));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 142));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
         main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         main.Controls.Add(dashboardHeader, 0, 0);
@@ -390,11 +390,16 @@ public sealed partial class MainForm
 
     private Control CreateRecentActivityList()
     {
-        var box = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
-        for (var i = 0; i < 5; i++) box.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
-        var rows = new[] { "● Healthcheck bereit", "● Chat bereit", "● Raidclip bereit", "● Updater aktuell", "● Punkte bereit" };
-        foreach (var text in rows) box.Controls.Add(new Label { Text = text, Dock = DockStyle.Fill, ForeColor = text.Contains("wartet", StringComparison.OrdinalIgnoreCase) ? WarningStatusColor : MutedTextColor, Font = new Font("Segoe UI", 8.4F), TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true });
-        return box;
+        _dashboardLogBox.Margin = Padding.Empty;
+        _dashboardLogBox.Padding = new Padding(2);
+        _dashboardLogBox.BackColor = CardColor;
+        _dashboardLogBox.ForeColor = TextColor;
+        if (string.IsNullOrWhiteSpace(_dashboardLogBox.Text))
+        {
+            _dashboardLogBox.Text = $"[{DateTime.Now:HH:mm:ss}] Bot Log bereit{Environment.NewLine}";
+        }
+
+        return _dashboardLogBox;
     }
 
     private DashboardCardPanel CreateCardPanel(Color accent, Padding padding)
