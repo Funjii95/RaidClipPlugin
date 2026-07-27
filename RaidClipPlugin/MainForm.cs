@@ -698,6 +698,19 @@ public sealed partial class MainForm : Form
         Font = new Font("Consolas", 10F)
     };
 
+    private readonly TextBox _dashboardLogBox = new()
+    {
+        Multiline = true,
+        ReadOnly = true,
+        ScrollBars = ScrollBars.Vertical,
+        WordWrap = false,
+        Dock = DockStyle.Fill,
+        BackColor = Color.FromArgb(24, 24, 28),
+        ForeColor = Color.Gainsboro,
+        BorderStyle = BorderStyle.None,
+        Font = new Font("Consolas", 8.6F)
+    };
+
     private readonly ListView _historyList = new()
     {
         View = View.Details,
@@ -5877,10 +5890,18 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
         try
         {
-            _logBox.AppendText(
-                $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+            var line = $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}";
+            _logBox.AppendText(line);
             _logBox.SelectionStart = _logBox.TextLength;
             _logBox.ScrollToCaret();
+
+            if (!_dashboardLogBox.IsDisposed && !_dashboardLogBox.Disposing && _dashboardLogBox.IsHandleCreated)
+            {
+                _dashboardLogBox.AppendText(line);
+                TrimDashboardLog();
+                _dashboardLogBox.SelectionStart = _dashboardLogBox.TextLength;
+                _dashboardLogBox.ScrollToCaret();
+            }
         }
         catch (ObjectDisposedException)
         {
@@ -5888,6 +5909,18 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         catch (InvalidOperationException)
         {
         }
+    }
+
+    private void TrimDashboardLog()
+    {
+        const int maxLines = 80;
+        var lines = _dashboardLogBox.Lines;
+        if (lines.Length <= maxLines)
+        {
+            return;
+        }
+
+        _dashboardLogBox.Lines = lines.Skip(lines.Length - maxLines).ToArray();
     }
 
     private void SetOverallStatus(string text, Color color)
