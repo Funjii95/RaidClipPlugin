@@ -312,19 +312,19 @@ public sealed partial class MainForm : Form
 
     private readonly Button _raidClipNavButton = CreateNavigationTile(
         "⌂  Dashboard",
-        "Übersicht und Systemstatus");
+        "Dashboard");
 
     private readonly Button _raidClipsNavButton = CreateNavigationTile(
         "▣  Raidclips",
-        "Raids, Clips und OBS");
+        "Raidclips");
 
     private readonly Button _moderationNavButton = CreateNavigationTile(
         "◉  Chat",
-        "Livechat und Bot-Log");
+        "Chat");
 
     private readonly Button _settingsNavButton = CreateNavigationTile(
         "⚙  Einstellungen",
-        "Allgemein und Verbindungen");
+        "Einstellungen");
 
     private readonly Panel _raidPage = new()
     {
@@ -656,11 +656,11 @@ public sealed partial class MainForm : Form
 
     private readonly Button _minigameNavButton = CreateNavigationTile(
         "♕  Punkte & Minigames",
-        "Punkte, Spiele und Jackpot");
+        "Minigames");
 
     private readonly Button _systemStatusNavButton = CreateNavigationTile(
         "🩺  Systemprüfung",
-        "Dienste und Recovery");
+        "Systemprüfung");
 
     private readonly Panel _minigamePage = new()
     {
@@ -936,17 +936,17 @@ private enum CloseChoice
     {
         return new Button
         {
-            Text = $"{title}{Environment.NewLine}{subtitle}",
+            Text = title,
             Width = 248,
-  Height = 48,
+  Height = 42,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
             TextAlign = ContentAlignment.MiddleLeft,
             Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
             ForeColor = TextColor,
             BackColor = SidebarColor,
-            Padding = new Padding(14, 7, 12, 7),
-            Margin = new Padding(5, 4, 5, 2),
+            Padding = new Padding(14, 0, 12, 0),
+            Margin = new Padding(5, 3, 5, 2),
             Cursor = Cursors.Hand,
             Tag = Tuple.Create(title, subtitle)
         };
