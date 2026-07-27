@@ -447,8 +447,8 @@ private Control BuildCommandsOverviewLayout(Control filters)
                 .ToDictionary(
                     x => x.Key,
                     x => string.Join("; ", x.Select(collision =>
-                            $"{collision.First.ModuleDisplayName}/{collision.First.Name} ↔ " +
-                            $"{collision.Second.ModuleDisplayName}/{collision.Second.Name}")
+                            $"{collision.First.ModuleDisplayName}/{collision.First.DisplayName} ↔ " +
+                            $"{collision.Second.ModuleDisplayName}/{collision.Second.DisplayName}")
                         .Distinct(StringComparer.OrdinalIgnoreCase)),
                     StringComparer.OrdinalIgnoreCase);
             _commandsGrid.Rows.Clear();
