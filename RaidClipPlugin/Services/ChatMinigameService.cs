@@ -192,6 +192,16 @@ public sealed class ChatMinigameService : IDisposable
     public static long CalculateAllInStake(long availablePoints) =>
         Math.Max(0L, availablePoints);
 
+    private async Task<long> ResolveAllInStakeAsync(
+        ChatMessage message,
+        CancellationToken cancellationToken)
+    {
+        var available = Math.Max(0L,
+            await _points.GetPointsAsync(message.UserId, cancellationToken) -
+            Math.Max(0L, _config.MinimumPoints));
+        return CalculateAllInStake(available);
+    }
+
     public static bool ShouldRun(MinigameConfig config) =>
         config.Enabled || config.PointsEnabled;
 
@@ -803,15 +813,26 @@ public sealed class ChatMinigameService : IDisposable
 
             if (command == "!coinflip")
             {
-                if (!_config.CoinflipEnabled || parts.Length != 3 ||
-                    !long.TryParse(parts[2], out var stake)) return;
+                if (!_config.CoinflipEnabled) return;
+                var coinflipStakeArgument = parts.Length == 3
+                    ? ParseGambleArgument(parts[2])
+                    : new GambleArgumentParseResult(false, false, 0, "");
+                if (parts.Length != 3 || !coinflipStakeArgument.IsValid)
+                {
+                    await TrySendChatAsync($"@{message.UserName}, nutze !coinflip <kopf|zahl> <einsatz|all>.", cancellationToken);
+                    return;
+                }
                 if (!await TryEnterCooldownWithReplyAsync(message, message.UserId,
                     _coinflipCooldowns, _config.CoinflipCooldownSeconds,
                     "!coinflip", cancellationToken)) return;
                 var choice = parts[1].ToLowerInvariant();
                 if (choice is not ("kopf" or "zahl"))
-                { await TrySendChatAsync($"@{message.UserName}, nutze !coinflip <kopf|zahl> <einsatz>.", cancellationToken); return; }
-                if (stake < _config.CoinflipMinimumBet || stake > _config.CoinflipMaximumBet) return;
+                { await TrySendChatAsync($"@{message.UserName}, nutze !coinflip <kopf|zahl> <einsatz|all>.", cancellationToken); return; }
+                var stake = coinflipStakeArgument.IsAllIn
+                    ? await ResolveAllInStakeAsync(message, cancellationToken)
+                    : coinflipStakeArgument.Stake;
+                if (stake < _config.CoinflipMinimumBet ||
+                    (!coinflipStakeArgument.IsAllIn && stake > _config.CoinflipMaximumBet)) return;
                 var resultSide = Random.Shared.Next(2) == 0 ? "kopf" : "zahl";
                 var payout = resultSide == choice
                     ? ToNonNegativeLong(stake * _config.CoinflipMultiplier)
@@ -831,12 +852,23 @@ public sealed class ChatMinigameService : IDisposable
 
             if (command == "!slots")
             {
-                if (!_config.SlotsEnabled || parts.Length != 2 ||
-                    !long.TryParse(parts[1], out var stake)) return;
+                if (!_config.SlotsEnabled) return;
+                var slotsStakeArgument = parts.Length == 2
+                    ? ParseGambleArgument(parts[1])
+                    : new GambleArgumentParseResult(false, false, 0, "");
+                if (parts.Length != 2 || !slotsStakeArgument.IsValid)
+                {
+                    await TrySendChatAsync($"@{message.UserName}, nutze !slots <einsatz|all>.", cancellationToken);
+                    return;
+                }
                 if (!await TryEnterCooldownWithReplyAsync(message, message.UserId,
                     _slotsCooldowns, _config.SlotsCooldownSeconds,
                     "!slots", cancellationToken)) return;
-                if (stake < _config.SlotsMinimumBet || stake > _config.SlotsMaximumBet) return;
+                var stake = slotsStakeArgument.IsAllIn
+                    ? await ResolveAllInStakeAsync(message, cancellationToken)
+                    : slotsStakeArgument.Stake;
+                if (stake < _config.SlotsMinimumBet ||
+                    (!slotsStakeArgument.IsAllIn && stake > _config.SlotsMaximumBet)) return;
                 var symbols = _config.SlotSymbols.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 if (symbols.Length < 2) throw new InvalidOperationException("Mindestens zwei Slot-Symbole erforderlich.");
                 var draw = new[] { symbols[Random.Shared.Next(symbols.Length)], symbols[Random.Shared.Next(symbols.Length)], symbols[Random.Shared.Next(symbols.Length)] };
@@ -852,22 +884,28 @@ public sealed class ChatMinigameService : IDisposable
             if (command == "!roulette")
             {
                 if (!_config.RouletteEnabled) return;
+                var rouletteStakeArgument = parts.Length == 3
+                    ? ParseGambleArgument(parts[2])
+                    : new GambleArgumentParseResult(false, false, 0, "");
                 if (parts.Length != 3 ||
-                    !long.TryParse(parts[2], out var rouletteStake) ||
+                    !rouletteStakeArgument.IsValid ||
                     !RouletteRules.TryParseBet(parts[1], out var rouletteBet))
                 {
                     await TrySendChatAsync(
                         $"@{message.UserName}, nutze !roulette " +
-                        "<rot|schwarz|gerade|ungerade|niedrig|hoch|0-36> <einsatz>.",
+                        "<rot|schwarz|gerade|ungerade|niedrig|hoch|0-36> <einsatz|all>.",
                         cancellationToken);
                     return;
                 }
+                var rouletteStake = rouletteStakeArgument.IsAllIn
+                    ? await ResolveAllInStakeAsync(message, cancellationToken)
+                    : rouletteStakeArgument.Stake;
                 if (!await TryEnterCooldownWithReplyAsync(message, message.UserId,
                     _rouletteCooldowns, _config.RouletteCooldownSeconds,
                     "!roulette",
                     cancellationToken)) return;
                 if (rouletteStake < _config.RouletteMinimumBet ||
-                    rouletteStake > _config.RouletteMaximumBet)
+                    (!rouletteStakeArgument.IsAllIn && rouletteStake > _config.RouletteMaximumBet))
                 {
                     await TrySendChatAsync(
                         $"@{message.UserName}, der Roulette-Einsatz muss zwischen " +
@@ -996,11 +1034,9 @@ public sealed class ChatMinigameService : IDisposable
             long gambleStake;
             if (isAllIn)
             {
-                var availableForGamble = Math.Max(0L,
-                    await _points.GetPointsAsync(
-                        message.UserId, cancellationToken) -
-                    Math.Max(0L, _config.MinimumPoints));
-                gambleStake = CalculateAllInStake(availableForGamble);
+                gambleStake = await ResolveAllInStakeAsync(
+                    message,
+                    cancellationToken);
             }
             else
             {
