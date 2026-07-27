@@ -52,7 +52,7 @@ public partial class MainForm
     private readonly CheckBox _discordInviteEnabledCheck =
         NewCheck("Discord-Einladungsbefehl aktivieren", false);
     private readonly TextBox _discordInviteCommandBox = new()
-        { Text = "!raidpluginjoindc", Width = 210, MaxLength = 30 };
+        { Text = "!dc", Width = 210, MaxLength = 30 };
     private readonly TextBox _discordInviteUrlBox = new()
         { Width = 360, PlaceholderText = "https://discord.gg/..." };
     private readonly TextBox _discordInviteMessageBox = new()
