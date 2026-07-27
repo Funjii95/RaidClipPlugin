@@ -65,34 +65,20 @@ public sealed partial class MainForm
         Width = 520, Multiline = true, Height = 130,
         Text = "!giveaway start\r\n!giveaway stop\r\n!giveaway pause\r\n!giveaway resume\r\n!giveaway draw\r\n!giveaway reroll\r\n!giveaway status"
     };
-    private readonly CheckBox _giveawayStartedEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayStartedText = GiveawayMessageBox("🎉 Giveaway gestartet! Gewinn: {prize} – Teilnahme mit {command}");
-    private readonly CheckBox _giveawayJoinedEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayJoinedText = GiveawayMessageBox("@{username}, du nimmst am Giveaway teil!");
-    private readonly CheckBox _giveawayDuplicateEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayDuplicateText = GiveawayMessageBox("@{username}, du bist bereits im Giveaway eingetragen.");
-    private readonly CheckBox _giveawayInsufficientPointsEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayInsufficientPointsText = GiveawayMessageBox("@{username}, du benötigst mindestens {requiredPoints} Punkte.");
-    private readonly CheckBox _giveawayExcludedEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayExcludedText = GiveawayMessageBox("@{username}, du darfst an diesem Giveaway nicht teilnehmen.");
-    private readonly CheckBox _giveawayEndedEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayEndedText = GiveawayMessageBox("Das Giveaway ist beendet. Insgesamt haben {participantCount} Zuschauer teilgenommen.");
-    private readonly CheckBox _giveawayWinnerEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayWinnerText = GiveawayMessageBox("🎉 Gewinner des Giveaways ist @{winner}! Herzlichen Glückwunsch zu {prize}!");
-    private readonly CheckBox _giveawayWinnersEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayWinnersText = GiveawayMessageBox("🎉 Die Gewinner sind: {winners}");
-    private readonly CheckBox _giveawayStatusMessageEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayStatusMessageText = GiveawayMessageBox("Giveaway {title}: {participantCount} Teilnehmer, noch {remainingTime}.");
-    private readonly CheckBox _giveawayPausedEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayPausedText = GiveawayMessageBox("Das Giveaway wurde pausiert.");
-    private readonly CheckBox _giveawayResumedEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayResumedText = GiveawayMessageBox("Das Giveaway läuft weiter. Teilnahme mit {command}");
-    private readonly CheckBox _giveawayCancelledEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayCancelledText = GiveawayMessageBox("Das Giveaway wurde abgebrochen.");
-    private readonly CheckBox _giveawayOfflineEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayOfflineText = GiveawayMessageBox("Giveaway-Teilnahme ist nur während des Livestreams möglich.");
-    private readonly CheckBox _giveawayNotActiveEnabled = NewCheck("Aktiv", true);
-    private readonly TextBox _giveawayNotActiveText = GiveawayMessageBox("Aktuell läuft kein Giveaway.");
+    private readonly TextBox _giveawayMessagesBox = new()
+    {
+        Dock = DockStyle.Fill, Multiline = true, ScrollBars = ScrollBars.Vertical,
+        Font = new Font("Consolas", 9F),
+        Text = "Started|1|🎉 Giveaway gestartet! Gewinn: {prize} – Teilnahme mit {command}\r\n" +
+               "Joined|1|@{username}, du nimmst am Giveaway teil!\r\n" +
+               "Duplicate|1|@{username}, du bist bereits im Giveaway eingetragen.\r\n" +
+               "InsufficientPoints|1|@{username}, du benötigst mindestens {requiredPoints} Punkte.\r\n" +
+               "Excluded|1|@{username}, du darfst an diesem Giveaway nicht teilnehmen.\r\n" +
+               "Ended|1|Das Giveaway ist beendet. Insgesamt haben {participantCount} Zuschauer teilgenommen.\r\n" +
+               "Winner|1|🎉 Gewinner des Giveaways ist @{winner}! Herzlichen Glückwunsch zu {prize}!\r\n" +
+               "Winners|1|🎉 Die Gewinner sind: {winners}\r\n" +
+               "Status|1|Giveaway {title}: {participantCount} Teilnehmer, noch {remainingTime}."
+    };
 
     private readonly Button _giveawaySaveButton = NewActionButton("Giveaway speichern");
     private readonly Button _giveawayStartButton = NewActionButton("Starten");
@@ -197,7 +183,11 @@ public sealed partial class MainForm
             _giveawayModCommands, Editor("Admin-Commands (7 Zeilen)", _giveawayAdminCommandsBox) })
             chance.Controls.Add(control);
 
-        var messages = BuildGiveawayMessagesPanel();
+        var messages = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
+        messages.Controls.Add(_giveawayMessagesBox);
+        var messageHint = new Label { Dock = DockStyle.Top, Height = 42, ForeColor = MutedTextColor,
+            Text = "Format: Name|1 oder 0|Chattext. Platzhalter: {username}, {title}, {prize}, {command}, {participantCount}, {winner}, {winners}, {remainingTime}, {requiredPoints}" };
+        messages.Controls.Add(messageHint);
 
         var settingsTabs = new TabControl
         {
@@ -208,7 +198,7 @@ public sealed partial class MainForm
         };
         AddMinigameTab(settingsTabs, "Allgemein", general);
         AddMinigameTab(settingsTabs, "Teilnahme", eligibility);
-        AddMinigameTab(settingsTabs, "Gewinnchancen & Admin", chance);
+        AddMinigameTab(settingsTabs, "Admin", chance);
         AddMinigameTab(settingsTabs, "Chattexte", messages);
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, AutoScroll = false, Padding = new Padding(2, 2, 2, 1) };
@@ -280,7 +270,7 @@ public sealed partial class MainForm
         _giveawayModCommands.Checked=g.ModeratorCommands.Enabled;
         _giveawayAdminCommandsBox.Lines=new[]{g.ModeratorCommands.Start,g.ModeratorCommands.Stop,g.ModeratorCommands.Pause,
             g.ModeratorCommands.Resume,g.ModeratorCommands.Draw,g.ModeratorCommands.Reroll,g.ModeratorCommands.Status};
-        LoadGiveawayMessages(g.ChatMessages);
+        _giveawayMessagesBox.Lines=GiveawayMessageLines(g.ChatMessages);
     }
 
     private GiveawayConfig ReadGiveawaySettings()
@@ -378,141 +368,14 @@ public sealed partial class MainForm
     private void SetGiveawayStatus(string text,Color color){if(InvokeRequired){BeginInvoke(new Action(()=>SetGiveawayStatus(text,color)));return;}
         _giveawayStatusLabel.Text="● Giveaway: "+text;_giveawayStatusLabel.ForeColor=color;}
 
-    private static TextBox GiveawayMessageBox(string text) => new()
-    {
-        Width = 410,
-        Height = 52,
-        Multiline = true,
-        ScrollBars = ScrollBars.Vertical,
-        Text = text
-    };
-
-    private Control BuildGiveawayMessagesPanel()
-    {
-        var panel = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            AutoScroll = true,
-            WrapContents = true,
-            Padding = new Padding(8)
-        };
-        var hint = new Label
-        {
-            Width = 900,
-            Height = 34,
-            ForeColor = MutedTextColor,
-            Text = "Platzhalter: {username}, {title}, {prize}, {command}, {participantCount}, " +
-                   "{winner}, {winners}, {remainingTime}, {requiredPoints}"
-        };
-        panel.Controls.Add(hint);
-        panel.SetFlowBreak(hint, true);
-        AddGiveawayMessageEditor(panel, "Gestartet", _giveawayStartedEnabled, _giveawayStartedText);
-        AddGiveawayMessageEditor(panel, "Beigetreten", _giveawayJoinedEnabled, _giveawayJoinedText);
-        AddGiveawayMessageEditor(panel, "Doppelte Teilnahme", _giveawayDuplicateEnabled, _giveawayDuplicateText);
-        AddGiveawayMessageEditor(panel, "Zu wenig Punkte", _giveawayInsufficientPointsEnabled, _giveawayInsufficientPointsText);
-        AddGiveawayMessageEditor(panel, "Ausgeschlossen", _giveawayExcludedEnabled, _giveawayExcludedText);
-        AddGiveawayMessageEditor(panel, "Beendet", _giveawayEndedEnabled, _giveawayEndedText);
-        AddGiveawayMessageEditor(panel, "Gewinner", _giveawayWinnerEnabled, _giveawayWinnerText);
-        AddGiveawayMessageEditor(panel, "Mehrere Gewinner", _giveawayWinnersEnabled, _giveawayWinnersText);
-        AddGiveawayMessageEditor(panel, "Status", _giveawayStatusMessageEnabled, _giveawayStatusMessageText);
-        AddGiveawayMessageEditor(panel, "Pausiert", _giveawayPausedEnabled, _giveawayPausedText);
-        AddGiveawayMessageEditor(panel, "Fortgesetzt", _giveawayResumedEnabled, _giveawayResumedText);
-        AddGiveawayMessageEditor(panel, "Abgebrochen", _giveawayCancelledEnabled, _giveawayCancelledText);
-        AddGiveawayMessageEditor(panel, "Offline", _giveawayOfflineEnabled, _giveawayOfflineText);
-        AddGiveawayMessageEditor(panel, "Nicht aktiv", _giveawayNotActiveEnabled, _giveawayNotActiveText);
-        return panel;
-    }
-
-    private static void AddGiveawayMessageEditor(
-        FlowLayoutPanel parent,
-        string label,
-        CheckBox enabled,
-        TextBox textBox)
-    {
-        parent.Controls.Add(CreateGiveawayMessageEditor(label, enabled, textBox));
-    }
-
-    private static Control CreateGiveawayMessageEditor(
-        string label,
-        CheckBox enabled,
-        TextBox textBox)
-    {
-        var layout = new TableLayoutPanel
-        {
-            Width = 440,
-            Height = 82,
-            ColumnCount = 2,
-            RowCount = 2,
-            Margin = new Padding(4, 4, 18, 8),
-            Padding = Padding.Empty
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.Controls.Add(new Label
-        {
-            Text = label,
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft,
-            AutoEllipsis = true
-        }, 0, 0);
-        enabled.Dock = DockStyle.Right;
-        enabled.Margin = new Padding(0);
-        layout.Controls.Add(enabled, 1, 0);
-        textBox.Dock = DockStyle.Fill;
-        layout.Controls.Add(textBox, 0, 1);
-        layout.SetColumnSpan(textBox, 2);
-        return layout;
-    }
-
-    private void LoadGiveawayMessages(GiveawayChatMessages messages)
-    {
-        SetGiveawayMessage(_giveawayStartedEnabled, _giveawayStartedText, messages.Started);
-        SetGiveawayMessage(_giveawayJoinedEnabled, _giveawayJoinedText, messages.Joined);
-        SetGiveawayMessage(_giveawayDuplicateEnabled, _giveawayDuplicateText, messages.Duplicate);
-        SetGiveawayMessage(_giveawayInsufficientPointsEnabled, _giveawayInsufficientPointsText, messages.InsufficientPoints);
-        SetGiveawayMessage(_giveawayExcludedEnabled, _giveawayExcludedText, messages.Excluded);
-        SetGiveawayMessage(_giveawayEndedEnabled, _giveawayEndedText, messages.Ended);
-        SetGiveawayMessage(_giveawayWinnerEnabled, _giveawayWinnerText, messages.Winner);
-        SetGiveawayMessage(_giveawayWinnersEnabled, _giveawayWinnersText, messages.Winners);
-        SetGiveawayMessage(_giveawayStatusMessageEnabled, _giveawayStatusMessageText, messages.Status);
-        SetGiveawayMessage(_giveawayPausedEnabled, _giveawayPausedText, messages.Paused);
-        SetGiveawayMessage(_giveawayResumedEnabled, _giveawayResumedText, messages.Resumed);
-        SetGiveawayMessage(_giveawayCancelledEnabled, _giveawayCancelledText, messages.Cancelled);
-        SetGiveawayMessage(_giveawayOfflineEnabled, _giveawayOfflineText, messages.Offline);
-        SetGiveawayMessage(_giveawayNotActiveEnabled, _giveawayNotActiveText, messages.NotActive);
-    }
-
-    private static void SetGiveawayMessage(
-        CheckBox enabled,
-        TextBox textBox,
-        GiveawayChatMessage message)
-    {
-        enabled.Checked = message.Enabled;
-        textBox.Text = message.Text;
-    }
-
-    private GiveawayChatMessages ReadGiveawayMessages() => new()
-    {
-        Started = ReadGiveawayMessage(_giveawayStartedEnabled, _giveawayStartedText),
-        Joined = ReadGiveawayMessage(_giveawayJoinedEnabled, _giveawayJoinedText),
-        Duplicate = ReadGiveawayMessage(_giveawayDuplicateEnabled, _giveawayDuplicateText),
-        InsufficientPoints = ReadGiveawayMessage(_giveawayInsufficientPointsEnabled, _giveawayInsufficientPointsText),
-        Excluded = ReadGiveawayMessage(_giveawayExcludedEnabled, _giveawayExcludedText),
-        Ended = ReadGiveawayMessage(_giveawayEndedEnabled, _giveawayEndedText),
-        Winner = ReadGiveawayMessage(_giveawayWinnerEnabled, _giveawayWinnerText),
-        Winners = ReadGiveawayMessage(_giveawayWinnersEnabled, _giveawayWinnersText),
-        Status = ReadGiveawayMessage(_giveawayStatusMessageEnabled, _giveawayStatusMessageText),
-        Paused = ReadGiveawayMessage(_giveawayPausedEnabled, _giveawayPausedText),
-        Resumed = ReadGiveawayMessage(_giveawayResumedEnabled, _giveawayResumedText),
-        Cancelled = ReadGiveawayMessage(_giveawayCancelledEnabled, _giveawayCancelledText),
-        Offline = ReadGiveawayMessage(_giveawayOfflineEnabled, _giveawayOfflineText),
-        NotActive = ReadGiveawayMessage(_giveawayNotActiveEnabled, _giveawayNotActiveText)
-    };
-
-    private static GiveawayChatMessage ReadGiveawayMessage(
-        CheckBox enabled,
-        TextBox textBox) =>
-        new(enabled.Checked, textBox.Text.Trim());
+    private static string[] GiveawayMessageLines(GiveawayChatMessages m)=>new[]{Line("Started",m.Started),Line("Joined",m.Joined),Line("Duplicate",m.Duplicate),
+        Line("InsufficientPoints",m.InsufficientPoints),Line("Excluded",m.Excluded),Line("Ended",m.Ended),Line("Winner",m.Winner),Line("Winners",m.Winners),
+        Line("Status",m.Status),Line("Paused",m.Paused),Line("Resumed",m.Resumed),Line("Cancelled",m.Cancelled),Line("Offline",m.Offline),Line("NotActive",m.NotActive)};
+    private static string Line(string name,GiveawayChatMessage m)=>$"{name}|{(m.Enabled?1:0)}|{m.Text}";
+    private GiveawayChatMessages ReadGiveawayMessages(){var map=_giveawayMessagesBox.Lines.Where(x=>!string.IsNullOrWhiteSpace(x)).Select(x=>x.Split('|',3))
+        .Where(x=>x.Length==3).ToDictionary(x=>x[0].Trim(),x=>new GiveawayChatMessage(x[1].Trim()!="0",x[2].Trim()),StringComparer.OrdinalIgnoreCase);
+        GiveawayChatMessage M(string k,GiveawayChatMessage d)=>map.TryGetValue(k,out var x)?x:d;var d=new GiveawayChatMessages();return new GiveawayChatMessages{
+            Started=M("Started",d.Started),Joined=M("Joined",d.Joined),Duplicate=M("Duplicate",d.Duplicate),InsufficientPoints=M("InsufficientPoints",d.InsufficientPoints),
+            Excluded=M("Excluded",d.Excluded),Ended=M("Ended",d.Ended),Winner=M("Winner",d.Winner),Winners=M("Winners",d.Winners),Status=M("Status",d.Status),
+            Paused=M("Paused",d.Paused),Resumed=M("Resumed",d.Resumed),Cancelled=M("Cancelled",d.Cancelled),Offline=M("Offline",d.Offline),NotActive=M("NotActive",d.NotActive)};}
 }
