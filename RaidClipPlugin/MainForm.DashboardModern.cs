@@ -46,10 +46,10 @@ public sealed partial class MainForm
 
     private Control CreateUpdateStatusCard()
     {
-        var card = CreateCardPanel(AccentColor, new Padding(14, 12, 14, 12));
-        card.MinimumSize = new Size(380, 82);
+        var card = CreateCardPanel(AccentColor, new Padding(14, 10, 14, 10));
+        card.MinimumSize = new Size(340, 76);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 112));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 104));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         _versionLabel.Dock = DockStyle.Fill;
         _versionLabel.AutoSize = false;
@@ -72,7 +72,7 @@ public sealed partial class MainForm
 
         foreach (var button in new[] { _updateButton, _changelogButton, _installUpdateButton, _skipUpdateButton })
         {
-            CompactDashboardButton(button, button == _updateButton ? 230 : 150);
+            CompactDashboardButton(button, button == _updateButton ? 210 : 132);
             button.Dock = DockStyle.None;
             button.Height = 34;
             button.MinimumSize = new Size(button.Width, 34);
@@ -169,21 +169,19 @@ public sealed partial class MainForm
         var page = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(26, 22, 26, 22), BackColor = BackgroundColor, Margin = Padding.Empty };
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
-        var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 254));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 142));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 124));
+        var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 236));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 130));
         main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         main.Controls.Add(dashboardHeader, 0, 0);
         main.Controls.Add(CreateHeroStatusCard(), 0, 1);
         main.Controls.Add(CreateDashboardSection("Module & Verbindungen", CreateModuleGrid()), 0, 2);
         main.Controls.Add(CreateDashboardSection("Heutige Statistiken", CreateDashboardStatsGrid()), 0, 3);
         main.Controls.Add(dashboardActions, 0, 4);
-        main.Controls.Add(CreateDashboardSection("Aktive Module", CreateActiveModulesGrid()), 0, 5);
         var side = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = BackgroundColor, Margin = Padding.Empty, Padding = Padding.Empty };
-        side.RowStyles.Add(new RowStyle(SizeType.Absolute, 410));
+        side.RowStyles.Add(new RowStyle(SizeType.Absolute, 270));
         side.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         side.Controls.Add(CreateDashboardSection("Systemprüfung", dashboardHealth), 0, 0);
         side.Controls.Add(CreateDashboardSection("Bot Log", CreateRecentActivityList()), 0, 1);
@@ -330,15 +328,14 @@ public sealed partial class MainForm
         // Dashboard uses its own lightweight controls. The real Systemprüfung page
         // owns _moduleHealthGrid/_checkModulesButton/etc.; sharing those controls
         // would move them away from their page and leave the tab visually empty.
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
 
         var summary = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, AutoScroll = false, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
         summary.Controls.Add(new StatusDotControl { Width = 16, Height = 16, DotColor = UnknownStatusColor, Margin = new Padding(0, 10, 8, 0) });
-        summary.Controls.Add(new Label { Text = "Systemstatus: Noch nicht geprüft", Dock = DockStyle.Fill, AutoSize = false, Width = 260, Height = 32, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true, ForeColor = UnknownStatusColor, Font = new Font("Segoe UI", 10F, FontStyle.Bold), Margin = Padding.Empty });
+        summary.Controls.Add(new Label { Text = "Noch nicht geprüft", Dock = DockStyle.Fill, AutoSize = false, Width = 220, Height = 32, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true, ForeColor = UnknownStatusColor, Font = new Font("Segoe UI", 10F, FontStyle.Bold), Margin = Padding.Empty });
         layout.Controls.Add(summary, 0, 0);
 
         var buttons = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
@@ -358,11 +355,10 @@ public sealed partial class MainForm
         buttons.Controls.Add(repairButton, 1, 0);
         layout.Controls.Add(buttons, 0, 1);
 
-        var list = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 7, BackColor = Color.Transparent, Margin = new Padding(0, 8, 0, 0), Padding = Padding.Empty };
-        for (var i = 0; i < 7; i++) list.RowStyles.Add(new RowStyle(SizeType.Percent, 100F / 7F));
-        foreach (var row in new[] { ("Twitch API", "OK", HealthyStatusColor), ("Twitch Chat", "Bereit", HealthyStatusColor), ("EventSub", "Bereit", HealthyStatusColor), ("OBS Studio", "Bereit", HealthyStatusColor), ("Lokaler Player", "Bereit", HealthyStatusColor), ("Commands", "Bereit", HealthyStatusColor), ("Updater", "Aktuell", HealthyStatusColor) }) list.Controls.Add(CreateHealthRow(row.Item1, row.Item2, row.Item3));
+        var list = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = Color.Transparent, Margin = new Padding(0, 8, 0, 0), Padding = Padding.Empty };
+        for (var i = 0; i < 4; i++) list.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
+        foreach (var row in new[] { ("Twitch", "Bereit", HealthyStatusColor), ("OBS", "Bereit", HealthyStatusColor), ("Chat", "Bereit", HealthyStatusColor), ("Updater", "Aktuell", HealthyStatusColor) }) list.Controls.Add(CreateHealthRow(row.Item1, row.Item2, row.Item3));
         layout.Controls.Add(list, 0, 2);
-        layout.Controls.Add(new Label { Text = "Letzte Prüfung: –", Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.BottomRight, ForeColor = InactiveColor, Font = new Font("Segoe UI", 8.4F), Margin = Padding.Empty }, 0, 3);
         return layout;
     }
 
@@ -391,9 +387,9 @@ public sealed partial class MainForm
 
     private Control CreateRecentActivityList()
     {
-        var box = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 8, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
-        for (var i = 0; i < 8; i++) box.RowStyles.Add(new RowStyle(SizeType.Percent, 12.5F));
-        var rows = new[] { "● Healthcheck bereit", "● Twitch Chat wartet auf Verbindung", "● Raidclip-System bereit", "● Updater aktuell", "● Commands geladen", "● Punkte-System bereit", "● OBS wartet auf Start", "● Lokaler Player bereit" };
+        var box = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
+        for (var i = 0; i < 5; i++) box.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
+        var rows = new[] { "● Healthcheck bereit", "● Chat bereit", "● Raidclip bereit", "● Updater aktuell", "● Punkte bereit" };
         foreach (var text in rows) box.Controls.Add(new Label { Text = text, Dock = DockStyle.Fill, ForeColor = text.Contains("wartet", StringComparison.OrdinalIgnoreCase) ? WarningStatusColor : MutedTextColor, Font = new Font("Segoe UI", 8.4F), TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true });
         return box;
     }
