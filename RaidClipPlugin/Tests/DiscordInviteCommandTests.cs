@@ -6,16 +6,16 @@ namespace RaidClipPlugin.Tests;
 public sealed class DiscordInviteCommandTests
 {
     [Theory]
-    [InlineData("!raidpluginjoindc", true)]
-    [InlineData("  !RAIDPLUGINJOINDC  ", true)]
+    [InlineData("!dc", true)]
+    [InlineData("  !DC  ", true)]
     [InlineData("!discord", false)]
     [InlineData("!join", false)]
-    [InlineData("!raidpluginjoindc extra", false)]
+    [InlineData("!dc extra", false)]
     public void OnlyConfiguredCommandMatches(string text, bool expected)
     {
         Assert.Equal(expected,
             DiscordInviteCommandService.IsCommand(
-                text, "!raidpluginjoindc"));
+                text, "!dc"));
     }
 
     [Theory]
