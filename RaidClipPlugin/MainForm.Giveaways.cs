@@ -194,14 +194,14 @@ public sealed partial class MainForm
             Dock = DockStyle.Fill,
             Padding = new Point(18, 8),
             ItemSize = new Size(0, 38),
-            MinimumSize = new Size(0, 230)
+            MinimumSize = new Size(0, 210)
         };
         AddMinigameTab(settingsTabs, "Allgemein", general);
         AddMinigameTab(settingsTabs, "Teilnahme", eligibility);
         AddMinigameTab(settingsTabs, "Admin", chance);
         AddMinigameTab(settingsTabs, "Chattexte", messages);
 
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false, Padding = new Padding(4, 4, 4, 4) };
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false, Padding = new Padding(4, 6, 4, 6) };
         foreach (var control in new Control[] { _giveawayStartButton, _giveawayPauseButton, _giveawayResumeButton,
             _giveawayDrawButton, _giveawayAdditionalButton, _giveawayRerollButton, _giveawayEndButton,
             _giveawayCancelButton, _giveawayResetButton, _giveawayCopyButton, _giveawaySaveButton,
@@ -234,16 +234,16 @@ public sealed partial class MainForm
 
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, Padding = new Padding(20) };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 250));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(header, 0, 0); layout.Controls.Add(settingsTabs, 0, 1);
         layout.Controls.Add(actions, 0, 2); layout.Controls.Add(participantPanel, 0, 3);
         _giveawayPage.Controls.Add(layout);
     }
 
     private static FlowLayoutPanel GiveawayFlow() => new()
-    { Dock = DockStyle.Fill, AutoScroll = true, WrapContents = true, Padding = new Padding(8) };
+    { Dock = DockStyle.Fill, AutoScroll = false, WrapContents = true, Padding = new Padding(8) };
     private static Control Editor(string label, Control control) => CreateSettingEditor(label, control);
 
     private void LoadGiveawaySettings(GiveawayConfig g)
