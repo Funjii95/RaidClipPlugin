@@ -745,7 +745,7 @@ public sealed class ConfigurationService
         bool synchronizeCommandOverrides = false)
     {
         config.UiTheme = (config.UiTheme ?? "RaidRed").Trim();
-        if (config.UiTheme is not ("RaidRed" or "NeonGreen" or "TwitchPurple"))
+        if (config.UiTheme is not ("DarkPurple" or "DarkBlue" or "LightModern" or "RaidRed" or "NeonGreen" or "TwitchPurple"))
             config.UiTheme = "RaidRed";
         config.Twitch.BroadcasterLogin =
             (config.Twitch.BroadcasterLogin ?? "").Trim().TrimStart('@');
