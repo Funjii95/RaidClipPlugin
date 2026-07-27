@@ -1826,65 +1826,6 @@ private enum CloseChoice
             _playerIndicator);
         var dashboardActions = CreateDashboardActionBar(actions);
 
-        var dashboardHealthBox = new Panel
-        {
-            Name = "SurfacePanel",
-            Dock = DockStyle.Fill,
-            Padding = Padding.Empty,
-            BackColor = SurfaceColor
-        };
-        var dashboardHealthHeader = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 3,
-            RowCount = 1,
-            BackColor = SurfaceColor,
-            Padding = Padding.Empty
-        };
-        dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        dashboardHealthHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        var dashboardHealthSummary = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = true,
-            BackColor = BackgroundColor,
-            Margin = new Padding(0)
-        };
-        dashboardHealthSummary.Controls.Add(_moduleHealthOverallDot);
-        dashboardHealthSummary.Controls.Add(_moduleHealthSummaryLabel);
-        dashboardHealthSummary.Controls.Add(_moduleHealthProgressLabel);
-        _checkModulesButton.Text = "Jetzt prüfen";
-        _restartModulesButton.Text = "Fehlerhafte neu starten";
-        dashboardHealthHeader.Controls.Add(dashboardHealthSummary, 0, 0);
-        dashboardHealthHeader.Controls.Add(_checkModulesButton, 1, 0);
-        dashboardHealthHeader.Controls.Add(_restartModulesButton, 2, 0);
-        var dashboardHealthFooter = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = SurfaceColor,
-            Padding = new Padding(0, 0, 0, 0)
-        };
-        _moduleHealthLastCheckLabel.Dock = DockStyle.Right;
-        dashboardHealthFooter.Controls.Add(_moduleHealthLastCheckLabel);
-        var dashboardHealthLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 3,
-            BackColor = SurfaceColor
-        };
-        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
-        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        dashboardHealthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        dashboardHealthLayout.Controls.Add(dashboardHealthHeader, 0, 0);
-        dashboardHealthLayout.Controls.Add(_moduleHealthGrid, 0, 1);
-        dashboardHealthLayout.Controls.Add(dashboardHealthFooter, 0, 2);
-        _moduleHealthGrid.Resize += (_, _) => UpdateModuleHealthCardWidths();
-        dashboardHealthBox.Controls.Add(dashboardHealthLayout);
-        var dashboardHealth = CreateDashboardSection(dashboardHealthBox, new Padding(0));
-
         _raidPage.Controls.Add(CreateModernDashboardLayout(
             dashboardHeader,
             dashboardIndicators,
