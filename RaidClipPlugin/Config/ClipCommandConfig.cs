@@ -77,7 +77,7 @@ public sealed class DiscordClipsConfig
 {
     public bool Enabled { get; set; } = false;
     public bool InviteCommandEnabled { get; set; } = false;
-    public string InviteCommand { get; set; } = "!raidpluginjoindc";
+    public string InviteCommand { get; set; } = "!dc";
     public string InviteUrl { get; set; } = "";
     public string InviteMessage { get; set; } =
         "@{username}, komm auf unseren Discord: {inviteUrl}";
