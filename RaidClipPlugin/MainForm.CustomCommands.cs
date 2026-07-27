@@ -73,14 +73,17 @@ public sealed partial class MainForm
             _removeCustomCommandButton, _saveCustomCommandsButton
         });
         foreach (Control control in actions.Controls)
-            control.Margin = new Padding(4, 4, 8, 4);
+        {
+            control.Margin = new Padding(4, 3, 8, 3);
+            if (control is Button button) button.Height = 30;
+        }
         var layout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1,
             Padding = new Padding(8)
         };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(hint, 0, 0);
         layout.Controls.Add(actions, 0, 1);
