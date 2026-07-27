@@ -171,24 +171,34 @@ private Control BuildCommandsOverviewLayout(Control filters)
         filterFlow.AutoSize = false;
         filterFlow.AutoScroll = false;
         filterFlow.Dock = DockStyle.Fill;
-        filterFlow.Height = 92;
-        filterFlow.MinimumSize = new Size(0, 88);
+        filterFlow.Height = 66;
+        filterFlow.MinimumSize = new Size(0, 62);
         filterFlow.WrapContents = true;
-        filterFlow.Padding = new Padding(0, 8, 0, 6);
+        filterFlow.Padding = new Padding(0, 3, 0, 2);
+        foreach (Control control in filterFlow.Controls)
+        {
+            control.Margin = new Padding(4, 3, 8, 3);
+            if (control is Button button)
+            {
+                button.Height = 30;
+            }
+        }
         filterFlow.Margin = new Padding(0);
     }
 
     var filterHost = new Panel
     {
         Dock = DockStyle.Fill,
-        Padding = new Padding(10, 8, 10, 6),
-        MinimumSize = new Size(0, 104),
+        Padding = new Padding(10, 5, 10, 4),
+        MinimumSize = new Size(0, 78),
         BackColor = BackgroundColor
     };
     filterHost.Controls.Add(filters);
 
     _commandsGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
-    _commandsGrid.RowTemplate.Height = 28;
+    _commandsGrid.RowTemplate.Height = 24;
+    _commandsGrid.RowTemplate.MinimumHeight = 24;
+    _commandsGrid.ColumnHeadersHeight = 24;
     _commandsGrid.AllowUserToResizeRows = false;
     _commandsGrid.ScrollBars = ScrollBars.Both;
     _commandsGrid.Dock = DockStyle.Fill;
@@ -201,7 +211,7 @@ private Control BuildCommandsOverviewLayout(Control filters)
         Padding = new Padding(10, 8, 10, 10),
         BackColor = BackgroundColor
     };
-    panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+    panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
     panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
     panel.Controls.Add(filterHost, 0, 0);
     panel.Controls.Add(_commandsGrid, 0, 1);
@@ -432,8 +442,15 @@ private Control BuildCommandsOverviewLayout(Control filters)
             if (_commandRoleFilter.SelectedIndex > 0)
                 filtered = filtered.Where(x => (int)x.RequiredRole == _commandRoleFilter.SelectedIndex - 1);
 
-            var collisions = _commandRegistry.FindCollisions().Select(x => x.Command)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var collisions = _commandRegistry.FindCollisions()
+                .GroupBy(x => x.Command, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    x => x.Key,
+                    x => string.Join("; ", x.Select(collision =>
+                            $"{collision.First.ModuleDisplayName}/{collision.First.Name} ↔ " +
+                            $"{collision.Second.ModuleDisplayName}/{collision.Second.Name}")
+                        .Distinct(StringComparer.OrdinalIgnoreCase)),
+                    StringComparer.OrdinalIgnoreCase);
             _commandsGrid.Rows.Clear();
             foreach (var command in filtered.OrderBy(x => x.ModuleDisplayName).ThenBy(x => x.CommandText))
             {
@@ -444,10 +461,14 @@ private Control BuildCommandsOverviewLayout(Control filters)
                 var row = _commandsGrid.Rows[index];
                 row.Tag = command;
                 if (!command.Enabled) row.DefaultCellStyle.ForeColor = MutedTextColor;
-                if (collisions.Contains(command.CommandText))
+                if (collisions.TryGetValue(command.CommandText, out var collisionDetails))
                 {
                     row.DefaultCellStyle.BackColor = Color.FromArgb(80, 20, 20);
-                    row.ErrorText = "Command-Kollision";
+                    row.ErrorText = "Command-Kollision: " + collisionDetails;
+                    foreach (DataGridViewCell cell in row.Cells)
+                    {
+                        cell.ToolTipText = row.ErrorText;
+                    }
                 }
             }
         }
