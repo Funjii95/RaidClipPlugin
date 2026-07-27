@@ -172,8 +172,8 @@ public sealed partial class MainForm
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
         var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 226));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 118));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 214));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
         main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -195,22 +195,22 @@ public sealed partial class MainForm
 
     private Control CreateHeroStatusCard()
     {
-        var hero = CreateCardPanel(AccentColor, new Padding(26, 22, 26, 22));
+        var hero = CreateCardPanel(AccentColor, new Padding(22, 12, 22, 12));
         hero.Margin = new Padding(0, 0, 0, 10);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 82));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 260));
-        layout.Controls.Add(new Label { Text = "R", Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 32F, FontStyle.Bold), ForeColor = AccentColor, BackColor = Color.Transparent }, 0, 0);
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
+        layout.Controls.Add(new Label { Text = "R", Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 30F, FontStyle.Bold), ForeColor = AccentColor, BackColor = Color.Transparent }, 0, 0);
         var text = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Margin = new Padding(8, 0, 0, 0), Padding = Padding.Empty };
-        text.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
-        text.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
+        text.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+        text.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
         text.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        text.Controls.Add(new Label { Text = "RaidClipPlugin", Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 12.5F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
+        text.Controls.Add(new Label { Text = "RaidClipPlugin", Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
         _overallStatusLabel.Dock = DockStyle.Fill;
         _overallStatusLabel.AutoSize = false;
         _overallStatusLabel.TextAlign = ContentAlignment.MiddleLeft;
-        _overallStatusLabel.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+        _overallStatusLabel.Font = new Font("Segoe UI", 12.8F, FontStyle.Bold);
         _overallStatusLabel.Margin = Padding.Empty;
         _overallStatusLabel.Padding = Padding.Empty;
         text.Controls.Add(_overallStatusLabel, 0, 1);
@@ -219,8 +219,8 @@ public sealed partial class MainForm
         meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
         meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
         meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
-        meta.RowStyles.Add(new RowStyle(SizeType.Percent, 44));
-        meta.RowStyles.Add(new RowStyle(SizeType.Percent, 56));
+        meta.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        meta.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         AddHeroMeta(meta, 0, "Kanal", "Funjii");
         AddHeroMeta(meta, 1, "Version", _updateService.CurrentDisplayVersion);
         AddHeroMeta(meta, 2, "Status", "Live");
