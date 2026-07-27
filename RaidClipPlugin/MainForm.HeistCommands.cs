@@ -171,8 +171,8 @@ private Control BuildCommandsOverviewLayout(Control filters)
         filterFlow.AutoSize = false;
         filterFlow.AutoScroll = false;
         filterFlow.Dock = DockStyle.Fill;
-        filterFlow.Height = 66;
-        filterFlow.MinimumSize = new Size(0, 62);
+        filterFlow.Height = 96;
+        filterFlow.MinimumSize = new Size(0, 92);
         filterFlow.WrapContents = true;
         filterFlow.Padding = new Padding(0, 3, 0, 2);
         foreach (Control control in filterFlow.Controls)
@@ -189,8 +189,8 @@ private Control BuildCommandsOverviewLayout(Control filters)
     var filterHost = new Panel
     {
         Dock = DockStyle.Fill,
-        Padding = new Padding(10, 5, 10, 4),
-        MinimumSize = new Size(0, 78),
+        Padding = new Padding(10, 7, 10, 6),
+        MinimumSize = new Size(0, 108),
         BackColor = BackgroundColor
     };
     filterHost.Controls.Add(filters);
@@ -211,7 +211,7 @@ private Control BuildCommandsOverviewLayout(Control filters)
         Padding = new Padding(10, 8, 10, 10),
         BackColor = BackgroundColor
     };
-    panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
+    panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 118));
     panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
     panel.Controls.Add(filterHost, 0, 0);
     panel.Controls.Add(_commandsGrid, 0, 1);
