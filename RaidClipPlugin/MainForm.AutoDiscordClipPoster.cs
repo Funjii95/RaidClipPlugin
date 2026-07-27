@@ -7,7 +7,7 @@ namespace RaidClipPlugin;
 public sealed partial class MainForm
 {
     private readonly Button _autoDiscordClipPosterNavButton =
-        CreateNavigationTile("◌  Events",
+        CreateNavigationTile("◌  Auto Clip",
             "Automatische Clip-Posts");
     private readonly Panel _autoDiscordClipPosterPage = new()
     {
