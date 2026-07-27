@@ -174,7 +174,7 @@ public sealed partial class MainForm
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 118));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 214));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 142));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 160));
         main.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
         main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         main.Controls.Add(dashboardHeader, 0, 0);
@@ -314,7 +314,7 @@ public sealed partial class MainForm
     {
         var panel = CreateCardPanel(color, new Padding(10, 8, 10, 8));
         panel.Margin = new Padding(5, 0, 5, 0);
-        panel.MinimumSize = new Size(112, 86);
+        panel.MinimumSize = new Size(112, 96);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
