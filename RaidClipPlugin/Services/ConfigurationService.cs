@@ -1737,7 +1737,7 @@ public sealed class ConfigurationService
         clip.AllowedUsers = NormalizeUsers(clip.AllowedUsers);
         clip.BlockedUsers = NormalizeUsers(clip.BlockedUsers);
         discord.InviteCommand = string.IsNullOrWhiteSpace(discord.InviteCommand)
-            ? "!raidpluginjoindc" : discord.InviteCommand.Trim().ToLowerInvariant();
+            ? "!dc" : discord.InviteCommand.Trim().ToLowerInvariant();
         discord.InviteUrl = (discord.InviteUrl ?? "").Trim();
         discord.InviteMessage = (discord.InviteMessage ?? "").Trim();
         discord.InviteCooldownSeconds = Math.Clamp(
