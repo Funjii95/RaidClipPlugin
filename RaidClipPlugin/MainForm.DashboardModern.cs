@@ -346,8 +346,8 @@ public sealed partial class MainForm
         buttons.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         var checkButton = NewActionButton("Jetzt prüfen");
         var repairButton = NewActionButton("Reparieren");
-        checkButton.Click += async (_, _) => await RunModuleHealthCheckAsync(false);
-        repairButton.Click += async (_, _) => await RestartUnhealthyModulesAsync();
+        checkButton.Click += async (_, _) => await CheckModulesNowAsync();
+        repairButton.Click += async (_, _) => await RestartModulesNowAsync();
         CompactDashboardButton(checkButton, 0);
         CompactDashboardButton(repairButton, 0);
         checkButton.Dock = DockStyle.Fill;
