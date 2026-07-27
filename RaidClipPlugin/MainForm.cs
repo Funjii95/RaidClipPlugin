@@ -1115,17 +1115,7 @@ private enum CloseChoice
                     break;
 
                 case Label label:
-                    if (label.Tag is Color labelAccentColor)
-                    {
-                        label.BackColor = Color.Transparent;
-                        label.ForeColor = labelAccentColor;
-                    }
-                    else if (label.Tag is string labelTag && labelTag.Equals("ThemeAccent", StringComparison.OrdinalIgnoreCase))
-                    {
-                        label.BackColor = Color.Transparent;
-                        label.ForeColor = AccentColor;
-                    }
-                    else if (ReferenceEquals(label, _obsIndicator) ||
+                    if (ReferenceEquals(label, _obsIndicator) ||
                         ReferenceEquals(label, _twitchIndicator) ||
                         ReferenceEquals(label, _eventSubIndicator) ||
                         ReferenceEquals(label, _playerIndicator))
@@ -1144,8 +1134,6 @@ private enum CloseChoice
                         label.BackColor = Color.Transparent;
                         if (label.ForeColor == AccentColor)
                             label.ForeColor = AccentColor;
-                        else if (label.Font.Size >= 16)
-                            label.ForeColor = Color.White;
                         else if (label.ForeColor == Color.DimGray)
                             label.ForeColor = MutedTextColor;
                         else
@@ -1529,8 +1517,7 @@ private enum CloseChoice
             Text = "Raid Clip",
             AutoSize = true,
             Font = new Font("Segoe UI", 20F, FontStyle.Bold),
-            ForeColor = AccentColor,
-            Tag = "ThemeAccent",
+            ForeColor = Color.White,
             Margin = Padding.Empty
         };
         var titleAccent = new Label
@@ -1539,7 +1526,6 @@ private enum CloseChoice
             AutoSize = true,
             Font = new Font("Segoe UI", 20F, FontStyle.Bold),
             ForeColor = AccentColor,
-            Tag = "ThemeAccent",
             Margin = Padding.Empty
         };
         var titleRow = new FlowLayoutPanel
