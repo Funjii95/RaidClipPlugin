@@ -30,7 +30,7 @@ public sealed partial class MainForm
         3 => "RaidRed",
         4 => "NeonGreen",
         5 => "TwitchPurple",
-        _ => "DarkPurple"
+        _ => "RaidRed"
     };
 
     private void SelectUiTheme(string? key)
@@ -43,7 +43,7 @@ public sealed partial class MainForm
             "raidred" => 3,
             "neongreen" => 4,
             "twitchpurple" => 5,
-            _ => 0
+            _ => 3
         };
     }
 
