@@ -1609,6 +1609,16 @@ public sealed class ConfigurationService
 
     public static void ValidateGiveawaySettings(GiveawayConfig config)
     {
+        var commands = GetGiveawayCommands(config).ToArray();
+        if (commands.Any(command =>
+                !System.Text.RegularExpressions.Regex.IsMatch(
+                    command, "^![a-z0-9_-]+(?: [a-z0-9_-]+)*$",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase)) ||
+            commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
+            commands.Length)
+            throw new InvalidOperationException(
+                "Giveaway-Commands sind ungültig oder doppelt vergeben.");
+
         if (!config.Enabled)
         {
             return;
@@ -1641,16 +1651,6 @@ public sealed class ConfigurationService
             throw new InvalidOperationException(
                 "Mindestens eine Giveaway-Rolle muss zugelassen sein.");
 
-
-        var commands = GetGiveawayCommands(config).ToArray();
-        if (commands.Any(command =>
-                !System.Text.RegularExpressions.Regex.IsMatch(
-                    command, "^![a-z0-9_-]+(?: [a-z0-9_-]+)*$",
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase)) ||
-            commands.Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
-            commands.Length)
-            throw new InvalidOperationException(
-                "Giveaway-Commands sind ungültig oder doppelt vergeben.");
     }
 
 
