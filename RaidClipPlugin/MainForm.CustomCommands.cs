@@ -52,16 +52,19 @@ public sealed partial class MainForm
         ConfigureCustomCommandsGrid();
         var hint = new Label
         {
-            AutoSize = true,
-            MaximumSize = new Size(1100, 0),
+            AutoSize = false,
+            Height = 24,
+            Dock = DockStyle.Fill,
+            AutoEllipsis = true,
+            MaximumSize = new Size(1100, 24),
             ForeColor = MutedTextColor,
             Text = "Eigene Chatbefehle mit frei wählbarer Rolle. Platzhalter: " +
                    "{user}, {login}, {args}, {target}, {command}. Das !raid-Beispiel ist zunächst deaktiviert."
         };
         var actions = new FlowLayoutPanel
         {
-            Dock = DockStyle.Fill, AutoScroll = true, WrapContents = true,
-            Padding = new Padding(4)
+            Dock = DockStyle.Fill, AutoScroll = false, WrapContents = false,
+            Padding = new Padding(2, 3, 2, 2)
         };
         actions.Controls.AddRange(new Control[]
         {
@@ -69,13 +72,15 @@ public sealed partial class MainForm
             _sharedChatCommandsHint, _addCustomCommandButton,
             _removeCustomCommandButton, _saveCustomCommandsButton
         });
+        foreach (Control control in actions.Controls)
+            control.Margin = new Padding(4, 4, 8, 4);
         var layout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1,
             Padding = new Padding(8)
         };
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(hint, 0, 0);
         layout.Controls.Add(actions, 0, 1);
