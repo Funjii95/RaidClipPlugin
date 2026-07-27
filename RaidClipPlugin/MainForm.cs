@@ -4676,7 +4676,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             return;
         }
 
-        indicator.Text = $"{GetServiceIcon(service)}  {service}{Environment.NewLine}{state.ToUpperInvariant()}";
+        indicator.Text = $"{service}{Environment.NewLine}{state.ToUpperInvariant()}";
         indicator.ForeColor = color;
         UpdateModernServiceStatus(service, state, color);
     }
