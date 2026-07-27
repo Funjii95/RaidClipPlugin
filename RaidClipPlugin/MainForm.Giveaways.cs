@@ -195,11 +195,11 @@ public sealed partial class MainForm
         AddMinigameTab(settingsTabs, "Gewinnchancen & Admin", chance);
         AddMinigameTab(settingsTabs, "Chattexte", messages);
 
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = true };
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, AutoScroll = false, Padding = new Padding(2, 4, 2, 2) };
         foreach (var control in new Control[] { _giveawayStartButton, _giveawayPauseButton, _giveawayResumeButton,
             _giveawayDrawButton, _giveawayAdditionalButton, _giveawayRerollButton, _giveawayEndButton,
             _giveawayCancelButton, _giveawayResetButton, _giveawayCopyButton, _giveawaySaveButton,
-            _giveawayRuntimeLabel }) actions.Controls.Add(control);
+            _giveawayRuntimeLabel }) { control.Margin = new Padding(4, 4, 6, 4); actions.Controls.Add(control); }
 
         _giveawayGrid.Columns.Add(new DataGridViewTextBoxColumn { Name="User", HeaderText="Nutzer", Width=180 });
         _giveawayGrid.Columns.Add(new DataGridViewTextBoxColumn { Name="Role", HeaderText="Rolle", Width=110 });
@@ -207,20 +207,20 @@ public sealed partial class MainForm
         _giveawayGrid.Columns.Add(new DataGridViewTextBoxColumn { Name="Points", HeaderText="Punkte", Width=80 });
         _giveawayGrid.Columns.Add(new DataGridViewTextBoxColumn { Name="Tickets", HeaderText="Lose", Width=70 });
         _giveawayGrid.Columns.Add(new DataGridViewTextBoxColumn { Name="Status", HeaderText="Status", AutoSizeMode=DataGridViewAutoSizeColumnMode.Fill });
-        var participantTools = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true };
+        var participantTools = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, AutoScroll = false, Padding = new Padding(2, 4, 2, 2) };
         foreach (var control in new Control[] { _giveawayManualUserBox, _giveawayAddUserButton,
             _giveawayRemoveUserButton, _giveawaySearchBox, _giveawayRefreshButton, _giveawayExportButton })
-            participantTools.Controls.Add(control);
+            { control.Margin = new Padding(4, 4, 6, 4); participantTools.Controls.Add(control); }
         var participantPanel = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2 };
-        participantPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        participantPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         participantPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         participantPanel.Controls.Add(participantTools, 0, 0); participantPanel.Controls.Add(_giveawayGrid, 0, 1);
 
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, Padding = new Padding(20) };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 48));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 52));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 40));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 60));
         layout.Controls.Add(header, 0, 0); layout.Controls.Add(settingsTabs, 0, 1);
         layout.Controls.Add(actions, 0, 2); layout.Controls.Add(participantPanel, 0, 3);
         _giveawayPage.Controls.Add(layout);
