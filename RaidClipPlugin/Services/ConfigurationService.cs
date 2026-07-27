@@ -810,6 +810,14 @@ public sealed class ConfigurationService
             (config.Minigame.CurrencyPlural ?? "").Trim();
         config.Minigame.CustomPointsCommand =
             (config.Minigame.CustomPointsCommand ?? "").Trim().ToLowerInvariant();
+        config.Minigame.LurkMessage =
+            string.IsNullOrWhiteSpace(config.Minigame.LurkMessage)
+                ? "@{username} ist jetzt im Lurk und erhält weiterhin Anwesenheitspunkte."
+                : config.Minigame.LurkMessage.Trim();
+        config.Minigame.UnlurkMessage =
+            string.IsNullOrWhiteSpace(config.Minigame.UnlurkMessage)
+                ? "@{username} ist zurück und erhält wieder normale Anwesenheitspunkte."
+                : config.Minigame.UnlurkMessage.Trim();
         if (config.Minigame.CustomPointsCommand.Length > 0 &&
             !config.Minigame.CustomPointsCommand.StartsWith('!'))
         {
@@ -1207,6 +1215,10 @@ public sealed class ConfigurationService
                     throw new InvalidOperationException(
                         $"Der Command {config.CustomPointsCommand} wird bereits verwendet.");
             }
+            if (string.IsNullOrWhiteSpace(config.LurkMessage) || config.LurkMessage.Length > 500 ||
+                string.IsNullOrWhiteSpace(config.UnlurkMessage) || config.UnlurkMessage.Length > 500)
+                throw new InvalidOperationException(
+                    "Die !lurk/!unlurk Antworttexte dürfen nicht leer und höchstens 500 Zeichen lang sein.");
             if (config.PointsPerInterval is < 0 or > 9_000_000_000L ||
                 config.LurkerPointsPerInterval is < 0 or > 9_000_000_000L)
                 throw new InvalidOperationException(
