@@ -217,10 +217,10 @@ public sealed class HeistService : IAsyncDisposable
             {
                 State=HeistState.Cancelled;
                 if(_config.ApplyGlobalCooldownOnCancelledHeist)_lastGlobalCompletion=DateTimeOffset.UtcNow;
-                var jackpot=await _points.GetJackpotAsync(_minigame.JackpotStartValue,cancellationToken);
-                await SendAsync(Format(_config.NotEnoughParticipantsMessage,"",participants.Length,jackpot,CalculateShare(jackpot,participants.Length)),cancellationToken);
+                var cancelledJackpot=await _points.GetJackpotAsync(_minigame.JackpotStartValue,cancellationToken);
+                await SendAsync(Format(_config.NotEnoughParticipantsMessage,"",participants.Length,cancelledJackpot,CalculateShare(cancelledJackpot,participants.Length)),cancellationToken);
                 Console.WriteLine("Heist automatisch abgebrochen: zu wenige Teilnehmer.");
-                StatusChanged?.Invoke(CurrentStatus(jackpot)); CleanupSession(); return;
+                StatusChanged?.Invoke(CurrentStatus(cancelledJackpot)); CleanupSession(); return;
             }
             State=HeistState.Evaluating;
             var jackpot=await _points.GetJackpotAsync(_minigame.JackpotStartValue,cancellationToken);
