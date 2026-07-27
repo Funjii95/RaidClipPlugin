@@ -162,6 +162,8 @@ public class MinigameConfig
     public bool PointsCommandPointsEnabled { get; set; } = false;
     public bool PointsCommandPerlenEnabled { get; set; } = false;
     public string CustomPointsCommand { get; set; } = "";
+    public string LurkMessage { get; set; } = "@{username} ist jetzt im Lurk und erhält weiterhin Anwesenheitspunkte.";
+    public string UnlurkMessage { get; set; } = "@{username} ist zurück und erhält wieder normale Anwesenheitspunkte.";
     public List<string> PointsBlacklist { get; set; } = new()
     {
         "nightbot",
