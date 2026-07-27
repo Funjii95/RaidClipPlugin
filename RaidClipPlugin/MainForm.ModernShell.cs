@@ -266,10 +266,10 @@ public sealed partial class MainForm
             if (control is Button button && button.Tag is Tuple<string, string> meta)
             {
                 button.Width = compact ? 42 : 240;
-                button.Height = compact ? 34 : 50;
+                button.Height = compact ? 34 : 42;
                 button.TextAlign = compact ? ContentAlignment.MiddleCenter : ContentAlignment.MiddleLeft;
-                button.Padding = compact ? Padding.Empty : new Padding(14, 5, 12, 5);
-                button.Text = compact ? meta.Item1.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? meta.Item1 : $"{meta.Item1}{Environment.NewLine}{meta.Item2}";
+                button.Padding = compact ? Padding.Empty : new Padding(14, 0, 12, 0);
+                button.Text = compact ? meta.Item1.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? meta.Item1 : meta.Item1;
                 _moduleHealthToolTip.SetToolTip(button, meta.Item1.Trim());
             }
         }
