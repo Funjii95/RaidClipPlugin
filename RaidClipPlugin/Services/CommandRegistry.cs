@@ -70,8 +70,12 @@ public sealed class CommandRegistry
         Add("points.remove", "!removepoints", null, "points", "Punkte", "Punkte zurücksetzen",
             "Setzt den Punktestand eines Nutzers auf null.", "!removepoints @name", "!removepoints @name",
             m.PointsEnabled, CommandRole.Broadcaster, order:25);
-        Add("points.lurk", "!lurk", new[]{"!unlurk"}, "points", "Punkte", "Lurk",
-            "Wechselt den Anwesenheitsstatus.", "!lurk", "!lurk", m.PointsEnabled, order:26);
+        Add("points.lurk", "!lurk", null, "points", "Punkte", "Lurk starten",
+            "Aktiviert den Lurk-Modus und nutzt deinen custom !lurk Antworttext.", "!lurk", "!lurk",
+            m.PointsEnabled, order:26);
+        Add("points.unlurk", "!unlurk", null, "points", "Punkte", "Lurk beenden",
+            "Beendet den Lurk-Modus und nutzt deinen custom !unlurk Antworttext.", "!unlurk", "!unlurk",
+            m.PointsEnabled, order:27);
         Add("casino.gamble", "!gamble", new[]{"!gambel"}, "casino", "Casino", "Gamble",
             "Würfelt mit einem Punkteinsatz.", "!gamble <Betrag|all>", "!gamble 100",
             m.Enabled && m.GambleEnabled, userCooldown:m.GambleCooldownSeconds, cost:m.MinimumBet, order:40);
@@ -122,7 +126,7 @@ public sealed class CommandRegistry
             userCooldown:config.DiscordClips.InviteCooldownSeconds, order:90);
 
         Add("moderation.permit", config.Moderation.Permit.Command, null, "moderation", "Moderation", "Linkfreigabe",
-            "Erlaubt einem Zuschauer vorÃ¼bergehend das Posten eines Links.", config.Moderation.Permit.Command + " @Benutzer [30s|5m|1h]",
+            "Erlaubt einem Zuschauer vorübergehend das Posten eines Links.", config.Moderation.Permit.Command + " @Benutzer [30s|5m|1h]",
             config.Moderation.Permit.Command + " @Funjii 5m", config.Moderation.Enabled && config.Moderation.Permit.Enabled,
             CommandRole.Moderator, order: 130);
         Add("moderation.unpermit", config.Moderation.Permit.UnpermitCommand, null, "moderation", "Moderation", "Linkfreigabe widerrufen",
