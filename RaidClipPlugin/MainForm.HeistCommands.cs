@@ -116,8 +116,8 @@ public sealed partial class MainForm
         var subtitle = new Label { Text = "Chat-Befehle, Custom Commands und frei wählbare Berechtigungen",
             AutoSize = true, ForeColor = MutedTextColor };
         var filters = new FlowLayoutPanel { AutoSize = false, AutoScroll = false,
-            Dock = DockStyle.Fill, Height = 88, WrapContents = true,
-            Padding = new Padding(0, 8, 0, 6), Margin = new Padding(0) };
+            Dock = DockStyle.Fill, Height = 44, WrapContents = false,
+            Padding = new Padding(0, 4, 0, 2), Margin = new Padding(0) };
         _commandActiveFilter.Items.AddRange(new object[] { "Alle", "Aktiv", "Inaktiv" }); _commandActiveFilter.SelectedIndex = 0;
         _commandRoleFilter.Items.AddRange(new object[] { "Alle Rollen", "Zuschauer", "Follower", "Subscriber", "VIP", "Moderator", "Broadcaster" }); _commandRoleFilter.SelectedIndex = 0;
         _commandModuleFilter.Items.Add("Alle Module"); _commandModuleFilter.SelectedIndex = 0;
@@ -146,8 +146,8 @@ public sealed partial class MainForm
         AddMinigameTab(tabs, "Custom Commands", BuildCustomCommandsPanel());
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3,
             ColumnCount = 1, Padding = new Padding(20) };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(header, 0, 0); layout.Controls.Add(subtitle, 0, 1);
         layout.Controls.Add(tabs, 0, 2);
