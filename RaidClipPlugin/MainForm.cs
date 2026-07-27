@@ -411,6 +411,22 @@ public sealed partial class MainForm : Form
         NewCheck("!perlen", false);
     private readonly TextBox _customPointsCommandBox = new()
         { Width = 150, MaxLength = 30 };
+    private readonly TextBox _lurkMessageBox = new()
+    {
+        Width = 520,
+        Height = 58,
+        Multiline = true,
+        ScrollBars = ScrollBars.Vertical,
+        Text = "@{username} ist jetzt im Lurk und erhält weiterhin Anwesenheitspunkte."
+    };
+    private readonly TextBox _unlurkMessageBox = new()
+    {
+        Width = 520,
+        Height = 58,
+        Multiline = true,
+        ScrollBars = ScrollBars.Vertical,
+        Text = "@{username} ist zurück und erhält wieder normale Anwesenheitspunkte."
+    };
     private readonly TextBox _pointsBlacklistInput = new()
         { Width = 180, MaxLength = 50 };
     private readonly ListBox _pointsBlacklistList = new()
@@ -2061,6 +2077,10 @@ private enum CloseChoice
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Stille Zuschauer/Lurker pro Intervall",
             _lurkerPointsPerIntervalControl));
+        pointsFlow.Controls.Add(CreateSettingEditor(
+            "!lurk Antworttext", _lurkMessageBox));
+        pointsFlow.Controls.Add(CreateSettingEditor(
+            "!unlurk Antworttext", _unlurkMessageBox));
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Intervall (Min.)", _pointsIntervalControl));
         pointsFlow.Controls.Add(CreateSettingEditor(
@@ -5044,6 +5064,8 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
                 _pointsCommandPointsCheck.Checked = config.Minigame.PointsCommandPointsEnabled;
                 _pointsCommandPerlenCheck.Checked = config.Minigame.PointsCommandPerlenEnabled;
                 _customPointsCommandBox.Text = config.Minigame.CustomPointsCommand;
+                _lurkMessageBox.Text = config.Minigame.LurkMessage;
+                _unlurkMessageBox.Text = config.Minigame.UnlurkMessage;
                 _pointsBlacklistList.Items.Clear();
                 _pointsBlacklistList.Items.AddRange(config.Minigame.PointsBlacklist.Cast<object>().ToArray());
                 UpdateCurrencyPreview();
@@ -5171,6 +5193,8 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             _currencySingularBox.Text = config.Minigame.CurrencySingular;
             _currencyPluralBox.Text = config.Minigame.CurrencyPlural;
             _customPointsCommandBox.Text = config.Minigame.CustomPointsCommand;
+            _lurkMessageBox.Text = config.Minigame.LurkMessage;
+            _unlurkMessageBox.Text = config.Minigame.UnlurkMessage;
             _slotSymbolsBox.Text = config.Minigame.SlotSymbols;
             _pointsBlacklistList.Items.Clear();
             foreach (var entry in config.Minigame.PointsBlacklist
@@ -5428,6 +5452,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             _pointsCommandPerlenCheck.Checked;
         config.Minigame.CustomPointsCommand =
             _customPointsCommandBox.Text.Trim();
+        config.Minigame.LurkMessage =
+            _lurkMessageBox.Text.Trim();
+        config.Minigame.UnlurkMessage =
+            _unlurkMessageBox.Text.Trim();
         config.Minigame.PointsBlacklist = _pointsBlacklistList.Items
             .Cast<object>()
             .Select(item => item.ToString() ?? "")
