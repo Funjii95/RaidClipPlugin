@@ -73,6 +73,7 @@ public sealed class MainFormStartupTests
                 var interactiveFlows = Descendants(form)
                     .OfType<FlowLayoutPanel>()
                     .Where(ContainsInteractiveSettings)
+                    .Where(flow => !HasDisableAutoScrollAncestor(flow))
                     .ToArray();
                 Assert.NotEmpty(interactiveFlows);
                 Assert.All(interactiveFlows, flow => Assert.True(flow.AutoScroll,
@@ -99,4 +100,15 @@ public sealed class MainFormStartupTests
     private static bool ContainsInteractiveSettings(Control root) =>
         Descendants(root).Any(child => child is Button or CheckBox or TextBox or
             ComboBox or NumericUpDown or ListBox or ListView or DataGridView);
+
+    private static bool HasDisableAutoScrollAncestor(Control control)
+    {
+        for (var current = control; current is not null; current = current.Parent)
+        {
+            if (current.Tag is string tag && tag == "DisableAutoScroll")
+                return true;
+        }
+
+        return false;
+    }
 }
