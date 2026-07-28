@@ -194,7 +194,7 @@ public sealed partial class MainForm
             Dock = DockStyle.Fill,
             Padding = new Point(18, 8),
             ItemSize = new Size(0, 38),
-            MinimumSize = new Size(0, 210)
+            MinimumSize = new Size(0, 300)
         };
         AddMinigameTab(settingsTabs, "Allgemein", general);
         AddMinigameTab(settingsTabs, "Teilnahme", eligibility);
@@ -207,7 +207,7 @@ public sealed partial class MainForm
             _giveawayCancelButton, _giveawayResetButton, _giveawayCopyButton, _giveawaySaveButton,
             _giveawayRuntimeLabel })
         {
-            control.Margin = new Padding(4, 3, 6, 3);
+            control.Margin = new Padding(4, 4, 6, 4);
             if (control is Button button) button.Height = 34;
             actions.Controls.Add(control);
         }
@@ -222,20 +222,20 @@ public sealed partial class MainForm
         foreach (var control in new Control[] { _giveawayManualUserBox, _giveawayAddUserButton,
             _giveawayRemoveUserButton, _giveawaySearchBox, _giveawayRefreshButton, _giveawayExportButton })
         {
-            control.Margin = new Padding(3, 2, 5, 2);
-            if (control is Button button) button.Height = 28;
-            else if (control is TextBox textBox) textBox.Height = 26;
+            control.Margin = new Padding(3, 4, 5, 4);
+            if (control is Button button) button.Height = 32;
+            else if (control is TextBox textBox) textBox.Height = 30;
             participantTools.Controls.Add(control);
         }
         var participantPanel = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2 };
-        participantPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        participantPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         participantPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         participantPanel.Controls.Add(participantTools, 0, 0); participantPanel.Controls.Add(_giveawayGrid, 0, 1);
 
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, Padding = new Padding(20) };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 250));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 330));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 118));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(header, 0, 0); layout.Controls.Add(settingsTabs, 0, 1);
         layout.Controls.Add(actions, 0, 2); layout.Controls.Add(participantPanel, 0, 3);
