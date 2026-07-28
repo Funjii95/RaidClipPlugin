@@ -9,7 +9,7 @@ public sealed partial class MainForm
 {
     private readonly Button _giveawayNavButton = CreateNavigationTile(
         "🎁  Giveaways", "Verlosungen und Gewinner");
-    private readonly Panel _giveawayPage = new() { Dock = DockStyle.Fill, Visible = false };
+    private readonly Panel _giveawayPage = new() { Dock = DockStyle.Fill, Visible = false, Tag = DisableAutoScrollTag };
     private readonly Label _giveawayStatusLabel = new()
     {
         Text = "● Giveaway: Deaktiviert", AutoSize = true,
