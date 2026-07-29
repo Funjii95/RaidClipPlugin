@@ -1,6 +1,7 @@
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
+using System.Diagnostics;
 
 namespace RaidClipPlugin;
 
@@ -1749,6 +1750,13 @@ private enum CloseChoice
         };
         settingsHeader.Controls.Add(settingsTitle);
         settingsHeader.Controls.Add(settingsSubtitle);
+        var settingsTabs = new TabControl
+        {
+            Dock = DockStyle.Fill
+        };
+        AddMinigameTab(settingsTabs, "Allgemein", generalSettingsGroup);
+        AddMinigameTab(settingsTabs, "Patchnotes", BuildPatchNotesPage());
+
         var settingsLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -1760,7 +1768,7 @@ private enum CloseChoice
         settingsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
         settingsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         settingsLayout.Controls.Add(settingsHeader, 0, 0);
-        settingsLayout.Controls.Add(generalSettingsGroup, 0, 1);
+        settingsLayout.Controls.Add(settingsTabs, 0, 1);
         _settingsPage.Controls.Add(settingsLayout);
 
         var moderationSettingsFlow = new FlowLayoutPanel
@@ -4691,6 +4699,119 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             }
 
             control.Enabled = enabled;
+        }
+    }
+
+    private Control BuildPatchNotesPage()
+    {
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(10),
+            BackColor = BackgroundColor
+        };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+
+        var title = new Label
+        {
+            Text = $"Aktueller Build: Version {_updateService.CurrentDisplayVersion}",
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+            ForeColor = AccentColor,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+
+        var patchNotesBox = new TextBox
+        {
+            Dock = DockStyle.Fill,
+            Multiline = true,
+            ReadOnly = true,
+            ScrollBars = ScrollBars.Vertical,
+            WordWrap = true,
+            BorderStyle = BorderStyle.FixedSingle,
+            BackColor = InputColor,
+            ForeColor = TextColor,
+            Font = new Font("Consolas", 10F),
+            Text = BuildPatchNotesHistoryText()
+        };
+
+        var actions = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            Padding = new Padding(0, 8, 0, 0),
+            BackColor = BackgroundColor
+        };
+
+        var openReleaseButton = NewActionButton("GitHub-Releases öffnen");
+        openReleaseButton.Click += (_, _) => OpenExternalUrl(
+            "https://github.com/Funjii95/RaidClipPlugin/releases/latest");
+        actions.Controls.Add(openReleaseButton);
+
+        layout.Controls.Add(title, 0, 0);
+        layout.Controls.Add(patchNotesBox, 0, 1);
+        layout.Controls.Add(actions, 0, 2);
+        return layout;
+    }
+
+    private static string BuildPatchNotesHistoryText()
+    {
+        return string.Join(
+            Environment.NewLine + Environment.NewLine,
+            new[]
+            {
+                """
+Version 2.0.7
+- Neuer Patchnotes-Reiter unter Einstellungen.
+- Aktueller Build wird direkt im Bot angezeigt.
+- Scrollbare Historie der letzten 5 Versionen ergänzt.
+- Button zu den GitHub-Releases hinzugefügt.
+""",
+                """
+Version 2.0.6
+- Giveaway-Layout stabilisiert: kein endloses Scrollen mehr im oberen Bereich.
+- Einstellungen, Aktionen und Teilnehmerliste im Giveaway sauberer aufgeteilt.
+- Teilnehmerliste bleibt der einzige große Listenbereich.
+""",
+                """
+Version 2.0.5
+- Giveaway-Seite gegen erzwungene AutoScroll-Effekte abgesichert.
+- Layout-Prüfung erweitert, damit Spezialseiten nicht versehentlich wieder scrollen.
+- Kleine UI-Korrekturen für feste Fenstergrößen.
+""",
+                """
+Version 2.0.4
+- Giveaway-Reiter weiter komprimiert und besser lesbar gemacht.
+- Buttons und Tabellenbereiche neu verteilt.
+- Vorbereitung für den stabileren 2.0.x-Layoutpfad.
+""",
+                """
+Version 2.0.3
+- Custom-Lurk/Unlurk-Texte in den Punkte- und Minigame-Bereich integriert.
+- Command-Übersicht erweitert, damit neue Befehle sichtbarer werden.
+- Kleine Korrekturen an Dashboard- und Einstellungsflächen.
+"""
+            });
+    }
+
+    private void OpenExternalUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception exception)
+        {
+            AppendLog("Patchnotes-Link konnte nicht geöffnet werden: " +
+                      exception.Message);
         }
     }
 
