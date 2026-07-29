@@ -14,6 +14,7 @@ public sealed class MusicRequestConfig
     public List<string> ChatCommandAliases { get; set; } = new() { "!sr" };
     public MusicPlaybackMode PlaybackMode { get; set; } = MusicPlaybackMode.AddToQueue;
     public string SelectedDeviceId { get; set; } = "";
+    public string SelectedDeviceName { get; set; } = "";
     public bool UseActiveDevice { get; set; } = true;
     public bool ActivateSelectedDevice { get; set; } = true;
     public int MaximumTrackDurationMinutes { get; set; } = 10;

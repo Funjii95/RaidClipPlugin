@@ -384,6 +384,7 @@ public sealed partial class MainForm
         _rewardIdBox.Text = config.SelectedRewardId;
         _rewardIdLabel.Text = "Belohnungs-ID: " +
             (config.SelectedRewardId.Length > 0 ? config.SelectedRewardId : "–");
+        ApplySavedMusicSelections(config);
         _playbackModeBox.SelectedIndex =
             config.PlaybackMode == MusicPlaybackMode.PlayImmediately ? 1 : 0;
         _useActiveDeviceCheck.Checked = config.UseActiveDevice;
@@ -433,22 +434,57 @@ public sealed partial class MainForm
     }
 
 
+    private void ApplySavedMusicSelections(MusicRequestConfig config)
+    {
+        if (!string.IsNullOrWhiteSpace(config.SelectedDeviceId) &&
+            _spotifyDeviceBox.Items.Count == 0)
+        {
+            var deviceName = string.IsNullOrWhiteSpace(config.SelectedDeviceName)
+                ? "Zuletzt verwendetes Spotify-Gerät"
+                : config.SelectedDeviceName;
+            _spotifyDeviceBox.DataSource = new List<SpotifyDevice>
+            {
+                new(config.SelectedDeviceId, deviceName, "gespeichert", false, false)
+            };
+            _spotifyDeviceBox.SelectedIndex = 0;
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.SelectedRewardId) &&
+            _rewardBox.Items.Count == 0)
+        {
+            var rewardName = string.IsNullOrWhiteSpace(config.SelectedRewardName)
+                ? "Gespeicherter Musikwunsch"
+                : config.SelectedRewardName;
+            _rewardBox.DataSource = new List<TwitchCustomReward>
+            {
+                new(config.SelectedRewardId, rewardName, true, true)
+            };
+            _rewardBox.SelectedIndex = 0;
+        }
+    }
+
+
     private void ReadMusicRequestSettings(AppConfig config)
     {
         var music = config.MusicRequests;
         ApplyMusicMessageDefaults(music.ChatMessages);
         music.Enabled = _musicEnabledCheck.Checked;
         music.SpotifyClientId = _spotifyClientIdBox.Text.Trim();
-        music.SelectedRewardId = _rewardIdBox.Text.Trim();
+        var selectedReward = _rewardBox.SelectedItem as TwitchCustomReward;
+        music.SelectedRewardId = !string.IsNullOrWhiteSpace(_rewardIdBox.Text)
+            ? _rewardIdBox.Text.Trim()
+            : selectedReward?.Id ?? music.SelectedRewardId;
         music.SelectedRewardName =
-            (_rewardBox.SelectedItem as TwitchCustomReward)?.Title ??
+            selectedReward?.Title ??
             music.SelectedRewardName;
         music.PlaybackMode = _playbackModeBox.SelectedIndex == 1
             ? MusicPlaybackMode.PlayImmediately
             : MusicPlaybackMode.AddToQueue;
-        music.SelectedDeviceId =
-            (_spotifyDeviceBox.SelectedItem as SpotifyDevice)?.Id ??
-            music.SelectedDeviceId;
+        if (_spotifyDeviceBox.SelectedItem is SpotifyDevice selectedDevice)
+        {
+            music.SelectedDeviceId = selectedDevice.Id;
+            music.SelectedDeviceName = selectedDevice.Name;
+        }
         music.UseActiveDevice = _useActiveDeviceCheck.Checked;
         music.ActivateSelectedDevice = _activateDeviceCheck.Checked;
         music.MaximumTrackDurationMinutes =
@@ -566,6 +602,7 @@ public sealed partial class MainForm
             !string.Equals(expected.SelectedRewardName, actual.SelectedRewardName, StringComparison.Ordinal) ||
             expected.PlaybackMode != actual.PlaybackMode ||
             !string.Equals(expected.SelectedDeviceId, actual.SelectedDeviceId, StringComparison.Ordinal) ||
+            !string.Equals(expected.SelectedDeviceName, actual.SelectedDeviceName, StringComparison.Ordinal) ||
             expected.UseActiveDevice != actual.UseActiveDevice ||
             expected.ActivateSelectedDevice != actual.ActivateSelectedDevice ||
             expected.MaximumTrackDurationMinutes != actual.MaximumTrackDurationMinutes ||
@@ -698,8 +735,19 @@ public sealed partial class MainForm
             EnsureSpotify(music);
             var devices = await _spotify!.GetDevicesAsync(
                 _shutdown?.Token ?? CancellationToken.None);
-            _spotifyDeviceBox.DataSource = devices.ToList();
-            var selectedIndex = devices.ToList().FindIndex(device =>
+            var allDevices = devices.ToList();
+            if (!string.IsNullOrWhiteSpace(music.SelectedDeviceId) &&
+                allDevices.All(device => !device.Id.Equals(
+                    music.SelectedDeviceId, StringComparison.Ordinal)))
+            {
+                var deviceName = string.IsNullOrWhiteSpace(music.SelectedDeviceName)
+                    ? "Zuletzt verwendetes Spotify-Gerät"
+                    : music.SelectedDeviceName;
+                allDevices.Insert(0, new SpotifyDevice(
+                    music.SelectedDeviceId, deviceName, "gespeichert", false, false));
+            }
+            _spotifyDeviceBox.DataSource = allDevices;
+            var selectedIndex = allDevices.FindIndex(device =>
                 device.Id.Equals(music.SelectedDeviceId,
                     StringComparison.Ordinal));
             if (selectedIndex >= 0) _spotifyDeviceBox.SelectedIndex = selectedIndex;
@@ -740,6 +788,16 @@ public sealed partial class MainForm
             var rewards = await twitch.GetCustomRewardsAsync(
                 broadcaster.Id, token);
             var allRewards = rewards.ToList();
+            if (!string.IsNullOrWhiteSpace(config.MusicRequests.SelectedRewardId) &&
+                allRewards.All(reward => !reward.Id.Equals(
+                    config.MusicRequests.SelectedRewardId, StringComparison.Ordinal)))
+            {
+                var rewardName = string.IsNullOrWhiteSpace(config.MusicRequests.SelectedRewardName)
+                    ? "Gespeicherter Musikwunsch"
+                    : config.MusicRequests.SelectedRewardName;
+                allRewards.Insert(0, new TwitchCustomReward(
+                    config.MusicRequests.SelectedRewardId, rewardName, true, true));
+            }
             _rewardBox.DataSource = allRewards;
             var selectedIndex = allRewards.FindIndex(reward =>
                 reward.Id.Equals(config.MusicRequests.SelectedRewardId,

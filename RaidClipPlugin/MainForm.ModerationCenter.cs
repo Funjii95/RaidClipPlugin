@@ -10,6 +10,8 @@ public sealed partial class MainForm
     private readonly CheckBox _linkFilterWarnCheck = NewModerationCheck("Bot-Warnung senden", true);
     private readonly CheckBox _linkFilterBareDomainsCheck = NewModerationCheck("Domains ohne http erkennen", true);
     private readonly CheckBox _linkFilterObfuscatedCheck = NewModerationCheck("Verschleierte Links erkennen", true);
+    private readonly CheckBox _linkFilterExemptModeratorsCheck = NewModerationCheck("Mods vom Linkfilter ausnehmen", true);
+    private readonly CheckBox _linkFilterExemptVipsCheck = NewModerationCheck("VIPs vom Linkfilter ausnehmen", true);
     private readonly CheckBox _permitEnabledCheck = NewModerationCheck("!permit aktivieren", true);
     private readonly CheckBox _unpermitEnabledCheck = NewModerationCheck("!unpermit aktivieren", true);
     private readonly TextBox _permitCommandBox = new() { Width = 120, Text = "!permit" };
@@ -78,6 +80,8 @@ public sealed partial class MainForm
         flow.Controls.Add(_linkFilterWarnCheck);
         flow.Controls.Add(_linkFilterBareDomainsCheck);
         flow.Controls.Add(_linkFilterObfuscatedCheck);
+        flow.Controls.Add(_linkFilterExemptModeratorsCheck);
+        flow.Controls.Add(_linkFilterExemptVipsCheck);
         flow.Controls.Add(CreateSettingEditor("Aktion bei Link", _linkFilterActionBox));
         flow.Controls.Add(CreateSettingEditor("Timeout (Sek.)", _linkFilterTimeoutControl));
         flow.Controls.Add(_permitEnabledCheck);
@@ -137,6 +141,8 @@ public sealed partial class MainForm
         _linkFilterWarnCheck.Checked = config.Moderation.LinkFilter.BotResponseEnabled;
         _linkFilterBareDomainsCheck.Checked = config.Moderation.LinkFilter.DetectBareDomains;
         _linkFilterObfuscatedCheck.Checked = config.Moderation.LinkFilter.DetectObfuscatedLinks;
+        _linkFilterExemptModeratorsCheck.Checked = config.Moderation.LinkFilter.ExemptModerators;
+        _linkFilterExemptVipsCheck.Checked = config.Moderation.LinkFilter.ExemptVips;
         _permitEnabledCheck.Checked = config.Moderation.Permit.Enabled;
         _unpermitEnabledCheck.Checked = config.Moderation.Permit.UnpermitEnabled;
         _permitCommandBox.Text = config.Moderation.Permit.Command;
@@ -155,9 +161,16 @@ public sealed partial class MainForm
     private void ReadModerationCenterSettings(AppConfig config)
     {
         config.Moderation.LinkFilter.Enabled = _linkFilterEnabledCheck.Checked;
+        if (config.Moderation.LinkFilter.Enabled)
+        {
+            config.Moderation.Enabled = true;
+            _moderationEnabledCheck.Checked = true;
+        }
         config.Moderation.LinkFilter.BotResponseEnabled = _linkFilterWarnCheck.Checked;
         config.Moderation.LinkFilter.DetectBareDomains = _linkFilterBareDomainsCheck.Checked;
         config.Moderation.LinkFilter.DetectObfuscatedLinks = _linkFilterObfuscatedCheck.Checked;
+        config.Moderation.LinkFilter.ExemptModerators = _linkFilterExemptModeratorsCheck.Checked;
+        config.Moderation.LinkFilter.ExemptVips = _linkFilterExemptVipsCheck.Checked;
         config.Moderation.LinkFilter.Action = (LinkModerationAction)Math.Max(0, _linkFilterActionBox.SelectedIndex);
         config.Moderation.LinkFilter.TimeoutSeconds = decimal.ToInt32(_linkFilterTimeoutControl.Value);
         config.Moderation.Permit.Enabled = _permitEnabledCheck.Checked;

@@ -202,9 +202,15 @@ public sealed class LinkModerationService
     public async Task ProcessAsync(ChatMessage message, AppConfig config, ChatModerationService? moderation, TwitchService twitch,
         string broadcasterId, string broadcasterLogin, string moderatorId, Func<ChatMessage, bool> musicBypass, Action<string> log, CancellationToken token)
     {
-        if (!config.Moderation.Enabled || string.IsNullOrWhiteSpace(message.Text) || message.IsBot) return;
-        if (await TryHandlePermitCommandAsync(message, config, twitch, broadcasterId, broadcasterLogin, moderatorId, log, token)) return;
+        if (string.IsNullOrWhiteSpace(message.Text) || message.IsBot) return;
         var filter = config.Moderation.LinkFilter;
+        var permit = config.Moderation.Permit;
+        if (!config.Moderation.Enabled && !filter.Enabled &&
+            !permit.Enabled && !permit.UnpermitEnabled)
+        {
+            return;
+        }
+        if (await TryHandlePermitCommandAsync(message, config, twitch, broadcasterId, broadcasterLogin, moderatorId, log, token)) return;
         if (!filter.Enabled) return;
         if (musicBypass(message))
         {

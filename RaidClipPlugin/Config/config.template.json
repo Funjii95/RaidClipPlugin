@@ -150,6 +150,7 @@
     "SelectedRewardName": "",
     "PlaybackMode": 0,
     "SelectedDeviceId": "",
+    "SelectedDeviceName": "",
     "UseActiveDevice": true,
     "ActivateSelectedDevice": true,
     "MaximumTrackDurationMinutes": 10,

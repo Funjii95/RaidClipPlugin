@@ -2722,7 +2722,7 @@ private enum CloseChoice
                 StartCustomCommandServices(config, twitch, session,
                     _broadcaster, cancellationToken);
 
-                if (config.Moderation.Enabled)
+                if (IsModerationRuntimeActive(config))
                 {
                     SetModerationStatus("Startet …", WaitingColor);
                     _chatModeration.Activated += () =>
@@ -2978,6 +2978,17 @@ private enum CloseChoice
                     exception.Message);
             }
         }
+    }
+
+
+    private static bool IsModerationRuntimeActive(AppConfig config)
+    {
+        var moderation = config.Moderation;
+        return moderation.Enabled ||
+            moderation.AutoFilterEnabled ||
+            moderation.LinkFilter.Enabled ||
+            moderation.Permit.Enabled ||
+            moderation.Permit.UnpermitEnabled;
     }
 
 
@@ -4779,6 +4790,13 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             Environment.NewLine + Environment.NewLine,
             new[]
             {
+                """
+Version 2.0.9
+- Musikwünsche merken sich das zuletzt verwendete Spotify-Gerät.
+- Musikwunsch-Belohnung wird nach Neustart direkt wieder angezeigt.
+- Linkfilter startet zuverlässig, sobald Linkfilter oder Permit aktiv ist.
+- Neue Linkfilter-Optionen: Mods und VIPs per Checkbox ausnehmen.
+""",
                 """
 Version 2.0.8
 - Chat-Menü zu "Chat Einstellungen" umbenannt.

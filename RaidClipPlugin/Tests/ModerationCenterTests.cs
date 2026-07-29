@@ -54,4 +54,99 @@ public sealed class ModerationCenterTests
         Assert.Contains(registry.Commands, command => command.CommandId == "moderation.permit" && command.RequiredRole == CommandRole.Moderator);
         Assert.Contains(registry.Commands, command => command.CommandId == "moderation.unpermit" && command.RequiredRole == CommandRole.Moderator);
     }
+
+    [Fact]
+    public async Task LinkFilterBlocksLinksEvenWhenGeneralModerationIsDisabled()
+    {
+        var historyPath = Path.Combine(
+            Path.GetTempPath(),
+            "raidclip-moderation-" + Guid.NewGuid().ToString("N") + ".jsonl");
+        var service = new LinkModerationService(
+            new PermitService(),
+            new ModerationHistoryService(historyPath));
+        var config = new AppConfig();
+        config.Moderation.Enabled = false;
+        config.Moderation.LinkFilter.Enabled = true;
+        config.Moderation.LinkFilter.Action = LinkModerationAction.LogOnly;
+        config.Moderation.LinkFilter.BotResponseEnabled = false;
+
+        var message = new ChatMessage
+        {
+            Id = "message-1",
+            UserId = "user-1",
+            UserLogin = "viewer",
+            UserName = "Viewer",
+            Text = "schau mal example.com"
+        };
+
+        await service.ProcessAsync(
+            message,
+            config,
+            moderation: null,
+            new TwitchService("client", "token"),
+            "channel-1",
+            "channel",
+            "moderator-1",
+            _ => false,
+            _ => { },
+            CancellationToken.None);
+
+        Assert.Equal(CommandAuthorization.Denied, message.CommandAuthorization);
+        Assert.True(File.Exists(historyPath));
+    }
+
+    [Fact]
+    public async Task VipLinkFilterExemptionCanBeDisabled()
+    {
+        var service = new LinkModerationService(
+            new PermitService(),
+            new ModerationHistoryService(Path.Combine(
+                Path.GetTempPath(),
+                "raidclip-moderation-" + Guid.NewGuid().ToString("N") + ".jsonl")));
+        var config = new AppConfig();
+        config.Moderation.LinkFilter.Enabled = true;
+        config.Moderation.LinkFilter.Action = LinkModerationAction.LogOnly;
+        config.Moderation.LinkFilter.BotResponseEnabled = false;
+
+        var exemptMessage = CreateVipLinkMessage("message-exempt");
+        await service.ProcessAsync(
+            exemptMessage,
+            config,
+            moderation: null,
+            new TwitchService("client", "token"),
+            "channel-1",
+            "channel",
+            "moderator-1",
+            _ => false,
+            _ => { },
+            CancellationToken.None);
+
+        Assert.NotEqual(CommandAuthorization.Denied, exemptMessage.CommandAuthorization);
+
+        config.Moderation.LinkFilter.ExemptVips = false;
+        var blockedMessage = CreateVipLinkMessage("message-blocked");
+        await service.ProcessAsync(
+            blockedMessage,
+            config,
+            moderation: null,
+            new TwitchService("client", "token"),
+            "channel-1",
+            "channel",
+            "moderator-1",
+            _ => false,
+            _ => { },
+            CancellationToken.None);
+
+        Assert.Equal(CommandAuthorization.Denied, blockedMessage.CommandAuthorization);
+    }
+
+    private static ChatMessage CreateVipLinkMessage(string id) => new()
+    {
+        Id = id,
+        UserId = "vip-1",
+        UserLogin = "vipviewer",
+        UserName = "VipViewer",
+        Text = "schau mal example.com",
+        IsVip = true
+    };
 }

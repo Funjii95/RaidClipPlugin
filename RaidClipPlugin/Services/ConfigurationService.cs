@@ -1406,6 +1406,7 @@ public sealed class ConfigurationService
         config.SelectedRewardId = (config.SelectedRewardId ?? "").Trim();
         config.SelectedRewardName = (config.SelectedRewardName ?? "").Trim();
         config.SelectedDeviceId = (config.SelectedDeviceId ?? "").Trim();
+        config.SelectedDeviceName = (config.SelectedDeviceName ?? "").Trim();
         config.UserBlacklist = NormalizeList(config.UserBlacklist, true);
         config.ArtistBlacklist = NormalizeList(config.ArtistBlacklist);
         config.TrackBlacklist = NormalizeList(config.TrackBlacklist);
