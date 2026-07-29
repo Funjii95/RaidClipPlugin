@@ -18,8 +18,10 @@ public sealed class ChatGridScrollTests
             try
             {
                 using var form = new MainForm();
-                var grid = Assert.IsType<DataGridView>(Assert.Single(
-                    form.Controls.Find("ModerationChatGrid", true)));
+                var gridField = typeof(MainForm).GetField("_chatGrid",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(gridField);
+                var grid = Assert.IsType<DataGridView>(gridField!.GetValue(form));
                 grid.Visible = false;
                 grid.Height = 0;
                 var add = typeof(MainForm).GetMethod("AddChatMessage",

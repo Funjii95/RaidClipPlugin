@@ -32,21 +32,81 @@ public sealed partial class MainForm
 
     private Control BuildModerationCenterPanel()
     {
-        if (_permitModeBox.Items.Count == 0) { _permitModeBox.Items.AddRange(new object[] { "Einmalige Linknachricht", "Genau ein Link", "Zeitfenster" }); _permitModeBox.SelectedIndex = 0; }
-        if (_linkFilterActionBox.Items.Count == 0) { _linkFilterActionBox.Items.AddRange(new object[] { "Nur loggen", "Nachricht löschen", "Löschen + warnen", "Löschen + Timeout", "Löschen + Warnung + Timeout" }); _linkFilterActionBox.SelectedIndex = 2; }
-        var box = new GroupBox { Text = "Moderationscenter · Linkfilter & Permit", AutoSize = true, Width = 980, Padding = new Padding(10), Margin = new Padding(8, 14, 8, 4), ForeColor = TextColor };
-        var flow = new FlowLayoutPanel { AutoSize = true, WrapContents = true, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(6), Dock = DockStyle.Fill };
-        flow.Controls.Add(_linkFilterEnabledCheck); flow.Controls.Add(_linkFilterWarnCheck); flow.Controls.Add(_linkFilterBareDomainsCheck); flow.Controls.Add(_linkFilterObfuscatedCheck);
-        flow.Controls.Add(CreateSettingEditor("Aktion bei Link", _linkFilterActionBox)); flow.Controls.Add(CreateSettingEditor("Timeout (Sek.)", _linkFilterTimeoutControl));
-        flow.Controls.Add(_permitEnabledCheck); flow.Controls.Add(_unpermitEnabledCheck); flow.Controls.Add(CreateSettingEditor("Permit-Command", _permitCommandBox));
-        flow.Controls.Add(CreateSettingEditor("Unpermit-Command", _unpermitCommandBox)); flow.Controls.Add(CreateSettingEditor("Standarddauer (Sek.)", _permitDefaultSecondsControl));
-        flow.Controls.Add(CreateSettingEditor("Max. Dauer (Sek.)", _permitMaxSecondsControl)); flow.Controls.Add(CreateSettingEditor("Permit-Modus", _permitModeBox));
-        flow.Controls.Add(CreateSettingEditor("Domain-Whitelist", _linkWhitelistBox)); flow.Controls.Add(CreateSettingEditor("Domain-Blacklist", _linkBlacklistBox));
-        flow.Controls.Add(CreateSettingEditor("User-Whitelist", _moderationUserWhitelistBox)); flow.Controls.Add(CreateSettingEditor("Warnnachricht", _linkWarningTemplateBox));
-        flow.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(900, 0), ForeColor = MutedTextColor, Margin = new Padding(8, 10, 4, 4), Text = "Erkannte Musikwünsche über den konfigurierten Songrequest-Command werden vor dem allgemeinen Linkfilter geschützt. Normale Spotify-/YouTube-/TIDAL-Links ohne gÃ¼ltigen Request werden weiterhin geprüft." });
-        box.Controls.Add(flow); return box;
-    }
+        if (_permitModeBox.Items.Count == 0)
+        {
+            _permitModeBox.Items.AddRange(new object[]
+            {
+                "Einmalige Linknachricht",
+                "Genau ein Link",
+                "Zeitfenster"
+            });
+            _permitModeBox.SelectedIndex = 0;
+        }
 
+        if (_linkFilterActionBox.Items.Count == 0)
+        {
+            _linkFilterActionBox.Items.AddRange(new object[]
+            {
+                "Nur loggen",
+                "Nachricht löschen",
+                "Löschen + warnen",
+                "Löschen + Timeout",
+                "Löschen + Warnung + Timeout"
+            });
+            _linkFilterActionBox.SelectedIndex = 2;
+        }
+
+        var box = new GroupBox
+        {
+            Text = "Linkfreigabe · Linkfilter & Permit",
+            Dock = DockStyle.Fill,
+            AutoSize = false,
+            Padding = new Padding(10),
+            ForeColor = TextColor
+        };
+
+        var flow = new FlowLayoutPanel
+        {
+            AutoScroll = true,
+            WrapContents = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            Padding = new Padding(6),
+            Dock = DockStyle.Fill
+        };
+
+        flow.Controls.Add(_linkFilterEnabledCheck);
+        flow.Controls.Add(_linkFilterWarnCheck);
+        flow.Controls.Add(_linkFilterBareDomainsCheck);
+        flow.Controls.Add(_linkFilterObfuscatedCheck);
+        flow.Controls.Add(CreateSettingEditor("Aktion bei Link", _linkFilterActionBox));
+        flow.Controls.Add(CreateSettingEditor("Timeout (Sek.)", _linkFilterTimeoutControl));
+        flow.Controls.Add(_permitEnabledCheck);
+        flow.Controls.Add(_unpermitEnabledCheck);
+        flow.Controls.Add(CreateSettingEditor("Permit-Command", _permitCommandBox));
+        flow.Controls.Add(CreateSettingEditor("Unpermit-Command", _unpermitCommandBox));
+        flow.Controls.Add(CreateSettingEditor("Standarddauer (Sek.)", _permitDefaultSecondsControl));
+        flow.Controls.Add(CreateSettingEditor("Max. Dauer (Sek.)", _permitMaxSecondsControl));
+        flow.Controls.Add(CreateSettingEditor("Permit-Modus", _permitModeBox));
+        flow.Controls.Add(CreateSettingEditor("Domain-Whitelist", _linkWhitelistBox));
+        flow.Controls.Add(CreateSettingEditor("Domain-Blacklist", _linkBlacklistBox));
+        flow.Controls.Add(CreateSettingEditor("User-Whitelist", _moderationUserWhitelistBox));
+        flow.Controls.Add(CreateSettingEditor("Warnnachricht", _linkWarningTemplateBox));
+        flow.Controls.Add(new Label
+        {
+            AutoSize = true,
+            MaximumSize = new Size(900, 0),
+            ForeColor = MutedTextColor,
+            Margin = new Padding(8, 10, 4, 4),
+            Text = "Erkannte Musikwünsche über den konfigurierten Songrequest-Command werden vor dem allgemeinen Linkfilter geschützt. Normale Spotify-/YouTube-/TIDAL-Links ohne gültigen Request werden weiterhin geprüft."
+        });
+
+        var saveButton = NewActionButton("Chat-Einstellungen speichern");
+        saveButton.Click += (_, _) => SaveSettingsFromControls();
+        flow.Controls.Add(saveButton);
+
+        box.Controls.Add(flow);
+        return box;
+    }
     private void EnsureModerationCenterServices()
     {
         _permitService ??= new PermitService();

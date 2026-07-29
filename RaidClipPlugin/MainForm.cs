@@ -852,6 +852,10 @@ private enum CloseChoice
         DoubleBuffered = true;
 
         BuildLayout();
+        _moderationNavButton.Text = "◉  Chat Einstellungen";
+        _moderationNavButton.Tag = Tuple.Create(
+            "◉  Chat Einstellungen",
+            "Moderation, Linkfreigabe und Botlog");
         ApplyVisibilitySafeguards(this);
         Resize += (_, _) => ApplyResponsiveSidebar();
         FormClosing += (_, _) => SaveModernWindowPlacement();
@@ -1929,14 +1933,14 @@ private enum CloseChoice
 
         var moderationTitle = new Label
         {
-            Text = "Chat-Moderation",
+            Text = "Chat Einstellungen",
             AutoSize = true,
             Font = new Font("Segoe UI", 20F, FontStyle.Bold),
             ForeColor = Color.FromArgb(35, 39, 47)
         };
         var moderationSubtitle = new Label
         {
-            Text = "Chat überwachen, Nachrichten löschen und Nutzer moderieren",
+            Text = "Moderation, Linkfreigabe, Diagnose und Botlog",
             AutoSize = true,
             ForeColor = Color.DimGray,
             Margin = new Padding(2, 3, 0, 0)
@@ -1966,8 +1970,8 @@ private enum CloseChoice
 
         var moderationHint = new Label
         {
-            Text = "Moderation läuft unabhängig von Raid-Clips. " +
-                   "Der Wortfilter löscht Treffer, führt aber keine automatischen Bans aus.",
+            Text = "Chat-Einstellungen laufen unabhängig von Raid-Clips. " +
+                   "Der Twitch-Livechat ist im eigenen Menüpunkt \"Livechat\" ausgelagert.",
             Dock = DockStyle.Fill,
             AutoSize = false,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -1976,61 +1980,71 @@ private enum CloseChoice
         };
 
         BuildChatDiagnosticsPanel();
-        var moderationLayout = new TableLayoutPanel
+
+        var moderationTabs = new TabControl
+        {
+            Dock = DockStyle.Fill
+        };
+
+        var moderationGeneralPage = new Panel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 5,
-            Padding = new Padding(20)
+            Padding = new Padding(4),
+            BackColor = BackgroundColor
         };
-        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
-        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
-        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 190));
-        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 235));
-        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        var chatAndLogSplit = new SplitContainer
+        moderationGeneralPage.Controls.Add(_moderationSettingsGroup);
+
+        var moderationPermitPage = new Panel
         {
             Dock = DockStyle.Fill,
-            Orientation = Orientation.Vertical,
-            SplitterWidth = 6,
-            BackColor = BackgroundColor,
-            Panel1MinSize = 120,
-            Panel2MinSize = 120
+            Padding = new Padding(4),
+            BackColor = BackgroundColor
         };
-        var liveChatBox = new GroupBox
+        moderationPermitPage.Controls.Add(BuildModerationCenterPanel());
+
+        var moderationDiagnosticsPage = new Panel
         {
-            Text = "Twitch-Livechat",
             Dock = DockStyle.Fill,
-            Padding = new Padding(8),
-            ForeColor = TextColor
+            Padding = new Padding(4),
+            BackColor = BackgroundColor
         };
-        liveChatBox.Controls.Add(_chatGrid);
+        moderationDiagnosticsPage.Controls.Add(_chatDiagnosticsGroup);
+
+        var moderationBotLogPage = new Panel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(4),
+            BackColor = BackgroundColor
+        };
         var botLogBox = new GroupBox
         {
-            Text = "Bot-Log",
+            Text = "Botlog",
             Dock = DockStyle.Fill,
             Padding = new Padding(8),
             ForeColor = TextColor
         };
         botLogBox.Controls.Add(_logBox);
-        chatAndLogSplit.Panel1.Controls.Add(liveChatBox);
-        chatAndLogSplit.Panel2.Controls.Add(botLogBox);
-        chatAndLogSplit.SizeChanged += (_, _) =>
+        moderationBotLogPage.Controls.Add(botLogBox);
+
+        AddMinigameTab(moderationTabs, "Moderation", moderationGeneralPage);
+        AddMinigameTab(moderationTabs, "Linkfreigabe", moderationPermitPage);
+        AddMinigameTab(moderationTabs, "Diagnose", moderationDiagnosticsPage);
+        AddMinigameTab(moderationTabs, "Botlog", moderationBotLogPage);
+
+        var moderationLayout = new TableLayoutPanel
         {
-            if (chatAndLogSplit.Width <= 360)
-                return;
-            var maximumDistance = chatAndLogSplit.Width -
-                chatAndLogSplit.Panel2MinSize - chatAndLogSplit.SplitterWidth;
-            if (maximumDistance > chatAndLogSplit.Panel1MinSize)
-                chatAndLogSplit.SplitterDistance = Math.Min(620, maximumDistance);
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(20)
         };
+        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
+        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+        moderationLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         moderationLayout.Controls.Add(moderationHeader, 0, 0);
         moderationLayout.Controls.Add(moderationHint, 0, 1);
-        moderationLayout.Controls.Add(_moderationSettingsGroup, 0, 2);
-        moderationLayout.Controls.Add(_chatDiagnosticsGroup, 0, 3);
-        moderationLayout.Controls.Add(chatAndLogSplit, 0, 4);
+        moderationLayout.Controls.Add(moderationTabs, 0, 2);
         _moderationPage.Controls.Add(moderationLayout);
-
         var minigameTitle = new Label
         {
             Text = "Chat-Minigame",
@@ -4766,6 +4780,13 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.8
+- Chat-Menü zu "Chat Einstellungen" umbenannt.
+- Linkfreigabe/Permit als eigener Reiter unter Chat Einstellungen eingebaut.
+- Twitch-Livechat aus Chat Einstellungen entfernt; Livechat bleibt im eigenen Menüpunkt.
+- Botlog als eigener Reiter unter Chat Einstellungen verschoben.
+""",
+                """
 Version 2.0.7
 - Neuer Patchnotes-Reiter unter Einstellungen.
 - Aktueller Build wird direkt im Bot angezeigt.
@@ -4789,12 +4810,6 @@ Version 2.0.4
 - Giveaway-Reiter weiter komprimiert und besser lesbar gemacht.
 - Buttons und Tabellenbereiche neu verteilt.
 - Vorbereitung für den stabileren 2.0.x-Layoutpfad.
-""",
-                """
-Version 2.0.3
-- Custom-Lurk/Unlurk-Texte in den Punkte- und Minigame-Bereich integriert.
-- Command-Übersicht erweitert, damit neue Befehle sichtbarer werden.
-- Kleine Korrekturen an Dashboard- und Einstellungsflächen.
 """
             });
     }
