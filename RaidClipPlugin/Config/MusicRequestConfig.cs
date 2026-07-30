@@ -27,6 +27,7 @@ public sealed class MusicRequestConfig
     public bool AllowTextSearch { get; set; } = true;
     public bool AutoFulfillRedemptions { get; set; } = true;
     public bool AutoCancelRejectedRedemptions { get; set; } = true;
+    public bool AutoCancelFailedRedemptions { get; set; } = true;
     public List<string> UserBlacklist { get; set; } = new();
     public List<string> ArtistBlacklist { get; set; } = new();
     public List<string> TrackBlacklist { get; set; } = new();

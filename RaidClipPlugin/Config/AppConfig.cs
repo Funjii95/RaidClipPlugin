@@ -192,6 +192,8 @@ public class MinigameConfig
     public long ChannelRewardPoints { get; set; } = 25;
     public bool DailyEnabled { get; set; } = true;
     public long DailyBonusPoints { get; set; } = 100;
+    public string DailySuccessMessage { get; set; } = "@{user} hat den täglichen Bonus abgeholt: +{amount}. Neuer Stand: {balance}.";
+    public string DailyCooldownMessage { get; set; } = "@{user}, dein Daily ist wieder verfügbar in {remaining}.";
     public bool LeaderboardEnabled { get; set; } = true;
     public int MaximumTopEntries { get; set; } = 10;
     public int LeaderboardCooldownSeconds { get; set; } = 30;

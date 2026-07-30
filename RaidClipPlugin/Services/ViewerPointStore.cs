@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Config;
 
@@ -571,7 +571,7 @@ public sealed class ViewerPointStore
         {
             await EnsureLoadedAsync(cancellationToken);
             return _entries!.Values.OrderByDescending(x => x.Points)
-                .ThenBy(x => x.DisplayName).Take(Math.Clamp(count, 1, 100))
+                .ThenBy(x => x.DisplayName).Take(Math.Clamp(count, 1, int.MaxValue))
                 .Select(CloneEntry).ToArray();
         }
         finally { _lock.Release(); }

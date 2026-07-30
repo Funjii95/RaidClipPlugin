@@ -487,8 +487,10 @@ public sealed class MusicRequestService : IDisposable
                     true, cancellationToken);
                 Console.WriteLine("Twitch-Einlösung wurde als erfüllt markiert.");
             }
-            else if (!result.Success && !result.IsTemporaryFailure &&
-                     _config.AutoCancelRejectedRedemptions)
+            else if (!result.Success &&
+                     _config.AutoCancelRejectedRedemptions &&
+                     (!result.IsTemporaryFailure ||
+                      _config.AutoCancelFailedRedemptions))
             {
                 await _twitch.UpdateRedemptionStatusAsync(
                     _broadcasterId, entry.RewardId, entry.RedemptionId,

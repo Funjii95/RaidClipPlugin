@@ -192,6 +192,29 @@ public sealed class ChatMinigameService : IDisposable
             .Replace("{currencyPlural}", _config.CurrencyPlural, StringComparison.OrdinalIgnoreCase);
     }
 
+    private string FormatDailyTemplate(
+        string template,
+        ChatMessage message,
+        long amount,
+        long balance,
+        TimeSpan remaining)
+    {
+        var safeTemplate = string.IsNullOrWhiteSpace(template)
+            ? "@{user} hat den täglichen Bonus abgeholt: +{amount}. Neuer Stand: {balance}."
+            : template;
+        var remainingText = $"{(int)remaining.TotalHours:00}:{remaining.Minutes:00}";
+
+        return safeTemplate
+            .Replace("{username}", message.UserName, StringComparison.OrdinalIgnoreCase)
+            .Replace("{user}", message.UserName, StringComparison.OrdinalIgnoreCase)
+            .Replace("{login}", message.UserName, StringComparison.OrdinalIgnoreCase)
+            .Replace("{amount}", FormatCurrency(amount), StringComparison.OrdinalIgnoreCase)
+            .Replace("{balance}", FormatCurrency(balance), StringComparison.OrdinalIgnoreCase)
+            .Replace("{remaining}", remainingText, StringComparison.OrdinalIgnoreCase)
+            .Replace("{currencySingular}", _config.CurrencySingular, StringComparison.OrdinalIgnoreCase)
+            .Replace("{currencyPlural}", _config.CurrencyPlural, StringComparison.OrdinalIgnoreCase);
+    }
+
     private bool IsPointsBlacklisted(string? login, string? displayName = null)
     {
         static string NormalizeName(string? value) =>
@@ -637,6 +660,11 @@ public sealed class ChatMinigameService : IDisposable
                 var text = daily.Success
                     ? $"@{message.UserName} hat den täglichen Bonus abgeholt: +{FormatCurrency(_config.DailyBonusPoints)}."
                     : $"@{message.UserName}, dein Daily ist wieder verfügbar in {(int)daily.Remaining.TotalHours:00}:{daily.Remaining.Minutes:00}.";
+                text = daily.Success
+                    ? FormatDailyTemplate(_config.DailySuccessMessage, message,
+                        _config.DailyBonusPoints, daily.Balance, TimeSpan.Zero)
+                    : FormatDailyTemplate(_config.DailyCooldownMessage, message,
+                        _config.DailyBonusPoints, daily.Balance, daily.Remaining);
                 await TrySendChatAsync(text, cancellationToken);
                 if (daily.Success) DataChanged?.Invoke();
                 return;

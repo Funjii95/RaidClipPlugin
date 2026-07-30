@@ -428,6 +428,22 @@ public sealed partial class MainForm : Form
         ScrollBars = ScrollBars.Vertical,
         Text = "@{username} ist zurück und erhält wieder normale Anwesenheitspunkte."
     };
+    private readonly TextBox _dailySuccessMessageBox = new()
+    {
+        Width = 520,
+        Height = 58,
+        Multiline = true,
+        ScrollBars = ScrollBars.Vertical,
+        Text = "@{user} hat den täglichen Bonus abgeholt: +{amount}. Neuer Stand: {balance}."
+    };
+    private readonly TextBox _dailyCooldownMessageBox = new()
+    {
+        Width = 520,
+        Height = 58,
+        Multiline = true,
+        ScrollBars = ScrollBars.Vertical,
+        Text = "@{user}, dein Daily ist wieder verfügbar in {remaining}."
+    };
     private readonly TextBox _pointsBlacklistInput = new()
         { Width = 180, MaxLength = 50 };
     private readonly ListBox _pointsBlacklistList = new()
@@ -2085,6 +2101,10 @@ private enum CloseChoice
         var overviewFlow = CreateMinigameFlow();
         overviewFlow.Controls.Add(_minigameEnabledCheck);
         overviewFlow.Controls.Add(_pointsEnabledCheck);
+        overviewFlow.Controls.Add(CreateSettingEditor(
+            "!lurk Antworttext", _lurkMessageBox));
+        overviewFlow.Controls.Add(CreateSettingEditor(
+            "!unlurk Antworttext", _unlurkMessageBox));
         overviewFlow.Controls.Add(_jackpotValueLabel);
         overviewFlow.Controls.Add(_saveMinigameSettingsButton);
 
@@ -2099,10 +2119,6 @@ private enum CloseChoice
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Stille Zuschauer/Lurker pro Intervall",
             _lurkerPointsPerIntervalControl));
-        pointsFlow.Controls.Add(CreateSettingEditor(
-            "!lurk Antworttext", _lurkMessageBox));
-        pointsFlow.Controls.Add(CreateSettingEditor(
-            "!unlurk Antworttext", _unlurkMessageBox));
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Intervall (Min.)", _pointsIntervalControl));
         pointsFlow.Controls.Add(CreateSettingEditor(
@@ -2148,6 +2164,10 @@ private enum CloseChoice
         commandsFlow.Controls.Add(_dailyCheck);
         commandsFlow.Controls.Add(CreateSettingEditor(
             "Daily-Bonus", _dailyPointsControl));
+        commandsFlow.Controls.Add(CreateSettingEditor(
+            "!daily Erfolgstext", _dailySuccessMessageBox));
+        commandsFlow.Controls.Add(CreateSettingEditor(
+            "!daily Cooldown-Text", _dailyCooldownMessageBox));
         commandsFlow.Controls.Add(CreateSettingEditor(
             "!punkte Cooldown", _pointsCommandCooldownControl));
         commandsFlow.Controls.Add(_leaderboardCheck);
@@ -2252,6 +2272,10 @@ private enum CloseChoice
         _minigameTopList.Columns.Add("Nutzer", 260);
         _minigameTopList.Columns.Add("Punkte", 140);
         _minigameTopList.Columns.Add("Watchtime", 140);
+        _minigameTopList.Columns.Add("Spiele", 90);
+        _minigameTopList.Columns.Add("Siege", 90);
+        _minigameTopList.Columns.Add("Niederlagen", 110);
+        _minigameTopList.Columns.Add("Größter Gewinn", 140);
         _minigameHistoryList.Columns.Add("Zeit", 145);
         _minigameHistoryList.Columns.Add("Nutzer", 170);
         _minigameHistoryList.Columns.Add("Spiel", 110);
@@ -4153,7 +4177,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         try
         {
             var token = _shutdown?.Token ?? CancellationToken.None;
-            var top = await _viewerPoints.GetTopAsync(10, token);
+            var top = await _viewerPoints.GetTopAsync(int.MaxValue, token);
             var history = await _viewerPoints.GetHistoryAsync(100, token);
             var jackpot = await _viewerPoints.GetJackpotAsync(
                 decimal.ToInt64(_jackpotStartControl.Value), token);
@@ -4189,7 +4213,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             _minigameTopList.Items.Add(new ListViewItem(new[]
             {
                 $"#{index + 1}", entry.DisplayName, $"{entry.Points:N0}",
-                $"{entry.WatchMinutes / 60}h {entry.WatchMinutes % 60}m"
+                $"{entry.WatchMinutes / 60}h {entry.WatchMinutes % 60}m",
+                $"{entry.GamesPlayed:N0}",
+                $"{entry.Wins:N0}",
+                $"{entry.Losses:N0}",
+                $"{entry.BiggestWin:N0}"
             }));
         }
         _minigameTopList.EndUpdate();
@@ -4791,6 +4819,13 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.10
+- Musikwunsch-Fehler können Twitch-Einlösungen automatisch stornieren, damit Kanalpunkte erstattet werden.
+- !daily hat jetzt frei einstellbare Erfolgs- und Cooldown-Texte.
+- !lurk/!unlurk-Texte wurden in die Minigame-Übersicht verschoben.
+- Die GUI-Rangliste zeigt alle gespeicherten Nutzer inklusive Watchtime, Spiele, Siege, Niederlagen und größtem Gewinn.
+""",
+                """
 Version 2.0.9
 - Musikwünsche merken sich das zuletzt verwendete Spotify-Gerät.
 - Musikwunsch-Belohnung wird nach Neustart direkt wieder angezeigt.
@@ -4816,22 +4851,9 @@ Version 2.0.6
 - Giveaway-Layout stabilisiert: kein endloses Scrollen mehr im oberen Bereich.
 - Einstellungen, Aktionen und Teilnehmerliste im Giveaway sauberer aufgeteilt.
 - Teilnehmerliste bleibt der einzige große Listenbereich.
-""",
-                """
-Version 2.0.5
-- Giveaway-Seite gegen erzwungene AutoScroll-Effekte abgesichert.
-- Layout-Prüfung erweitert, damit Spezialseiten nicht versehentlich wieder scrollen.
-- Kleine UI-Korrekturen für feste Fenstergrößen.
-""",
-                """
-Version 2.0.4
-- Giveaway-Reiter weiter komprimiert und besser lesbar gemacht.
-- Buttons und Tabellenbereiche neu verteilt.
-- Vorbereitung für den stabileren 2.0.x-Layoutpfad.
 """
             });
     }
-
     private void OpenExternalUrl(string url)
     {
         try
@@ -5221,6 +5243,8 @@ Version 2.0.4
                 _customPointsCommandBox.Text = config.Minigame.CustomPointsCommand;
                 _lurkMessageBox.Text = config.Minigame.LurkMessage;
                 _unlurkMessageBox.Text = config.Minigame.UnlurkMessage;
+                _dailySuccessMessageBox.Text = config.Minigame.DailySuccessMessage;
+                _dailyCooldownMessageBox.Text = config.Minigame.DailyCooldownMessage;
                 _pointsBlacklistList.Items.Clear();
                 _pointsBlacklistList.Items.AddRange(config.Minigame.PointsBlacklist.Cast<object>().ToArray());
                 UpdateCurrencyPreview();
@@ -5350,6 +5374,8 @@ Version 2.0.4
             _customPointsCommandBox.Text = config.Minigame.CustomPointsCommand;
             _lurkMessageBox.Text = config.Minigame.LurkMessage;
             _unlurkMessageBox.Text = config.Minigame.UnlurkMessage;
+            _dailySuccessMessageBox.Text = config.Minigame.DailySuccessMessage;
+            _dailyCooldownMessageBox.Text = config.Minigame.DailyCooldownMessage;
             _slotSymbolsBox.Text = config.Minigame.SlotSymbols;
             _pointsBlacklistList.Items.Clear();
             foreach (var entry in config.Minigame.PointsBlacklist
@@ -5611,6 +5637,10 @@ Version 2.0.4
             _lurkMessageBox.Text.Trim();
         config.Minigame.UnlurkMessage =
             _unlurkMessageBox.Text.Trim();
+        config.Minigame.DailySuccessMessage =
+            _dailySuccessMessageBox.Text.Trim();
+        config.Minigame.DailyCooldownMessage =
+            _dailyCooldownMessageBox.Text.Trim();
         config.Minigame.PointsBlacklist = _pointsBlacklistList.Items
             .Cast<object>()
             .Select(item => item.ToString() ?? "")
@@ -6457,6 +6487,7 @@ Version 2.0.4
         base.OnFormClosing(e);
     }
 }
+
 
 
 

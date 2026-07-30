@@ -68,6 +68,8 @@ public sealed partial class MainForm
         NewCheck("Erfolgreiche Einlösungen automatisch erfüllen", true);
     private readonly CheckBox _autoCancelCheck =
         NewCheck("Endgültig abgelehnte Einlösungen stornieren", true);
+    private readonly CheckBox _autoCancelFailedCheck =
+        NewCheck("Fehlgeschlagene Einlösungen stornieren / Punkte erstatten", true);
     private readonly TextBox _musicUserBlacklistBox = NewMusicListBox();
     private readonly TextBox _musicArtistBlacklistBox = NewMusicListBox();
     private readonly TextBox _musicTrackIdBlacklistBox = NewMusicListBox();
@@ -259,6 +261,7 @@ public sealed partial class MainForm
         filters.Controls.Add(_allowTextSearchCheck);
         filters.Controls.Add(_autoFulfillCheck);
         filters.Controls.Add(_autoCancelCheck);
+        filters.Controls.Add(_autoCancelFailedCheck);
         var filterSave = NewActionButton("Einstellungen speichern");
         filterSave.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         filters.Controls.Add(filterSave);
@@ -401,6 +404,7 @@ public sealed partial class MainForm
         _allowTextSearchCheck.Checked = config.AllowTextSearch;
         _autoFulfillCheck.Checked = config.AutoFulfillRedemptions;
         _autoCancelCheck.Checked = config.AutoCancelRejectedRedemptions;
+        _autoCancelFailedCheck.Checked = config.AutoCancelFailedRedemptions;
         SetMusicList(_musicUserBlacklistBox, config.UserBlacklist);
         SetMusicList(_musicArtistBlacklistBox, config.ArtistBlacklist);
         SetMusicList(_musicTrackIdBlacklistBox, config.TrackBlacklist);
@@ -501,6 +505,7 @@ public sealed partial class MainForm
         music.AllowTextSearch = _allowTextSearchCheck.Checked;
         music.AutoFulfillRedemptions = _autoFulfillCheck.Checked;
         music.AutoCancelRejectedRedemptions = _autoCancelCheck.Checked;
+        music.AutoCancelFailedRedemptions = _autoCancelFailedCheck.Checked;
         music.UserBlacklist = ReadMusicList(_musicUserBlacklistBox, true);
         music.ArtistBlacklist = ReadMusicList(_musicArtistBlacklistBox);
         music.TrackBlacklist = ReadMusicList(_musicTrackIdBlacklistBox);
@@ -615,6 +620,7 @@ public sealed partial class MainForm
             expected.AllowTextSearch != actual.AllowTextSearch ||
             expected.AutoFulfillRedemptions != actual.AutoFulfillRedemptions ||
             expected.AutoCancelRejectedRedemptions != actual.AutoCancelRejectedRedemptions ||
+            expected.AutoCancelFailedRedemptions != actual.AutoCancelFailedRedemptions ||
             !SameList(expected.UserBlacklist, actual.UserBlacklist) ||
             !SameList(expected.ArtistBlacklist, actual.ArtistBlacklist) ||
             !SameList(expected.TrackBlacklist, actual.TrackBlacklist) ||

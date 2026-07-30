@@ -818,6 +818,14 @@ public sealed class ConfigurationService
             string.IsNullOrWhiteSpace(config.Minigame.UnlurkMessage)
                 ? "@{username} ist zurück und erhält wieder normale Anwesenheitspunkte."
                 : config.Minigame.UnlurkMessage.Trim();
+        config.Minigame.DailySuccessMessage =
+            string.IsNullOrWhiteSpace(config.Minigame.DailySuccessMessage)
+                ? "@{user} hat den täglichen Bonus abgeholt: +{amount}. Neuer Stand: {balance}."
+                : config.Minigame.DailySuccessMessage.Trim();
+        config.Minigame.DailyCooldownMessage =
+            string.IsNullOrWhiteSpace(config.Minigame.DailyCooldownMessage)
+                ? "@{user}, dein Daily ist wieder verfügbar in {remaining}."
+                : config.Minigame.DailyCooldownMessage.Trim();
         if (config.Minigame.CustomPointsCommand.Length > 0 &&
             !config.Minigame.CustomPointsCommand.StartsWith('!'))
         {
@@ -1219,6 +1227,12 @@ public sealed class ConfigurationService
                 string.IsNullOrWhiteSpace(config.UnlurkMessage) || config.UnlurkMessage.Length > 500)
                 throw new InvalidOperationException(
                     "Die !lurk/!unlurk Antworttexte dürfen nicht leer und höchstens 500 Zeichen lang sein.");
+            if (string.IsNullOrWhiteSpace(config.DailySuccessMessage) ||
+                config.DailySuccessMessage.Length > 500 ||
+                string.IsNullOrWhiteSpace(config.DailyCooldownMessage) ||
+                config.DailyCooldownMessage.Length > 500)
+                throw new InvalidOperationException(
+                    "Die !daily Antworttexte dürfen nicht leer und höchstens 500 Zeichen lang sein.");
             if (config.PointsPerInterval is < 0 or > 9_000_000_000L ||
                 config.LurkerPointsPerInterval is < 0 or > 9_000_000_000L)
                 throw new InvalidOperationException(
