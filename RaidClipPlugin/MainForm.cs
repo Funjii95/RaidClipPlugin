@@ -2161,13 +2161,6 @@ private enum CloseChoice
         commandsFlow.Controls.Add(_pointsCommandPerlenCheck);
         commandsFlow.Controls.Add(CreateSettingEditor(
             "Eigener Command", _customPointsCommandBox));
-        commandsFlow.Controls.Add(_dailyCheck);
-        commandsFlow.Controls.Add(CreateSettingEditor(
-            "Daily-Bonus", _dailyPointsControl));
-        commandsFlow.Controls.Add(CreateSettingEditor(
-            "!daily Erfolgstext", _dailySuccessMessageBox));
-        commandsFlow.Controls.Add(CreateSettingEditor(
-            "!daily Cooldown-Text", _dailyCooldownMessageBox));
         commandsFlow.Controls.Add(CreateSettingEditor(
             "!punkte Cooldown", _pointsCommandCooldownControl));
         commandsFlow.Controls.Add(_leaderboardCheck);
@@ -2183,6 +2176,32 @@ private enum CloseChoice
         var saveCommandsButton = NewActionButton("Einstellungen speichern");
         saveCommandsButton.Click += (_, _) => SaveMinigameSettingsFromControls();
         commandsFlow.Controls.Add(saveCommandsButton);
+
+        var dailyFlow = CreateMinigameFlow();
+        dailyFlow.Controls.Add(_dailyCheck);
+        dailyFlow.Controls.Add(CreateSettingEditor(
+            "Punkte pro Daily", _dailyPointsControl));
+        dailyFlow.Controls.Add(CreateSettingEditor(
+            "Erfolgstext im Chat", _dailySuccessMessageBox));
+        dailyFlow.Controls.Add(new Label
+        {
+            Text = "Platzhalter: {user}, {amount}, {balance}",
+            AutoSize = true,
+            ForeColor = Color.DimGray,
+            Margin = new Padding(8, 0, 8, 8)
+        });
+        dailyFlow.Controls.Add(CreateSettingEditor(
+            "Cooldown-Text im Chat", _dailyCooldownMessageBox));
+        dailyFlow.Controls.Add(new Label
+        {
+            Text = "Platzhalter: {user}, {amount}, {balance}, {remaining}",
+            AutoSize = true,
+            ForeColor = Color.DimGray,
+            Margin = new Padding(8, 0, 8, 8)
+        });
+        var saveDailyButton = NewActionButton("Einstellungen speichern");
+        saveDailyButton.Click += (_, _) => SaveMinigameSettingsFromControls();
+        dailyFlow.Controls.Add(saveDailyButton);
 
         var rangeTable = new TableLayoutPanel
         {
@@ -2318,6 +2337,7 @@ private enum CloseChoice
         AddMinigameTab(tabs, "Übersicht", overviewFlow);
         AddMinigameTab(tabs, "Punkte & Währung", pointsFlow);
         AddMinigameTab(tabs, "Chat-Commands", commandsFlow);
+        AddMinigameTab(tabs, "Daily", dailyFlow);
         AddMinigameTab(tabs, "Casino-Spiele", casinoLayout);
         AddMinigameTab(tabs, "Heist", BuildHeistSettingsPanel());
         AddMinigameTab(tabs, "Duel", BuildDuelSettingsPanel());
