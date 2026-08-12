@@ -1,3 +1,9 @@
+## 2.0.12
+
+- Neuer eigener Reiter „Daily“ unter „Punkte & Minigames“.
+- Punkte pro `!daily` sowie Erfolgs- und Cooldown-Text sind dort frei einstellbar.
+- Unterstützte Textplatzhalter werden direkt in der Oberfläche angezeigt.
+
 ## 2.0.11
 
 - Durch den Explicit-Filter abgelehnte Twitch-Musikwünsche werden automatisch storniert.
