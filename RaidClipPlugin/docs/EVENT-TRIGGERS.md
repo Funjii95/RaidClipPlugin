@@ -2,6 +2,9 @@
 
 Die Event-Trigger befinden sich unter `Timer > Event-Trigger` und senden bei
 aktivierten Ereignissen eine frei konfigurierbare Nachricht in den Twitch-Chat.
+Für jeden Trigger kann zusätzlich ein lokaler Streamer-Sound ausgewählt und über
+`Anhören` getestet werden. Zur Auswahl stehen kein Sound, Hinweis, Erfolg,
+Glocke, Achtung und Frage. Der Sound wird nur auf dem RaidClip-PC abgespielt.
 
 ## Twitch
 

@@ -416,11 +416,11 @@
   },
   "EventTriggers": {
     "Enabled": false,
-    "Follow": { "Enabled": false, "Message": "Danke für den Follow, @{user}!", "MinimumAmount": 0 },
-    "Tip": { "Enabled": false, "Message": "Vielen Dank an {user} für {amount} {currency}!", "MinimumAmount": 0 },
-    "Subscription": { "Enabled": false, "Message": "Danke für dein Abo, @{user}!", "MinimumAmount": 0 },
-    "Cheer": { "Enabled": false, "Message": "Danke @{user} für {amount} Bits!", "MinimumAmount": 0 },
-    "AdBreak": { "Enabled": false, "Message": "Werbepause für {duration} Sekunden – gleich geht es weiter!", "MinimumAmount": 0 },
+    "Follow": { "Enabled": false, "Message": "Danke für den Follow, @{user}!", "MinimumAmount": 0, "Sound": "Hinweis" },
+    "Tip": { "Enabled": false, "Message": "Vielen Dank an {user} für {amount} {currency}!", "MinimumAmount": 0, "Sound": "Erfolg" },
+    "Subscription": { "Enabled": false, "Message": "Danke für dein Abo, @{user}!", "MinimumAmount": 0, "Sound": "Erfolg" },
+    "Cheer": { "Enabled": false, "Message": "Danke @{user} für {amount} Bits!", "MinimumAmount": 0, "Sound": "Glocke" },
+    "AdBreak": { "Enabled": false, "Message": "Werbepause für {duration} Sekunden – gleich geht es weiter!", "MinimumAmount": 0, "Sound": "Achtung" },
     "TipProviders": {
       "StreamElements": { "Enabled": false, "ChannelId": "", "Token": "", "TokenType": "jwt" },
       "Streamlabs": { "Enabled": false, "AccessToken": "", "PollIntervalSeconds": 15 },

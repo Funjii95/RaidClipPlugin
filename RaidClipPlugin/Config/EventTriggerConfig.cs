@@ -5,23 +5,28 @@ public sealed class EventTriggerConfig
     public bool Enabled { get; set; } = false;
     public ChatAlertRuleConfig Follow { get; set; } = new()
     {
-        Message = "Danke für den Follow, @{user}!"
+        Message = "Danke für den Follow, @{user}!",
+        Sound = "Hinweis"
     };
     public ChatAlertRuleConfig Tip { get; set; } = new()
     {
-        Message = "Vielen Dank an {user} für {amount} {currency}!"
+        Message = "Vielen Dank an {user} für {amount} {currency}!",
+        Sound = "Erfolg"
     };
     public ChatAlertRuleConfig Subscription { get; set; } = new()
     {
-        Message = "Danke für dein Abo, @{user}!"
+        Message = "Danke für dein Abo, @{user}!",
+        Sound = "Erfolg"
     };
     public ChatAlertRuleConfig Cheer { get; set; } = new()
     {
-        Message = "Danke @{user} für {amount} Bits!"
+        Message = "Danke @{user} für {amount} Bits!",
+        Sound = "Glocke"
     };
     public ChatAlertRuleConfig AdBreak { get; set; } = new()
     {
-        Message = "Werbepause für {duration} Sekunden – gleich geht es weiter!"
+        Message = "Werbepause für {duration} Sekunden – gleich geht es weiter!",
+        Sound = "Achtung"
     };
     public TipProviderConfig TipProviders { get; set; } = new();
 }
@@ -31,6 +36,7 @@ public sealed class ChatAlertRuleConfig
     public bool Enabled { get; set; } = false;
     public string Message { get; set; } = "";
     public decimal MinimumAmount { get; set; } = 0;
+    public string Sound { get; set; } = "Kein Sound";
 }
 
 public sealed class TipProviderConfig
