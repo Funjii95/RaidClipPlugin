@@ -49,6 +49,31 @@ public sealed class MusicRequestRulesTests
     }
 
     [Fact]
+    public void ExplicitRejectionAlwaysRefundsChannelPoints()
+    {
+        var config = new MusicRequestConfig
+        {
+            AutoCancelRejectedRedemptions = false,
+            AutoCancelFailedRedemptions = false
+        };
+        var result = new MusicRequestResult(
+            false, "explicit", "Explicit nicht erlaubt", Track(), "redemption-1");
+
+        Assert.True(MusicRequestService.ShouldCancelRedemption(config, result));
+    }
+
+    [Fact]
+    public void OtherRejectionsStillRespectAutoCancelSetting()
+    {
+        var config = new MusicRequestConfig
+            { AutoCancelRejectedRedemptions = false };
+        var result = new MusicRequestResult(
+            false, "too-long", "Song zu lang", Track(), "redemption-1");
+
+        Assert.False(MusicRequestService.ShouldCancelRedemption(config, result));
+    }
+
+    [Fact]
     public void BlacklistsIgnoreCase()
     {
         var config = new MusicRequestConfig

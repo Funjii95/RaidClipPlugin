@@ -4819,6 +4819,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.11
+- Durch den Explicit-Filter abgelehnte Twitch-Musikwünsche werden automatisch storniert.
+- Twitch erstattet dadurch die eingesetzten Kanalpunkte, auch wenn die allgemeine Auto-Stornierung deaktiviert ist.
+""",
+                """
 Version 2.0.10
 - Musikwunsch-Fehler können Twitch-Einlösungen automatisch stornieren, damit Kanalpunkte erstattet werden.
 - !daily hat jetzt frei einstellbare Erfolgs- und Cooldown-Texte.

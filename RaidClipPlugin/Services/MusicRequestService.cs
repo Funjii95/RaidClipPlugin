@@ -487,15 +487,14 @@ public sealed class MusicRequestService : IDisposable
                     true, cancellationToken);
                 Console.WriteLine("Twitch-Einlösung wurde als erfüllt markiert.");
             }
-            else if (!result.Success &&
-                     _config.AutoCancelRejectedRedemptions &&
-                     (!result.IsTemporaryFailure ||
-                      _config.AutoCancelFailedRedemptions))
+            else if (ShouldCancelRedemption(_config, result))
             {
                 await _twitch.UpdateRedemptionStatusAsync(
                     _broadcasterId, entry.RewardId, entry.RedemptionId,
                     false, cancellationToken);
-                Console.WriteLine("Twitch-Einlösung wurde storniert.");
+                Console.WriteLine(result.FailureReason == "explicit"
+                    ? "Twitch-Einlösung wurde storniert; Kanalpunkte für den expliziten Song werden erstattet."
+                    : "Twitch-Einlösung wurde storniert.");
             }
         }
         catch (Exception exception)
@@ -505,6 +504,13 @@ public sealed class MusicRequestService : IDisposable
                 exception.Message);
         }
     }
+
+    public static bool ShouldCancelRedemption(
+        MusicRequestConfig config, MusicRequestResult result) =>
+        !result.Success &&
+        (result.FailureReason.Equals("explicit", StringComparison.Ordinal) ||
+         (config.AutoCancelRejectedRedemptions &&
+          (!result.IsTemporaryFailure || config.AutoCancelFailedRedemptions)));
 
     private async Task SaveAndNotifyAsync(
         MusicRequestEntry entry, bool processed,
