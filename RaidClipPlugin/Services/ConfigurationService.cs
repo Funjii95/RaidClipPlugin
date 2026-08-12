@@ -135,6 +135,7 @@ public sealed class ConfigurationService
             AutoDiscordClipPoster = config.AutoDiscordClipPoster,
             Giveaways = config.Giveaways,
             Timer = config.Timer,
+            AdBreakNotifications = config.AdBreakNotifications,
             ModuleHealth = config.ModuleHealth,
             Update = config.Update
         };
@@ -673,6 +674,8 @@ public sealed class ConfigurationService
                 config.Giveaways = settings.Giveaways;
             if (settings.Timer is not null)
                 config.Timer = settings.Timer;
+            if (settings.AdBreakNotifications is not null)
+                config.AdBreakNotifications = settings.AdBreakNotifications;
             if (settings.ModuleHealth is not null)
                 config.ModuleHealth = settings.ModuleHealth;
             if (settings.Moderation is not null)
@@ -768,6 +771,7 @@ public sealed class ConfigurationService
         config.Giveaways ??= new GiveawayConfig();
         config.Timer ??= new ChatTimerConfig();
         config.Timer.Entries ??= new List<ChatTimerEntryConfig>();
+        config.AdBreakNotifications ??= new AdBreakNotificationConfig();
         config.ModuleHealth ??= new ModuleHealthConfig();
         config.ModuleHealth.IntervalSeconds = Math.Clamp(
             config.ModuleHealth.IntervalSeconds, 5, 600);
@@ -1009,6 +1013,7 @@ public sealed class ConfigurationService
         ValidateClipSettings(config.ClipCommand, config.DiscordClips);
         ValidateGiveawaySettings(config.Giveaways);
         ValidateTimerSettings(config.Timer);
+        ValidateAdBreakNotificationSettings(config.AdBreakNotifications);
         ValidateDuelSettings(config.Duel);
         ValidateHeistAndCommands(config);
         var pointCommands = new List<string>();
@@ -1200,6 +1205,24 @@ public sealed class ConfigurationService
                 throw new InvalidOperationException(
                     "Die Mindestzuschauerzahl eines Timers ist ungültig.");
         }
+    }
+
+    public static void ValidateAdBreakNotificationSettings(
+        AdBreakNotificationConfig config)
+    {
+        if (!config.Enabled) return;
+        if (!config.SendChatMessage && !config.ShowStreamerNotification)
+            throw new InvalidOperationException(
+                "Für die Werbepausen-Erkennung muss mindestens eine Benachrichtigung aktiv sein.");
+        if (config.SendChatMessage &&
+            (string.IsNullOrWhiteSpace(config.ChatMessage) || config.ChatMessage.Length > 500))
+            throw new InvalidOperationException(
+                "Der Werbepausen-Chattext darf nicht leer und höchstens 500 Zeichen lang sein.");
+        if (config.ShowStreamerNotification &&
+            (string.IsNullOrWhiteSpace(config.StreamerMessage) ||
+             config.StreamerMessage.Length > 500))
+            throw new InvalidOperationException(
+                "Der lokale Werbepausen-Hinweis darf nicht leer und höchstens 500 Zeichen lang sein.");
     }
 
     public static void ValidateMinigameSettings(MinigameConfig config)
@@ -1897,6 +1920,7 @@ public sealed class ConfigurationService
         public DiscordClipsConfig? DiscordClips { get; set; }
         public GiveawayConfig? Giveaways { get; set; }
         public ChatTimerConfig? Timer { get; set; }
+        public AdBreakNotificationConfig? AdBreakNotifications { get; set; }
         public ModuleHealthConfig? ModuleHealth { get; set; }
         public ModerationConfig? Moderation { get; set; }
         public AutoDiscordClipPosterConfig? AutoDiscordClipPoster { get; set; }

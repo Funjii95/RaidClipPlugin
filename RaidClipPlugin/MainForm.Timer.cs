@@ -42,6 +42,26 @@ public sealed partial class MainForm
         Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
         Padding = new Padding(4)
     };
+    private readonly CheckBox _adBreakEnabledCheck = NewCheck(
+        "Werbepausen erkennen", false);
+    private readonly CheckBox _adBreakChatCheck = NewCheck(
+        "Text im Chat senden", true);
+    private readonly TextBox _adBreakChatMessageBox = new()
+    {
+        Width = 720, Height = 58, Multiline = true,
+        ScrollBars = ScrollBars.Vertical,
+        Text = "Werbepause für {duration} Sekunden – gleich geht es weiter!"
+    };
+    private readonly CheckBox _adBreakStreamerCheck = NewCheck(
+        "Lokalen Streamer-Hinweis anzeigen", true);
+    private readonly CheckBox _adBreakSoundCheck = NewCheck(
+        "Hinweiston abspielen", true);
+    private readonly TextBox _adBreakStreamerMessageBox = new()
+    {
+        Width = 720, Height = 58, Multiline = true,
+        ScrollBars = ScrollBars.Vertical,
+        Text = "Werbung gestartet: {duration} Sekunden ({type})."
+    };
     private ChatTimerService? _chatTimerService;
     private Task? _chatTimerTask;
 
@@ -107,22 +127,64 @@ public sealed partial class MainForm
             _saveTimerButton
         });
 
+        var adBreakPanel = BuildAdBreakSettingsPanel();
+        var bodyTabs = new TabControl { Dock = DockStyle.Fill };
+        var timerTab = new TabPage("Chat-Timer") { BackColor = BackgroundColor };
+        var timerBody = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1,
+            Padding = new Padding(4)
+        };
+        timerBody.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));
+        timerBody.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        timerBody.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        timerBody.Controls.Add(hint, 0, 0);
+        timerBody.Controls.Add(actions, 0, 1);
+        timerBody.Controls.Add(_timerGrid, 0, 2);
+        timerTab.Controls.Add(timerBody);
+        var adTab = new TabPage("Werbepausen") { BackColor = BackgroundColor };
+        adTab.Controls.Add(adBreakPanel);
+        bodyTabs.TabPages.Add(timerTab);
+        bodyTabs.TabPages.Add(adTab);
+
         var layout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            RowCount = 4,
+            RowCount = 2,
             ColumnCount = 1,
             Padding = new Padding(12)
         };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(header, 0, 0);
-        layout.Controls.Add(hint, 0, 1);
-        layout.Controls.Add(actions, 0, 2);
-        layout.Controls.Add(_timerGrid, 0, 3);
+        layout.Controls.Add(bodyTabs, 0, 1);
         _timerPage.Controls.Add(layout);
+    }
+
+    private Control BuildAdBreakSettingsPanel()
+    {
+        var flow = CreateMinigameFlow();
+        flow.Controls.Add(_adBreakEnabledCheck);
+        flow.Controls.Add(_adBreakChatCheck);
+        flow.Controls.Add(CreateSettingEditor(
+            "Chattext beim Werbestart", _adBreakChatMessageBox));
+        flow.Controls.Add(_adBreakStreamerCheck);
+        flow.Controls.Add(_adBreakSoundCheck);
+        flow.Controls.Add(CreateSettingEditor(
+            "Lokaler Hinweis für den Streamer", _adBreakStreamerMessageBox));
+        flow.Controls.Add(new Label
+        {
+            AutoSize = true,
+            MaximumSize = new Size(900, 0),
+            ForeColor = MutedTextColor,
+            Text = "Platzhalter: {duration}, {minutes}, {type}, {automatic}, " +
+                   "{time}, {requester}. Kein Whisper – der Streamer-Hinweis " +
+                   "erscheint ausschließlich lokal in RaidClip."
+        });
+        var save = NewHeistActionButton("Einstellungen speichern", 210);
+        save.Click += (_, _) => SaveSettingsFromControls();
+        flow.Controls.Add(save);
+        return flow;
     }
 
     private void ConfigureTimerGrid()
@@ -178,6 +240,16 @@ public sealed partial class MainForm
             AddTimerRow(entry);
     }
 
+    private void LoadAdBreakSettings(AdBreakNotificationConfig config)
+    {
+        _adBreakEnabledCheck.Checked = config.Enabled;
+        _adBreakChatCheck.Checked = config.SendChatMessage;
+        _adBreakChatMessageBox.Text = config.ChatMessage;
+        _adBreakStreamerCheck.Checked = config.ShowStreamerNotification;
+        _adBreakSoundCheck.Checked = config.PlaySound;
+        _adBreakStreamerMessageBox.Text = config.StreamerMessage;
+    }
+
     private void ReadTimerSettings(AppConfig config)
     {
         config.Timer.Enabled = _timerEnabledCheck.Checked;
@@ -191,6 +263,18 @@ public sealed partial class MainForm
                 MinimumViewers = ParseTimerNumber(row, "MinimumViewers")
             })
             .ToList();
+    }
+
+    private void ReadAdBreakSettings(AppConfig config)
+    {
+        config.AdBreakNotifications.Enabled = _adBreakEnabledCheck.Checked;
+        config.AdBreakNotifications.SendChatMessage = _adBreakChatCheck.Checked;
+        config.AdBreakNotifications.ChatMessage = _adBreakChatMessageBox.Text.Trim();
+        config.AdBreakNotifications.ShowStreamerNotification =
+            _adBreakStreamerCheck.Checked;
+        config.AdBreakNotifications.PlaySound = _adBreakSoundCheck.Checked;
+        config.AdBreakNotifications.StreamerMessage =
+            _adBreakStreamerMessageBox.Text.Trim();
     }
 
     private static int ParseTimerNumber(DataGridViewRow row, string column) =>
@@ -231,5 +315,80 @@ public sealed partial class MainForm
             : status == "Deaktiviert"
                 ? InactiveColor
                 : ActiveColor;
+    }
+
+    private async Task HandleAdBreakStartedAsync(
+        AdBreakEvent adBreak,
+        AppConfig config,
+        TwitchService twitch,
+        string broadcasterId,
+        string senderId,
+        CancellationToken cancellationToken)
+    {
+        var settings = config.AdBreakNotifications;
+        if (!settings.Enabled) return;
+
+        if (settings.SendChatMessage)
+        {
+            try
+            {
+                await twitch.SendChatMessageAsync(
+                    broadcasterId,
+                    senderId,
+                    FormatAdBreakMessage(settings.ChatMessage, adBreak),
+                    cancellationToken);
+            }
+            catch (Exception exception)
+            {
+                AppendLog("Werbepausen-Chattext fehlgeschlagen: " + exception.Message);
+            }
+        }
+
+        var localMessage = FormatAdBreakMessage(
+            settings.StreamerMessage,
+            adBreak);
+        AppendLog("Werbepause erkannt: " + localMessage);
+        if (settings.ShowStreamerNotification)
+            ShowAdBreakStreamerNotification(localMessage, settings.PlaySound);
+    }
+
+    private void ShowAdBreakStreamerNotification(string message, bool playSound)
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(() =>
+                ShowAdBreakStreamerNotification(message, playSound)));
+            return;
+        }
+
+        _timerStatusLabel.Text = "● Werbung: " + message;
+        _timerStatusLabel.ForeColor = WaitingColor;
+        _trayIcon.ShowBalloonTip(
+            10_000,
+            "RaidClip · Werbepause",
+            message,
+            ToolTipIcon.Info);
+        if (playSound)
+            System.Media.SystemSounds.Exclamation.Play();
+    }
+
+    public static string FormatAdBreakMessage(
+        string template,
+        AdBreakEvent adBreak)
+    {
+        var type = adBreak.IsAutomatic ? "automatisch" : "manuell";
+        var minutes = Math.Ceiling(adBreak.DurationSeconds / 60d);
+        return (template ?? "")
+            .Replace("{duration}", adBreak.DurationSeconds.ToString(),
+                StringComparison.OrdinalIgnoreCase)
+            .Replace("{minutes}", minutes.ToString("0"),
+                StringComparison.OrdinalIgnoreCase)
+            .Replace("{type}", type, StringComparison.OrdinalIgnoreCase)
+            .Replace("{automatic}", adBreak.IsAutomatic ? "ja" : "nein",
+                StringComparison.OrdinalIgnoreCase)
+            .Replace("{time}", adBreak.StartedAt.ToLocalTime().ToString("HH:mm:ss"),
+                StringComparison.OrdinalIgnoreCase)
+            .Replace("{requester}", adBreak.RequesterName,
+                StringComparison.OrdinalIgnoreCase);
     }
 }

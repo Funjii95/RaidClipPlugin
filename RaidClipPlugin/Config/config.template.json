@@ -406,6 +406,14 @@
     "Enabled": false,
     "Entries": []
   },
+  "AdBreakNotifications": {
+    "Enabled": false,
+    "SendChatMessage": true,
+    "ChatMessage": "Werbepause für {duration} Sekunden – gleich geht es weiter!",
+    "ShowStreamerNotification": true,
+    "PlaySound": true,
+    "StreamerMessage": "Werbung gestartet: {duration} Sekunden ({type})."
+  },
   "ModuleHealth": {
     "Enabled": true,
     "IntervalSeconds": 30,

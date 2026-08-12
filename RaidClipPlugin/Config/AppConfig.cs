@@ -20,8 +20,21 @@ public class AppConfig
     public AutoDiscordClipPosterConfig AutoDiscordClipPoster { get; set; } = new();
     public GiveawayConfig Giveaways { get; set; } = new();
     public ChatTimerConfig Timer { get; set; } = new();
+    public AdBreakNotificationConfig AdBreakNotifications { get; set; } = new();
     public UpdateConfig Update { get; set; } = new();
     public ModuleHealthConfig ModuleHealth { get; set; } = new();
+}
+
+public sealed class AdBreakNotificationConfig
+{
+    public bool Enabled { get; set; } = false;
+    public bool SendChatMessage { get; set; } = true;
+    public string ChatMessage { get; set; } =
+        "Werbepause für {duration} Sekunden – gleich geht es weiter!";
+    public bool ShowStreamerNotification { get; set; } = true;
+    public bool PlaySound { get; set; } = true;
+    public string StreamerMessage { get; set; } =
+        "Werbung gestartet: {duration} Sekunden ({type}).";
 }
 
 public class ModuleHealthConfig
