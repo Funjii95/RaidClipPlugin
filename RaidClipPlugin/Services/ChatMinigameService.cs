@@ -229,6 +229,15 @@ public sealed class ChatMinigameService : IDisposable
     public static long CalculateAllInStake(long availablePoints) =>
         Math.Max(0L, availablePoints);
 
+    public static long CalculateAttendancePoints(
+        bool isLurking,
+        bool lurkersReceiveNormalPoints,
+        long normalPoints,
+        long lurkerPoints) =>
+        isLurking && !lurkersReceiveNormalPoints
+            ? lurkerPoints
+            : normalPoints;
+
     private async Task<long> ResolveAllInStakeAsync(
         ChatMessage message,
         CancellationToken cancellationToken)
@@ -529,9 +538,11 @@ public sealed class ChatMinigameService : IDisposable
                     return (
                         UserId: user.Id,
                         DisplayName: user.DisplayName,
-                        Points: isLurking
-                            ? config.LurkerPointsPerInterval
-                            : config.PointsPerInterval);
+                        Points: CalculateAttendancePoints(
+                            isLurking,
+                            config.LurkersReceiveNormalAttendancePoints,
+                            config.PointsPerInterval,
+                            config.LurkerPointsPerInterval));
                 }).ToArray();
 
                 var awardedUsers = await _points.AwardAttendanceAsync(
@@ -545,6 +556,11 @@ public sealed class ChatMinigameService : IDisposable
                     activeUsers.ContainsKey(award.UserId) &&
                     !lurkingUsers.Contains(award.UserId));
                 var lurkerCount = awards.Length - activeCount;
+                var effectiveLurkerPoints = CalculateAttendancePoints(
+                    true,
+                    config.LurkersReceiveNormalAttendancePoints,
+                    config.PointsPerInterval,
+                    config.LurkerPointsPerInterval);
 
                 if (awardedUsers > 0)
                 {
@@ -556,7 +572,7 @@ public sealed class ChatMinigameService : IDisposable
                         $"Minigame-Anwesenheit: {activeCount} aktive Zuschauer " +
                         $"erhalten je {FormatCurrency(config.PointsPerInterval)}; " +
                         $"{lurkerCount} stille Zuschauer/Lurker erhalten je " +
-                        $"{FormatCurrency(config.LurkerPointsPerInterval)}.");
+                        $"{FormatCurrency(effectiveLurkerPoints)}.");
                 }
             }
             catch (OperationCanceledException)

@@ -156,6 +156,7 @@ public class MinigameConfig
     public bool PointsEnabled { get; set; } = true;
     public long PointsPerInterval { get; set; } = 10;
     public long LurkerPointsPerInterval { get; set; } = 5;
+    public bool LurkersReceiveNormalAttendancePoints { get; set; } = false;
     public string CurrencySingular { get; set; } = "Punkt";
     public string CurrencyPlural { get; set; } = "Punkte";
     public bool PointsCommandPunkteEnabled { get; set; } = true;
