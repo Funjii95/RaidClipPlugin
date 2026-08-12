@@ -17,6 +17,7 @@ public sealed class EventSubService
     private readonly HttpClient _http = new();
     public event Func<RaidEvent, Task>? RaidReceived;
     public event Func<AdBreakEvent, Task>? AdBreakStarted;
+    public event Func<ChatAlertEvent, Task>? ChatAlertReceived;
     public event Action? Activated;
 
     public EventSubService(string clientId, string accessToken, string broadcasterId)
@@ -136,13 +137,44 @@ public sealed class EventSubService
             new { broadcaster_user_id = _broadcasterId },
             sessionId,
             cancellationToken);
+        await CreateSubscriptionAsync(
+            "channel.follow",
+            new
+            {
+                broadcaster_user_id = _broadcasterId,
+                moderator_user_id = _broadcasterId
+            },
+            sessionId,
+            cancellationToken,
+            "2");
+        await CreateSubscriptionAsync(
+            "channel.subscribe",
+            new { broadcaster_user_id = _broadcasterId },
+            sessionId,
+            cancellationToken);
+        await CreateSubscriptionAsync(
+            "channel.subscription.message",
+            new { broadcaster_user_id = _broadcasterId },
+            sessionId,
+            cancellationToken);
+        await CreateSubscriptionAsync(
+            "channel.subscription.gift",
+            new { broadcaster_user_id = _broadcasterId },
+            sessionId,
+            cancellationToken);
+        await CreateSubscriptionAsync(
+            "channel.cheer",
+            new { broadcaster_user_id = _broadcasterId },
+            sessionId,
+            cancellationToken);
     }
 
     private async Task CreateSubscriptionAsync(
         string type,
         object condition,
         string sessionId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string version = "1")
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, SubscriptionsUrl);
         request.Headers.Add("Client-Id", _clientId);
@@ -150,7 +182,7 @@ public sealed class EventSubService
         request.Content = JsonContent.Create(new
         {
             type,
-            version = "1",
+            version,
             condition,
             transport = new { method = "websocket", session_id = sessionId }
         });
@@ -168,6 +200,13 @@ public sealed class EventSubService
         var subscriptionType = payload.GetProperty("subscription")
             .GetProperty("type").GetString();
         var data = payload.GetProperty("event");
+        var alert = ParseChatAlert(subscriptionType, data);
+        if (alert is not null)
+        {
+            if (ChatAlertReceived is { } alertHandler)
+                await alertHandler(alert);
+            return;
+        }
         if (subscriptionType == "channel.ad_break.begin")
         {
             var durationText = data.GetProperty("duration_seconds").ToString();
@@ -198,6 +237,55 @@ public sealed class EventSubService
         };
         if (RaidReceived is { } handler) _ = handler(raid);
     }
+
+    private static ChatAlertEvent? ParseChatAlert(
+        string? subscriptionType,
+        JsonElement data)
+    {
+        var user = GetString(data, "user_name");
+        return subscriptionType switch
+        {
+            "channel.follow" => new ChatAlertEvent(
+                ChatAlertKind.Follow, user),
+            "channel.subscribe" => GetBool(data, "is_gift")
+                ? null
+                : new ChatAlertEvent(
+                    ChatAlertKind.Subscription, user),
+            "channel.subscription.message" => new ChatAlertEvent(
+                ChatAlertKind.Subscription,
+                user,
+                Message: data.TryGetProperty("message", out var message)
+                    ? GetString(message, "text")
+                    : "",
+                Months: GetInt(data, "cumulative_months")),
+            "channel.subscription.gift" => new ChatAlertEvent(
+                ChatAlertKind.Subscription,
+                GetBool(data, "is_anonymous") ? "Anonym" : user,
+                Quantity: Math.Max(1, GetInt(data, "total")),
+                IsGift: true),
+            "channel.cheer" => new ChatAlertEvent(
+                ChatAlertKind.Cheer,
+                GetBool(data, "is_anonymous") ? "Anonym" : user,
+                Amount: GetInt(data, "bits"),
+                Message: GetString(data, "message")),
+            _ => null
+        };
+    }
+
+    private static string GetString(JsonElement data, string property) =>
+        data.TryGetProperty(property, out var value)
+            ? value.GetString() ?? ""
+            : "";
+
+    private static int GetInt(JsonElement data, string property) =>
+        data.TryGetProperty(property, out var value) &&
+        value.TryGetInt32(out var result)
+            ? result
+            : 0;
+
+    private static bool GetBool(JsonElement data, string property) =>
+        data.TryGetProperty(property, out var value) &&
+        value.ValueKind is JsonValueKind.True;
 
     private static async Task<string?> ReceiveTextAsync(ClientWebSocket socket,
         CancellationToken cancellationToken)

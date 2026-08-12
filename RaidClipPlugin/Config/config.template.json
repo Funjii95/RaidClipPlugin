@@ -414,6 +414,20 @@
     "PlaySound": true,
     "StreamerMessage": "Werbung gestartet: {duration} Sekunden ({type})."
   },
+  "EventTriggers": {
+    "Enabled": false,
+    "Follow": { "Enabled": false, "Message": "Danke für den Follow, @{user}!", "MinimumAmount": 0 },
+    "Tip": { "Enabled": false, "Message": "Vielen Dank an {user} für {amount} {currency}!", "MinimumAmount": 0 },
+    "Subscription": { "Enabled": false, "Message": "Danke für dein Abo, @{user}!", "MinimumAmount": 0 },
+    "Cheer": { "Enabled": false, "Message": "Danke @{user} für {amount} Bits!", "MinimumAmount": 0 },
+    "AdBreak": { "Enabled": false, "Message": "Werbepause für {duration} Sekunden – gleich geht es weiter!", "MinimumAmount": 0 },
+    "TipProviders": {
+      "StreamElements": { "Enabled": false, "ChannelId": "", "Token": "", "TokenType": "jwt" },
+      "Streamlabs": { "Enabled": false, "AccessToken": "", "PollIntervalSeconds": 15 },
+      "KoFi": { "Enabled": false, "Path": "kofi", "VerificationToken": "" },
+      "TipeeeStream": { "Enabled": false, "Path": "tipeeestream", "VerificationToken": "" }
+    }
+  },
   "ModuleHealth": {
     "Enabled": true,
     "IntervalSeconds": 30,
