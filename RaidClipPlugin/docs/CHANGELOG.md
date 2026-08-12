@@ -1,3 +1,8 @@
+## 2.0.13
+
+- Neue Option, mit der stille Zuschauer und Nutzer im `!lurk`-Modus den normalen Anwesenheitssatz erhalten.
+- Der separate Lurker-Satz bleibt optional für bestehende Konfigurationen verfügbar.
+
 ## 2.0.12
 
 - Neuer eigener Reiter „Daily“ unter „Punkte & Minigames“.

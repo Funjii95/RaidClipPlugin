@@ -384,6 +384,8 @@ public sealed partial class MainForm : Form
         CreateIntegerControl(10, 0, 9_000_000_000);
     private readonly NumericUpDown _lurkerPointsPerIntervalControl =
         CreateIntegerControl(5, 0, 9_000_000_000);
+    private readonly CheckBox _lurkersReceiveNormalPointsCheck = NewCheck(
+        "Lurker erhalten normale Anwesenheitspunkte", false);
     private readonly NumericUpDown _pointsIntervalControl =
         CreateIntegerControl(5, 1, 1440);
     private readonly NumericUpDown _minimumPointsControl =
@@ -2116,6 +2118,7 @@ private enum CloseChoice
         pointsFlow.Controls.Add(_currencyPreviewLabel);
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Aktive Zuschauer pro Intervall", _pointsPerIntervalControl));
+        pointsFlow.Controls.Add(_lurkersReceiveNormalPointsCheck);
         pointsFlow.Controls.Add(CreateSettingEditor(
             "Stille Zuschauer/Lurker pro Intervall",
             _lurkerPointsPerIntervalControl));
@@ -2348,9 +2351,9 @@ private enum CloseChoice
 
         var minigameHint = new Label
         {
-            Text = "Aktive Zuschauer erhalten den normalen Satz. Stille Chatnutzer " +
-                   "und Nutzer mit !lurk erhalten den Lurker-Satz; mit !unlurk " +
-                   "wechseln sie zurück.",
+            Text = "Aktive Zuschauer erhalten den normalen Satz. Optional erhalten " +
+                   "stille Chatnutzer und Nutzer mit !lurk denselben Satz; andernfalls " +
+                   "gilt der separate Lurker-Satz.",
             Dock = DockStyle.Fill,
             AutoSize = false,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -4839,7 +4842,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
-Version 2.0.12
+Version 2.0.13
 - Durch den Explicit-Filter abgelehnte Twitch-Musikwünsche werden automatisch storniert.
 - Twitch erstattet dadurch die eingesetzten Kanalpunkte, auch wenn die allgemeine Auto-Stornierung deaktiviert ist.
 """,
@@ -5277,6 +5280,8 @@ Version 2.0.6
                     _minigameTopList.Columns[2].Text = config.Minigame.CurrencyPlural;
                 SetNumericValue(_pointsPerIntervalControl, config.Minigame.PointsPerInterval);
                 SetNumericValue(_lurkerPointsPerIntervalControl, config.Minigame.LurkerPointsPerInterval);
+                _lurkersReceiveNormalPointsCheck.Checked =
+                    config.Minigame.LurkersReceiveNormalAttendancePoints;
                 SetNumericValue(_pointsIntervalControl, config.Minigame.IntervalMinutes);
                 SetNumericValue(_minimumPointsControl, config.Minigame.MinimumPoints);
                 SetNumericValue(_pointsCommandCooldownControl, config.Minigame.PointsCommandCooldownSeconds);
@@ -5412,6 +5417,8 @@ Version 2.0.6
 
             SetNumericValue(_pointsPerIntervalControl, config.Minigame.PointsPerInterval);
             SetNumericValue(_lurkerPointsPerIntervalControl, config.Minigame.LurkerPointsPerInterval);
+            _lurkersReceiveNormalPointsCheck.Checked =
+                config.Minigame.LurkersReceiveNormalAttendancePoints;
             SetNumericValue(_pointsIntervalControl, config.Minigame.IntervalMinutes);
             SetNumericValue(_minimumPointsControl, config.Minigame.MinimumPoints);
             SetNumericValue(_pointsCommandCooldownControl, config.Minigame.PointsCommandCooldownSeconds);
@@ -5675,6 +5682,8 @@ Version 2.0.6
             decimal.ToInt64(_pointsPerIntervalControl.Value);
         config.Minigame.LurkerPointsPerInterval =
             decimal.ToInt64(_lurkerPointsPerIntervalControl.Value);
+        config.Minigame.LurkersReceiveNormalAttendancePoints =
+            _lurkersReceiveNormalPointsCheck.Checked;
         config.Minigame.IntervalMinutes =
             decimal.ToInt32(_pointsIntervalControl.Value);
         config.Minigame.MinimumPoints =

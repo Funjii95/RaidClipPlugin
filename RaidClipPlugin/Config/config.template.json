@@ -45,6 +45,7 @@
     "PointsEnabled": true,
     "PointsPerInterval": 10,
     "LurkerPointsPerInterval": 5,
+    "LurkersReceiveNormalAttendancePoints": false,
     "CurrencySingular": "Punkt",
     "CurrencyPlural": "Punkte",
     "PointsCommandPunkteEnabled": true,
