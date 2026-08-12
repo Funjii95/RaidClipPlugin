@@ -134,6 +134,7 @@ public sealed class ConfigurationService
             DiscordClips = config.DiscordClips,
             AutoDiscordClipPoster = config.AutoDiscordClipPoster,
             Giveaways = config.Giveaways,
+            Timer = config.Timer,
             ModuleHealth = config.ModuleHealth,
             Update = config.Update
         };
@@ -670,6 +671,8 @@ public sealed class ConfigurationService
                 config.DiscordClips = settings.DiscordClips;
             if (settings.Giveaways is not null)
                 config.Giveaways = settings.Giveaways;
+            if (settings.Timer is not null)
+                config.Timer = settings.Timer;
             if (settings.ModuleHealth is not null)
                 config.ModuleHealth = settings.ModuleHealth;
             if (settings.Moderation is not null)
@@ -763,6 +766,8 @@ public sealed class ConfigurationService
         config.ClipCommand ??= new ClipCommandConfig();
         config.DiscordClips ??= new DiscordClipsConfig();
         config.Giveaways ??= new GiveawayConfig();
+        config.Timer ??= new ChatTimerConfig();
+        config.Timer.Entries ??= new List<ChatTimerEntryConfig>();
         config.ModuleHealth ??= new ModuleHealthConfig();
         config.ModuleHealth.IntervalSeconds = Math.Clamp(
             config.ModuleHealth.IntervalSeconds, 5, 600);
@@ -1003,6 +1008,7 @@ public sealed class ConfigurationService
         ValidateMusicRequestSettings(config.MusicRequests);
         ValidateClipSettings(config.ClipCommand, config.DiscordClips);
         ValidateGiveawaySettings(config.Giveaways);
+        ValidateTimerSettings(config.Timer);
         ValidateDuelSettings(config.Duel);
         ValidateHeistAndCommands(config);
         var pointCommands = new List<string>();
@@ -1167,6 +1173,34 @@ public sealed class ConfigurationService
         }
     }
 
+
+    public static void ValidateTimerSettings(ChatTimerConfig config)
+    {
+        if (!config.Enabled)
+        {
+            return;
+        }
+
+        var enabledEntries = config.Entries.Where(entry => entry.Enabled).ToArray();
+        if (enabledEntries.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "Für den aktivierten Chat-Timer muss mindestens ein Eintrag aktiv sein.");
+        }
+
+        foreach (var entry in enabledEntries)
+        {
+            if (string.IsNullOrWhiteSpace(entry.Message) || entry.Message.Length > 500)
+                throw new InvalidOperationException(
+                    "Timer-Chattexte dürfen nicht leer und höchstens 500 Zeichen lang sein.");
+            if (entry.IntervalMinutes is < 1 or > 1440)
+                throw new InvalidOperationException(
+                    "Timer-Intervalle müssen zwischen 1 und 1440 Minuten liegen.");
+            if (entry.MinimumViewers is < 0 or > 10_000_000)
+                throw new InvalidOperationException(
+                    "Die Mindestzuschauerzahl eines Timers ist ungültig.");
+        }
+    }
 
     public static void ValidateMinigameSettings(MinigameConfig config)
     {
@@ -1862,6 +1896,7 @@ public sealed class ConfigurationService
         public ClipCommandConfig? ClipCommand { get; set; }
         public DiscordClipsConfig? DiscordClips { get; set; }
         public GiveawayConfig? Giveaways { get; set; }
+        public ChatTimerConfig? Timer { get; set; }
         public ModuleHealthConfig? ModuleHealth { get; set; }
         public ModerationConfig? Moderation { get; set; }
         public AutoDiscordClipPosterConfig? AutoDiscordClipPoster { get; set; }

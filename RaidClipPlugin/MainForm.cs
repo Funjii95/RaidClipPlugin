@@ -885,6 +885,7 @@ private enum CloseChoice
         InitializeHeistCommandEvents();
         InitializeDuelEvents();
         InitializeLiveChatEvents();
+        InitializeTimerEvents();
         InitializeChatDiagnosticsEvents();
         InitializeThemeEvents();
         InitializeTrayIntegration();
@@ -1371,6 +1372,7 @@ private enum CloseChoice
         var showGiveaways = section == "giveaways";
         var showCommands = section == "commands";
         var showLiveChat = section == "livechat";
+        var showTimer = section == "timer";
 
         _raidPage.Visible = showRaid;
         _raidClipsPage.Visible = showRaidClips;
@@ -1385,6 +1387,7 @@ private enum CloseChoice
         _giveawayPage.Visible = showGiveaways;
         _commandsPage.Visible = showCommands;
         _liveChatPage.Visible = showLiveChat;
+        _timerPage.Visible = showTimer;
 
         if (showRaidClips)
             _raidClipsPage.BringToFront();
@@ -1410,6 +1413,8 @@ private enum CloseChoice
             _commandsPage.BringToFront();
         else if (showLiveChat)
             _liveChatPage.BringToFront();
+        else if (showTimer)
+            _timerPage.BringToFront();
         else
             _raidPage.BringToFront();
 
@@ -1426,6 +1431,7 @@ private enum CloseChoice
         SetNavigationTileState(_giveawayNavButton, showGiveaways);
         SetNavigationTileState(_commandsNavButton, showCommands);
         SetNavigationTileState(_liveChatNavButton, showLiveChat);
+        SetNavigationTileState(_timerNavButton, showTimer);
         if (showMusic) _ = RefreshMusicGridAsync();
         if (showMinigame) _ = RefreshMinigameDashboardAsync();
     }
@@ -2382,6 +2388,7 @@ private enum CloseChoice
         BuildGiveawayPage();
         BuildCommandsPage();
         BuildSystemStatusPage();
+        BuildTimerPage();
         _liveChatPage.Controls.Add(BuildLiveChatSection());
 
         var brand = new PictureBox
@@ -2409,6 +2416,7 @@ private enum CloseChoice
         navigation.Controls.Add(_raidClipsNavButton);
         navigation.Controls.Add(_moderationNavButton);
         navigation.Controls.Add(_commandsNavButton);
+        navigation.Controls.Add(_timerNavButton);
         navigation.Controls.Add(_minigameNavButton);
         navigation.Controls.Add(_musicNavButton);
         navigation.Controls.Add(_giveawayNavButton);
@@ -2429,6 +2437,7 @@ private enum CloseChoice
         contentHost.Controls.Add(_settingsPage);
         contentHost.Controls.Add(_raidClipsPage);
         contentHost.Controls.Add(_commandsPage);
+        contentHost.Controls.Add(_timerPage);
         contentHost.Controls.Add(_liveChatPage);
         contentHost.Controls.Add(_systemStatusPage);
         contentHost.Controls.Add(_giveawayPage);
@@ -2750,6 +2759,8 @@ private enum CloseChoice
                 config, twitch, _broadcaster, cancellationToken);
             await StartGiveawayModuleAsync(
                 config, session, twitch, _broadcaster, cancellationToken);
+            StartTimerModule(
+                config, twitch, _broadcaster, session.UserId, cancellationToken);
 
             var startChatTransport = true;
             if (startChatTransport)
@@ -4593,6 +4604,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             _clipCommandTask,
             _autoDiscordClipPosterTask,
             _giveawayTask,
+            _chatTimerTask,
             _moduleHealthTask
         }
             .Where(task => task is not null)
@@ -4656,6 +4668,8 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         _eventSubTask = null;
         _clipCommandTask = null;
         _giveawayTask = null;
+        _chatTimerService = null;
+        _chatTimerTask = null;
 
         ResetServiceIndicators();
         ResetChatDiagnosticConnection();
@@ -4842,7 +4856,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
-Version 2.0.13
+Version 2.0.14
 - Durch den Explicit-Filter abgelehnte Twitch-Musikwünsche werden automatisch storniert.
 - Twitch erstattet dadurch die eingesetzten Kanalpunkte, auch wenn die allgemeine Auto-Stornierung deaktiviert ist.
 """,
@@ -5362,6 +5376,7 @@ Version 2.0.6
             LoadSettingsSection("Heist", () => LoadHeistCommandsSettings(config));
             LoadSettingsSection("Duel", () => LoadDuelSettings(config.Duel));
             LoadSettingsSection("Livechat", () => LoadLiveChatSettings(config.LiveChat));
+            LoadSettingsSection("Timer", () => LoadTimerSettings(config.Timer));
         }
         catch (Exception exception)
         {
@@ -5646,6 +5661,7 @@ Version 2.0.6
         ReadHeistCommandsSettings(config);
         ReadDuelSettings(config);
         ReadLiveChatSettings(config);
+        ReadTimerSettings(config);
         return config;
     }
 

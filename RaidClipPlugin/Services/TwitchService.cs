@@ -7,7 +7,7 @@ using RaidClipPlugin.Models;
 namespace RaidClipPlugin.Services;
 
 
-public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawayTwitchClient, IHeistTwitchClient, IDuelTwitchClient, IDuelModerationClient
+public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawayTwitchClient, IHeistTwitchClient, IDuelTwitchClient, IDuelModerationClient, IChatTimerClient
 {
     private readonly HttpClient _http = new();
     private int _sharedChatSendNoticeLogged;
@@ -310,6 +310,27 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
 
 
         return chatters.Values.ToList();
+    }
+
+    public async Task<int> GetViewerCountAsync(
+        string broadcasterId,
+        CancellationToken cancellationToken)
+    {
+        var url = "https://api.twitch.tv/helix/streams?user_id=" +
+                  Uri.EscapeDataString(broadcasterId);
+        using var response = await _http.GetAsync(url, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(cancellationToken));
+        var data = document.RootElement.GetProperty("data");
+        if (data.GetArrayLength() == 0)
+        {
+            return 0;
+        }
+
+        return data[0].TryGetProperty("viewer_count", out var viewerCount)
+            ? Math.Max(0, viewerCount.GetInt32())
+            : 0;
     }
 
 

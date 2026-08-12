@@ -32,7 +32,7 @@ public sealed partial class MainForm
     private readonly Button _addCustomCommandButton =
         NewHeistActionButton("Command hinzufügen", 180);
     private readonly Button _removeCustomCommandButton =
-        NewHeistActionButton("Auswahl entfernen", 180);
+        NewHeistActionButton("Auswahl löschen", 180);
     private readonly Button _saveCustomCommandsButton =
         NewHeistActionButton("Custom Commands speichern", 220);
     private readonly Button _saveCommandRolesButton =
@@ -63,14 +63,14 @@ public sealed partial class MainForm
         };
         var actions = new FlowLayoutPanel
         {
-            Dock = DockStyle.Fill, AutoScroll = false, WrapContents = false,
+            Dock = DockStyle.Fill, AutoScroll = false, WrapContents = true,
             Padding = new Padding(2, 3, 2, 2)
         };
         actions.Controls.AddRange(new Control[]
         {
-            _customCommandsEnabledCheck, _ignoreSharedChatCommandsCheck,
-            _sharedChatCommandsHint, _addCustomCommandButton,
-            _removeCustomCommandButton, _saveCustomCommandsButton
+            _addCustomCommandButton, _removeCustomCommandButton,
+            _saveCustomCommandsButton, _customCommandsEnabledCheck,
+            _ignoreSharedChatCommandsCheck, _sharedChatCommandsHint
         });
         foreach (Control control in actions.Controls)
         {
@@ -83,7 +83,7 @@ public sealed partial class MainForm
             Padding = new Padding(8)
         };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 138));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(hint, 0, 0);
         layout.Controls.Add(actions, 0, 1);
