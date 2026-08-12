@@ -1,3 +1,9 @@
+## 2.0.17
+
+- Jeder Event-Trigger besitzt jetzt eine eigene lokale Soundauswahl für den Streamer.
+- Enthalten sind die Sounds Hinweis, Erfolg, Glocke, Achtung und Frage sowie die Option „Kein Sound“.
+- Jeder Sound kann direkt in den Einstellungen über „Anhören“ getestet werden.
+
 ## 2.0.16
 
 - Neue Event-Trigger mit frei einstellbaren Chatantworten für Follows, Tips, Abonnements, Geschenkabos, Cheers/Bits und Werbepausen.

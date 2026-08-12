@@ -19,6 +19,11 @@ public sealed partial class MainForm
     private readonly TextBox _adAlertMessage = AlertText("Werbepause für {duration} Sekunden – gleich geht es weiter!");
     private readonly NumericUpDown _tipMinimum = AlertAmount();
     private readonly NumericUpDown _cheerMinimum = AlertAmount();
+    private readonly ComboBox _followSound = AlertSound("Hinweis");
+    private readonly ComboBox _tipSound = AlertSound("Erfolg");
+    private readonly ComboBox _subscriptionSound = AlertSound("Erfolg");
+    private readonly ComboBox _cheerSound = AlertSound("Glocke");
+    private readonly ComboBox _adSound = AlertSound("Achtung");
     private readonly CheckBox _streamElementsEnabled = NewCheck("StreamElements aktiv", false);
     private readonly TextBox _streamElementsChannel = new() { Width = 520 };
     private readonly TextBox _streamElementsToken = SecretText();
@@ -55,6 +60,21 @@ public sealed partial class MainForm
         Width = 150
     };
 
+    private static ComboBox AlertSound(string selected)
+    {
+        var box = new ComboBox
+        {
+            Width = 210,
+            DropDownStyle = ComboBoxStyle.DropDownList
+        };
+        box.Items.AddRange(new object[]
+        {
+            "Kein Sound", "Hinweis", "Erfolg", "Glocke", "Achtung", "Frage"
+        });
+        box.SelectedItem = selected;
+        return box;
+    }
+
     private Control BuildEventTriggerSettingsPanel()
     {
         _streamElementsTokenType.Items.AddRange(new object[] { "jwt", "apikey", "oauth2" });
@@ -63,11 +83,11 @@ public sealed partial class MainForm
         var alerts = new TabPage("Antworten") { BackColor = BackgroundColor };
         var alertFlow = CreateMinigameFlow();
         alertFlow.Controls.Add(_eventTriggersEnabled);
-        AddAlertEditor(alertFlow, _followAlertEnabled, "Antwort bei Follow", _followAlertMessage, null);
-        AddAlertEditor(alertFlow, _tipAlertEnabled, "Antwort bei Tip", _tipAlertMessage, _tipMinimum);
-        AddAlertEditor(alertFlow, _subscriptionAlertEnabled, "Antwort bei Abo / Geschenkabo", _subscriptionAlertMessage, null);
-        AddAlertEditor(alertFlow, _cheerAlertEnabled, "Antwort bei Cheers / Bits", _cheerAlertMessage, _cheerMinimum);
-        AddAlertEditor(alertFlow, _adAlertEnabled, "Antwort bei Werbepause", _adAlertMessage, null);
+        AddAlertEditor(alertFlow, _followAlertEnabled, "Antwort bei Follow", _followAlertMessage, null, _followSound);
+        AddAlertEditor(alertFlow, _tipAlertEnabled, "Antwort bei Tip", _tipAlertMessage, _tipMinimum, _tipSound);
+        AddAlertEditor(alertFlow, _subscriptionAlertEnabled, "Antwort bei Abo / Geschenkabo", _subscriptionAlertMessage, null, _subscriptionSound);
+        AddAlertEditor(alertFlow, _cheerAlertEnabled, "Antwort bei Cheers / Bits", _cheerAlertMessage, _cheerMinimum, _cheerSound);
+        AddAlertEditor(alertFlow, _adAlertEnabled, "Antwort bei Werbepause", _adAlertMessage, null, _adSound);
         alertFlow.Controls.Add(new Label
         {
             AutoSize = true,
@@ -114,22 +134,34 @@ public sealed partial class MainForm
         CheckBox enabled,
         string label,
         TextBox message,
-        NumericUpDown? minimum)
+        NumericUpDown? minimum,
+        ComboBox sound)
     {
         flow.Controls.Add(enabled);
         flow.Controls.Add(CreateSettingEditor(label, message));
         if (minimum is not null)
             flow.Controls.Add(CreateSettingEditor("Mindestbetrag / Mindest-Bits", minimum));
+        var soundRow = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            WrapContents = false,
+            FlowDirection = FlowDirection.LeftToRight
+        };
+        soundRow.Controls.Add(sound);
+        var preview = NewHeistActionButton("Anhören", 110);
+        preview.Click += (_, _) => PlayEventSound(sound.Text);
+        soundRow.Controls.Add(preview);
+        flow.Controls.Add(CreateSettingEditor("Lokaler Sound für den Streamer", soundRow));
     }
 
     private void LoadEventTriggerSettings(EventTriggerConfig config)
     {
         _eventTriggersEnabled.Checked = config.Enabled;
-        LoadRule(config.Follow, _followAlertEnabled, _followAlertMessage);
-        LoadRule(config.Tip, _tipAlertEnabled, _tipAlertMessage, _tipMinimum);
-        LoadRule(config.Subscription, _subscriptionAlertEnabled, _subscriptionAlertMessage);
-        LoadRule(config.Cheer, _cheerAlertEnabled, _cheerAlertMessage, _cheerMinimum);
-        LoadRule(config.AdBreak, _adAlertEnabled, _adAlertMessage);
+        LoadRule(config.Follow, _followAlertEnabled, _followAlertMessage, _followSound);
+        LoadRule(config.Tip, _tipAlertEnabled, _tipAlertMessage, _tipSound, _tipMinimum);
+        LoadRule(config.Subscription, _subscriptionAlertEnabled, _subscriptionAlertMessage, _subscriptionSound);
+        LoadRule(config.Cheer, _cheerAlertEnabled, _cheerAlertMessage, _cheerSound, _cheerMinimum);
+        LoadRule(config.AdBreak, _adAlertEnabled, _adAlertMessage, _adSound);
         var providers = config.TipProviders;
         _streamElementsEnabled.Checked = providers.StreamElements.Enabled;
         _streamElementsChannel.Text = providers.StreamElements.ChannelId;
@@ -145,10 +177,12 @@ public sealed partial class MainForm
     }
 
     private static void LoadRule(ChatAlertRuleConfig rule, CheckBox enabled,
-        TextBox message, NumericUpDown? minimum = null)
+        TextBox message, ComboBox sound, NumericUpDown? minimum = null)
     {
         enabled.Checked = rule.Enabled;
         message.Text = rule.Message;
+        sound.SelectedItem = rule.Sound;
+        if (sound.SelectedIndex < 0) sound.SelectedIndex = 0;
         if (minimum is not null)
             minimum.Value = Math.Clamp(rule.MinimumAmount, minimum.Minimum, minimum.Maximum);
     }
@@ -157,11 +191,11 @@ public sealed partial class MainForm
     {
         var triggers = config.EventTriggers;
         triggers.Enabled = _eventTriggersEnabled.Checked;
-        ReadRule(triggers.Follow, _followAlertEnabled, _followAlertMessage);
-        ReadRule(triggers.Tip, _tipAlertEnabled, _tipAlertMessage, _tipMinimum);
-        ReadRule(triggers.Subscription, _subscriptionAlertEnabled, _subscriptionAlertMessage);
-        ReadRule(triggers.Cheer, _cheerAlertEnabled, _cheerAlertMessage, _cheerMinimum);
-        ReadRule(triggers.AdBreak, _adAlertEnabled, _adAlertMessage);
+        ReadRule(triggers.Follow, _followAlertEnabled, _followAlertMessage, _followSound);
+        ReadRule(triggers.Tip, _tipAlertEnabled, _tipAlertMessage, _tipSound, _tipMinimum);
+        ReadRule(triggers.Subscription, _subscriptionAlertEnabled, _subscriptionAlertMessage, _subscriptionSound);
+        ReadRule(triggers.Cheer, _cheerAlertEnabled, _cheerAlertMessage, _cheerSound, _cheerMinimum);
+        ReadRule(triggers.AdBreak, _adAlertEnabled, _adAlertMessage, _adSound);
         triggers.TipProviders.StreamElements.Enabled = _streamElementsEnabled.Checked;
         triggers.TipProviders.StreamElements.ChannelId = _streamElementsChannel.Text.Trim();
         triggers.TipProviders.StreamElements.Token = _streamElementsToken.Text.Trim();
@@ -175,11 +209,12 @@ public sealed partial class MainForm
     }
 
     private static void ReadRule(ChatAlertRuleConfig rule, CheckBox enabled,
-        TextBox message, NumericUpDown? minimum = null)
+        TextBox message, ComboBox sound, NumericUpDown? minimum = null)
     {
         rule.Enabled = enabled.Checked;
         rule.Message = message.Text.Trim();
         rule.MinimumAmount = minimum?.Value ?? 0;
+        rule.Sound = sound.Text;
     }
 
     private void StartTipEvents(AppConfig config, TwitchService twitch,
@@ -220,6 +255,7 @@ public sealed partial class MainForm
         if (rule is null || !rule.Enabled || alert.Amount < rule.MinimumAmount) return;
         var text = FormatChatAlert(rule.Message, alert);
         if (string.IsNullOrWhiteSpace(text)) return;
+        PlayEventSound(rule.Sound);
         try
         {
             await twitch.SendChatMessageAsync(broadcasterId, senderId, text, cancellationToken);
@@ -245,4 +281,16 @@ public sealed partial class MainForm
             .Replace("{provider}", alert.Provider, StringComparison.OrdinalIgnoreCase)
             .Replace("{duration}", alert.DurationSeconds.ToString(), StringComparison.OrdinalIgnoreCase)
             .Replace("{type}", alert.IsAutomatic ? "automatisch" : "manuell", StringComparison.OrdinalIgnoreCase);
+
+    public static void PlayEventSound(string? sound)
+    {
+        switch (sound)
+        {
+            case "Hinweis": System.Media.SystemSounds.Asterisk.Play(); break;
+            case "Erfolg": System.Media.SystemSounds.Exclamation.Play(); break;
+            case "Glocke": System.Media.SystemSounds.Beep.Play(); break;
+            case "Achtung": System.Media.SystemSounds.Hand.Play(); break;
+            case "Frage": System.Media.SystemSounds.Question.Play(); break;
+        }
+    }
 }

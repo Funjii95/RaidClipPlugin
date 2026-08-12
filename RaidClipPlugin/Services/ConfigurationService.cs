@@ -1258,6 +1258,13 @@ public sealed class ConfigurationService
         if (enabledRules.Any(rule => rule.MinimumAmount < 0))
             throw new InvalidOperationException(
                 "Mindestbeträge für Event-Trigger dürfen nicht negativ sein.");
+        var sounds = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "Kein Sound", "Hinweis", "Erfolg", "Glocke", "Achtung", "Frage"
+        };
+        if (enabledRules.Any(rule => !sounds.Contains(rule.Sound ?? "")))
+            throw new InvalidOperationException(
+                "Für einen Event-Trigger wurde ein unbekannter Sound ausgewählt.");
         if (config.Tip.Enabled)
         {
             var providers = config.TipProviders;
