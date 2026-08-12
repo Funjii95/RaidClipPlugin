@@ -2723,9 +2723,26 @@ private enum CloseChoice
                 }
             };
             _eventSub.AdBreakStarted += adBreak =>
-                HandleAdBreakStartedAsync(
+            {
+                var legacyTask = HandleAdBreakStartedAsync(
                     adBreak, config, twitch, _broadcaster.Id,
                     session.UserId, cancellationToken);
+                var triggerTask = HandleChatAlertAsync(
+                    new ChatAlertEvent(
+                        ChatAlertKind.AdBreak,
+                        adBreak.RequesterName,
+                        Provider: "Twitch",
+                        DurationSeconds: adBreak.DurationSeconds,
+                        IsAutomatic: adBreak.IsAutomatic),
+                    config, twitch, _broadcaster.Id, session.UserId,
+                    cancellationToken);
+                return Task.WhenAll(legacyTask, triggerTask);
+            };
+            _eventSub.ChatAlertReceived += alert =>
+                HandleChatAlertAsync(alert, config, twitch, _broadcaster.Id,
+                    session.UserId, cancellationToken);
+            StartTipEvents(config, twitch, _broadcaster.Id, session.UserId,
+                cancellationToken);
 
             _eventSubTask = _eventSub.RunAsync(cancellationToken);
             ObserveBackgroundTask(
@@ -4609,6 +4626,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             _autoDiscordClipPosterTask,
             _giveawayTask,
             _chatTimerTask,
+            _tipEventTask,
             _moduleHealthTask
         }
             .Where(task => task is not null)
@@ -4641,6 +4659,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         StopGiveawayModule();
         StopCustomCommandServices();
         StopLiveChat();
+        _tipEventService?.Dispose();
         _minigameEvents?.Dispose();
         _minigameRunCts?.Dispose();
         _moduleHealth?.Dispose();
@@ -4674,6 +4693,8 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         _giveawayTask = null;
         _chatTimerService = null;
         _chatTimerTask = null;
+        _tipEventService = null;
+        _tipEventTask = null;
 
         ResetServiceIndicators();
         ResetChatDiagnosticConnection();
@@ -4860,7 +4881,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
-Version 2.0.15
+Version 2.0.16
 - Durch den Explicit-Filter abgelehnte Twitch-Musikwünsche werden automatisch storniert.
 - Twitch erstattet dadurch die eingesetzten Kanalpunkte, auch wenn die allgemeine Auto-Stornierung deaktiviert ist.
 """,
@@ -5383,6 +5404,8 @@ Version 2.0.6
             LoadSettingsSection("Timer", () => LoadTimerSettings(config.Timer));
             LoadSettingsSection("Werbepausen", () =>
                 LoadAdBreakSettings(config.AdBreakNotifications));
+            LoadSettingsSection("Event-Trigger", () =>
+                LoadEventTriggerSettings(config.EventTriggers));
         }
         catch (Exception exception)
         {
@@ -5669,6 +5692,7 @@ Version 2.0.6
         ReadLiveChatSettings(config);
         ReadTimerSettings(config);
         ReadAdBreakSettings(config);
+        ReadEventTriggerSettings(config);
         return config;
     }
 
@@ -6536,6 +6560,7 @@ Version 2.0.6
         _obs?.Dispose();
         _player?.Dispose();
         _spotify?.Dispose();
+        _tipEventService?.Dispose();
         _liveChatTimer.Stop();
         StopLiveChat();
         CloseOfficialLiveChat();

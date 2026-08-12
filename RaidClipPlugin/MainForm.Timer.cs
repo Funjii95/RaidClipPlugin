@@ -144,8 +144,11 @@ public sealed partial class MainForm
         timerTab.Controls.Add(timerBody);
         var adTab = new TabPage("Werbepausen") { BackColor = BackgroundColor };
         adTab.Controls.Add(adBreakPanel);
+        var eventTab = new TabPage("Event-Trigger") { BackColor = BackgroundColor };
+        eventTab.Controls.Add(BuildEventTriggerSettingsPanel());
         bodyTabs.TabPages.Add(timerTab);
         bodyTabs.TabPages.Add(adTab);
+        bodyTabs.TabPages.Add(eventTab);
 
         var layout = new TableLayoutPanel
         {

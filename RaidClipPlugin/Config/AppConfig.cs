@@ -21,6 +21,7 @@ public class AppConfig
     public GiveawayConfig Giveaways { get; set; } = new();
     public ChatTimerConfig Timer { get; set; } = new();
     public AdBreakNotificationConfig AdBreakNotifications { get; set; } = new();
+    public EventTriggerConfig EventTriggers { get; set; } = new();
     public UpdateConfig Update { get; set; } = new();
     public ModuleHealthConfig ModuleHealth { get; set; } = new();
 }

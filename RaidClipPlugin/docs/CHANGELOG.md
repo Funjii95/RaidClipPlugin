@@ -1,3 +1,10 @@
+## 2.0.16
+
+- Neue Event-Trigger mit frei einstellbaren Chatantworten für Follows, Tips, Abonnements, Geschenkabos, Cheers/Bits und Werbepausen.
+- Tip-Anbindungen für StreamElements, Streamlabs, Ko-fi und TipeeeStream.
+- Unterstützt Mindestbeträge, Providerstatus und individuelle Platzhalter je Ereignis.
+- StreamElements wird über den Astro-WebSocket angebunden; Ko-fi und TipeeeStream unterstützen abgesicherte Webhook-Relays.
+
 ## 2.0.15
 
 - Twitch-Werbepausen werden automatisch über EventSub erkannt.

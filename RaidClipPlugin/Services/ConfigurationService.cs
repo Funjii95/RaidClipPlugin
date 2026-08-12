@@ -136,6 +136,7 @@ public sealed class ConfigurationService
             Giveaways = config.Giveaways,
             Timer = config.Timer,
             AdBreakNotifications = config.AdBreakNotifications,
+            EventTriggers = config.EventTriggers,
             ModuleHealth = config.ModuleHealth,
             Update = config.Update
         };
@@ -676,6 +677,8 @@ public sealed class ConfigurationService
                 config.Timer = settings.Timer;
             if (settings.AdBreakNotifications is not null)
                 config.AdBreakNotifications = settings.AdBreakNotifications;
+            if (settings.EventTriggers is not null)
+                config.EventTriggers = settings.EventTriggers;
             if (settings.ModuleHealth is not null)
                 config.ModuleHealth = settings.ModuleHealth;
             if (settings.Moderation is not null)
@@ -772,6 +775,17 @@ public sealed class ConfigurationService
         config.Timer ??= new ChatTimerConfig();
         config.Timer.Entries ??= new List<ChatTimerEntryConfig>();
         config.AdBreakNotifications ??= new AdBreakNotificationConfig();
+        config.EventTriggers ??= new EventTriggerConfig();
+        config.EventTriggers.Follow ??= new ChatAlertRuleConfig();
+        config.EventTriggers.Tip ??= new ChatAlertRuleConfig();
+        config.EventTriggers.Subscription ??= new ChatAlertRuleConfig();
+        config.EventTriggers.Cheer ??= new ChatAlertRuleConfig();
+        config.EventTriggers.AdBreak ??= new ChatAlertRuleConfig();
+        config.EventTriggers.TipProviders ??= new TipProviderConfig();
+        config.EventTriggers.TipProviders.StreamElements ??= new StreamElementsTipConfig();
+        config.EventTriggers.TipProviders.Streamlabs ??= new StreamlabsTipConfig();
+        config.EventTriggers.TipProviders.KoFi ??= new WebhookTipConfig { Path = "kofi" };
+        config.EventTriggers.TipProviders.TipeeeStream ??= new WebhookTipConfig { Path = "tipeeestream" };
         config.ModuleHealth ??= new ModuleHealthConfig();
         config.ModuleHealth.IntervalSeconds = Math.Clamp(
             config.ModuleHealth.IntervalSeconds, 5, 600);
@@ -1014,6 +1028,7 @@ public sealed class ConfigurationService
         ValidateGiveawaySettings(config.Giveaways);
         ValidateTimerSettings(config.Timer);
         ValidateAdBreakNotificationSettings(config.AdBreakNotifications);
+        ValidateEventTriggerSettings(config.EventTriggers);
         ValidateDuelSettings(config.Duel);
         ValidateHeistAndCommands(config);
         var pointCommands = new List<string>();
@@ -1223,6 +1238,43 @@ public sealed class ConfigurationService
              config.StreamerMessage.Length > 500))
             throw new InvalidOperationException(
                 "Der lokale Werbepausen-Hinweis darf nicht leer und höchstens 500 Zeichen lang sein.");
+    }
+
+    public static void ValidateEventTriggerSettings(EventTriggerConfig config)
+    {
+        if (!config.Enabled) return;
+        var enabledRules = new[]
+        {
+            config.Follow, config.Tip, config.Subscription,
+            config.Cheer, config.AdBreak
+        }.Where(rule => rule.Enabled).ToArray();
+        if (enabledRules.Length == 0)
+            throw new InvalidOperationException(
+                "Für Event-Trigger muss mindestens eine Antwort aktiviert sein.");
+        if (enabledRules.Any(rule => string.IsNullOrWhiteSpace(rule.Message) ||
+                                     rule.Message.Length > 500))
+            throw new InvalidOperationException(
+                "Event-Antworten dürfen nicht leer und höchstens 500 Zeichen lang sein.");
+        if (enabledRules.Any(rule => rule.MinimumAmount < 0))
+            throw new InvalidOperationException(
+                "Mindestbeträge für Event-Trigger dürfen nicht negativ sein.");
+        if (config.Tip.Enabled)
+        {
+            var providers = config.TipProviders;
+            if (!(providers.StreamElements.Enabled || providers.Streamlabs.Enabled ||
+                  providers.KoFi.Enabled || providers.TipeeeStream.Enabled))
+                throw new InvalidOperationException(
+                    "Für aktivierte Tips muss mindestens ein Tip-Anbieter aktiviert sein.");
+            if (providers.StreamElements.Enabled &&
+                (string.IsNullOrWhiteSpace(providers.StreamElements.ChannelId) ||
+                 string.IsNullOrWhiteSpace(providers.StreamElements.Token)))
+                throw new InvalidOperationException(
+                    "StreamElements benötigt Channel-ID und Token.");
+            if (providers.Streamlabs.Enabled &&
+                string.IsNullOrWhiteSpace(providers.Streamlabs.AccessToken))
+                throw new InvalidOperationException(
+                    "Streamlabs benötigt einen OAuth Access Token.");
+        }
     }
 
     public static void ValidateMinigameSettings(MinigameConfig config)
@@ -1921,6 +1973,7 @@ public sealed class ConfigurationService
         public GiveawayConfig? Giveaways { get; set; }
         public ChatTimerConfig? Timer { get; set; }
         public AdBreakNotificationConfig? AdBreakNotifications { get; set; }
+        public EventTriggerConfig? EventTriggers { get; set; }
         public ModuleHealthConfig? ModuleHealth { get; set; }
         public ModerationConfig? Moderation { get; set; }
         public AutoDiscordClipPosterConfig? AutoDiscordClipPoster { get; set; }
