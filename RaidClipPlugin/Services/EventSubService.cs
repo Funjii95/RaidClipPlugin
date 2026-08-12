@@ -16,6 +16,7 @@ public sealed class EventSubService
     private readonly string _broadcasterId;
     private readonly HttpClient _http = new();
     public event Func<RaidEvent, Task>? RaidReceived;
+    public event Func<AdBreakEvent, Task>? AdBreakStarted;
     public event Action? Activated;
 
     public EventSubService(string clientId, string accessToken, string broadcasterId)
@@ -103,8 +104,8 @@ public sealed class EventSubService
                 case "session_welcome":
                     var sessionId = root.GetProperty("payload").GetProperty("session").GetProperty("id").GetString();
                     if (subscribe && !string.IsNullOrWhiteSpace(sessionId))
-                        await CreateSubscriptionAsync(sessionId, cancellationToken);
-                    Console.WriteLine("Raid-Erkennung ist aktiv.");
+                        await CreateSubscriptionsAsync(sessionId, cancellationToken);
+                    Console.WriteLine("Raid- und Werbepausen-Erkennung sind aktiv.");
                     Activated?.Invoke();
                     break;
                 case "notification":
@@ -121,30 +122,73 @@ public sealed class EventSubService
         return null;
     }
 
-    private async Task CreateSubscriptionAsync(string sessionId, CancellationToken cancellationToken)
+    private async Task CreateSubscriptionsAsync(
+        string sessionId,
+        CancellationToken cancellationToken)
+    {
+        await CreateSubscriptionAsync(
+            "channel.raid",
+            new { to_broadcaster_user_id = _broadcasterId },
+            sessionId,
+            cancellationToken);
+        await CreateSubscriptionAsync(
+            "channel.ad_break.begin",
+            new { broadcaster_user_id = _broadcasterId },
+            sessionId,
+            cancellationToken);
+    }
+
+    private async Task CreateSubscriptionAsync(
+        string type,
+        object condition,
+        string sessionId,
+        CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, SubscriptionsUrl);
         request.Headers.Add("Client-Id", _clientId);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
         request.Content = JsonContent.Create(new
         {
-            type = "channel.raid",
+            type,
             version = "1",
-            condition = new { to_broadcaster_user_id = _broadcasterId },
+            condition,
             transport = new { method = "websocket", session_id = sessionId }
         });
         using var response = await _http.SendAsync(request, cancellationToken);
         if (response.IsSuccessStatusCode) return;
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         throw new InvalidOperationException(
-            $"Raid-Subscription fehlgeschlagen ({(int)response.StatusCode}): {body}");
+            $"EventSub-Subscription {type} fehlgeschlagen " +
+            $"({(int)response.StatusCode}): {body}");
     }
 
     private async Task HandleNotificationAsync(JsonElement root)
     {
         var payload = root.GetProperty("payload");
-        if (payload.GetProperty("subscription").GetProperty("type").GetString() != "channel.raid") return;
+        var subscriptionType = payload.GetProperty("subscription")
+            .GetProperty("type").GetString();
         var data = payload.GetProperty("event");
+        if (subscriptionType == "channel.ad_break.begin")
+        {
+            var durationText = data.GetProperty("duration_seconds").ToString();
+            _ = int.TryParse(durationText, out var durationSeconds);
+            var startedAtText = data.GetProperty("started_at").GetString();
+            _ = DateTimeOffset.TryParse(startedAtText, out var startedAt);
+            var automaticText = data.GetProperty("is_automatic").ToString();
+            _ = bool.TryParse(automaticText, out var isAutomatic);
+            var adBreak = new AdBreakEvent(
+                Math.Max(0, durationSeconds),
+                startedAt,
+                isAutomatic,
+                data.TryGetProperty("requester_user_name", out var requester)
+                    ? requester.GetString() ?? ""
+                    : "");
+            if (AdBreakStarted is { } adHandler)
+                await adHandler(adBreak);
+            return;
+        }
+
+        if (subscriptionType != "channel.raid") return;
         var raid = new RaidEvent
         {
             FromBroadcasterId = data.GetProperty("from_broadcaster_user_id").GetString() ?? "",

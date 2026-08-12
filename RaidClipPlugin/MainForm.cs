@@ -2722,6 +2722,10 @@ private enum CloseChoice
                         exception.Message);
                 }
             };
+            _eventSub.AdBreakStarted += adBreak =>
+                HandleAdBreakStartedAsync(
+                    adBreak, config, twitch, _broadcaster.Id,
+                    session.UserId, cancellationToken);
 
             _eventSubTask = _eventSub.RunAsync(cancellationToken);
             ObserveBackgroundTask(
@@ -4856,7 +4860,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
-Version 2.0.14
+Version 2.0.15
 - Durch den Explicit-Filter abgelehnte Twitch-Musikwünsche werden automatisch storniert.
 - Twitch erstattet dadurch die eingesetzten Kanalpunkte, auch wenn die allgemeine Auto-Stornierung deaktiviert ist.
 """,
@@ -5377,6 +5381,8 @@ Version 2.0.6
             LoadSettingsSection("Duel", () => LoadDuelSettings(config.Duel));
             LoadSettingsSection("Livechat", () => LoadLiveChatSettings(config.LiveChat));
             LoadSettingsSection("Timer", () => LoadTimerSettings(config.Timer));
+            LoadSettingsSection("Werbepausen", () =>
+                LoadAdBreakSettings(config.AdBreakNotifications));
         }
         catch (Exception exception)
         {
@@ -5662,6 +5668,7 @@ Version 2.0.6
         ReadDuelSettings(config);
         ReadLiveChatSettings(config);
         ReadTimerSettings(config);
+        ReadAdBreakSettings(config);
         return config;
     }
 

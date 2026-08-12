@@ -1,5 +1,6 @@
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Services;
+using RaidClipPlugin.Models;
 using Xunit;
 
 namespace RaidClipPlugin.Tests;
@@ -48,5 +49,21 @@ public sealed class ChatTimerTests
         };
 
         ConfigurationService.ValidateTimerSettings(config);
+    }
+
+    [Fact]
+    public void AdBreakTemplateUsesDurationAndType()
+    {
+        var adBreak = new AdBreakEvent(
+            90,
+            new DateTimeOffset(2026, 8, 12, 12, 30, 0, TimeSpan.Zero),
+            true,
+            "Streamer");
+
+        var text = MainForm.FormatAdBreakMessage(
+            "{duration}s / {minutes} Min. / {type} / {requester}",
+            adBreak);
+
+        Assert.Equal("90s / 2 Min. / automatisch / Streamer", text);
     }
 }

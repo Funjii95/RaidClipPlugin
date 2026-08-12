@@ -1,3 +1,10 @@
+## 2.0.15
+
+- Twitch-Werbepausen werden automatisch über EventSub erkannt.
+- Für Werbepausen kann ein frei konfigurierbarer Text in den Chat gesendet werden.
+- Der Streamer kann lokal per Windows-Benachrichtigung und optionalem Ton informiert werden; es wird kein Whisper versendet.
+- Texte unterstützen Platzhalter für Dauer, Typ, Uhrzeit und Auslöser der Werbung.
+
 ## 2.0.14
 
 - Neuer Hauptreiter „Timer“ für automatische Chatnachrichten mit individuellen Intervallen.
