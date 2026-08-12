@@ -1,3 +1,10 @@
+## 2.0.14
+
+- Neuer Hauptreiter „Timer“ für automatische Chatnachrichten mit individuellen Intervallen.
+- Jeder Timer kann erst ab einer frei wählbaren Mindestzuschauerzahl senden.
+- Timer lassen sich einzeln sowie als gesamtes Modul aktivieren und dauerhaft speichern.
+- Der Custom-Commands-Bereich besitzt einen gut sichtbaren Löschen-Button und mehr Platz ohne Scrollleiste.
+
 ## 2.0.13
 
 - Neue Option, mit der stille Zuschauer und Nutzer im `!lurk`-Modus den normalen Anwesenheitssatz erhalten.

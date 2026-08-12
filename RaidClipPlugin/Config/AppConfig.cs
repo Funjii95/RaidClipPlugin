@@ -19,6 +19,7 @@ public class AppConfig
     public DiscordClipsConfig DiscordClips { get; set; } = new();
     public AutoDiscordClipPosterConfig AutoDiscordClipPoster { get; set; } = new();
     public GiveawayConfig Giveaways { get; set; } = new();
+    public ChatTimerConfig Timer { get; set; } = new();
     public UpdateConfig Update { get; set; } = new();
     public ModuleHealthConfig ModuleHealth { get; set; } = new();
 }
