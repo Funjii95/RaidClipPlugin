@@ -216,7 +216,7 @@ public sealed partial class MainForm
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 92));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 310));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 330));
         layout.Controls.Add(new DashboardIconBadge { Text = "✓", AccentColor = HealthyStatusColor, Filled = true, Dock = DockStyle.Fill, Margin = new Padding(5, 12, 7, 12), Font = new Font("Segoe UI", 25F, FontStyle.Bold) }, 0, 0);
         var text = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent, Margin = new Padding(8, 0, 0, 0), Padding = Padding.Empty };
         text.RowStyles.Add(new RowStyle(SizeType.Percent, 52));
@@ -231,24 +231,53 @@ public sealed partial class MainForm
         _overallStatusLabel.Padding = Padding.Empty;
         _overallStatusLabel.Text = "Twitch, OBS und EventSub sind verbunden";
         text.Controls.Add(_overallStatusLabel, 0, 1);
-        var meta = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 20, 0, 20) };
+        var meta = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 4, 0, 4) };
         meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        meta.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        meta.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
         var streamCheck = NewActionButton("Stream prüfen");
         streamCheck.BackColor = AccentColor;
         streamCheck.Click += (_, _) => ShowSection("stream-check");
-        var modules = NewActionButton("Module starten");
-        modules.Click += (_, _) => _startButton.PerformClick();
+        var startModules = NewActionButton("Module starten");
+        startModules.Click += async (_, _) => await StartPluginAsync();
+        var stopModules = NewActionButton("Module stoppen");
+        stopModules.Click += async (_, _) => await StopPluginAsync();
+        var restartModules = NewActionButton("Neu starten");
+        restartModules.Click += async (_, _) => await RestartAllModulesFromDashboardAsync();
         streamCheck.Dock = DockStyle.Fill;
-        modules.Dock = DockStyle.Fill;
+        startModules.Dock = DockStyle.Fill;
+        stopModules.Dock = DockStyle.Fill;
+        restartModules.Dock = DockStyle.Fill;
         streamCheck.Margin = new Padding(4);
-        modules.Margin = new Padding(4);
+        startModules.Margin = new Padding(4);
+        stopModules.Margin = new Padding(4);
+        restartModules.Margin = new Padding(4);
         meta.Controls.Add(streamCheck, 0, 0);
-        meta.Controls.Add(modules, 1, 0);
+        meta.Controls.Add(startModules, 1, 0);
+        meta.Controls.Add(stopModules, 0, 1);
+        meta.Controls.Add(restartModules, 1, 1);
         layout.Controls.Add(text, 1, 0);
         layout.Controls.Add(meta, 2, 0);
         hero.Controls.Add(layout);
         return hero;
+    }
+
+    private async Task RestartAllModulesFromDashboardAsync()
+    {
+        try
+        {
+            AppendLog("Dashboard: Module werden neu gestartet.");
+            await StopPluginAsync();
+            await StartPluginAsync();
+        }
+        catch (Exception exception)
+        {
+            AppendLog("Dashboard: Neustart der Module fehlgeschlagen: " + exception.Message);
+            MessageBox.Show(this, "Die Module konnten nicht neu gestartet werden: " +
+                exception.Message, "Module neu starten", MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
     }
 
     private static void AddHeroMeta(TableLayoutPanel meta, int column, string title, string value)
