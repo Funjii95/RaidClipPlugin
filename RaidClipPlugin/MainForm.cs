@@ -1747,6 +1747,8 @@ private enum CloseChoice
             Padding = new Padding(4)
         };
         generalSettingsFlow.Controls.Add(CreateSettingEditor("UI-Theme", _uiThemeBox));
+        generalSettingsFlow.Controls.Add(CreateSettingEditor(
+            "Akzentfarbe (RGB / Hex)", BuildAccentColorEditor()));
         generalSettingsFlow.Controls.Add(CreateSettingEditor("Twitch-Kanal", _twitchChannelBox));
         generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Host", _obsHostBox));
         generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Port", _obsPortControl));
@@ -2420,7 +2422,6 @@ private enum CloseChoice
         navigation.Controls.Add(_minigameNavButton);
         navigation.Controls.Add(_musicNavButton);
         navigation.Controls.Add(_giveawayNavButton);
-        navigation.Controls.Add(CreateSidebarDivider("Weitere Module"));
         navigation.Controls.Add(_autoDiscordClipPosterNavButton);
         navigation.Controls.Add(_clipDiscordNavButton);
         navigation.Controls.Add(_streamCheckNavButton);
@@ -5255,6 +5256,7 @@ Version 2.0.6
                 ApplySavedCriticalSettingsToControls(config);
                 SelectUiTheme(config.UiTheme);
                 ApplyUiTheme(config.UiTheme);
+                ApplySavedAccent(config.UiAccentColor);
             });
 
             LoadSettingsSection("Raidclip/OBS", () =>
@@ -5568,6 +5570,7 @@ Version 2.0.6
     {
         var config = _configurationService.LoadForEditing();
         config.UiTheme = ThemeKeyFromSelection();
+        config.UiAccentColor = SelectedAccentHex();
         config.Twitch.BroadcasterLogin = _twitchChannelBox.Text
             .Trim()
             .TrimStart('@');
@@ -5630,6 +5633,7 @@ Version 2.0.6
     {
         var config = _configurationService.LoadForEditing();
         config.UiTheme = ThemeKeyFromSelection();
+        config.UiAccentColor = SelectedAccentHex();
         config.Twitch.BroadcasterLogin = _twitchChannelBox.Text
             .Trim()
             .TrimStart('@');
@@ -6047,6 +6051,7 @@ Version 2.0.6
             updated.AutoDiscordClipPoster, _broadcaster);
         _moduleHealth?.UpdateConfig(updated.ModuleHealth);
         ApplyUiTheme(updated.UiTheme);
+        ApplySavedAccent(updated.UiAccentColor);
         _giveawayService?.UpdateConfig(updated.Giveaways, updated.Minigame);
         UpdateCurrencyPreview();
         if (_minigameTopList.Columns.Count >= 3)
@@ -6196,6 +6201,7 @@ Version 2.0.6
                 _dashboardLogBox.SelectionStart = _dashboardLogBox.TextLength;
                 _dashboardLogBox.ScrollToCaret();
             }
+            AppendDashboardEvent(message);
         }
         catch (ObjectDisposedException)
         {

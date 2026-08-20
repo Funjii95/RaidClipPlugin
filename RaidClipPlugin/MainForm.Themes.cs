@@ -1,3 +1,5 @@
+using RaidClipPlugin.Services;
+
 namespace RaidClipPlugin;
 
 public sealed partial class MainForm
@@ -6,6 +8,20 @@ public sealed partial class MainForm
     {
         Width = 210,
         DropDownStyle = ComboBoxStyle.DropDownList
+    };
+    private readonly NumericUpDown _accentRed = CreateRgbControl(255);
+    private readonly NumericUpDown _accentGreen = CreateRgbControl(48);
+    private readonly NumericUpDown _accentBlue = CreateRgbControl(58);
+    private readonly TextBox _accentHex = new() { Width = 92, Text = "#FF303A", MaxLength = 7 };
+    private readonly Panel _accentPreview = new() { Width = 42, Height = 32, BackColor = Color.FromArgb(255, 48, 58) };
+    private bool _updatingAccentControls;
+
+    private static NumericUpDown CreateRgbControl(int value) => new()
+    {
+        Minimum = 0,
+        Maximum = 255,
+        Value = value,
+        Width = 68
     };
 
     private void InitializeThemeEvents()
@@ -18,9 +34,128 @@ public sealed partial class MainForm
         _uiThemeBox.SelectedIndexChanged += (_, _) =>
         {
             if (_uiThemeBox.SelectedIndex >= 0)
+            {
                 ApplyUiTheme(ThemeKeyFromSelection());
+                SetAccentControls(AccentColor, apply: false);
+            }
+        };
+        _accentRed.ValueChanged += (_, _) => ApplyAccentFromRgb();
+        _accentGreen.ValueChanged += (_, _) => ApplyAccentFromRgb();
+        _accentBlue.ValueChanged += (_, _) => ApplyAccentFromRgb();
+        _accentHex.Leave += (_, _) => ApplyAccentFromHex(showError: true);
+        _accentHex.KeyDown += (_, eventArgs) =>
+        {
+            if (eventArgs.KeyCode != Keys.Enter) return;
+            ApplyAccentFromHex(showError: true);
+            eventArgs.SuppressKeyPress = true;
         };
     }
+
+    private Control BuildAccentColorEditor()
+    {
+        var flow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = Padding.Empty };
+        flow.Controls.Add(new Label { Text = "R", AutoSize = true, Margin = new Padding(0, 9, 3, 0) });
+        flow.Controls.Add(_accentRed);
+        flow.Controls.Add(new Label { Text = "G", AutoSize = true, Margin = new Padding(8, 9, 3, 0) });
+        flow.Controls.Add(_accentGreen);
+        flow.Controls.Add(new Label { Text = "B", AutoSize = true, Margin = new Padding(8, 9, 3, 0) });
+        flow.Controls.Add(_accentBlue);
+        flow.Controls.Add(_accentHex);
+        flow.Controls.Add(_accentPreview);
+        var choose = NewActionButton("Farbe wählen");
+        choose.Click += (_, _) => ChooseAccentColor();
+        var reset = NewActionButton("Standard");
+        reset.Click += (_, _) => SetAccentControls(Color.FromArgb(255, 48, 58), apply: true);
+        flow.Controls.Add(choose);
+        flow.Controls.Add(reset);
+        return flow;
+    }
+
+    private void ChooseAccentColor()
+    {
+        using var dialog = new ColorDialog
+        {
+            Color = Color.FromArgb((int)_accentRed.Value, (int)_accentGreen.Value, (int)_accentBlue.Value),
+            FullOpen = true,
+            AnyColor = true
+        };
+        if (dialog.ShowDialog(this) == DialogResult.OK)
+            SetAccentControls(dialog.Color, apply: true);
+    }
+
+    private void ApplyAccentFromRgb()
+    {
+        if (_updatingAccentControls) return;
+        SetAccentControls(Color.FromArgb((int)_accentRed.Value,
+            (int)_accentGreen.Value, (int)_accentBlue.Value), apply: true);
+    }
+
+    private void ApplyAccentFromHex(bool showError)
+    {
+        var normalized = ConfigurationService.NormalizeAccentColor(_accentHex.Text);
+        if (string.IsNullOrEmpty(normalized))
+        {
+            if (showError)
+                MessageBox.Show(this, "Bitte eine Farbe im Format #RRGGBB eingeben.",
+                    "Ungültige Akzentfarbe", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            _accentHex.Text = ColorToHex(AccentColor);
+            return;
+        }
+        SetAccentControls(ColorTranslator.FromHtml(normalized), apply: true);
+    }
+
+    private void SetAccentControls(Color color, bool apply)
+    {
+        _updatingAccentControls = true;
+        _accentRed.Value = color.R;
+        _accentGreen.Value = color.G;
+        _accentBlue.Value = color.B;
+        _accentHex.Text = ColorToHex(color);
+        _accentPreview.BackColor = color;
+        _updatingAccentControls = false;
+        if (apply) ApplyCustomAccent(color);
+    }
+
+    private void ApplySavedAccent(string? hex)
+    {
+        var normalized = ConfigurationService.NormalizeAccentColor(hex);
+        SetAccentControls(string.IsNullOrEmpty(normalized)
+            ? AccentColor
+            : ColorTranslator.FromHtml(normalized), apply: !string.IsNullOrEmpty(normalized));
+    }
+
+    private void ApplyCustomAccent(Color color)
+    {
+        var previous = AccentColor;
+        AccentColor = color;
+        AccentDarkColor = Color.FromArgb(
+            Math.Max(18, color.R * 44 / 100),
+            Math.Max(12, color.G * 44 / 100),
+            Math.Max(14, color.B * 44 / 100));
+        BorderColor = Color.FromArgb(
+            Math.Max(35, color.R * 45 / 100),
+            Math.Max(35, color.G * 45 / 100),
+            Math.Max(35, color.B * 45 / 100));
+        UpdateDashboardAccent(this, previous, color);
+        ApplyRaidClipTheme(this);
+        Invalidate(true);
+    }
+
+    private static void UpdateDashboardAccent(Control root, Color previous, Color color)
+    {
+        foreach (Control control in root.Controls)
+        {
+            if (control is DashboardCardPanel card && card.AccentColor == previous)
+                card.AccentColor = color;
+            UpdateDashboardAccent(control, previous, color);
+        }
+    }
+
+    private static string ColorToHex(Color color) =>
+        $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+
+    private string SelectedAccentHex() => ColorToHex(Color.FromArgb(
+        (int)_accentRed.Value, (int)_accentGreen.Value, (int)_accentBlue.Value));
 
     private string ThemeKeyFromSelection() => _uiThemeBox.SelectedIndex switch
     {

@@ -1,3 +1,9 @@
+## 2.0.18
+
+- Das Dashboard wurde vollständig überarbeitet und zeigt Systemstatus, Schnellaktionen, Tagesaktivität und letzte Ereignisse übersichtlich an.
+- Die Akzentfarbe lässt sich unter „Allgemeine Einstellungen“ frei per RGB-Werten, Hex-Code oder Windows-Farbauswahl festlegen und dauerhaft speichern.
+- Die Seitenleiste kommt ohne die zusätzliche Kategorie „Weitere Module“ aus.
+
 ## 2.0.17
 
 - Jeder Event-Trigger besitzt jetzt eine eigene lokale Soundauswahl für den Streamer.
