@@ -1279,9 +1279,10 @@ public sealed class ConfigurationService
         {
             "Kein Sound", "Hinweis", "Erfolg", "Glocke", "Achtung", "Frage"
         };
-        if (enabledRules.Any(rule => !sounds.Contains(rule.Sound ?? "")))
+        if (enabledRules.Any(rule => !sounds.Contains(rule.Sound ?? "") &&
+            !IsValidCustomEventSound(rule.Sound)))
             throw new InvalidOperationException(
-                "Für einen Event-Trigger wurde ein unbekannter Sound ausgewählt.");
+                "Eigene Event-Sounds müssen vorhandene WAV-Dateien sein.");
         if (config.Tip.Enabled)
         {
             var providers = config.TipProviders;
@@ -1299,6 +1300,14 @@ public sealed class ConfigurationService
                 throw new InvalidOperationException(
                     "Streamlabs benötigt einen OAuth Access Token.");
         }
+    }
+
+    private static bool IsValidCustomEventSound(string? sound)
+    {
+        if (sound?.StartsWith("Datei: ", StringComparison.OrdinalIgnoreCase) != true)
+            return false;
+        var path = sound[7..].Trim();
+        return path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) && File.Exists(path);
     }
 
     public static void ValidateMinigameSettings(MinigameConfig config)

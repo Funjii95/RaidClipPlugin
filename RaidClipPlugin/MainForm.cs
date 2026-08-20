@@ -991,15 +991,15 @@ private enum CloseChoice
         {
             Text = title,
             Width = 248,
-  Height = 42,
+            Height = 46,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0 },
             TextAlign = ContentAlignment.MiddleLeft,
-            Font = new Font("Segoe UI", 9.2F, FontStyle.Bold),
+            Font = new Font("Segoe UI", 10.2F, FontStyle.Regular),
             ForeColor = TextColor,
             BackColor = SidebarColor,
             Padding = new Padding(14, 0, 12, 0),
-            Margin = new Padding(5, 3, 5, 2),
+            Margin = new Padding(5, 1, 5, 1),
             Cursor = Cursors.Hand,
             Tag = Tuple.Create(title, subtitle)
         };
@@ -1367,8 +1367,7 @@ private enum CloseChoice
         var showSystemStatus = section == "system-status";
         var showMusic = section == "music";
         var showStreamCheck = section == "stream-check";
-        var showClipDiscord = section == "clip-discord";
-        var showAutoDiscordPoster = section == "auto-discord-poster";
+        var showClips = section is "clips" or "clip-discord" or "auto-discord-poster";
         var showGiveaways = section == "giveaways";
         var showCommands = section == "commands";
         var showLiveChat = section == "livechat";
@@ -1382,8 +1381,7 @@ private enum CloseChoice
         _systemStatusPage.Visible = showSystemStatus;
         _musicPage.Visible = showMusic;
         _streamCheckPage.Visible = showStreamCheck;
-        _clipDiscordPage.Visible = showClipDiscord;
-        _autoDiscordClipPosterPage.Visible = showAutoDiscordPoster;
+        _clipsHubPage.Visible = showClips;
         _giveawayPage.Visible = showGiveaways;
         _commandsPage.Visible = showCommands;
         _liveChatPage.Visible = showLiveChat;
@@ -1403,10 +1401,8 @@ private enum CloseChoice
             _musicPage.BringToFront();
         else if (showStreamCheck)
             _streamCheckPage.BringToFront();
-        else if (showClipDiscord)
-            _clipDiscordPage.BringToFront();
-        else if (showAutoDiscordPoster)
-            _autoDiscordClipPosterPage.BringToFront();
+        else if (showClips)
+            _clipsHubPage.BringToFront();
         else if (showGiveaways)
             _giveawayPage.BringToFront();
         else if (showCommands)
@@ -1426,8 +1422,7 @@ private enum CloseChoice
         SetNavigationTileState(_systemStatusNavButton, showSystemStatus);
         SetNavigationTileState(_musicNavButton, showMusic);
         SetNavigationTileState(_streamCheckNavButton, showStreamCheck);
-        SetNavigationTileState(_clipDiscordNavButton, showClipDiscord);
-        SetNavigationTileState(_autoDiscordClipPosterNavButton, showAutoDiscordPoster);
+        SetNavigationTileState(_clipDiscordNavButton, showClips);
         SetNavigationTileState(_giveawayNavButton, showGiveaways);
         SetNavigationTileState(_commandsNavButton, showCommands);
         SetNavigationTileState(_liveChatNavButton, showLiveChat);
@@ -2387,21 +2382,14 @@ private enum CloseChoice
         BuildStreamCheckPage();
         BuildClipDiscordPage();
         BuildAutoDiscordClipPosterPage();
+        BuildClipsHubPage();
         BuildGiveawayPage();
         BuildCommandsPage();
         BuildSystemStatusPage();
         BuildTimerPage();
         _liveChatPage.Controls.Add(BuildLiveChatSection());
 
-        var brand = new PictureBox
-        {
-            Image = LoadBrandImage(),
-            SizeMode = PictureBoxSizeMode.Zoom,
-            Width = 252,
-  Height = 116,
-            Margin = new Padding(0, 4, 0, 14),
-            BackColor = SidebarColor
-        };
+        var brand = CreateCompactSidebarBrand();
 
         var navigation = new FlowLayoutPanel
         {
@@ -2422,7 +2410,6 @@ private enum CloseChoice
         navigation.Controls.Add(_minigameNavButton);
         navigation.Controls.Add(_musicNavButton);
         navigation.Controls.Add(_giveawayNavButton);
-        navigation.Controls.Add(_autoDiscordClipPosterNavButton);
         navigation.Controls.Add(_clipDiscordNavButton);
         navigation.Controls.Add(_streamCheckNavButton);
         navigation.Controls.Add(_liveChatNavButton);
@@ -2443,8 +2430,7 @@ private enum CloseChoice
         contentHost.Controls.Add(_systemStatusPage);
         contentHost.Controls.Add(_giveawayPage);
         contentHost.Controls.Add(_streamCheckPage);
-        contentHost.Controls.Add(_clipDiscordPage);
-        contentHost.Controls.Add(_autoDiscordClipPosterPage);
+        contentHost.Controls.Add(_clipsHubPage);
         contentHost.Controls.Add(_musicPage);
         contentHost.Controls.Add(_minigamePage);
         contentHost.Controls.Add(_moderationPage);

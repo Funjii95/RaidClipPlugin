@@ -93,7 +93,10 @@ public sealed partial class MainForm
     private void InitializeAutoDiscordClipPosterEvents()
     {
         _autoDiscordClipPosterNavButton.Click += (_, _) =>
-            ShowSection("auto-discord-poster");
+        {
+            ShowSection("clips");
+            _clipsHubTabs.SelectedIndex = 1;
+        };
         _autoPosterSaveButton.Click += (_, _) => SaveSettingsFromControls();
         _autoPosterCheckButton.Click += async (_, _) =>
             await RunAutoDiscordClipPosterCheckAsync(null);
