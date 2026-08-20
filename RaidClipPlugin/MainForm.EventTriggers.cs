@@ -1,6 +1,7 @@
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
+using System.Security.Cryptography;
 
 namespace RaidClipPlugin;
 
@@ -129,7 +130,7 @@ public sealed partial class MainForm
         return tabs;
     }
 
-    private static void AddAlertEditor(
+    private void AddAlertEditor(
         FlowLayoutPanel flow,
         CheckBox enabled,
         string label,
@@ -151,7 +152,44 @@ public sealed partial class MainForm
         var preview = NewHeistActionButton("Anhören", 110);
         preview.Click += (_, _) => PlayEventSound(sound.Text);
         soundRow.Controls.Add(preview);
+        var custom = NewHeistActionButton("Eigene WAV…", 130);
+        custom.Click += (_, _) => ChooseCustomEventSound(sound);
+        soundRow.Controls.Add(custom);
         flow.Controls.Add(CreateSettingEditor("Lokaler Sound für den Streamer", soundRow));
+    }
+
+    private void ChooseCustomEventSound(ComboBox sound)
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Eigenen Event-Sound auswählen",
+            Filter = "Wave-Audiodatei (*.wav)|*.wav",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+        try
+        {
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RaidClipPlugin", "EventSounds");
+            Directory.CreateDirectory(directory);
+            var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dialog.FileName)))[..12];
+            var safeName = string.Concat(Path.GetFileNameWithoutExtension(dialog.FileName)
+                .Select(character => Path.GetInvalidFileNameChars().Contains(character) ? '_' : character));
+            var destination = Path.Combine(directory, $"{safeName}-{hash}.wav");
+            if (!File.Exists(destination)) File.Copy(dialog.FileName, destination);
+            var value = "Datei: " + destination;
+            if (!sound.Items.Contains(value)) sound.Items.Add(value);
+            sound.SelectedItem = value;
+            PlayEventSound(value);
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(this, "Der Sound konnte nicht übernommen werden: " + exception.Message,
+                "Event-Sound", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
     }
 
     private void LoadEventTriggerSettings(EventTriggerConfig config)
@@ -181,6 +219,10 @@ public sealed partial class MainForm
     {
         enabled.Checked = rule.Enabled;
         message.Text = rule.Message;
+        if (!string.IsNullOrWhiteSpace(rule.Sound) &&
+            rule.Sound.StartsWith("Datei: ", StringComparison.OrdinalIgnoreCase) &&
+            !sound.Items.Contains(rule.Sound))
+            sound.Items.Add(rule.Sound);
         sound.SelectedItem = rule.Sound;
         if (sound.SelectedIndex < 0) sound.SelectedIndex = 0;
         if (minimum is not null)
@@ -284,6 +326,16 @@ public sealed partial class MainForm
 
     public static void PlayEventSound(string? sound)
     {
+        if (sound?.StartsWith("Datei: ", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var path = sound[7..].Trim();
+            if (File.Exists(path))
+            {
+                try { new System.Media.SoundPlayer(path).Play(); }
+                catch { System.Media.SystemSounds.Hand.Play(); }
+            }
+            return;
+        }
         switch (sound)
         {
             case "Hinweis": System.Media.SystemSounds.Asterisk.Play(); break;

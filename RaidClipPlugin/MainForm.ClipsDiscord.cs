@@ -9,6 +9,10 @@ public partial class MainForm
 {
     private readonly Button _clipDiscordNavButton = CreateNavigationTile(
         "◎  Clips", "!clip und Discord-Veröffentlichung");
+    private readonly Panel _clipsHubPage = new()
+        { Dock = DockStyle.Fill, Visible = false };
+    private readonly TabControl _clipsHubTabs = new()
+        { Dock = DockStyle.Fill };
     private readonly Panel _clipDiscordPage = new()
         { Dock = DockStyle.Fill, Visible = false };
     private readonly CheckBox _clipCommandEnabledCheck =
@@ -116,7 +120,11 @@ public partial class MainForm
 
     private void InitializeClipDiscordEvents()
     {
-        _clipDiscordNavButton.Click += (_, _) => ShowSection("clip-discord");
+        _clipDiscordNavButton.Click += (_, _) =>
+        {
+            ShowSection("clips");
+            _clipsHubTabs.SelectedIndex = 0;
+        };
         _addDiscordChannelButton.Click += (_, _) => AddDiscordChannelRow();
         _removeDiscordChannelButton.Click += (_, _) =>
         {
@@ -195,6 +203,28 @@ public partial class MainForm
         layout.Controls.Add(status, 0, 1);
         layout.Controls.Add(tabs, 0, 2);
         _clipDiscordPage.Controls.Add(layout);
+    }
+
+    private void BuildClipsHubPage()
+    {
+        _clipDiscordPage.Visible = true;
+        _autoDiscordClipPosterPage.Visible = true;
+
+        var clipsTab = new TabPage("Clips")
+        {
+            BackColor = BackgroundColor,
+            Padding = Padding.Empty
+        };
+        var autoClipTab = new TabPage("Auto Clip")
+        {
+            BackColor = BackgroundColor,
+            Padding = Padding.Empty
+        };
+        clipsTab.Controls.Add(_clipDiscordPage);
+        autoClipTab.Controls.Add(_autoDiscordClipPosterPage);
+        _clipsHubTabs.TabPages.Add(clipsTab);
+        _clipsHubTabs.TabPages.Add(autoClipTab);
+        _clipsHubPage.Controls.Add(_clipsHubTabs);
     }
 
     private Control BuildClipCommandTab()

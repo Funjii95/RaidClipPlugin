@@ -199,6 +199,44 @@ public sealed partial class MainForm
         return _modernSidebarShell;
     }
 
+    private Control CreateCompactSidebarBrand()
+    {
+        var brand = new TableLayoutPanel
+        {
+            Width = 252,
+            Height = 82,
+            ColumnCount = 2,
+            RowCount = 1,
+            BackColor = SidebarColor,
+            Margin = new Padding(0, 2, 0, 8),
+            Padding = new Padding(12, 10, 4, 10)
+        };
+        brand.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50));
+        brand.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        var icon = new Label
+        {
+            Text = "▶",
+            Dock = DockStyle.Fill,
+            BackColor = AccentColor,
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI", 16F, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleCenter,
+            Margin = new Padding(0, 5, 8, 5)
+        };
+        var name = new Label
+        {
+            Text = "RaidClipPlugin",
+            Dock = DockStyle.Fill,
+            ForeColor = TextColor,
+            Font = new Font("Segoe UI", 15F, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = Padding.Empty
+        };
+        brand.Controls.Add(icon, 0, 0);
+        brand.Controls.Add(name, 1, 0);
+        return brand;
+    }
+
     private static Label CreateSidebarDivider(string text)
     {
         return new Label

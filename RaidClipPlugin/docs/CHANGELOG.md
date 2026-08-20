@@ -1,3 +1,11 @@
+## 2.0.19
+
+- Das Dashboard orientiert sich mit kompakter Navigation, großzügigeren Karten und eigenen Grafiken für Twitch, OBS, EventSub und Player stärker am neuen Mockup.
+- Versionsanzeige und Update-Suche stehen übersichtlich im mittleren Kopfbereich.
+- Clips und Auto Clip sind unter dem gemeinsamen Hauptreiter „Clips“ zusammengeführt.
+- Die Dashboard-Aktion „Chat testen“ verwendet jetzt direkt die Diagnose-Testnachricht.
+- Für jeden Event-Trigger kann eine eigene lokale WAV-Datei ausgewählt, angehört und dauerhaft gespeichert werden.
+
 ## 2.0.18
 
 - Das Dashboard wurde vollständig überarbeitet und zeigt Systemstatus, Schnellaktionen, Tagesaktivität und letzte Ereignisse übersichtlich an.
