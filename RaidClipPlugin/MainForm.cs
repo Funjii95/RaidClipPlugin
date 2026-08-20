@@ -1881,18 +1881,11 @@ private enum CloseChoice
         raidTabs.TabPages.Add(historyPage);
 
         var dashboardHeader = CreateDashboardHeader(headerRow, updatePanel);
-        var dashboardIndicators = CreateDashboardIndicatorGrid(
-            _obsIndicator,
-            _twitchIndicator,
-            _eventSubIndicator,
-            _playerIndicator);
         var dashboardActions = CreateDashboardActionBar(actions);
 
         _raidPage.Controls.Add(CreateModernDashboardLayout(
             dashboardHeader,
-            dashboardIndicators,
-            dashboardActions,
-            CreateDashboardHealthSummary()));
+            dashboardActions));
 
         var raidClipsTitle = new Label
         {
@@ -4759,7 +4752,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             return;
         }
 
-        indicator.Text = $"{service}{Environment.NewLine}{state.ToUpperInvariant()}";
+        indicator.Text = $"●  {state}";
         indicator.ForeColor = color;
         UpdateModernServiceStatus(service, state, color);
     }
