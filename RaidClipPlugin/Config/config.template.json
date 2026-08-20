@@ -1,4 +1,6 @@
 {
+  "UiTheme": "RaidRed",
+  "UiAccentColor": "",
   "Twitch": {
     "ClientId": "",
     "ClientSecret": "",

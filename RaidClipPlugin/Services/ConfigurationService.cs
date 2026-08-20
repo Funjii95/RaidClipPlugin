@@ -84,6 +84,7 @@ public sealed class ConfigurationService
         var settings = new GuiSettings
         {
             UiTheme = config.UiTheme,
+            UiAccentColor = config.UiAccentColor,
             TwitchChannel = config.Twitch.BroadcasterLogin,
             ObsHost = config.OBS.Host,
             ObsPort = config.OBS.Port,
@@ -277,6 +278,7 @@ public sealed class ConfigurationService
         }
 
         target.UiTheme ??= existing.UiTheme;
+        target.UiAccentColor ??= existing.UiAccentColor;
         target.TwitchChannel ??= existing.TwitchChannel;
         target.ObsHost ??= existing.ObsHost;
         target.ObsPort ??= existing.ObsPort;
@@ -480,6 +482,10 @@ public sealed class ConfigurationService
             if (!string.IsNullOrWhiteSpace(settings.UiTheme))
             {
                 config.UiTheme = settings.UiTheme;
+            }
+            if (settings.UiAccentColor is not null)
+            {
+                config.UiAccentColor = settings.UiAccentColor;
             }
 
 
@@ -749,6 +755,16 @@ public sealed class ConfigurationService
     }
 
 
+    public static string NormalizeAccentColor(string? value)
+    {
+        var text = (value ?? "").Trim();
+        if (text.Length == 6) text = "#" + text;
+        return System.Text.RegularExpressions.Regex.IsMatch(
+            text, "^#[0-9A-Fa-f]{6}$")
+            ? text.ToUpperInvariant()
+            : "";
+    }
+
     private static void Normalize(
         AppConfig config,
         bool synchronizeCommandOverrides = false)
@@ -756,6 +772,7 @@ public sealed class ConfigurationService
         config.UiTheme = (config.UiTheme ?? "RaidRed").Trim();
         if (config.UiTheme is not ("DarkPurple" or "DarkBlue" or "LightModern" or "RaidRed" or "NeonGreen" or "TwitchPurple"))
             config.UiTheme = "RaidRed";
+        config.UiAccentColor = NormalizeAccentColor(config.UiAccentColor);
         config.Twitch.BroadcasterLogin =
             (config.Twitch.BroadcasterLogin ?? "").Trim().TrimStart('@');
         config.OBS.Host = (config.OBS.Host ?? "").Trim();
@@ -1934,6 +1951,7 @@ public sealed class ConfigurationService
     private sealed class GuiSettings
     {
         public string? UiTheme { get; set; }
+        public string? UiAccentColor { get; set; }
         public string? TwitchChannel { get; set; }
         public string? ObsHost { get; set; }
         public int? ObsPort { get; set; }

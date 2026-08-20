@@ -2,6 +2,15 @@ namespace RaidClipPlugin;
 
 public sealed partial class MainForm
 {
+    private readonly FlowLayoutPanel _dashboardEventFeed = new()
+    {
+        Dock = DockStyle.Fill,
+        FlowDirection = FlowDirection.TopDown,
+        WrapContents = false,
+        AutoScroll = true,
+        BackColor = Color.Transparent,
+        Padding = new Padding(0, 4, 0, 0)
+    };
     private static string GetServiceIcon(string service) => service switch
     {
         "OBS" => "◉",
@@ -34,12 +43,14 @@ public sealed partial class MainForm
     private Control CreateDashboardHeader(Control header, Control updatePanel)
     {
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty, Padding = Padding.Empty, BackColor = BackgroundColor };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 54));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
-        header.Dock = DockStyle.Fill;
-        header.Margin = new Padding(0, 0, 14, 0);
-        if (updatePanel is ScrollableControl scroller) scroller.AutoScroll = false;
-        layout.Controls.Add(header, 0, 0);
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 62));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38));
+        var greeting = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty, BackColor = BackgroundColor };
+        greeting.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        greeting.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        greeting.Controls.Add(new Label { Text = "Guten Abend, Funjii", Dock = DockStyle.Fill, AutoSize = false, ForeColor = TextColor, Font = new Font("Segoe UI", 20F, FontStyle.Bold), TextAlign = ContentAlignment.BottomLeft }, 0, 0);
+        greeting.Controls.Add(new Label { Text = "Dein Stream-System ist bereit.", Dock = DockStyle.Fill, AutoSize = false, ForeColor = MutedTextColor, Font = new Font("Segoe UI", 10.2F), TextAlign = ContentAlignment.TopLeft }, 0, 1);
+        layout.Controls.Add(greeting, 0, 0);
         layout.Controls.Add(CreateUpdateStatusCard(), 1, 0);
         return layout;
     }
@@ -47,7 +58,7 @@ public sealed partial class MainForm
     private Control CreateUpdateStatusCard()
     {
         var card = CreateCardPanel(AccentColor, new Padding(14, 10, 14, 10));
-        card.MinimumSize = new Size(340, 76);
+        card.MinimumSize = new Size(340, 68);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 104));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -136,77 +147,71 @@ public sealed partial class MainForm
 
     private Control CreateDashboardActionBar(Control actions)
     {
-        var host = new TableLayoutPanel { Dock = DockStyle.Top, Height = 70, ColumnCount = 6, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 2, 0, 8) };
-        host.RowStyles.Add(new RowStyle(SizeType.Absolute, 66));
-        foreach (var percent in new[] { 15, 18, 18, 24, 13, 12 }) host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, percent));
-        if (actions is FlowLayoutPanel flow)
-        {
-  flow.AutoScroll = false;
-  flow.WrapContents = false;
-  var orderedControls = flow.Controls.Cast<Control>().Where(control => !ReferenceEquals(control, _overallStatusLabel)).Take(host.ColumnCount).ToArray();
-  flow.Controls.Clear();
-  for (var index = 0; index < orderedControls.Length; index++)
-  {
-      var child = orderedControls[index];
-      child.Dock = DockStyle.None;
-      child.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
-      child.Margin = new Padding(5, 8, 5, 8);
-      if (child is Button button) { button.AutoSize = false; button.Height = 38; button.MaximumSize = new Size(0, 38); button.Padding = new Padding(6, 0, 6, 0); button.AutoEllipsis = true; }
-      else if (child is TextBox textBox) { textBox.AutoSize = false; textBox.Height = 30; textBox.MaximumSize = new Size(0, 30); textBox.Margin = new Padding(5, 12, 5, 8); }
-      host.Controls.Add(child, index, 0);
-  }
-        }
-        else
-        {
-  actions.Dock = DockStyle.Fill;
-  host.Controls.Add(actions, 0, 0);
-  host.SetColumnSpan(actions, host.ColumnCount);
-        }
+        var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 4, 0, 0) };
+        for (var i = 0; i < 4; i++) host.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
+        AddQuickAction(host, 0, "▣   Clip abspielen", () => _testButton.PerformClick());
+        AddQuickAction(host, 1, "◯   Chat testen", () => _testConnectionsButton.PerformClick());
+        AddQuickAction(host, 2, "◷   Timer öffnen", () => ShowSection("timer"));
+        AddQuickAction(host, 3, "ϟ   Event-Trigger", () => ShowSection("timer"));
         return CreateDashboardSection("Schnellaktionen", host);
+    }
+
+    private void AddQuickAction(TableLayoutPanel host, int row, string text, Action action)
+    {
+        var button = NewActionButton(text + "                                      ›");
+        button.Dock = DockStyle.Fill;
+        button.TextAlign = ContentAlignment.MiddleLeft;
+        button.Font = new Font("Segoe UI", 9.6F);
+        button.Margin = new Padding(0, 4, 0, 4);
+        button.BackColor = Color.FromArgb(20, 27, 36);
+        button.Click += (_, _) => action();
+        host.Controls.Add(button, 0, row);
     }
 
     private Control CreateModernDashboardLayout(Control dashboardHeader, Control dashboardIndicators, Control dashboardActions, Control dashboardHealth)
     {
-        var page = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(26, 22, 26, 22), BackColor = BackgroundColor, Margin = Padding.Empty };
-        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
-        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
-        var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 118));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 214));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 160));
-        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
+        var page = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2, Padding = new Padding(22, 18, 22, 10), BackColor = BackgroundColor, Margin = Padding.Empty };
+        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70));
+        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
+        page.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        page.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, BackColor = BackgroundColor, Margin = new Padding(0, 0, 18, 0), Padding = Padding.Empty };
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 154));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 174));
         main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        main.RowStyles.Add(new RowStyle(SizeType.Absolute, 1));
         main.Controls.Add(dashboardHeader, 0, 0);
         main.Controls.Add(CreateHeroStatusCard(), 0, 1);
-        main.Controls.Add(CreateDashboardSection("Module & Verbindungen", CreateModuleGrid()), 0, 2);
-        main.Controls.Add(CreateDashboardSection("Heutige Statistiken", CreateDashboardStatsGrid()), 0, 3);
-        main.Controls.Add(dashboardActions, 0, 4);
-        main.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = BackgroundColor, Margin = Padding.Empty }, 0, 5);
+        main.Controls.Add(CreateModuleGrid(), 0, 2);
+        main.Controls.Add(CreateDashboardSection("Heutige Aktivität", CreateDashboardStatsGrid()), 0, 3);
         var side = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = BackgroundColor, Margin = Padding.Empty, Padding = Padding.Empty };
-        side.RowStyles.Add(new RowStyle(SizeType.Absolute, 270));
+        side.RowStyles.Add(new RowStyle(SizeType.Absolute, 300));
         side.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        side.Controls.Add(CreateDashboardSection("Systemprüfung", dashboardHealth), 0, 0);
-        side.Controls.Add(CreateDashboardSection("Bot Log", CreateRecentActivityList()), 0, 1);
+        side.Controls.Add(dashboardActions, 0, 0);
+        side.Controls.Add(CreateDashboardSection("Letzte Ereignisse", CreateRecentActivityList()), 0, 1);
         page.Controls.Add(main, 0, 0);
         page.Controls.Add(side, 1, 0);
+        var footer = CreateDashboardFooter();
+        page.Controls.Add(footer, 0, 1);
+        page.SetColumnSpan(footer, 2);
         return page;
     }
 
     private Control CreateHeroStatusCard()
     {
-        var hero = CreateCardPanel(AccentColor, new Padding(22, 12, 22, 12));
+        var hero = CreateCardPanel(HealthyStatusColor, new Padding(22, 14, 22, 14));
         hero.Margin = new Padding(0, 0, 0, 10);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 82));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
-        layout.Controls.Add(new Label { Text = "R", Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 30F, FontStyle.Bold), ForeColor = AccentColor, BackColor = Color.Transparent }, 0, 0);
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 310));
+        layout.Controls.Add(new Label { Text = "✓", Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 34F, FontStyle.Bold), ForeColor = HealthyStatusColor, BackColor = Color.Transparent }, 0, 0);
         var text = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Margin = new Padding(8, 0, 0, 0), Padding = Padding.Empty };
         text.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         text.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
         text.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        text.Controls.Add(new Label { Text = "RaidClipPlugin", Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
+        text.Controls.Add(new Label { Text = "Alle Systeme bereit", Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 14F, FontStyle.Bold), ForeColor = TextColor, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
         _overallStatusLabel.Dock = DockStyle.Fill;
         _overallStatusLabel.AutoSize = false;
         _overallStatusLabel.TextAlign = ContentAlignment.MiddleLeft;
@@ -214,16 +219,21 @@ public sealed partial class MainForm
         _overallStatusLabel.Margin = Padding.Empty;
         _overallStatusLabel.Padding = Padding.Empty;
         text.Controls.Add(_overallStatusLabel, 0, 1);
-        text.Controls.Add(new Label { Text = "Alle Kernmodule bleiben getrennt und blockieren sich nicht gegenseitig.", Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 9.2F), ForeColor = MutedTextColor, TextAlign = ContentAlignment.TopLeft, AutoEllipsis = true }, 0, 2);
-        var meta = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
-        meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
-        meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
-        meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
-        meta.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
-        meta.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        AddHeroMeta(meta, 0, "Kanal", "Funjii");
-        AddHeroMeta(meta, 1, "Version", _updateService.CurrentDisplayVersion);
-        AddHeroMeta(meta, 2, "Status", "Live");
+        text.Controls.Add(new Label { Text = "Twitch, OBS und EventSub sind verbunden", Dock = DockStyle.Fill, AutoSize = false, Font = new Font("Segoe UI", 9.6F), ForeColor = MutedTextColor, TextAlign = ContentAlignment.TopLeft, AutoEllipsis = true }, 0, 2);
+        var meta = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 20, 0, 20) };
+        meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        meta.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        var streamCheck = NewActionButton("Stream prüfen");
+        streamCheck.BackColor = AccentColor;
+        streamCheck.Click += (_, _) => ShowSection("stream-check");
+        var modules = NewActionButton("Module starten");
+        modules.Click += (_, _) => _startButton.PerformClick();
+        streamCheck.Dock = DockStyle.Fill;
+        modules.Dock = DockStyle.Fill;
+        streamCheck.Margin = new Padding(4);
+        modules.Margin = new Padding(4);
+        meta.Controls.Add(streamCheck, 0, 0);
+        meta.Controls.Add(modules, 1, 0);
         layout.Controls.Add(text, 1, 0);
         layout.Controls.Add(meta, 2, 0);
         hero.Controls.Add(layout);
@@ -238,18 +248,13 @@ public sealed partial class MainForm
 
     private Control CreateModuleGrid()
     {
-        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 2, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
+        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, BackColor = Color.Transparent, Padding = new Padding(0, 8, 0, 8), Margin = Padding.Empty };
         for (var i = 0; i < 4; i++) grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         grid.Controls.Add(CreateDashboardStatusCard(_twitchIndicator), 0, 0);
         grid.Controls.Add(CreateDashboardStatusCard(_obsIndicator), 1, 0);
         grid.Controls.Add(CreateDashboardStatusCard(_eventSubIndicator), 2, 0);
         grid.Controls.Add(CreateDashboardStatusCard(_playerIndicator), 3, 0);
-        grid.Controls.Add(CreateModuleInfoCard("Discord", "Optional", GetServiceIcon("Discord"), GetServiceAccent("Discord")), 0, 1);
-        grid.Controls.Add(CreateModuleInfoCard("Musikdienst", "Optional", GetServiceIcon("Musikdienst"), GetServiceAccent("Musikdienst")), 1, 1);
-        grid.Controls.Add(CreateModuleInfoCard("Commands", "Bereit", GetServiceIcon("Commands"), GetServiceAccent("Commands")), 2, 1);
-        grid.Controls.Add(CreateModuleInfoCard("Updater", "Aktuell", GetServiceIcon("Updater"), GetServiceAccent("Updater")), 3, 1);
         return grid;
     }
 
@@ -299,15 +304,23 @@ public sealed partial class MainForm
 
     private Control CreateDashboardStatsGrid()
     {
-        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 1, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
-        for (var i = 0; i < 6; i++) grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / 6F));
-        grid.Controls.Add(CreateStatisticCard("💬", "Chat", "—", AccentColor), 0, 0);
-        grid.Controls.Add(CreateStatisticCard("</>", "Commands", "—", Color.FromArgb(255, 159, 67)), 1, 0);
-        grid.Controls.Add(CreateStatisticCard("▣", "Raidclips", _historyList.Items.Count.ToString("N0"), AccentColor), 2, 0);
-        grid.Controls.Add(CreateStatisticCard("👥", "Raids", "—", Color.FromArgb(166, 96, 255)), 3, 0);
-        grid.Controls.Add(CreateStatisticCard("◴", "Punkte", "—", Color.FromArgb(245, 176, 65)), 4, 0);
-        grid.Controls.Add(CreateStatisticCard("⚠", "Fehler", "Keine", UnhealthyStatusColor), 5, 0);
+        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, BackColor = Color.Transparent, Padding = Padding.Empty, Margin = Padding.Empty };
+        for (var i = 0; i < 4; i++) grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        grid.Controls.Add(CreateStatisticCard("♟", "Raids", "—", AccentColor), 0, 0);
+        grid.Controls.Add(CreateStatisticCard("▣", "Clips", _historyList.Items.Count.ToString("N0"), AccentColor), 1, 0);
+        grid.Controls.Add(CreateStatisticCard("◯", "Chat-Aktionen", "—", AccentColor), 2, 0);
+        grid.Controls.Add(CreateStatisticCard("◇", "Events", "—", AccentColor), 3, 0);
         return grid;
+    }
+
+    private Control CreateDashboardFooter()
+    {
+        var footer = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = BackgroundColor, Padding = new Padding(4, 6, 4, 0), Margin = Padding.Empty };
+        footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 75));
+        footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        footer.Controls.Add(new Label { Text = "●  Verbindung: Stabil     |     Aktive Module: bereit", Dock = DockStyle.Fill, ForeColor = HealthyStatusColor, Font = new Font("Segoe UI", 8.6F), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        footer.Controls.Add(new Label { Text = "RaidClipPlugin " + _updateService.CurrentDisplayVersion, Dock = DockStyle.Fill, ForeColor = MutedTextColor, Font = new Font("Segoe UI", 8.6F), TextAlign = ContentAlignment.MiddleRight }, 1, 0);
+        return footer;
     }
 
     private Control CreateStatisticCard(string icon, string label, string value, Color color)
@@ -390,16 +403,47 @@ public sealed partial class MainForm
 
     private Control CreateRecentActivityList()
     {
-        _dashboardLogBox.Margin = Padding.Empty;
-        _dashboardLogBox.Padding = new Padding(2);
-        _dashboardLogBox.BackColor = CardColor;
-        _dashboardLogBox.ForeColor = TextColor;
-        if (string.IsNullOrWhiteSpace(_dashboardLogBox.Text))
-        {
-            _dashboardLogBox.Text = $"[{DateTime.Now:HH:mm:ss}] Bot Log bereit{Environment.NewLine}";
-        }
+        if (_dashboardEventFeed.Controls.Count == 0)
+            AddDashboardEvent("System", "Dashboard bereit", MutedTextColor);
+        return _dashboardEventFeed;
+    }
 
-        return _dashboardLogBox;
+    private void AppendDashboardEvent(string message)
+    {
+        var lower = message.ToLowerInvariant();
+        var eventType = lower.Contains("follow") ? "Follow" :
+            lower.Contains("abo") || lower.Contains("subscription") ? "Abo" :
+            lower.Contains("cheer") || lower.Contains("bits") ? "Cheer" :
+            lower.Contains("werb") ? "Werbepause" :
+            lower.Contains("raid") ? "Raid" :
+            lower.Contains("clip") ? "Clip" : null;
+        if (eventType is null) return;
+        var color = eventType == "Werbepause"
+            ? Color.FromArgb(245, 176, 65)
+            : eventType is "Follow" or "Abo" or "Cheer"
+                ? Color.FromArgb(166, 96, 255)
+                : AccentColor;
+        AddDashboardEvent(eventType, message, color);
+    }
+
+    private void AddDashboardEvent(string type, string detail, Color color)
+    {
+        var row = new TableLayoutPanel { Width = 300, Height = 66, ColumnCount = 3, RowCount = 2, Margin = new Padding(0, 0, 0, 4), BackColor = Color.Transparent };
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 24));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 62));
+        row.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+        row.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        row.Controls.Add(new Label { Text = "●", Dock = DockStyle.Fill, ForeColor = color, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 10F, FontStyle.Bold) }, 0, 0);
+        row.SetRowSpan(row.Controls[^1], 2);
+        row.Controls.Add(new Label { Text = type, Dock = DockStyle.Fill, ForeColor = TextColor, Font = new Font("Segoe UI", 9.4F, FontStyle.Bold), TextAlign = ContentAlignment.BottomLeft }, 1, 0);
+        row.Controls.Add(new Label { Text = DateTime.Now.ToString("HH:mm:ss"), Dock = DockStyle.Fill, ForeColor = MutedTextColor, Font = new Font("Segoe UI", 8F), TextAlign = ContentAlignment.BottomRight }, 2, 0);
+        row.Controls.Add(new Label { Text = detail, Dock = DockStyle.Fill, ForeColor = MutedTextColor, Font = new Font("Segoe UI", 8.2F), TextAlign = ContentAlignment.TopLeft, AutoEllipsis = true }, 1, 1);
+        row.SetColumnSpan(row.Controls[^1], 2);
+        _dashboardEventFeed.Controls.Add(row);
+        _dashboardEventFeed.Controls.SetChildIndex(row, 0);
+        while (_dashboardEventFeed.Controls.Count > 8)
+            _dashboardEventFeed.Controls.RemoveAt(_dashboardEventFeed.Controls.Count - 1);
     }
 
     private DashboardCardPanel CreateCardPanel(Color accent, Padding padding)
@@ -418,12 +462,24 @@ public sealed partial class MainForm
   base.OnPaint(e);
   var bounds = ClientRectangle;
   if (bounds.Width <= 1 || bounds.Height <= 1) return;
+  e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+  using var path = RoundedRectangle(new Rectangle(0, 0, bounds.Width - 1, bounds.Height - 1), 10);
   using var background = new SolidBrush(BackColor);
-  e.Graphics.FillRectangle(background, bounds);
+  e.Graphics.FillPath(background, path);
   using var border = new Pen(Color.FromArgb(42, 50, 63), 1F);
-  e.Graphics.DrawRectangle(border, 0, 0, bounds.Width - 1, bounds.Height - 1);
-  using var accent = new Pen(AccentColor, 2F);
-  e.Graphics.DrawLine(accent, 12, bounds.Height - 2, bounds.Width - 12, bounds.Height - 2);
+  e.Graphics.DrawPath(border, path);
+        }
+
+        private static System.Drawing.Drawing2D.GraphicsPath RoundedRectangle(Rectangle bounds, int radius)
+        {
+            var path = new System.Drawing.Drawing2D.GraphicsPath();
+            var diameter = radius * 2;
+            path.AddArc(bounds.Left, bounds.Top, diameter, diameter, 180, 90);
+            path.AddArc(bounds.Right - diameter, bounds.Top, diameter, diameter, 270, 90);
+            path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
+            path.AddArc(bounds.Left, bounds.Bottom - diameter, diameter, diameter, 90, 90);
+            path.CloseFigure();
+            return path;
         }
     }
 }

@@ -99,4 +99,14 @@ public sealed class ChatTimerTests
         Assert.Throws<InvalidOperationException>(() =>
             ConfigurationService.ValidateEventTriggerSettings(config));
     }
+
+    [Theory]
+    [InlineData("#12abEF", "#12ABEF")]
+    [InlineData("12abef", "#12ABEF")]
+    [InlineData("#12345", "")]
+    [InlineData("rot", "")]
+    public void AccentColorIsNormalized(string input, string expected)
+    {
+        Assert.Equal(expected, ConfigurationService.NormalizeAccentColor(input));
+    }
 }
