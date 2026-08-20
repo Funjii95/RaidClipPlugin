@@ -1,3 +1,8 @@
+## 2.0.20
+
+- Twitch, OBS Studio, EventSub und Player erhalten im Dashboard wieder ihre jeweils richtige Grafik und Bezeichnung.
+- Die doppelte Erzeugung der Service-Karten wurde entfernt und abgeschnittene Statistikwerte wurden korrigiert.
+
 ## 2.0.19
 
 - Das Dashboard orientiert sich mit kompakter Navigation, großzügigeren Karten und eigenen Grafiken für Twitch, OBS, EventSub und Player stärker am neuen Mockup.
