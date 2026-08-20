@@ -1,3 +1,8 @@
+## 2.0.21
+
+- „Chat testen“ im Dashboard ruft die Diagnose-Testnachricht nun direkt auf und funktioniert auch bei geschlossenem Diagnose-Reiter.
+- Die Schnellaktion „Event-Trigger“ wurde durch „Minigames“ ersetzt und öffnet unmittelbar den Bereich Punkte & Minigames.
+
 ## 2.0.20
 
 - Twitch, OBS Studio, EventSub und Player erhalten im Dashboard wieder ihre jeweils richtige Grafik und Bezeichnung.

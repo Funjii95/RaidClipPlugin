@@ -161,9 +161,9 @@ public sealed partial class MainForm
         var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 4, 0, 0) };
         for (var i = 0; i < 4; i++) host.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
         AddQuickAction(host, 0, "▣   Clip abspielen", () => _testButton.PerformClick());
-        AddQuickAction(host, 1, "◯   Chat testen", () => _testChatButton.PerformClick());
+        AddQuickAction(host, 1, "◯   Chat testen", () => _ = SendChatDiagnosticTestAsync());
         AddQuickAction(host, 2, "◷   Timer öffnen", () => ShowSection("timer"));
-        AddQuickAction(host, 3, "ϟ   Event-Trigger", () => ShowSection("timer"));
+        AddQuickAction(host, 3, "♜   Minigames", () => ShowSection("minigame"));
         return CreateDashboardSection("Schnellaktionen", host);
     }
 
