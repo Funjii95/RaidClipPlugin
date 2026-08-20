@@ -1,3 +1,8 @@
+## 2.0.22
+
+- Das Dashboard bietet jetzt direkte Aktionen zum Starten, Stoppen und vollständigen Neustarten aller Module.
+- Der Modulneustart beendet die laufenden Dienste kontrolliert und startet das Plugin anschließend erneut.
+
 ## 2.0.21
 
 - „Chat testen“ im Dashboard ruft die Diagnose-Testnachricht nun direkt auf und funktioniert auch bei geschlossenem Diagnose-Reiter.
