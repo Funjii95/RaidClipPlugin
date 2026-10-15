@@ -30,6 +30,8 @@ public sealed class CommandRegistry
             if (normalized.Length == 0) return;
             if (config.Commands.CommandRoleOverrides.TryGetValue(id, out var roleOverride))
                 role = ParseRole(roleOverride, role);
+            if (module == "music" && role != CommandRole.Broadcaster)
+                role = CommandRole.Moderator;
             if (!config.Commands.IsCommandEnabled(id))
                 enabled = false;
             list.Add(new ChatCommandDefinition(id, normalized,
@@ -151,10 +153,10 @@ public sealed class CommandRegistry
         var music=config.MusicRequests;
         Add("music.request", music.ChatCommand, music.ChatCommandAliases, "music", "Musik", "Musikwunsch",
             "Wünscht einen Song.", music.ChatCommand+" <Song|Spotify-Link>", music.ChatCommand+" Songname",
-            music.Enabled && music.ChatCommandEnabled, userCooldown:music.UserCooldownMinutes*60, order:100);
+            music.Enabled && music.ChatCommandEnabled, CommandRole.Moderator, userCooldown:music.UserCooldownMinutes*60, order:100);
         Add("music.song", music.ModeratorCommands.Song, null, "music", "Musik", "Aktueller Song",
             "Zeigt den aktuellen Song.", music.ModeratorCommands.Song, music.ModeratorCommands.Song,
-            music.Enabled && music.ModeratorCommands.SongEnabled, order:101);
+            music.Enabled && music.ModeratorCommands.SongEnabled, CommandRole.Moderator, order:101);
         foreach (var item in new[]{
             ("skip",music.ModeratorCommands.Skip,music.ModeratorCommands.SkipEnabled,"Song überspringen"),
             ("queue",music.ModeratorCommands.Queue,music.ModeratorCommands.QueueEnabled,"Warteschlange"),

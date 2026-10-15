@@ -4865,6 +4865,15 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.24
+- Alle Musikwunsch-Chatbefehle und Aliase nur für Moderatoren/Broadcaster; Kanalpunkte-Belohnungen bleiben für Zuschauer nutzbar.
+- Getrennte Erfolgstexte für !sr/Chat-Musikwünsche und Kanalpunkte-Belohnungen, jeweils für Warteschlange und sofortige Wiedergabe.
+- {role} in Musikwunsch- und Skip-Chattexten zeigt Broadcaster, Moderator, VIP oder Zuschauer; Rollenabfragen für Kanalpunkte benötigen erneute Twitch-Autorisierung.
+- Einstellbarer Chattext bei erfolgreichem Song-Skip mit {moderator} für den Auslöser.
+- Neuer Skip-Button im Kopfbereich von Musikwünsche, in jedem Unterreiter sichtbar.
+- Rückmeldung bei fehlender Spotify-Verbindung oder fehlgeschlagenem Überspringen; Schutz vor Mehrfachklicks.
+""",
+                """
 Version 2.0.23
 - Rechtsklick in der Command-Übersicht: Modul öffnen oder Command samt zugehörigem Modul deaktivieren und speichern.
 - Nachrichtenfarbe pro Custom Command und Timer: normaler Chat oder Ankündigung in Blau, Grün, Orange, Lila oder Twitch-Kanalfarbe.

@@ -39,6 +39,9 @@ public sealed class MusicRequestConfig
 
 public sealed class MusicRequestChatMessages
 {
+    public string ChatCommandQueued { get; set; } = "🎵 {role} @{user} wünscht sich per Chat „{track}“ von {artist}. Der Song steht in der Warteschlange.";
+    public string ChatCommandPlaying { get; set; } = "▶️ Chat-Musikwunsch von {role} @{user}: Jetzt läuft „{track}“ von {artist}.";
+    public string Skipped { get; set; } = "⏭️ Der Song wurde von {moderator} übersprungen.";
     public string Queued { get; set; } = "🎵 @{user}, dein Musikwunsch „{track}“ von {artist} wurde zur Warteschlange hinzugefügt.";
     public string Playing { get; set; } = "▶️ @{user}, jetzt läuft „{track}“ von {artist}.";
     public string NotFound { get; set; } = "❌ @{user}, der gewünschte Song wurde nicht gefunden.";
