@@ -84,6 +84,9 @@ public sealed partial class MainForm
     private readonly TextBox _musicCooldownMessageBox = NewMusicMessageBox();
     private readonly TextBox _musicQueueFullMessageBox = NewMusicMessageBox();
     private readonly TextBox _musicBlacklistMessageBox = NewMusicMessageBox();
+    private readonly TextBox _musicSkippedMessageBox = NewMusicMessageBox();
+    private readonly TextBox _musicCommandQueuedMessageBox = NewMusicMessageBox();
+    private readonly TextBox _musicCommandPlayingMessageBox = NewMusicMessageBox();
     private readonly CheckBox _songCommandCheck = NewCheck("!song aktiv", true);
     private readonly CheckBox _skipCommandCheck = NewCheck("!skip aktiv", true);
     private readonly CheckBox _queueCommandCheck = NewCheck("!musicqueue aktiv", true);
@@ -102,6 +105,9 @@ public sealed partial class MainForm
         NewActionButton("Song abspielen");
     private readonly Button _skipMusicButton =
         NewActionButton("Song überspringen");
+    private readonly Button _skipCurrentMusicButton =
+        NewActionButton("⏭ Aktuellen Song überspringen");
+    private bool _musicSkipBusy;
     private readonly Button _retryMusicButton =
         NewActionButton("Erneut versuchen");
     private readonly Button _removeMusicEntryButton =
@@ -175,6 +181,7 @@ public sealed partial class MainForm
         _playMusicEntryButton.Click += async (_, _) =>
             await PlaySelectedMusicEntryAsync();
         _skipMusicButton.Click += async (_, _) => await SkipSpotifyAsync();
+        _skipCurrentMusicButton.Click += async (_, _) => await SkipSpotifyAsync();
         _retryMusicButton.Click += async (_, _) =>
             await RetrySelectedMusicEntryAsync();
         _removeMusicEntryButton.Click += async (_, _) =>
@@ -220,7 +227,14 @@ public sealed partial class MainForm
             AutoSize = true, ForeColor = Color.DimGray
         });
         header.Controls.Add(titleFlow, 0, 0);
-        header.Controls.Add(_spotifyStatusLabel, 1, 0);
+        var headerActions = new FlowLayoutPanel
+        {
+            AutoSize = true, Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight, WrapContents = false
+        };
+        headerActions.Controls.Add(_spotifyStatusLabel);
+        headerActions.Controls.Add(_skipCurrentMusicButton);
+        header.Controls.Add(headerActions, 1, 0);
 
 
         var connection = CreateMinigameFlow();
@@ -307,8 +321,10 @@ public sealed partial class MainForm
 
 
         var messages = CreateMinigameFlow();
-        messages.Controls.Add(CreateSettingEditor("Erfolg · Warteschlange", _musicQueuedMessageBox));
-        messages.Controls.Add(CreateSettingEditor("Erfolg · Sofort", _musicPlayingMessageBox));
+        messages.Controls.Add(CreateSettingEditor("Belohnung · Warteschlange", _musicQueuedMessageBox));
+        messages.Controls.Add(CreateSettingEditor("Belohnung · Sofort", _musicPlayingMessageBox));
+        messages.Controls.Add(CreateSettingEditor("Chat-Command (!sr) · Warteschlange", _musicCommandQueuedMessageBox));
+        messages.Controls.Add(CreateSettingEditor("Chat-Command (!sr) · Sofort", _musicCommandPlayingMessageBox));
         messages.Controls.Add(CreateSettingEditor("Nicht gefunden", _musicNotFoundMessageBox));
         messages.Controls.Add(CreateSettingEditor("Kein Gerät", _musicNoDeviceMessageBox));
         messages.Controls.Add(CreateSettingEditor("Song zu lang", _musicTooLongMessageBox));
@@ -316,6 +332,12 @@ public sealed partial class MainForm
         messages.Controls.Add(CreateSettingEditor("Cooldown", _musicCooldownMessageBox));
         messages.Controls.Add(CreateSettingEditor("Warteschlange voll", _musicQueueFullMessageBox));
         messages.Controls.Add(CreateSettingEditor("Blacklist", _musicBlacklistMessageBox));
+        messages.Controls.Add(CreateSettingEditor("Song übersprungen ({moderator}, {role})", _musicSkippedMessageBox));
+        messages.Controls.Add(new Label
+        {
+            AutoSize = true, MaximumSize = new Size(750, 0), ForeColor = MutedTextColor,
+            Text = "{role}: Broadcaster, Moderator, VIP oder Zuschauer. Bei Kanalpunkte-Wünschen benötigt die Rollenabfrage eine neue Twitch-Autorisierung; ohne Abfrage ist die Rolle Unbekannt."
+        });
         var messageSave = NewActionButton("Einstellungen speichern");
         messageSave.Click += (_, _) => SaveMusicRequestSettingsFromControls();
         messages.Controls.Add(messageSave);
@@ -419,6 +441,9 @@ public sealed partial class MainForm
         _musicCooldownMessageBox.Text = config.ChatMessages.Cooldown;
         _musicQueueFullMessageBox.Text = config.ChatMessages.QueueFull;
         _musicBlacklistMessageBox.Text = config.ChatMessages.Blacklisted;
+        _musicSkippedMessageBox.Text = config.ChatMessages.Skipped;
+        _musicCommandQueuedMessageBox.Text = config.ChatMessages.ChatCommandQueued;
+        _musicCommandPlayingMessageBox.Text = config.ChatMessages.ChatCommandPlaying;
         var commands = config.ModeratorCommands;
         _songCommandCheck.Checked = commands.SongEnabled;
         _skipCommandCheck.Checked = commands.SkipEnabled;
@@ -520,6 +545,9 @@ public sealed partial class MainForm
         music.ChatMessages.Cooldown = ReadMusicMessage(_musicCooldownMessageBox, music.ChatMessages.Cooldown);
         music.ChatMessages.QueueFull = ReadMusicMessage(_musicQueueFullMessageBox, music.ChatMessages.QueueFull);
         music.ChatMessages.Blacklisted = ReadMusicMessage(_musicBlacklistMessageBox, music.ChatMessages.Blacklisted);
+        music.ChatMessages.Skipped = ReadMusicMessage(_musicSkippedMessageBox, music.ChatMessages.Skipped);
+        music.ChatMessages.ChatCommandQueued = ReadMusicMessage(_musicCommandQueuedMessageBox, music.ChatMessages.ChatCommandQueued);
+        music.ChatMessages.ChatCommandPlaying = ReadMusicMessage(_musicCommandPlayingMessageBox, music.ChatMessages.ChatCommandPlaying);
         var commands = music.ModeratorCommands;
         commands.SongEnabled = _songCommandCheck.Checked;
         commands.SkipEnabled = _skipCommandCheck.Checked;
@@ -598,6 +626,11 @@ public sealed partial class MainForm
 
         var expectedMessages = expected.ChatMessages;
         var actualMessages = actual.ChatMessages;
+        if (expectedMessages.ChatCommandQueued != actualMessages.ChatCommandQueued ||
+            expectedMessages.ChatCommandPlaying != actualMessages.ChatCommandPlaying)
+            throw new InvalidOperationException("Die Chat-Command-Musikwunschtexte wurden nicht korrekt gespeichert.");
+        if (expectedMessages.Skipped != actualMessages.Skipped)
+            throw new InvalidOperationException("Der Skip-Chattext wurde nicht korrekt gespeichert.");
         var expectedCommands = expected.ModeratorCommands;
         var actualCommands = actual.ModeratorCommands;
 
@@ -655,6 +688,9 @@ public sealed partial class MainForm
     private static void ApplyMusicMessageDefaults(MusicRequestChatMessages messages)
     {
         var defaults = new MusicRequestChatMessages();
+        messages.ChatCommandQueued = string.IsNullOrWhiteSpace(messages.ChatCommandQueued) ? defaults.ChatCommandQueued : messages.ChatCommandQueued.Trim();
+        messages.ChatCommandPlaying = string.IsNullOrWhiteSpace(messages.ChatCommandPlaying) ? defaults.ChatCommandPlaying : messages.ChatCommandPlaying.Trim();
+        messages.Skipped = string.IsNullOrWhiteSpace(messages.Skipped) ? defaults.Skipped : messages.Skipped.Trim();
         messages.Queued = string.IsNullOrWhiteSpace(messages.Queued) ? defaults.Queued : messages.Queued.Trim();
         messages.Playing = string.IsNullOrWhiteSpace(messages.Playing) ? defaults.Playing : messages.Playing.Trim();
         messages.NotFound = string.IsNullOrWhiteSpace(messages.NotFound) ? defaults.NotFound : messages.NotFound.Trim();
@@ -964,16 +1000,36 @@ public sealed partial class MainForm
 
     private async Task SkipSpotifyAsync()
     {
+        if (_musicSkipBusy) return;
+        _musicSkipBusy = true;
+        _skipMusicButton.Enabled = false;
+        _skipCurrentMusicButton.Enabled = false;
         try
         {
-            if (_spotify is not null)
-                await _spotify.SkipAsync(
-                    _shutdown?.Token ?? CancellationToken.None);
+            if (_spotify is null)
+            {
+                MessageBox.Show(this, "Bitte zuerst Spotify im Reiter Verbindung verbinden.",
+                    "Song überspringen", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (_musicRequests is not null)
+                await _musicRequests.SkipCurrentSongAsync("Streamer", _shutdown?.Token ?? CancellationToken.None);
+            else
+                await _spotify.SkipAsync(_shutdown?.Token ?? CancellationToken.None);
+            AppendLog("Aktueller Spotify-Song wurde über das Plugin übersprungen.");
         }
         catch (Exception exception)
         {
             AppendLog("Spotify-Song konnte nicht übersprungen werden: " +
                       exception.Message);
+            MessageBox.Show(this, exception.Message, "Song konnte nicht übersprungen werden",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        finally
+        {
+            _musicSkipBusy = false;
+            _skipMusicButton.Enabled = true;
+            _skipCurrentMusicButton.Enabled = true;
         }
     }
 

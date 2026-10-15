@@ -67,10 +67,12 @@ public sealed record MusicRequestRedemption(
     string DisplayName,
     string UserInput,
     DateTimeOffset RedeemedAt,
-    string Status);
+    string Status,
+    string Role = "");
 
 public sealed class MusicRequestEntry
 {
+    public string Role { get; set; } = "Unbekannt";
     public string RedemptionId { get; set; } = "";
     public string RewardId { get; set; } = "";
     public string RewardName { get; set; } = "";

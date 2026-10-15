@@ -190,11 +190,18 @@ public sealed class MusicRequestService : IDisposable
             UserId = redemption.UserId,
             UserLogin = redemption.UserLogin,
             DisplayName = redemption.DisplayName,
+            Role = string.IsNullOrEmpty(redemption.Role) ? "Unbekannt" : redemption.Role,
             UserInput = redemption.UserInput.Trim(),
             RedeemedAt = redemption.RedeemedAt,
             PlaybackMode = _config.PlaybackMode,
             Status = MusicRequestStatus.Checking
         };
+        if (string.IsNullOrEmpty(redemption.Role))
+        {
+            try { entry.Role = await _twitch.GetMusicRequesterRoleAsync(_broadcasterId, entry.UserId, cancellationToken); }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception exception) { Console.WriteLine("Musikwunsch-Rolle nicht abrufbar: " + exception.Message); }
+        }
         await SaveAndNotifyAsync(entry, false, cancellationToken);
         Console.WriteLine("Musikwunsch wird verarbeitet: " + entry.UserInput + ".");
 
@@ -306,14 +313,16 @@ public sealed class MusicRequestService : IDisposable
             await _spotify.AddToQueueAsync(track, device.Id, cancellationToken);
             Console.WriteLine("Track wurde zur Spotify-Warteschlange hinzugefügt.");
             return Accept(entry, track, Template(
-                _config.ChatMessages.Queued, entry, track,
+                entry.RedemptionId.StartsWith("chat:", StringComparison.Ordinal)
+                    ? _config.ChatMessages.ChatCommandQueued : _config.ChatMessages.Queued, entry, track,
                 queuePosition: (open.Length + 1).ToString()));
         }
 
         await _spotify.PlayAsync(track, device.Id, cancellationToken);
         Console.WriteLine("Spotify-Track wird sofort abgespielt.");
         return Accept(entry, track, Template(
-            _config.ChatMessages.Playing, entry, track));
+            entry.RedemptionId.StartsWith("chat:", StringComparison.Ordinal)
+                ? _config.ChatMessages.ChatCommandPlaying : _config.ChatMessages.Playing, entry, track));
     }
 
     private MusicRequestResult CreateValidationFailure(
@@ -346,13 +355,14 @@ public sealed class MusicRequestService : IDisposable
         var retry = new MusicRequestRedemption(
             entry.RedemptionId, entry.RewardId, entry.RewardName,
             entry.UserId, entry.UserLogin, entry.DisplayName,
-            entry.UserInput, entry.RedeemedAt, "unfulfilled");
+            entry.UserInput, entry.RedeemedAt, "unfulfilled", entry.Role);
         await ProcessMusicRequestAsync(retry, cancellationToken);
     }
 
     public async Task ProcessChatMessageAsync(
         ChatMessage message, CancellationToken cancellationToken)
     {
+        if (!CanUseMusicCommands(message, _broadcasterId)) return;
         try
         {
             if (await TryProcessSongRequestCommandAsync(
@@ -371,6 +381,10 @@ public sealed class MusicRequestService : IDisposable
     public Task ProcessModeratorCommandAsync(
         ChatMessage message, CancellationToken cancellationToken) =>
         ProcessChatMessageAsync(message, cancellationToken);
+
+    public static bool CanUseMusicCommands(ChatMessage message, string broadcasterId) =>
+        message.IsBroadcaster || message.IsModerator ||
+        (!string.IsNullOrEmpty(broadcasterId) && message.UserId == broadcasterId);
 
     private async Task<bool> TryProcessSongRequestCommandAsync(
         ChatMessage message, CancellationToken cancellationToken)
@@ -404,7 +418,7 @@ public sealed class MusicRequestService : IDisposable
             message.UserName,
             parts[1],
             message.ReceivedAt,
-            "unfulfilled");
+            "unfulfilled", GetMusicChatRole(message));
         var accepted = await EnqueueAsync(redemption, cancellationToken);
         if (!accepted)
         {
@@ -437,7 +451,7 @@ public sealed class MusicRequestService : IDisposable
         }
         else if (commands.SkipEnabled && command == commands.Skip)
         {
-            await _spotify.SkipAsync(cancellationToken);
+            await SkipCurrentSongAsync(message.UserName, cancellationToken, GetMusicChatRole(message));
             Console.WriteLine($"Spotify-Track wurde von {message.UserName} übersprungen.");
         }
         else if (commands.PauseEnabled && command == commands.Pause)
@@ -466,6 +480,20 @@ public sealed class MusicRequestService : IDisposable
                     $"Musikwunsch wurde von {message.UserName} entfernt.");
             }
         }
+    }
+
+    public static string GetMusicChatRole(ChatMessage message) =>
+        message.IsBroadcaster ? "Broadcaster" : message.IsModerator ? "Moderator" :
+        message.IsVip ? "VIP" : "Zuschauer";
+
+    public async Task SkipCurrentSongAsync(string moderator, CancellationToken cancellationToken, string role = "Broadcaster")
+    {
+        await _spotify.SkipAsync(cancellationToken);
+        var text = (_config.ChatMessages.Skipped ?? "")
+            .Replace("{role}", role, StringComparison.OrdinalIgnoreCase)
+            .Replace("{moderator}", moderator, StringComparison.OrdinalIgnoreCase)
+            .Replace("{user}", moderator, StringComparison.OrdinalIgnoreCase);
+        await SendChatOnceAsync(text, cancellationToken);
     }
 
     public Task<IReadOnlyList<MusicRequestEntry>> GetEntriesAsync(
@@ -540,7 +568,8 @@ public sealed class MusicRequestService : IDisposable
     private string Template(
         string template, MusicRequestEntry entry, SpotifyTrack? track,
         string remainingCooldown = "", string queuePosition = "") =>
-        template.Replace("{user}", entry.DisplayName, StringComparison.Ordinal)
+        template.Replace("{role}", entry.Role, StringComparison.OrdinalIgnoreCase)
+            .Replace("{user}", entry.DisplayName, StringComparison.Ordinal)
             .Replace("{track}", track?.Name ?? "", StringComparison.Ordinal)
             .Replace("{artist}", track?.Artist ?? "", StringComparison.Ordinal)
             .Replace("{duration}", track is null ? "" :

@@ -380,6 +380,25 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
     }
 
 
+    public async Task<string> GetMusicRequesterRoleAsync(string broadcasterId, string userId,
+        CancellationToken cancellationToken)
+    {
+        if (broadcasterId == userId) return "Broadcaster";
+        foreach (var (endpoint, role) in new[]
+        {
+            ("moderation/moderators", "Moderator"), ("channels/vips", "VIP")
+        })
+        {
+            using var response = await _http.GetAsync(
+                $"https://api.twitch.tv/helix/{endpoint}?broadcaster_id={Uri.EscapeDataString(broadcasterId)}&user_id={Uri.EscapeDataString(userId)}",
+                cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            if (json.RootElement.GetProperty("data").GetArrayLength() > 0) return role;
+        }
+        return "Zuschauer";
+    }
+
     public async Task SendChatAnnouncementAsync(string broadcasterId, string moderatorId,
         string message, string color, CancellationToken cancellationToken)
     {

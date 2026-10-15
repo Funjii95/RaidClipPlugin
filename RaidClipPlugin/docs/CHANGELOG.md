@@ -1,3 +1,16 @@
+## 2.0.24
+
+- Alle Musikwunsch-Chatbefehle einschließlich !sr, !songrequest und Aliasen sind auf Moderatoren und Broadcaster begrenzt. Niedrigere Rollen in der Command-Übersicht können diese Begrenzung nicht aufheben. Kanalpunkte-Belohnungen bleiben unverändert verfügbar.
+
+- Wünsche über !sr und andere konfigurierte Musikwunsch-Chatbefehle besitzen eigene Erfolgstexte für Warteschlange und sofortige Wiedergabe, getrennt von Kanalpunkte-Belohnungen.
+
+- Musikwunsch-Chattexte und Skip-Nachrichten unterstützen {role}: Broadcaster, Moderator, VIP oder Zuschauer. Rollen von Kanalpunkte-Einlösern werden über Twitch abgefragt; dafür ist eine erneute Autorisierung nötig. Fehlgeschlagene Rollenabfragen erscheinen als „Unbekannt“.
+
+- Unter Musikwünsche → Chattexte ist die Nachricht „Song übersprungen“ mit dem Platzhalter {moderator} einstellbar; sie wird nach erfolgreichem Skip per Moderator-Command oder Plugin-Button gesendet, wenn das Musikwunsch-Modul läuft.
+
+- Ein dauerhaft sichtbarer Button „Aktuellen Song überspringen“ im Kopfbereich von Musikwünsche überspringt den laufenden Spotify-Song unabhängig vom geöffneten Unterreiter.
+- Die Skip-Aktion verhindert Mehrfachklicks und zeigt fehlende Spotify-Verbindungen sowie Fehler direkt an.
+
 ## 2.0.23
 
 - Rechtsklick auf einen Command in der Übersicht öffnet ein Menü mit „Modul“ zum passenden Einstellungsbereich und „Deaktivieren“ zum gespeicherten Abschalten des Commands und seines zugehörigen Moduls.
