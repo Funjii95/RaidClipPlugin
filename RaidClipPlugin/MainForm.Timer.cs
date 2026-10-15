@@ -106,7 +106,8 @@ public sealed partial class MainForm
         {
             Text = "Jeder Eintrag besitzt ein eigenes Intervall. Mindestzuschauer 0 " +
                    "bedeutet: unabhängig von der aktuellen Zuschauerzahl posten. " +
-                   "Der erste Versand erfolgt nach Ablauf des eingestellten Intervalls.",
+                   "Der erste Versand erfolgt nach Ablauf des eingestellten Intervalls. " +
+                   "Farben senden als Ankündigung: Bot benötigt Moderatorrechte und neue Twitch-Autorisierung.",
             AutoSize = true,
             MaximumSize = new Size(1050, 0),
             ForeColor = MutedTextColor,
@@ -205,6 +206,10 @@ public sealed partial class MainForm
             { Name = "Interval", HeaderText = "Intervall (Min.)", Width = 130 });
         _timerGrid.Columns.Add(new DataGridViewTextBoxColumn
             { Name = "MinimumViewers", HeaderText = "Ab Zuschauer", Width = 125 });
+        var color = new DataGridViewComboBoxColumn
+            { Name = "AnnouncementColor", HeaderText = "Nachrichtenfarbe", Width = 145, FlatStyle = FlatStyle.Flat };
+        color.Items.AddRange(ChatAnnouncement.Labels.Cast<object>().ToArray());
+        _timerGrid.Columns.Add(color);
     }
 
     private void InitializeTimerEvents()
@@ -231,7 +236,8 @@ public sealed partial class MainForm
             entry.Enabled,
             entry.Message,
             entry.IntervalMinutes,
-            entry.MinimumViewers);
+            entry.MinimumViewers,
+            ChatAnnouncement.LabelFromColor(entry.AnnouncementColor));
         _timerGrid.Rows[index].Selected = true;
     }
 
@@ -262,6 +268,7 @@ public sealed partial class MainForm
             {
                 Enabled = row.Cells["Enabled"].Value is true,
                 Message = row.Cells["Message"].Value?.ToString()?.Trim() ?? "",
+                AnnouncementColor = ChatAnnouncement.ColorFromLabel(row.Cells["AnnouncementColor"].Value?.ToString()),
                 IntervalMinutes = ParseTimerNumber(row, "Interval"),
                 MinimumViewers = ParseTimerNumber(row, "MinimumViewers")
             })

@@ -380,6 +380,19 @@ public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawa
     }
 
 
+    public async Task SendChatAnnouncementAsync(string broadcasterId, string moderatorId,
+        string message, string color, CancellationToken cancellationToken)
+    {
+        ChatAnnouncement.Validate(color);
+        using var response = await _http.PostAsJsonAsync(
+            $"https://api.twitch.tv/helix/chat/announcements?broadcaster_id={Uri.EscapeDataString(broadcasterId)}&moderator_id={Uri.EscapeDataString(moderatorId)}",
+            new { message = message.Length > 500 ? message[..500] : message, color }, cancellationToken);
+        if (response.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+            throw new InvalidOperationException("Ankündigung nicht erlaubt: Twitch unter Chat-Einstellungen → Diagnose neu autorisieren und dem Bot Moderatorrechte geben.");
+        await EnsureSuccessAsync(response, cancellationToken);
+        ChatMessageSent?.Invoke(DateTimeOffset.Now);
+    }
+
     public async Task SendChatMessageAsync(
         string broadcasterId,
         string senderId,

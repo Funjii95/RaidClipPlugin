@@ -4517,8 +4517,12 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
     {
         if (_playback is null || _broadcaster is null || _shutdown is null)
         {
+            MessageBox.Show(this, "Bitte zuerst die Module starten, um einen Clip abzuspielen.",
+                "Clip abspielen", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
+
+        if (!_testChannelBox.Enabled) return;
 
         _testButton.Enabled = false;
         _testChannelBox.Enabled = false;
@@ -4860,6 +4864,15 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             Environment.NewLine + Environment.NewLine,
             new[]
             {
+                """
+Version 2.0.23
+- Rechtsklick in der Command-Übersicht: Modul öffnen oder Command samt zugehörigem Modul deaktivieren und speichern.
+- Nachrichtenfarbe pro Custom Command und Timer: normaler Chat oder Ankündigung in Blau, Grün, Orange, Lila oder Twitch-Kanalfarbe.
+- Ankündigungen benötigen Moderatorrechte und eine erneute Twitch-Autorisierung.
+- Clip-Kanalfeld im Dashboard wieder verfügbar: leer = eigener Kanal; alternativ einen anderen Kanal eintragen.
+- Clip-Wiedergabe direkt aus dem Dashboard, mit Hinweis bei gestoppten Modulen.
+- Lokaler Player bleibt bei wenig Platz durch einen zweizeiligen Titel vollständig lesbar.
+""",
                 """
 Version 2.0.17
 - Durch den Explicit-Filter abgelehnte Twitch-Musikwünsche werden automatisch storniert.

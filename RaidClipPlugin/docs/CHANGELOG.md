@@ -1,3 +1,13 @@
+## 2.0.23
+
+- Rechtsklick auf einen Command in der Übersicht öffnet ein Menü mit „Modul“ zum passenden Einstellungsbereich und „Deaktivieren“ zum gespeicherten Abschalten des Commands und seines zugehörigen Moduls.
+
+- Custom Commands und Chat-Timer bieten pro Eintrag die Auswahl zwischen normalem Chat und Ankündigungen in Blau, Grün, Orange, Lila oder der Twitch-Kanalfarbe.
+- Farbige Ankündigungen benötigen Moderatorrechte und eine erneute Twitch-Autorisierung für die zusätzliche Berechtigung.
+- Die Dashboard-Schnellaktionen enthalten wieder ein Clip-Kanalfeld: leer für den eigenen Kanal oder ein anderer Kanalname zum Testen.
+- „Clip abspielen“ ruft die Wiedergabe direkt auf und weist bei gestoppten Modulen darauf hin, diese zuerst zu starten.
+- „Lokaler Player“ wird bei wenig Platz auf zwei Zeilen angezeigt, damit die Beschriftung vollständig lesbar bleibt.
+
 ## 2.0.22
 
 - Das Dashboard bietet jetzt direkte Aktionen zum Starten, Stoppen und vollständigen Neustarten aller Module.
