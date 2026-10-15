@@ -2,7 +2,7 @@ using RaidClipPlugin.Config;
 
 namespace RaidClipPlugin.Services;
 
-public interface IChatTimerClient
+public interface IChatTimerClient : IChatAnnouncementClient
 {
     Task<int> GetViewerCountAsync(
         string broadcasterId,
@@ -75,7 +75,10 @@ public sealed class ChatTimerService
                     continue;
                 }
 
-                await _client.SendChatMessageAsync(
+                if (!string.IsNullOrEmpty(entry.AnnouncementColor))
+                    await _client.SendChatAnnouncementAsync(_broadcasterId, _senderId,
+                        entry.Message.Trim(), entry.AnnouncementColor, cancellationToken);
+                else await _client.SendChatMessageAsync(
                     _broadcasterId,
                     _senderId,
                     entry.Message.Trim(),

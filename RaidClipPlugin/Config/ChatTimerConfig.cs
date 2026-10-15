@@ -8,6 +8,7 @@ public sealed class ChatTimerConfig
 
 public sealed class ChatTimerEntryConfig
 {
+    public string AnnouncementColor { get; set; } = "";
     public bool Enabled { get; set; } = true;
     public string Message { get; set; } = "";
     public int IntervalMinutes { get; set; } = 15;

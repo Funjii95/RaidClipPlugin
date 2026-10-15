@@ -59,7 +59,7 @@ public sealed partial class MainForm
             MaximumSize = new Size(1100, 24),
             ForeColor = MutedTextColor,
             Text = "Eigene Chatbefehle mit frei wählbarer Rolle. Platzhalter: " +
-                   "{user}, {login}, {args}, {target}, {command}. Das !raid-Beispiel ist zunächst deaktiviert."
+                   "{user}, {login}, {args}, {target}, {command}. Farben senden als Ankündigung: Bot benötigt Moderatorrechte und neue Twitch-Autorisierung."
         };
         var actions = new FlowLayoutPanel
         {
@@ -116,6 +116,10 @@ public sealed partial class MainForm
             { Name = "UserCooldown", HeaderText = "Nutzer-CD", Width = 90 });
         _customCommandsGrid.Columns.Add(new DataGridViewTextBoxColumn
             { Name = "GlobalCooldown", HeaderText = "Global-CD", Width = 90 });
+        var color = new DataGridViewComboBoxColumn
+            { Name = "AnnouncementColor", HeaderText = "Nachrichtenfarbe", Width = 145, FlatStyle = FlatStyle.Flat };
+        color.Items.AddRange(ChatAnnouncement.Labels.Cast<object>().ToArray());
+        _customCommandsGrid.Columns.Add(color);
     }
 
 
@@ -138,6 +142,7 @@ public sealed partial class MainForm
 
     private void InitializeCustomCommandEvents()
     {
+        InitializeCommandContextMenu();
         InitializeCustomCommandImportEvents();
         _addCustomCommandButton.Click += (_, _) => AddCustomCommandRow();
         _removeCustomCommandButton.Click += (_, _) =>
@@ -179,6 +184,102 @@ public sealed partial class MainForm
         };
     }
 
+    private void InitializeCommandContextMenu()
+    {
+        var menu = new ContextMenuStrip();
+        menu.Items.Add("Modul", null, (_, _) =>
+        {
+            if (_commandsGrid.SelectedRows.Count == 1 &&
+                _commandsGrid.SelectedRows[0].Tag is ChatCommandDefinition command)
+                OpenCommandModule(command);
+        });
+        menu.Items.Add("Deaktivieren", null, (_, _) => DisableSelectedCommandModule());
+        _commandsGrid.CellMouseDown += (_, e) =>
+        {
+            if (e.Button != MouseButtons.Right || e.RowIndex < 0) return;
+            _commandsGrid.ClearSelection();
+            _commandsGrid.Rows[e.RowIndex].Selected = true;
+        };
+        menu.Opening += (_, e) => e.Cancel = _commandsGrid.SelectedRows.Count != 1;
+        _commandsGrid.ContextMenuStrip = menu;
+    }
+
+    private void OpenCommandModule(ChatCommandDefinition command)
+    {
+        var section = command.ModuleId switch
+        {
+            "points" or "casino" or "heist" or "duel" => "minigame",
+            "clips" or "discord" => "clips",
+            "moderation" => "chat",
+            "giveaway" => "giveaways",
+            "music" => "music",
+            _ => "commands"
+        };
+        ShowSection(section);
+        var page = section switch
+        {
+            "minigame" => _minigamePage,
+            "clips" => _clipsHubPage,
+            "commands" => _commandsPage,
+            _ => null
+        };
+        var tab = command.ModuleId switch
+        {
+            "heist" => "Heist", "duel" => "Duel", "casino" => "Casino-Spiele",
+            "points" when command.CommandId == "points.daily" => "Daily",
+            "points" => "Punkte & Währung", "custom" => "Custom Commands",
+            "clips" or "discord" => "Clips", _ => "Übersicht & Rechte"
+        };
+        if (page is not null) SelectCommandModuleTab(page, tab);
+    }
+
+    private static void SelectCommandModuleTab(Control root, string title)
+    {
+        foreach (Control child in root.Controls)
+        {
+            if (child is TabControl tabs)
+                foreach (TabPage page in tabs.TabPages)
+                    if (page.Text == title) { tabs.SelectedTab = page; return; }
+            SelectCommandModuleTab(child, title);
+        }
+    }
+
+    private void DisableSelectedCommandModule()
+    {
+        if (_settingsSaveBusy || _commandsGrid.SelectedRows.Count != 1 ||
+            _commandsGrid.SelectedRows[0].Tag is not ChatCommandDefinition command) return;
+        try
+        {
+            _commandsGrid.EndEdit();
+            var config = ReadSettingsFromControls();
+            config.Commands.CommandEnabledOverrides[command.CommandId] = false;
+            switch (command.ModuleId)
+            {
+                case "points": config.Minigame.PointsEnabled = false; break;
+                case "casino": config.Minigame.Enabled = false; break;
+                case "heist": config.Heist.Enabled = false; break;
+                case "duel": config.Duel.Enabled = false; break;
+                case "clips": config.ClipCommand.Enabled = false; break;
+                case "discord": config.DiscordClips.InviteCommandEnabled = false; break;
+                case "moderation": config.Moderation.Enabled = false; break;
+                case "music": config.MusicRequests.Enabled = false; break;
+                case "giveaway": config.Giveaways.Enabled = false; break;
+                case "custom": config.Commands.CustomCommandsEnabled = false; break;
+                case "commands": config.Commands.Enabled = false; break;
+                default: throw new InvalidOperationException("Unbekanntes Command-Modul.");
+            }
+            _configurationService.SaveGuiSettings(config);
+            ApplyRuntimeSettings(config);
+            LoadSettingsIntoControls();
+            AppendLog($"Command {command.CommandText} und Modul {command.ModuleId} deaktiviert.");
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(this, "Deaktivieren fehlgeschlagen: " + exception.Message,
+                "Commands", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
 
     private void AddCustomCommandRow(CustomChatCommandConfig? item = null)
     {
@@ -191,7 +292,8 @@ public sealed partial class MainForm
         var index = _customCommandsGrid.Rows.Add(item.Id, item.Enabled,
             item.Command, string.Join(", ", item.Aliases), item.Response,
             RoleLabel(CommandRegistry.ParseRole(item.RequiredRole)),
-            item.UserCooldownSeconds, item.GlobalCooldownSeconds);
+            item.UserCooldownSeconds, item.GlobalCooldownSeconds,
+            ChatAnnouncement.LabelFromColor(item.AnnouncementColor));
         _customCommandsGrid.Rows[index].Selected = true;
     }
 
@@ -224,6 +326,7 @@ public sealed partial class MainForm
                 Command = CellText(row, "Command"),
                 Aliases = SplitCommandValues(CellText(row, "Aliases")),
                 Response = CellText(row, "Response"),
+                AnnouncementColor = ChatAnnouncement.ColorFromLabel(CellText(row, "AnnouncementColor")),
                 RequiredRole = ParseRoleLabel(CellText(row, "Role")).ToString(),
                 UserCooldownSeconds = ParseCooldown(row, "UserCooldown"),
                 GlobalCooldownSeconds = ParseCooldown(row, "GlobalCooldown")

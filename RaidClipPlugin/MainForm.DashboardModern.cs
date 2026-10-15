@@ -138,7 +138,19 @@ public sealed partial class MainForm
         heading.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 62));
         heading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         heading.Controls.Add(new DashboardIconBadge { IconKind = service, AccentColor = accent, Dock = DockStyle.Fill, Margin = new Padding(2, 3, 8, 3) }, 0, 0);
-        heading.Controls.Add(new Label { Text = service == "Player" ? "Lokaler Player" : service == "OBS" ? "OBS Studio" : service, Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI", 10.5F), ForeColor = TextColor, BackColor = Color.Transparent, Tag = "DashboardTransparent" }, 1, 0);
+        var title = new Label { Text = service == "Player" ? "Lokaler Player" : service == "OBS" ? "OBS Studio" : service, Dock = DockStyle.Fill, AutoSize = false, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI", 10.5F), ForeColor = TextColor, BackColor = Color.Transparent, Margin = Padding.Empty, Tag = "DashboardTransparent" };
+        if (service == "Player")
+        {
+            // Use a deliberate two-line title when the available width cannot fit it.
+            title.SizeChanged += (_, _) =>
+            {
+                var requiredWidth = TextRenderer.MeasureText("Lokaler Player", title.Font).Width;
+                title.Text = title.ClientSize.Width < requiredWidth
+                    ? "Lokaler" + Environment.NewLine + "Player"
+                    : "Lokaler Player";
+            };
+        }
+        heading.Controls.Add(title, 1, 0);
         indicator.Dock = DockStyle.Fill;
         indicator.AutoSize = false;
         indicator.BorderStyle = BorderStyle.None;
@@ -158,12 +170,17 @@ public sealed partial class MainForm
 
     private Control CreateDashboardActionBar(Control actions)
     {
-        var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 4, 0, 0) };
+        var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 4, 0, 0) };
+        host.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         for (var i = 0; i < 4; i++) host.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
-        AddQuickAction(host, 0, "▣   Clip abspielen", () => _testButton.PerformClick());
-        AddQuickAction(host, 1, "◯   Chat testen", () => _ = SendChatDiagnosticTestAsync());
-        AddQuickAction(host, 2, "◷   Timer öffnen", () => ShowSection("timer"));
-        AddQuickAction(host, 3, "♜   Minigames", () => ShowSection("minigame"));
+        _testChannelBox.Dock = DockStyle.Fill;
+        _testChannelBox.Margin = new Padding(0, 3, 0, 3);
+        _testChannelBox.PlaceholderText = "Clip-Kanal (leer = eigener Kanal)";
+        host.Controls.Add(_testChannelBox, 0, 0);
+        AddQuickAction(host, 1, "▣   Clip abspielen", () => _ = PlayTestClipAsync());
+        AddQuickAction(host, 2, "◯   Chat testen", () => _ = SendChatDiagnosticTestAsync());
+        AddQuickAction(host, 3, "◷   Timer öffnen", () => ShowSection("timer"));
+        AddQuickAction(host, 4, "♜   Minigames", () => ShowSection("minigame"));
         return CreateDashboardSection("Schnellaktionen", host);
     }
 

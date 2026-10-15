@@ -170,9 +170,11 @@ public sealed class CustomCommandService
         if (string.IsNullOrWhiteSpace(response)) return true;
         try
         {
-            await _chat.SendChatMessageAsync(_broadcasterId, _senderId,
-                response.Length <= 480 ? response : response[..477] + "…",
-                cancellationToken);
+            var text = response.Length <= 480 ? response : response[..477] + "…";
+            if (!string.IsNullOrEmpty(command.AnnouncementColor))
+                await _chat.SendChatAnnouncementAsync(_broadcasterId, _senderId,
+                    text, command.AnnouncementColor, cancellationToken);
+            else await _chat.SendChatMessageAsync(_broadcasterId, _senderId, text, cancellationToken);
             Console.WriteLine($"Custom Command {commandText} für {message.UserName} beantwortet.");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }

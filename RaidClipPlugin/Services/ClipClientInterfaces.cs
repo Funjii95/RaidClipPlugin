@@ -46,7 +46,7 @@ public interface IDiscordClipClient
         CancellationToken cancellationToken);
 }
 
-public interface IClipChatClient
+public interface IClipChatClient : IChatAnnouncementClient
 {
     Task SendChatMessageAsync(
         string broadcasterId,
