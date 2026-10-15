@@ -19,6 +19,7 @@ public sealed class MusicRequestConfig
     public bool ActivateSelectedDevice { get; set; } = true;
     public int MaximumTrackDurationMinutes { get; set; } = 10;
     public bool AllowExplicitTracks { get; set; } = false;
+    public List<string> AllowedExplicitTrackIds { get; set; } = new();
     public int MaximumQueueLength { get; set; } = 25;
     public int UserCooldownMinutes { get; set; } = 5;
     public int MaximumRequestsPerUser { get; set; } = 2;

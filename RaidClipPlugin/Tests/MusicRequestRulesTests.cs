@@ -9,6 +9,20 @@ public sealed class MusicRequestRulesTests
 {
     private const string Id = "4iV5W9uYEdYUVa79Axb7Rh";
 
+    [Fact]
+    public void ExplicitExceptionAllowsOnlySelectedTrackAndKeepsBlacklist()
+    {
+        var config = new MusicRequestConfig { AllowExplicitTracks = false };
+        config.AllowedExplicitTrackIds.Add(Id);
+        Assert.Null(MusicRequestRules.ValidateTrack(config,
+            Track(explicitTrack: true), Array.Empty<string>()));
+        Assert.Equal("explicit", MusicRequestRules.ValidateTrack(config,
+            Track(explicitTrack: true) with { Id = "other" }, Array.Empty<string>()));
+        config.TrackBlacklist.Add(Id);
+        Assert.Equal("blacklist", MusicRequestRules.ValidateTrack(config,
+            Track(explicitTrack: true), Array.Empty<string>()));
+    }
+
     [Theory]
     [InlineData("https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh")]
     [InlineData("https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh?si=test")]
