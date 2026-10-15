@@ -25,7 +25,9 @@ public static class MusicRequestRules
         if (track.DurationMs > TimeSpan.FromMinutes(
                 config.MaximumTrackDurationMinutes).TotalMilliseconds)
             return "too-long";
-        if (track.Explicit && !config.AllowExplicitTracks) return "explicit";
+        if (track.Explicit && !config.AllowExplicitTracks &&
+            !(config.AllowedExplicitTrackIds ?? new()).Contains(track.Id, StringComparer.OrdinalIgnoreCase))
+            return "explicit";
         if (config.TrackBlacklist.Contains(track.Id,
                 StringComparer.OrdinalIgnoreCase) ||
             config.ArtistBlacklist.Any(artist =>

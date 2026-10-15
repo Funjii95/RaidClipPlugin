@@ -108,6 +108,10 @@ public sealed partial class MainForm
     private readonly Button _skipCurrentMusicButton =
         NewActionButton("⏭ Aktuellen Song überspringen");
     private bool _musicSkipBusy;
+    private readonly TextBox _explicitExceptionsBox = new()
+    {
+        Width = 520, Height = 100, Multiline = true, ScrollBars = ScrollBars.Vertical
+    };
     private readonly Button _retryMusicButton =
         NewActionButton("Erneut versuchen");
     private readonly Button _removeMusicEntryButton =
@@ -270,6 +274,13 @@ public sealed partial class MainForm
         filters.Controls.Add(CreateSettingEditor(
             "Offene Wünsche pro Nutzer", _maxRequestsPerUserControl));
         filters.Controls.Add(_allowExplicitCheck);
+        filters.Controls.Add(CreateSettingEditor(
+            "Explicit-Ausnahmeliste (Spotify-Track-ID pro Zeile)", _explicitExceptionsBox));
+        filters.Controls.Add(new Label
+        {
+            AutoSize = true, MaximumSize = new Size(650, 0), ForeColor = MutedTextColor,
+            Text = "Per Rechtsklick → Zukünftig erlauben freigegebene Songs werden hier dauerhaft gespeichert. Zum Widerrufen die Track-ID entfernen und Einstellungen speichern. Andere Filter gelten weiterhin."
+        });
         filters.Controls.Add(_allowDuplicatesCheck);
         filters.Controls.Add(_allowSpotifyLinksCheck);
         filters.Controls.Add(_allowTextSearchCheck);
@@ -386,6 +397,27 @@ public sealed partial class MainForm
 
     private void ConfigureMusicGrid()
     {
+        var menu = new ContextMenuStrip();
+        var replay = menu.Items.Add("Nochmal abspielen");
+        replay.Click += async (_, _) => await PlaySelectedMusicEntryAsync();
+        var allow = menu.Items.Add("Zukünftig erlauben");
+        allow.Click += (_, _) => AllowSelectedExplicitTrack();
+        _musicGrid.CellMouseDown += (_, e) =>
+        {
+            if (e.Button != MouseButtons.Right || e.RowIndex < 0) return;
+            _musicGrid.ClearSelection();
+            _musicGrid.Rows[e.RowIndex].Selected = true;
+        };
+        menu.Opening += (_, e) =>
+        {
+            var entry = SelectedMusicEntry();
+            e.Cancel = entry is null;
+            replay.Enabled = entry?.Track is not null && _spotify is not null;
+            allow.Visible = entry?.Track?.Explicit == true;
+            allow.Enabled = entry?.Track is { } track && !string.IsNullOrWhiteSpace(track.Id) &&
+                !ReadMusicList(_explicitExceptionsBox).Contains(track.Id, StringComparer.OrdinalIgnoreCase);
+        };
+        _musicGrid.ContextMenuStrip = menu;
         foreach (var (name, header, width) in new[]
         {
             ("Status", "Status", 110), ("Track", "Song", 220),
@@ -403,6 +435,7 @@ public sealed partial class MainForm
 
     private void LoadMusicRequestSettings(MusicRequestConfig config)
     {
+        SetMusicList(_explicitExceptionsBox, config.AllowedExplicitTrackIds ?? new());
         ApplyMusicMessageDefaults(config.ChatMessages);
         _musicEnabledCheck.Checked = config.Enabled;
         _spotifyClientIdBox.Text = config.SpotifyClientId;
@@ -496,6 +529,7 @@ public sealed partial class MainForm
     private void ReadMusicRequestSettings(AppConfig config)
     {
         var music = config.MusicRequests;
+        music.AllowedExplicitTrackIds = ReadMusicList(_explicitExceptionsBox);
         ApplyMusicMessageDefaults(music.ChatMessages);
         music.Enabled = _musicEnabledCheck.Checked;
         music.SpotifyClientId = _spotifyClientIdBox.Text.Trim();
@@ -654,6 +688,7 @@ public sealed partial class MainForm
             expected.AutoFulfillRedemptions != actual.AutoFulfillRedemptions ||
             expected.AutoCancelRejectedRedemptions != actual.AutoCancelRejectedRedemptions ||
             expected.AutoCancelFailedRedemptions != actual.AutoCancelFailedRedemptions ||
+            !SameList(expected.AllowedExplicitTrackIds, actual.AllowedExplicitTrackIds) ||
             !SameList(expected.UserBlacklist, actual.UserBlacklist) ||
             !SameList(expected.ArtistBlacklist, actual.ArtistBlacklist) ||
             !SameList(expected.TrackBlacklist, actual.TrackBlacklist) ||
@@ -994,6 +1029,30 @@ public sealed partial class MainForm
         catch (Exception exception)
         {
             AppendLog("Song konnte nicht abgespielt werden: " + exception.Message);
+        }
+    }
+
+    private void AllowSelectedExplicitTrack()
+    {
+        if (_settingsSaveBusy || SelectedMusicEntry()?.Track is not { Explicit: true } track ||
+            string.IsNullOrWhiteSpace(track.Id)) return;
+        var previous = _explicitExceptionsBox.Text;
+        try
+        {
+            var exceptions = ReadMusicList(_explicitExceptionsBox);
+            if (!exceptions.Contains(track.Id, StringComparer.OrdinalIgnoreCase))
+                exceptions.Add(track.Id);
+            SetMusicList(_explicitExceptionsBox, exceptions);
+            var config = ReadSettingsFromControls();
+            _configurationService.SaveGuiSettings(config);
+            ApplyRuntimeSettings(config);
+            AppendLog($"Explicit-Ausnahme gespeichert: {track.Name} von {track.Artist} ist zukünftig erlaubt.");
+        }
+        catch (Exception exception)
+        {
+            _explicitExceptionsBox.Text = previous;
+            MessageBox.Show(this, exception.Message, "Song-Freigabe fehlgeschlagen",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 

@@ -4865,6 +4865,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.25
+- Bearbeitbare Explicit-Ausnahmeliste unter Musikwünsche → Filter & Limits; Freigaben durch Entfernen der Track-ID widerrufen.
+- Rechtsklick in der Musikwunsch-Warteschlange: Nochmal abspielen und explizite Songs einzeln zukünftig erlauben.
+""",
+                """
 Version 2.0.24
 - Alle Musikwunsch-Chatbefehle und Aliase nur für Moderatoren/Broadcaster; Kanalpunkte-Belohnungen bleiben für Zuschauer nutzbar.
 - Getrennte Erfolgstexte für !sr/Chat-Musikwünsche und Kanalpunkte-Belohnungen, jeweils für Warteschlange und sofortige Wiedergabe.

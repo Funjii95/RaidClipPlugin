@@ -1,3 +1,10 @@
+## 2.0.25
+
+- Die gespeicherten Explicit-Freigaben sind als bearbeitbare Ausnahmeliste unter Musikwünsche → Filter & Limits sichtbar. Track-IDs können entfernt werden, um einzelne Freigaben zu widerrufen.
+
+- Rechtsklick unter Musikwünsche → Warteschlange: „Nochmal abspielen“ startet den ausgewählten Song erneut.
+- „Zukünftig erlauben“ speichert für explizite Songs eine Ausnahme anhand der Spotify-Track-ID. Der allgemeine Explicit-Filter und andere Sperren bleiben aktiv.
+
 ## 2.0.24
 
 - Alle Musikwunsch-Chatbefehle einschließlich !sr, !songrequest und Aliasen sind auf Moderatoren und Broadcaster begrenzt. Niedrigere Rollen in der Command-Übersicht können diese Begrenzung nicht aufheben. Kanalpunkte-Belohnungen bleiben unverändert verfügbar.
