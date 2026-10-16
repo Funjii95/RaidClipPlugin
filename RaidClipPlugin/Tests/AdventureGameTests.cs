@@ -8,17 +8,52 @@ namespace RaidClipPlugin.Tests;
 public sealed class AdventureGameTests
 {
     [Fact]
+    public async Task BossAttackCooldownReportsSecondsAcrossAliasesWithoutExtraDamage()
+    {
+        using var f = new Fixture(10);
+        f.Config.Adventures.Boss.AttackCooldownSeconds = 10;
+        f.Config.Adventures.Boss.AttackCooldownMessage = "@{user}: noch {remaining}s warten";
+        await f.Send("mod", "!boss", moderator:true);
+        await f.Send("a", "!attack");
+        Assert.Equal(50, f.Service.Status.BossHp);
+        f.Now = f.Now.AddSeconds(3);
+        await f.Send("a", "!joinboss");
+        Assert.Equal("@a: noch 7s warten", f.Messages.Last());
+        Assert.Equal(50, f.Service.Status.BossHp);
+        f.Now = f.Now.AddSeconds(7);
+        await f.Send("a", "!attack");
+        Assert.Equal(40, f.Service.Status.BossHp);
+    }
+    [Fact]
+    public async Task AttackAndLegacyAliasShareCooldownAndRegistryEntry()
+    {
+        using var f = new Fixture(30);
+        await f.Send("mod", "!boss", moderator:true);
+        await f.Send("a", "!attack");
+        Assert.Equal(30, f.Service.Status.BossHp);
+        await f.Send("a", "!joinboss");
+        Assert.Equal(30, f.Service.Status.BossHp);
+        f.Now = f.Now.AddSeconds(11);
+        await f.Send("a", "!joinboss");
+        Assert.False(f.Service.Status.BossActive);
+        var config = new AppConfig(); config.Minigame.Enabled = true;
+        var registry = new CommandRegistry(); registry.Update(config);
+        var entry = Assert.Single(registry.Commands.Where(c => c.CommandId == "adventure.boss.join"));
+        Assert.Equal("!attack", entry.CommandText);
+        Assert.Contains("!joinboss", entry.Aliases);
+    }
+    [Fact]
     public async Task FishingCooldownShowsRemainingTimeWithoutExtendingOrChargingAgain()
     {
         using var f = new Fixture(1); await f.Seed("a");
         f.Config.Adventures.Fishing.CooldownSeconds = 30;
-        await f.Send("a", "!fischen 100");
+        await f.Send("a", "!fish 100");
         f.Now = f.Now.AddSeconds(10);
-        await f.Send("a", "!fischen 100");
+        await f.Send("a", "!fish 100");
         Assert.Contains("20 Sekunden", f.Messages.Last());
         Assert.Equal(900, await f.Balance("a"));
         f.Now = f.Now.AddSeconds(20);
-        await f.Send("a", "!fischen 100");
+        await f.Send("a", "!fish 100");
         Assert.Equal(800, await f.Balance("a"));
         Assert.DoesNotContain("wieder verfügbar", f.Messages.Last());
     }
@@ -41,7 +76,7 @@ public sealed class AdventureGameTests
     public async Task CollectionAndBiggestFishPersistAcrossStoreReload()
     {
         using var f = new Fixture(100); await f.Seed("a");
-        await f.Send("a", "!fischen 100");
+        await f.Send("a", "!fish 100");
         var profile = await f.Points.GetProfileAsync("a", default);
         Assert.Equal(1, profile.Entry.FishCollection["Kraken"]);
         Assert.True(profile.Entry.BiggestFishGrams >= 5000);
@@ -60,7 +95,7 @@ public sealed class AdventureGameTests
     {
         using var f = new Fixture(100); await f.Seed("a");
         f.Config.DailyWinLimitEnabled = true; f.Config.DailyWinLimit = 1;
-        await f.Send("a", "!fischen 100");
+        await f.Send("a", "!fish 100");
         Assert.Empty((await f.Points.GetProfileAsync("a", default)).Entry.FishCollection);
     }
 
@@ -102,7 +137,7 @@ public sealed class AdventureGameTests
     {
         using var f = new Fixture(100); await f.Seed("a");
         f.Config.Adventures.Fishing.ResultMessage = "{USER}: {stake} -> {payout} / {balance}";
-        await f.Send("a", "!fischen 100");
+        await f.Send("a", "!fish 100");
         Assert.Equal("a: 100 -> 800 / 1700", Assert.Single(f.Messages));
         f.Config.Adventures.Boss.StartMessage = new string('x', 600);
         await f.Send("mod", "!boss", moderator:true);
@@ -126,7 +161,7 @@ public sealed class AdventureGameTests
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
             var html = await http.GetStringAsync(url);
-            Assert.Contains("!joinboss", html); Assert.Contains("background:transparent", html);
+            Assert.Contains("!attack", html); Assert.Contains("background:transparent", html);
             var json = await http.GetStringAsync(url + "state");
             var status = System.Text.Json.JsonSerializer.Deserialize<AdventureStatus>(json)!;
             Assert.True(status.BossActive); Assert.Equal(42, status.BossHp);
@@ -193,14 +228,14 @@ public sealed class AdventureGameTests
     }
 
     [Theory]
-    [InlineData("!fischen", 1, 900)]
-    [InlineData("!fischen", 80, 1000)]
-    [InlineData("!fischen", 97, 1100)]
-    [InlineData("!fischen", 100, 1700)]
-    [InlineData("!schatzsuche", 1, 900)]
-    [InlineData("!schatzsuche", 75, 1000)]
-    [InlineData("!schatzsuche", 95, 1100)]
-    [InlineData("!schatzsuche", 100, 1500)]
+    [InlineData("!fish", 1, 900)]
+    [InlineData("!fish", 80, 1000)]
+    [InlineData("!fish", 97, 1100)]
+    [InlineData("!fish", 100, 1700)]
+    [InlineData("!dive", 1, 900)]
+    [InlineData("!dive", 75, 1000)]
+    [InlineData("!dive", 95, 1100)]
+    [InlineData("!dive", 100, 1500)]
     public async Task SoloOutcomesAreAccountedExactlyOnce(string command, int roll, long expected)
     {
         using var f = new Fixture(roll);
@@ -213,11 +248,11 @@ public sealed class AdventureGameTests
     }
 
     [Theory]
-    [InlineData("!fischen -100")]
-    [InlineData("!fischen 0")]
-    [InlineData("!fischen 999999999999999999999")]
-    [InlineData("!schatzsuche 2000")]
-    [InlineData("!schatzsuche")]
+    [InlineData("!fish -100")]
+    [InlineData("!fish 0")]
+    [InlineData("!fish 999999999999999999999")]
+    [InlineData("!dive 2000")]
+    [InlineData("!dive")]
     public async Task InvalidOrUnaffordableStakesDoNotChangeBalance(string text)
     {
         using var f = new Fixture();
@@ -232,11 +267,11 @@ public sealed class AdventureGameTests
         using var f = new Fixture(1);
         await f.Seed("a", 5000);
         f.Config.Adventures.Fishing.MaximumBet = 200;
-        await f.Send("a", "!fischen all");
+        await f.Send("a", "!fish all");
         Assert.Equal(4800, await f.Balance("a"));
         f.Now = f.Now.AddSeconds(60);
         f.Config.DailyLossLimitEnabled = true; f.Config.DailyLossLimit = 200;
-        await f.Send("a", "!fischen 100");
+        await f.Send("a", "!fish 100");
         Assert.Equal(4800, await f.Balance("a"));
         Assert.Contains(f.Messages, s => s.Contains("Verlustlimit"));
     }
@@ -245,10 +280,10 @@ public sealed class AdventureGameTests
     public async Task DisabledDeniedAndBlacklistedUsersCannotPlay()
     {
         using var f = new Fixture(); await f.Seed("a");
-        await f.Send("a", "!fischen 100", CommandAuthorization.Denied);
-        f.Config.PointsBlacklist.Add("a"); await f.Send("a", "!fischen 100");
+        await f.Send("a", "!fish 100", CommandAuthorization.Denied);
+        f.Config.PointsBlacklist.Add("a"); await f.Send("a", "!fish 100");
         f.Config.PointsBlacklist.Clear(); f.Config.Adventures.Fishing.Enabled = false;
-        await f.Send("a", "!fischen 100");
+        await f.Send("a", "!fish 100");
         Assert.Empty(f.Messages); Assert.Equal(1000, await f.Balance("a"));
     }
 
@@ -327,7 +362,7 @@ public sealed class AdventureGameTests
         var config = new AppConfig(); config.Minigame.Enabled = true;
         var registry = new CommandRegistry(); registry.Update(config);
         Assert.Contains(registry.Commands, c => c.CommandText == "!joinrace" && c.Enabled);
-        Assert.Contains(registry.Commands, c => c.CommandText == "!joinboss" && c.Enabled);
+        Assert.Contains(registry.Commands, c => c.CommandText == "!attack" && c.Enabled);
         Assert.DoesNotContain(registry.FindCollisions(false), c => c.Command == "!join");
         config.Minigame.Adventures.Race.Enabled = false; registry.Update(config);
         Assert.DoesNotContain(registry.Commands, c => c.ModuleId == "race" && c.Enabled);

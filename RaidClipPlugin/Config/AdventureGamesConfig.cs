@@ -4,8 +4,8 @@ namespace RaidClipPlugin.Config;
 
 public sealed class AdventureGamesConfig
 {
-    public StakeAdventureConfig Fishing { get; set; } = new();
-    public StakeAdventureConfig Treasure { get; set; } = new();
+    public SoloAdventureConfig Fishing { get; set; } = new();
+    public DiveAdventureConfig Treasure { get; set; } = new();
     public RaceAdventureConfig Race { get; set; } = new();
     public BossAdventureConfig Boss { get; set; } = new();
 }
@@ -22,6 +22,32 @@ public class StakeAdventureConfig
     [DisplayName("Nutzer-Cooldown (Sekunden)")] public int CooldownSeconds { get; set; } = 30;
 }
 
+public class SoloAdventureConfig : StakeAdventureConfig
+{
+    [Category("Gewinnchancen"), DisplayName("Stufe 1 – Niete"), TypeConverter(typeof(ChanceOutOf100Converter))] public int LossChance { get; set; } = 50;
+    [Category("Gewinnchancen"), DisplayName("Stufe 2 – Kleiner Fund"), TypeConverter(typeof(ChanceOutOf100Converter))] public int SmallChance { get; set; } = 30;
+    [Category("Gewinnchancen"), DisplayName("Stufe 3 – Großer Fund"), TypeConverter(typeof(ChanceOutOf100Converter))] public int LargeChance { get; set; } = 17;
+    [Category("Gewinnchancen"), DisplayName("Stufe 4 – Seltener Fund"), TypeConverter(typeof(ChanceOutOf100Converter))] public int RareChance { get; set; } = 3;
+    [Category("Auszahlungen"), DisplayName("Stufe 1 – Faktor")] public decimal LossMultiplier { get; set; }
+    [Category("Auszahlungen"), DisplayName("Stufe 2 – Faktor")] public decimal SmallMultiplier { get; set; } = 1;
+    [Category("Auszahlungen"), DisplayName("Stufe 3 – Faktor")] public decimal LargeMultiplier { get; set; } = 2;
+    [Category("Auszahlungen"), DisplayName("Stufe 4 – Faktor")] public decimal RareMultiplier { get; set; } = 8;
+
+    public void Validate(string game)
+    {
+        var chances = new[] { LossChance, SmallChance, LargeChance, RareChance };
+        if (chances.Any(c => c is < 0 or > 100) || chances.Sum() != 100)
+            throw new InvalidOperationException($"{game}: Die vier Gewinnchancen müssen jeweils zwischen 0 und 100 liegen und zusammen genau 100 % ergeben.");
+        if (new[] { LossMultiplier, SmallMultiplier, LargeMultiplier, RareMultiplier }.Any(m => m < 0 || m > 100))
+            throw new InvalidOperationException($"{game}: Auszahlungsfaktoren müssen zwischen 0 und 100 liegen.");
+    }
+}
+
+public sealed class DiveAdventureConfig : SoloAdventureConfig
+{
+    public DiveAdventureConfig() { SmallChance = 25; LargeChance = 20; RareChance = 5; RareMultiplier = 6; }
+}
+
 public sealed class RaceAdventureConfig : StakeAdventureConfig
 {
     [DisplayName("Starttext")] public string StartMessage { get; set; } = "Rennen eröffnet! Mit !joinrace beitreten ({seconds} Sekunden). Einsatz: {stake} {currency} für alle; Abrechnung erst beim Rennstart. Mindestens 2 Teilnehmer.";
@@ -35,7 +61,9 @@ public sealed class RaceAdventureConfig : StakeAdventureConfig
 
 public sealed class BossAdventureConfig
 {
-    [DisplayName("Starttext")] public string StartMessage { get; set; } = "Ein Perlenwächter erscheint! {hp} LP, {seconds} Sekunden. Alle greifen mit !joinboss an! Belohnungstopf: {reward} {currency}.";
+    [DisplayName("Angriffs-Cooldown-Text"), Description("{user}, {remaining} (Sekunden)")]
+    public string AttackCooldownMessage { get; set; } = "@{user}, du kannst in {remaining} Sekunden wieder mit !attack angreifen.";
+    [DisplayName("Starttext")] public string StartMessage { get; set; } = "Ein Perlenwächter erscheint! {hp} LP, {seconds} Sekunden. Alle greifen mit !attack an! Belohnungstopf: {reward} {currency}.";
     [DisplayName("Angriffstext")] public string AttackMessage { get; set; } = "@{user} trifft für {damage}! Boss: {hp} LP.";
     [DisplayName("Siegtext")] public string WinMessage { get; set; } = "Boss besiegt! {count} Kämpfer teilen die Beute: je {reward} {currency} (Kontolimit gilt).";
     [DisplayName("Zeitablauftext")] public string TimeoutMessage { get; set; } = "Der Boss entkommt! Zeit abgelaufen – keine Belohnung, kein Einsatz verloren.";

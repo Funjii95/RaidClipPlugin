@@ -79,6 +79,8 @@ public sealed class ConfigurationService
     public void SaveGuiSettings(AppConfig config)
     {
         Normalize(config, synchronizeCommandOverrides: true);
+        config.Minigame.Adventures.Fishing.Validate("Fischen (!fish)");
+        config.Minigame.Adventures.Treasure.Validate("Schatzsuche (!dive)");
 
 
         var settings = new GuiSettings
@@ -782,6 +784,9 @@ public sealed class ConfigurationService
         config.Minigame.Adventures.Treasure ??= new();
         config.Minigame.Adventures.Race ??= new();
         config.Minigame.Adventures.Boss ??= new();
+        var defaultBossStart = new BossAdventureConfig().StartMessage;
+        if (config.Minigame.Adventures.Boss.StartMessage == defaultBossStart.Replace("!attack", "!joinboss"))
+            config.Minigame.Adventures.Boss.StartMessage = defaultBossStart;
         foreach (var adventure in new StakeAdventureConfig[] { config.Minigame.Adventures.Fishing,
                      config.Minigame.Adventures.Treasure, config.Minigame.Adventures.Race })
         {
@@ -1344,6 +1349,8 @@ public sealed class ConfigurationService
 
     public static void ValidateMinigameSettings(MinigameConfig config)
     {
+        config.Adventures.Fishing.Validate("Fischen (!fish)");
+        config.Adventures.Treasure.Validate("Schatzsuche (!dive)");
         if (!config.Enabled && !config.PointsEnabled)
         {
             return;

@@ -105,7 +105,7 @@ public sealed partial class MainForm
     {
         if (_fishingSettings.SelectedObject is not StakeAdventureConfig fishing) return;
         config.Adventures = JsonSerializer.Deserialize<AdventureGamesConfig>(JsonSerializer.Serialize(new AdventureGamesConfig {
-            Fishing = fishing, Treasure = (StakeAdventureConfig)_treasureSettings.SelectedObject,
+            Fishing = (SoloAdventureConfig)fishing, Treasure = (DiveAdventureConfig)_treasureSettings.SelectedObject,
             Race = (RaceAdventureConfig)_raceSettings.SelectedObject, Boss = (BossAdventureConfig)_bossSettings.SelectedObject }))!;
     }
 }
