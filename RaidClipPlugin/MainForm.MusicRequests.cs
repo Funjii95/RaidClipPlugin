@@ -1351,6 +1351,7 @@ public sealed partial class MainForm
 
     private void StopMusicRequests()
     {
+        _spotify?.CancelPendingReturn();
         _musicEventSub?.Dispose();
         _musicEventSub = null;
         _musicRequests?.Dispose();
