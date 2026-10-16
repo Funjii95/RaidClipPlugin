@@ -4865,6 +4865,13 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.31
+- !sr ohne Freigabe erklärt Zuschauern die Freischaltung über !srpermit und die Kanalpunkte-Alternative.
+- Erneut in die Warteschlange hinzufügen reiht den Song regulär ein, ohne Sofortstart. Nochmal abspielen und !srnow starten weiterhin sofort.
+- Spotify-Startbefehle werden mit bekannter Inhaltslänge übertragen. !srnow bestätigt Erfolg erst bei tatsächlich gemeldeter Wiedergabe.
+- !srnow für Mods/Broadcaster umgeht Duplikatsperre und Explicit-Filter. Bei !srpermit bleiben beide aktiv; Blacklists gelten weiterhin.
+""",
+                """
 Version 2.0.30
 - !srnow <Song oder Spotify-Link>: sofortige Wiedergabe für Mods/Broadcaster unabhängig vom allgemeinen Modus.
 - Warteschlange: Erneut hinzufügen startet den ausgewählten Song sofort und legt nach bestätigtem Start einen neuen Eintrag an.

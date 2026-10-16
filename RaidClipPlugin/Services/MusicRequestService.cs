@@ -209,7 +209,9 @@ public sealed class MusicRequestService : IDisposable
         MusicRequestResult result;
         try
         {
-            result = await ResolveAndPlayAsync(entry, cancellationToken);
+            result = await ResolveAndPlayAsync(entry, cancellationToken,
+                redemption.RedemptionId.StartsWith("chat:", StringComparison.Ordinal) &&
+                redemption.PlaybackModeOverride == MusicPlaybackMode.PlayImmediately);
         }
         catch (SpotifyApiException exception)
         {
@@ -243,7 +245,8 @@ public sealed class MusicRequestService : IDisposable
     }
 
     private async Task<MusicRequestResult> ResolveAndPlayAsync(
-        MusicRequestEntry entry, CancellationToken cancellationToken)
+        MusicRequestEntry entry, CancellationToken cancellationToken,
+        bool explicitImmediateRequest = false)
     {
         if (MusicRequestRules.IsUserBlacklisted(_config, entry.UserLogin))
             return Reject(entry, "user-blacklist", _config.ChatMessages.Blacklisted);
@@ -295,7 +298,7 @@ public sealed class MusicRequestService : IDisposable
         var validationReason = MusicRequestRules.ValidateTrack(
             _config, track, existing.Where(item =>
                     MusicRequestRules.IsDuplicateCandidate(item, DateTimeOffset.UtcNow))
-                .Select(item => item.Track!.Id));
+                .Select(item => item.Track!.Id), explicitImmediateRequest);
         if (validationReason is not null)
             return CreateValidationFailure(validationReason, entry, track);
 
@@ -318,6 +321,24 @@ public sealed class MusicRequestService : IDisposable
         }
 
         await _spotify.PlayAsync(track, device.Id, cancellationToken);
+        var confirmed = false;
+        for (var attempt = 0; attempt < 16; attempt++)
+        {
+            await Task.Delay(500, cancellationToken);
+            if (await _spotify.IsTrackPlayingAsync(track.Id, cancellationToken))
+            {
+                confirmed = true;
+                break;
+            }
+        }
+        if (!confirmed)
+        {
+            var diagnostic = await _spotify.GetPlaybackDiagnosticAsync(cancellationToken);
+            Console.WriteLine("Spotify-Sofortstart nicht bestätigt: " + diagnostic);
+            return Fail(entry, "playback-unconfirmed",
+                $"❌ @{entry.DisplayName}, Spotify hat den Start von „{track.Name}“ nicht bestätigt. Bitte die Wiedergabe auf dem Zielgerät prüfen.",
+                true, track);
+        }
         Console.WriteLine("Spotify-Track wird sofort abgespielt.");
         return Accept(entry, track, Template(
             entry.RedemptionId.StartsWith("chat:", StringComparison.Ordinal)
@@ -383,7 +404,16 @@ public sealed class MusicRequestService : IDisposable
                 await SendChatOnceAsync($"🎵 @{user.DisplayName}, du darfst jetzt 5 Minuten lang !sr für Musikwünsche verwenden.", cancellationToken);
                 return;
             }
-            if (!moderator && !_songRequestPermits.IsAllowed(message.UserId, DateTimeOffset.UtcNow)) return;
+            if (!moderator && !_songRequestPermits.IsAllowed(message.UserId, DateTimeOffset.UtcNow))
+            {
+                if (_config.ChatCommandEnabled && parts.Length > 0 &&
+                    (parts[0].Equals(_config.ChatCommand, StringComparison.OrdinalIgnoreCase) ||
+                     (_config.ChatCommandAliases ?? new List<string>()).Contains(parts[0], StringComparer.OrdinalIgnoreCase)))
+                    await SendChatOnceAsync(
+                        $"🎵 @{message.UserName}, Musikwünsche per Chat benötigen eine Freigabe. Ein Moderator kann dich mit !srpermit @{message.UserLogin} für 5 Minuten freischalten. Alternativ kannst du die Musikwunsch-Kanalpunktebelohnung nutzen.",
+                        cancellationToken);
+                return;
+            }
             if (await TryProcessSongRequestCommandAsync(
                     message, cancellationToken)) return;
             if (!moderator) return;

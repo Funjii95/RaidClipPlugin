@@ -1,3 +1,13 @@
+## 2.0.31
+
+- Zuschauer ohne aktive !srpermit-Freigabe erhalten bei !sr und dessen Aliasen einen Hinweis auf die fünfminütige Moderator-Freigabe und Musikwünsche über Kanalpunkte.
+
+- „Erneut in die Warteschlange hinzufügen“ nutzt nun wie reguläre Warteschlangen-Wünsche den Spotify-Einreihaufruf und erstellt einen neuen Eintrag „In Warteschlange“, ohne den laufenden Song zu unterbrechen. „Nochmal abspielen“ und !srnow bleiben Sofortstarts.
+
+- Spotify-Sofortstart und erneute Wiedergabe senden den JSON-Startbefehl gepuffert mit bekannter Inhaltslänge. !srnow meldet „Jetzt läuft“ erst nach bestätigter Wiedergabe; ausbleibende Bestätigungen werden als fehlgeschlagener Start protokolliert.
+
+- !srnow umgeht für Moderatoren und Broadcaster die Duplikatsperre und den Explicit-Filter. Blacklists und andere Grenzen bleiben aktiv. Normale !sr-Wünsche einschließlich !srpermit-Freigaben behalten den Explicit-Filter und die Duplikatprüfung.
+
 ## 2.0.30
 
 - !srnow <Songname oder Spotify-Link> startet Musikwünsche für Moderatoren und Broadcaster im Modus „Sofort“. Der globale Wiedergabemodus bleibt unverändert; !srpermit gewährt keinen Zugriff auf !srnow.

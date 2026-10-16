@@ -279,14 +279,20 @@ public sealed class SpotifyService : IDisposable
         var url = ApiUrl + "/me/player/play" +
                   (string.IsNullOrWhiteSpace(deviceId) ? "" :
                       "?device_id=" + Uri.EscapeDataString(deviceId));
-        using var response = await SendAsync(() => new HttpRequestMessage(
-            HttpMethod.Put, url)
-        {
-            Content = JsonContent.Create(new { uris = new[] { track.Uri }, position_ms = 0 })
-        }, cancellationToken);
+        using var response = await SendAsync(() => CreatePlaybackRequest(url, track.Uri), cancellationToken);
         await EnsureSuccessAsync(response, "Spotify-Wiedergabe", cancellationToken);
         Console.WriteLine($"Spotify-Startbefehl für Track {track.Id} angenommen (HTTP {(int)response.StatusCode}).");
     }
+
+    internal static HttpRequestMessage CreatePlaybackRequest(string url, string trackUri) =>
+        new(HttpMethod.Put, url)
+        {
+            // Buffer JSON so the request has a known Content-Length rather than a streamed body.
+            Content = new StringContent(JsonSerializer.Serialize(new
+            {
+                uris = new[] { trackUri }, position_ms = 0
+            }), Encoding.UTF8, "application/json")
+        };
 
     public async Task TransferPlaybackAsync(
         string deviceId, CancellationToken cancellationToken)
@@ -294,10 +300,10 @@ public sealed class SpotifyService : IDisposable
         using var response = await SendAsync(() => new HttpRequestMessage(
             HttpMethod.Put, ApiUrl + "/me/player")
         {
-            Content = JsonContent.Create(new
+            Content = new StringContent(JsonSerializer.Serialize(new
             {
                 device_ids = new[] { deviceId }, play = false
-            })
+            }), Encoding.UTF8, "application/json")
         }, cancellationToken);
         await EnsureSuccessAsync(response, "Spotify-Gerätewechsel", cancellationToken);
     }

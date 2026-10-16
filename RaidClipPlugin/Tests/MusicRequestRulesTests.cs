@@ -9,6 +9,20 @@ public sealed class MusicRequestRulesTests
 {
     private const string Id = "4iV5W9uYEdYUVa79Axb7Rh";
 
+    [Fact]
+    public void ModeratorImmediateRequestBypassesExplicitAndDuplicatesButKeepsBlacklist()
+    {
+        var config = new MusicRequestConfig { AllowDuplicateTracks = false };
+        Assert.Equal("duplicate", MusicRequestRules.ValidateTrack(config, Track(), new[] { Id }));
+        Assert.Null(MusicRequestRules.ValidateTrack(config, Track(), new[] { Id }, true));
+        Assert.Null(MusicRequestRules.ValidateTrack(config,
+            Track(explicitTrack: true), new[] { Id }, true));
+        Assert.Equal("explicit", MusicRequestRules.ValidateTrack(config,
+            Track(explicitTrack: true), Array.Empty<string>()));
+        config.TrackBlacklist.Add(Id);
+        Assert.Equal("blacklist", MusicRequestRules.ValidateTrack(config, Track(), new[] { Id }, true));
+    }
+
     [Theory]
     [InlineData(MusicRequestStatus.Rejected, false)]
     [InlineData(MusicRequestStatus.Failed, false)]
