@@ -1321,9 +1321,7 @@ public sealed class ConfigurationService
             config.Follow, config.Tip, config.Subscription,
             config.Cheer, config.AdBreak
         }.Where(rule => rule.Enabled).ToArray();
-        if (enabledRules.Length == 0)
-            throw new InvalidOperationException(
-                "Für Event-Trigger muss mindestens eine Antwort aktiviert sein.");
+        // No selected responses is a valid inactive state, not a global startup error.
         if (enabledRules.Any(rule => string.IsNullOrWhiteSpace(rule.Message) ||
                                      rule.Message.Length > 500))
             throw new InvalidOperationException(
@@ -1339,23 +1337,8 @@ public sealed class ConfigurationService
             !IsValidCustomEventSound(rule.Sound)))
             throw new InvalidOperationException(
                 "Eigene Event-Sounds müssen vorhandene WAV-Dateien sein.");
-        if (config.Tip.Enabled)
-        {
-            var providers = config.TipProviders;
-            if (!(providers.StreamElements.Enabled || providers.Streamlabs.Enabled ||
-                  providers.KoFi.Enabled || providers.TipeeeStream.Enabled))
-                throw new InvalidOperationException(
-                    "Für aktivierte Tips muss mindestens ein Tip-Anbieter aktiviert sein.");
-            if (providers.StreamElements.Enabled &&
-                (string.IsNullOrWhiteSpace(providers.StreamElements.ChannelId) ||
-                 string.IsNullOrWhiteSpace(providers.StreamElements.Token)))
-                throw new InvalidOperationException(
-                    "StreamElements benötigt Channel-ID und Token.");
-            if (providers.Streamlabs.Enabled &&
-                string.IsNullOrWhiteSpace(providers.Streamlabs.AccessToken))
-                throw new InvalidOperationException(
-                    "Streamlabs benötigt einen OAuth Access Token.");
-        }
+        // Optional provider readiness is checked by TipEventService. Missing credentials
+        // must not prevent saving corrections or starting unrelated modules.
     }
 
     private static bool IsValidCustomEventSound(string? sound)

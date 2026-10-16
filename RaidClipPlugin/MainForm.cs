@@ -4876,6 +4876,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.16 – Modulstart trotz fehlender Tip-Anbieter
+
+- Fehlende oder unvollständige Tip-Anbieter pausieren nur Tips statt alle Module. Status und Botlog zeigen Hinweise. Eigener Speichern-Knopf bei den Tip-Anbietern.
+
 2.1.15 – RPG-Überleben, Unterwassergegner und Hot Time
 
 - Unterwassergegner bei !dive: 15 % Begegnungschance (10–20 % einstellbar), stärkere Gegner und mehr EXP je Einsatzstufe. Sieg gewährt Bonusbeute aus dem besseren von zwei Lootwürfen. HP-Kampf ohne zusätzliche Perlenverluste; atomare Speicherung und eigene RPG-Einstellungen.

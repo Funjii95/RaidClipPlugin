@@ -1,3 +1,8 @@
+## 2.1.16 – Modulstart trotz fehlender Tip-Anbieter
+
+- Fehlende Tip-Anbieter oder Zugangsdaten pausieren nur den betroffenen Tip-Empfang und verhindern weder Modulstart noch Speichern. Warnhinweise erscheinen im Tip-Status und Botlog. Andere gültige Anbieter bleiben aktiv; gespeicherte Anbieter-Einstellungen werden nicht automatisch überschrieben.
+- Eigener Speichern-Knopf unter Timer → Event-Trigger → Tip-Anbieter.
+
 ## 2.1.15 – RPG-Überleben, Unterwassergegner und Hot Time
 
 - Kleine Unterwassergegner bei `!dive`: standardmäßig 15 % Begegnungschance (10–20 % einstellbar), fünf einsatzabhängige Gegnerstufen, automatische HP-Kämpfe und EXP bei Sieg. Gegnerbonusbeute verwendet den besseren von zwei normalen Lootwürfen mit unveränderten Legendary-Grenzen. Kampf, HP, EXP und Beute werden mit dem Tauchgang atomar gespeichert; keine zusätzlichen Perlenverluste. Einstellungen im RPG-Bereich unter „Unterwassergegner“. Details: `docs/RPG-UNDERWATER-ENEMIES.md`.
