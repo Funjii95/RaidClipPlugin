@@ -2,6 +2,7 @@ namespace RaidClipPlugin.Config;
 
 public sealed class GiveawayConfig
 {
+    public WheelConfig Wheel { get; set; } = new();
     public bool Enabled { get; set; } = false;
     public string Title { get; set; } = "Community Giveaway";
     public string Description { get; set; } = "";

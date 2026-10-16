@@ -200,6 +200,7 @@ public sealed partial class MainForm
         AddMinigameTab(settingsTabs, "Teilnahme", eligibility);
         AddMinigameTab(settingsTabs, "Admin", chance);
         AddMinigameTab(settingsTabs, "Chattexte", messages);
+        AddMinigameTab(settingsTabs, "Glücksrad", BuildWheelPanel());
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false, Padding = new Padding(4, 6, 4, 6) };
         foreach (var control in new Control[] { _giveawayStartButton, _giveawayPauseButton, _giveawayResumeButton,
@@ -248,6 +249,7 @@ public sealed partial class MainForm
 
     private void LoadGiveawaySettings(GiveawayConfig g)
     {
+        LoadWheelSettings(g.Wheel);
         _giveawayEnabledCheck.Checked=g.Enabled; _giveawayTitleBox.Text=g.Title;
         _giveawayDescriptionBox.Text=g.Description; _giveawayPrizeBox.Text=g.Prize;
         _giveawayCommandBox.Text=g.Command; _giveawayAliasesBox.Text=string.Join(", ",g.Aliases);
@@ -298,7 +300,7 @@ public sealed partial class MainForm
         if(cmd.Length!=7) throw new InvalidOperationException("Bitte genau sieben Giveaway-Admin-Commands eintragen.");
         g.ModeratorCommands=new GiveawayModeratorCommands { Enabled=_giveawayModCommands.Checked, Start=cmd[0],Stop=cmd[1],
             Pause=cmd[2],Resume=cmd[3],Draw=cmd[4],Reroll=cmd[5],Status=cmd[6] };
-        g.ChatMessages=ReadGiveawayMessages(); return g;
+        g.ChatMessages=ReadGiveawayMessages(); g.Wheel=ReadWheelSettings(); return g;
     }
 
     private static List<string> ParseNames(string text,bool names) => text.Split(new[]{',',';','\r','\n'},
