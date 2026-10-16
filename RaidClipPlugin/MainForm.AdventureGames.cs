@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.ComponentModel;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Services;
 
@@ -83,12 +84,16 @@ public sealed partial class MainForm
     private Control BuildAdventurePanel(PropertyGrid grid, string description)
     {
         var solo = ReferenceEquals(grid, _fishingSettings) || ReferenceEquals(grid, _treasureSettings);
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = solo ? 4 : 3, ColumnCount = 1, Padding = new Padding(12) };
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = solo ? 5 : 4, ColumnCount = 1, Padding = new Padding(12) };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 90));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
         if (solo) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         layout.Controls.Add(new Label { Text = description + "\nBenötigt aktivierte Punkte und Minigames. Bestehende Tages- und Kontolimits gelten für Einsatzspiele.", Dock = DockStyle.Fill }, 0, 0);
+        var switches = BuildAdventureSwitches(grid);
+        grid.SelectedObjectsChanged += (_, _) => ApplyRaidClipTheme(switches);
+        layout.Controls.Add(switches, 0, 1);
         if (solo)
         {
             var summary = new Label { Dock = DockStyle.Fill, AutoSize = false, Padding = new Padding(4), TextAlign = ContentAlignment.MiddleLeft };
@@ -99,14 +104,34 @@ public sealed partial class MainForm
             }
             grid.PropertyValueChanged += (_, _) => UpdateSummary();
             grid.SelectedObjectsChanged += (_, _) => UpdateSummary();
-            layout.Controls.Add(summary, 0, 1);
+            layout.Controls.Add(summary, 0, 2);
             UpdateSummary();
         }
-        layout.Controls.Add(grid, 0, solo ? 2 : 1);
+        layout.Controls.Add(grid, 0, solo ? 3 : 2);
         var save = NewActionButton("Einstellungen speichern");
         save.Click += (_, _) => SaveMinigameSettingsFromControls();
-        layout.Controls.Add(save, 0, solo ? 3 : 2);
+        layout.Controls.Add(save, 0, solo ? 4 : 3);
         return layout;
+    }
+    internal static FlowLayoutPanel BuildAdventureSwitches(PropertyGrid grid)
+    {
+        var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, WrapContents = true };
+        void Rebuild()
+        {
+            foreach (var old in panel.Controls.Cast<Control>().ToArray()) old.Dispose();
+            if (grid.SelectedObject is not { } settings) return;
+            foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(settings))
+            {
+                if (property.PropertyType != typeof(bool)) continue;
+                var check = new CheckBox { Name = property.Name, Text = property.DisplayName, AutoSize = true,
+                    Checked = (bool)(property.GetValue(settings) ?? false), Margin = new Padding(4, 8, 20, 4) };
+                check.CheckedChanged += (_, _) => { property.SetValue(settings, check.Checked); grid.Refresh(); };
+                panel.Controls.Add(check);
+            }
+        }
+        grid.SelectedObjectsChanged += (_, _) => Rebuild();
+        Rebuild();
+        return panel;
     }
     internal static string ChanceSummary(SoloAdventureConfig settings)
     {
