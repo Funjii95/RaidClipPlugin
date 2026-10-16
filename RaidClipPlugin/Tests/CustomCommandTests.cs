@@ -7,6 +7,24 @@ namespace RaidClipPlugin.Tests;
 
 public sealed class CustomCommandTests
 {
+    [Theory]
+    [InlineData("!command")]
+    [InlineData("!commands")]
+    public async Task BroadcasterUsingSendingAccountStillReceivesCommandList(string text)
+    {
+        var registry = new CommandRegistry();
+        registry.Update(new AppConfig());
+        var fake = new FakeTwitch();
+        var service = new CommandListService(registry, "channel", "channel", fake, fake, _ => false);
+        var message = new ChatMessage { UserId = "channel", UserLogin = "funjii",
+            UserName = "Funjii", IsBroadcaster = true, IsBot = true, Text = text };
+        Assert.True(await service.HandleMessageAsync(message, CancellationToken.None));
+        var response = Assert.Single(fake.Messages);
+        Assert.Contains("Deine Befehle", response);
+        Assert.False(await service.HandleMessageAsync(new ChatMessage { UserId = "channel",
+            IsBot = true, Text = response }, CancellationToken.None));
+        Assert.Single(fake.Messages);
+    }
     [Fact]
     public async Task CommandDirectoryHasOneDefinitionAndHonorsConfiguredAliasAndDisable()
     {

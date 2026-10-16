@@ -1,3 +1,7 @@
+## 2.1.2
+
+- !command und !commands antworten auch dann auf manuelle Eingaben, wenn der Broadcaster selbst als Bot-Sendekonto verwendet wird. Das interne IsBot-Merkmal hatte diese Eingaben fälschlich unterdrückt. Berechtigungen und Cooldown bleiben aktiv; eigene Listenantworten lösen keine neue Ausgabe aus.
+
 ## 2.1.1
 
 - Alte und neue Befehlslisten-Registrierung zusammengeführt: !command und !commands verwenden genau einen aktiven Handler und einen Registry-Eintrag. Ein zuvor konfigurierter Listenbefehl bleibt als Alias erhalten; Deaktivierung wird berücksichtigt.

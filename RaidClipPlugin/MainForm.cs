@@ -4865,6 +4865,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.1.2
+- !command und !commands funktionieren auch bei identischem Broadcaster- und Bot-Konto. Manuelle Eingaben werden nicht mehr als Bot-Nachrichten verworfen.
+""",
+                """
 Version 2.1.1
 - !command / !commands: aktive Befehle passend zur eigenen Rolle anzeigen. Weitere Seiten mit !command 2; temporäre !srpermit-Freigaben werden berücksichtigt.
 """,
