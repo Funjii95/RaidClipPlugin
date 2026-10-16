@@ -1,5 +1,6 @@
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Services;
+using RaidClipPlugin.Controls;
 
 namespace RaidClipPlugin;
 
@@ -14,12 +15,32 @@ public sealed partial class MainForm
 
     private Control BuildWheelPanel()
     {
-        var flow = CreateMinigameFlow();
-        flow.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(800, 0), Text = "Eigenständiges Glücksrad – unabhängig vom Giveaway und ohne Punkte-Einsatz. Ein Feld pro Zeile, 2–100 Felder (max. 80 Zeichen je Feld). Alle Felder gleich wahrscheinlich. Texte/Aktionen werden nur angezeigt, nicht automatisch ausgeführt." });
-        flow.Controls.Add(CreateSettingEditor("Felder (ein Eintrag je Zeile)", _wheelEntries));
-        flow.Controls.Add(CreateSettingEditor("Drehdauer (Sekunden)", _wheelSeconds));
-        flow.Controls.Add(CreateSettingEditor("Eigenes Design (PNG/JPG, bis 10 MB)", _wheelDesign));
-        var pick = NewActionButton("Design auswählen");
+        var flow = new TableLayoutPanel { Name = "WheelLayout", Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(12) };
+        flow.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        flow.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        flow.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
+        flow.RowStyles.Add(new RowStyle(SizeType.Absolute, 68));
+        flow.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "Eigenständiges Glücksrad ohne Giveaway oder Punkte-Einsatz. 2–100 Felder, ein Text pro Zeile.\nAlle Felder sind gleich wahrscheinlich. Texte/Aktionen werden nur angezeigt, nicht ausgeführt." }, 0, 0);
+        var columns = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+        columns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46)); columns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 54));
+        var editor = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, Padding = new Padding(0, 0, 12, 0) };
+        editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        editor.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+        editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        editor.Controls.Add(new Label { Text = "Felder (ein Eintrag je Zeile)", Dock = DockStyle.Fill }, 0, 0);
+        _wheelEntries.Dock = DockStyle.Fill; _wheelEntries.Name = "WheelEntries";
+        editor.Controls.Add(_wheelEntries, 0, 1);
+        var duration = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true };
+        duration.Controls.Add(new Label { AutoSize = true, Text = "Drehdauer (Sekunden)", Padding = new Padding(0, 6, 6, 0) }); duration.Controls.Add(_wheelSeconds);
+        editor.Controls.Add(duration, 0, 2);
+        editor.Controls.Add(new Label { Text = "Eigenes Bild (PNG/JPG, bis 10 MB)", Dock = DockStyle.Fill }, 0, 3);
+        _wheelDesign.Dock = DockStyle.Fill; editor.Controls.Add(_wheelDesign, 0, 4);
+        var preview = new WheelPreviewControl { Name = "WheelPreview", Dock = DockStyle.Fill };
+        columns.Controls.Add(editor, 0, 0); columns.Controls.Add(preview, 1, 0); flow.Controls.Add(columns, 0, 1);
+        var pick = NewActionButton("Bild auswählen …"); pick.Name = "WheelChooseImage";
         pick.Click += (_, _) =>
         {
             using var dialog = new OpenFileDialog { Filter = "Bilder (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg", CheckFileExists = true };
@@ -44,7 +65,18 @@ public sealed partial class MainForm
             }
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Glücksrad speichern"); }
         };
-        var status = new Label { AutoSize = true, Text = "Glücksrad bereit.", MaximumSize = new Size(800, 0) };
+        var status = new Label { Dock = DockStyle.Fill, Text = "Glücksrad bereit." };
+        var imageError = "";
+        void UpdateDraft() { preview.SetDraft(_wheelEntries.Lines); }
+        void UpdateDesign()
+        {
+            try { preview.SetDesign(_wheelDesign.Text); imageError = ""; }
+            catch (Exception ex) { preview.SetDesign(""); imageError = ex.Message; }
+            UpdateDraft();
+        }
+        _wheelEntries.TextChanged += (_, _) => UpdateDraft();
+        _wheelDesign.TextChanged += (_, _) => UpdateDesign();
+        UpdateDraft(); UpdateDesign();
         void StartSource()
         {
             if (_wheelServerTask is { IsCompleted: false }) return;
@@ -60,18 +92,26 @@ public sealed partial class MainForm
             catch (Exception ex) { MessageBox.Show(this, ex.Message, "Glücksrad"); }
         };
         clear.Click += (_, _) => { try { _wheel.Reset(); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "Glücksrad"); } };
-        var actions = new FlowLayoutPanel { Width = 800, Height = 95, WrapContents = true };
-        actions.Controls.AddRange(new Control[] { pick, remove, save, source, spin, clear, copy });
-        flow.Controls.Add(actions);
-        flow.Controls.Add(status);
-        flow.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(800, 0), Text = "OBS-Browserquelle: " + WheelOverlayServer.Url + " · 740 × 850, transparenter Hintergrund.\nStartet über Browserquelle starten oder Glücksrad drehen, ohne Twitch-Verbindung. Design wird mittig kreisförmig beschnitten und mitgedreht. Bilddatei am ausgewählten Ort behalten. Änderungen gelten ab der nächsten Drehung." });
-        var timer = new System.Windows.Forms.Timer { Interval = 200 };
+        var imageActions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, WrapContents = false };
+        imageActions.Controls.AddRange(new Control[] { pick, remove }); editor.Controls.Add(imageActions, 0, 5);
+        var actions = new FlowLayoutPanel { Name = "WheelActions", Dock = DockStyle.Fill, AutoScroll = true, WrapContents = true };
+        actions.Controls.AddRange(new Control[] { spin, clear, save, source, copy });
+        flow.Controls.Add(actions, 0, 2);
+        status.Text = "Vorschau bereit. OBS: " + WheelOverlayServer.Url;
+        flow.Controls.Add(status, 0, 3);
+        var lastSpinId = "";
+        var timer = new System.Windows.Forms.Timer { Interval = 33 };
         timer.Tick += (_, _) =>
         {
             var state = _wheel.State; var busy = _wheel.IsSpinning;
             spin.Enabled = !busy; clear.Enabled = !busy;
+            foreach (var control in new Control[] { pick, remove, _wheelEntries, _wheelSeconds }) control.Enabled = !busy;
+            if (state.SpinId != lastSpinId) { preview.SetState(state); lastSpinId = state.SpinId; }
+            preview.Invalidate();
             if (state.SpinId.Length > 0) status.Text = busy ? "Das Rad dreht sich …" : "Ergebnis: " + state.Entries[state.WinnerIndex];
             else status.Text = _wheelServerTask is { IsCompleted: false } ? "Browserquelle bereit: " + WheelOverlayServer.Url : "Glücksrad bereit.";
+            status.Text += "\nOBS: " + WheelOverlayServer.Url + " · 740 × 850, transparenter Hintergrund. Bilddatei am ausgewählten Ort behalten.";
+            if (imageError.Length > 0) status.Text += "\n" + imageError;
         };
         timer.Start();
         flow.Disposed += (_, _) => { timer.Dispose(); _wheelLifetime?.Cancel(); _wheelLifetime?.Dispose(); };

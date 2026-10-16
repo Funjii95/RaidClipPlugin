@@ -191,6 +191,7 @@ public sealed partial class MainForm
 
         var settingsTabs = new TabControl
         {
+            Name = "GiveawaySettingsTabs",
             Dock = DockStyle.Fill,
             Padding = new Point(18, 8),
             ItemSize = new Size(0, 38),
@@ -202,7 +203,7 @@ public sealed partial class MainForm
         AddMinigameTab(settingsTabs, "Chattexte", messages);
         AddMinigameTab(settingsTabs, "Glücksrad", BuildWheelPanel());
 
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false, Padding = new Padding(4, 6, 4, 6) };
+        var actions = new FlowLayoutPanel { Name = "GiveawayActions", Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false, Padding = new Padding(4, 6, 4, 6) };
         foreach (var control in new Control[] { _giveawayStartButton, _giveawayPauseButton, _giveawayResumeButton,
             _giveawayDrawButton, _giveawayAdditionalButton, _giveawayRerollButton, _giveawayEndButton,
             _giveawayCancelButton, _giveawayResetButton, _giveawayCopyButton, _giveawaySaveButton,
@@ -228,7 +229,7 @@ public sealed partial class MainForm
             else if (control is TextBox textBox) textBox.Height = 30;
             participantTools.Controls.Add(control);
         }
-        var participantPanel = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2 };
+        var participantPanel = new TableLayoutPanel { Name = "GiveawayParticipants", Dock = DockStyle.Fill, RowCount = 2 };
         participantPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         participantPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         participantPanel.Controls.Add(participantTools, 0, 0); participantPanel.Controls.Add(_giveawayGrid, 0, 1);
@@ -240,6 +241,21 @@ public sealed partial class MainForm
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(header, 0, 0); layout.Controls.Add(settingsTabs, 0, 1);
         layout.Controls.Add(actions, 0, 2); layout.Controls.Add(participantPanel, 0, 3);
+        settingsTabs.SelectedIndexChanged += (_, _) =>
+        {
+            var wheelSelected = settingsTabs.SelectedTab?.Text == "Glücksrad";
+            layout.SuspendLayout();
+            actions.Visible = participantPanel.Visible = !wheelSelected;
+            _giveawayStatusLabel.Visible = !wheelSelected;
+            title.Text = wheelSelected ? "Glücksrad" : "Giveaways";
+            subtitle.Text = wheelSelected ? "Eigenständiges Rad – unabhängig von Giveaway-Teilnehmern" : "Verlosungen sicher verwalten, auslosen und wiederherstellen";
+            layout.RowStyles[1].SizeType = wheelSelected ? SizeType.Percent : SizeType.Absolute;
+            layout.RowStyles[1].Height = wheelSelected ? 100 : 330;
+            layout.RowStyles[2].Height = wheelSelected ? 0 : 118;
+            layout.RowStyles[3].SizeType = wheelSelected ? SizeType.Absolute : SizeType.Percent;
+            layout.RowStyles[3].Height = wheelSelected ? 0 : 100;
+            layout.ResumeLayout(true);
+        };
         _giveawayPage.Controls.Add(layout);
     }
 

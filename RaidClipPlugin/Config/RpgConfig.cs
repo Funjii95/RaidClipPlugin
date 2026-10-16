@@ -55,10 +55,10 @@ public sealed class RpgConfig
     };
     public List<RpgRecipe> Recipes { get; set; } = new()
     {
-        new() { Id = "fishing", FishId = "sardine", Activity = RpgActivity.Fishing, Attributes = new() { FishingLuck = 5 } },
-        new() { Id = "fighter", FishId = "perch", Activity = RpgActivity.Boss, Attributes = new() { Damage = 10 } },
-        new() { Id = "critical", FishId = "crystal-carp", Activity = RpgActivity.Boss, Attributes = new() { CritChance = 5 } },
-        new() { Id = "dive", FishId = "eel", Activity = RpgActivity.Dive, Attributes = new() { DiveLuck = 5 } }
+        new() { Id = "fishing", FishId = "sardine", PearlCost = 250, Activity = RpgActivity.Fishing, Attributes = new() { FishingLuck = 5 } },
+        new() { Id = "fighter", FishId = "perch", PearlCost = 500, Activity = RpgActivity.Boss, Attributes = new() { Damage = 10 } },
+        new() { Id = "critical", FishId = "crystal-carp", PearlCost = 1000, Activity = RpgActivity.Boss, Attributes = new() { CritChance = 5 } },
+        new() { Id = "dive", FishId = "eel", PearlCost = 1500, Activity = RpgActivity.Dive, Attributes = new() { DiveLuck = 5 } }
     };
 }
 
@@ -77,7 +77,7 @@ public sealed class RpgPerkDefinition
 {
     public string Id { get; set; } = "";
     public int MaximumLevel { get; set; } = 5;
-    public long BaseCost { get; set; } = 250;
+    public long BaseCost { get; set; } = 500;
     public decimal CostGrowth { get; set; } = 2;
     public RpgAttributes BonusPerLevel { get; set; } = new();
     public long Cost(int currentLevel)

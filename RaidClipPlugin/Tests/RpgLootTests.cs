@@ -10,12 +10,14 @@ public sealed class RpgLootTests
     private sealed class Lowest : IDuelRandom { public int NextInclusive(int min, int max) => min; }
     [Theory]
     [InlineData(0, ItemRarity.Uncommon)]
-    [InlineData(99, ItemRarity.Uncommon)]
-    [InlineData(100, ItemRarity.Rare)]
-    [InlineData(499, ItemRarity.Rare)]
-    [InlineData(500, ItemRarity.Epic)]
+    [InlineData(249, ItemRarity.Uncommon)]
+    [InlineData(250, ItemRarity.Rare)]
+    [InlineData(999, ItemRarity.Rare)]
+    [InlineData(1000, ItemRarity.Epic)]
     [InlineData(4999, ItemRarity.Epic)]
-    [InlineData(5000, ItemRarity.Legendary)]
+    [InlineData(5000, ItemRarity.Epic)]
+    [InlineData(9999, ItemRarity.Epic)]
+    [InlineData(10000, ItemRarity.Legendary)]
     public void EnormousLuckCannotBypassStakeGate(long stake, ItemRarity expected)
     {
         var config = new RpgLootConfig();
@@ -23,7 +25,7 @@ public sealed class RpgLootTests
         config.BaseDropChance = config.MaximumDropChance = 100;
         config.RarityWeights = new() { [ItemRarity.Legendary] = 1 };
         var item = new RpgLootService(new Lowest()).Roll(stake, decimal.MaxValue, config, DateTimeOffset.UtcNow).Item;
-        if (stake < 5000) Assert.Null(item);
+        if (stake < 10000) Assert.Null(item);
         else Assert.Equal(ItemRarity.Legendary, item!.Rarity);
     }
 
@@ -33,7 +35,7 @@ public sealed class RpgLootTests
         var config = new RpgLootConfig();
         var chance = RpgLootService.Chances(5000, 100, config, 100, 100);
         Assert.Equal(10, chance.Luck + chance.Sushi + chance.Equipment, 10);
-        Assert.Equal(38, chance.Total);
+        Assert.Equal(47, chance.Total);
         Assert.True(chance.Sushi > 0);
         Assert.True(chance.Equipment > 0);
     }
