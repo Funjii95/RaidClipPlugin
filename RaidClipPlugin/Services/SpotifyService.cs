@@ -227,6 +227,19 @@ public sealed class SpotifyService : IDisposable
             : null;
     }
 
+    public async Task<bool> IsTrackPlayingAsync(string trackId, CancellationToken cancellationToken)
+    {
+        using var response = await SendAsync(() => new HttpRequestMessage(HttpMethod.Get,
+            ApiUrl + "/me/player/currently-playing"), cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NoContent) return false;
+        await EnsureSuccessAsync(response, "Spotify-Wiedergabe prüfen", cancellationToken);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        var root = document.RootElement;
+        return root.TryGetProperty("is_playing", out var playing) && playing.ValueKind == JsonValueKind.True &&
+            root.TryGetProperty("item", out var item) && item.ValueKind == JsonValueKind.Object &&
+            item.TryGetProperty("id", out var id) && id.GetString() == trackId;
+    }
+
     public async Task AddToQueueAsync(
         SpotifyTrack track, string? deviceId,
         CancellationToken cancellationToken)

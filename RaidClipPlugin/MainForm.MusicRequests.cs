@@ -108,6 +108,7 @@ public sealed partial class MainForm
     private readonly Button _skipCurrentMusicButton =
         NewActionButton("⏭ Aktuellen Song überspringen");
     private bool _musicSkipBusy;
+    private bool _musicReplayBusy;
     private readonly TextBox _explicitExceptionsBox = new()
     {
         Width = 520, Height = 100, Multiline = true, ScrollBars = ScrollBars.Vertical
@@ -1014,14 +1015,47 @@ public sealed partial class MainForm
 
     private async Task PlaySelectedMusicEntryAsync()
     {
+        if (_musicReplayBusy) return;
         var entry = SelectedMusicEntry();
-        if (entry?.Track is null || _spotify is null) return;
+        if (entry?.Track is null) return;
+        if (_spotify is null)
+        {
+            MessageBox.Show(this, "Bitte zuerst Spotify verbinden.", "Song abspielen",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        _musicReplayBusy = true;
         try
         {
-            await _spotify.PlayAsync(entry.Track,
-                (_spotifyDeviceBox.SelectedItem as SpotifyDevice)?.Id,
-                _shutdown?.Token ?? CancellationToken.None);
+            var token = _shutdown?.Token ?? CancellationToken.None;
+            var config = ReadSettingsFromControls().MusicRequests;
+            var devices = (await _spotify.GetDevicesAsync(token))
+                .Where(device => !device.IsRestricted).ToArray();
+            var device = config.UseActiveDevice
+                ? devices.FirstOrDefault(item => item.IsActive) ?? devices.FirstOrDefault()
+                : devices.FirstOrDefault(item => item.Id == config.SelectedDeviceId);
+            if (device is null)
+                throw new InvalidOperationException("Kein passendes Spotify-Gerät verfügbar. Bitte Spotify öffnen und unter Verbindung das Wiedergabegerät prüfen.");
+            if (!device.IsActive)
+            {
+                await _spotify.TransferPlaybackAsync(device.Id, token);
+                await Task.Delay(700, token);
+            }
+            await _spotify.PlayAsync(entry.Track, device.Id, token);
+            var started = false;
+            for (var attempt = 0; attempt < 6; attempt++)
+            {
+                await Task.Delay(500, token);
+                if (await _spotify.IsTrackPlayingAsync(entry.Track.Id, token))
+                {
+                    started = true;
+                    break;
+                }
+            }
+            if (!started)
+                throw new InvalidOperationException("Spotify hat den Start des ausgewählten Songs nicht bestätigt. Bitte Gerät und Spotify-Wiedergabe prüfen.");
             entry.Status = MusicRequestStatus.Playing;
+            entry.FailureReason = "";
             await _musicStore.AddOrUpdateAsync(entry, true,
                 _shutdown?.Token ?? CancellationToken.None);
             await RefreshMusicGridAsync();
@@ -1029,7 +1063,10 @@ public sealed partial class MainForm
         catch (Exception exception)
         {
             AppendLog("Song konnte nicht abgespielt werden: " + exception.Message);
+            MessageBox.Show(this, exception.Message, "Song konnte nicht abgespielt werden",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
+        finally { _musicReplayBusy = false; }
     }
 
     private void AllowSelectedExplicitTrack()

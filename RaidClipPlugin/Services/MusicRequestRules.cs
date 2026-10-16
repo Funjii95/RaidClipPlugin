@@ -79,4 +79,9 @@ public static class MusicRequestRules
         MusicRequestStatus.Checking or MusicRequestStatus.Accepted or
         MusicRequestStatus.Queued or MusicRequestStatus.Playing or
         MusicRequestStatus.Failed;
+
+    public static bool IsDuplicateCandidate(MusicRequestEntry entry, DateTimeOffset now) =>
+        entry.Track is not null &&
+        (entry.Status is MusicRequestStatus.Queued or MusicRequestStatus.Playing ||
+         entry.Status == MusicRequestStatus.Completed && entry.UpdatedAt > now.AddHours(-6));
 }

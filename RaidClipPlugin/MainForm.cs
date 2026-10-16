@@ -4865,6 +4865,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.26
+- Erneute Song-Wiedergabe mit aktueller Geräteauswahl und Bestätigung durch Spotify statt vorzeitigem Statuswechsel.
+- Duplikatprüfung korrigiert: Abgelehnte oder fehlgeschlagene Musikwünsche blockieren erneute Versuche nach einer Explicit-Freigabe nicht mehr.
+""",
+                """
 Version 2.0.25
 - Bearbeitbare Explicit-Ausnahmeliste unter Musikwünsche → Filter & Limits; Freigaben durch Entfernen der Track-ID widerrufen.
 - Rechtsklick in der Musikwunsch-Warteschlange: Nochmal abspielen und explizite Songs einzeln zukünftig erlauben.
