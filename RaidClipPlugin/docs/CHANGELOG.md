@@ -1,3 +1,12 @@
+## 2.1.11 – Economy 1.2, RPG-Verwaltung und Glücksrad
+
+- Glücksrad-Oberfläche vom Giveaway getrennt: Giveaway-Buttons, Teilnehmerliste und Giveaway-Status werden im Glücksrad-Reiter ausgeblendet. Mehr Platz, sichtbare native Vorschau samt Drehanimation und direkt erreichbare PNG-/JPG-Bildauswahl; Bildänderungen erscheinen sofort in der Vorschau. Giveaway-Ansicht wird beim Zurückwechseln wiederhergestellt.
+
+- Neue Standardwerte für Dive-Loot, Einsatzstufen bis 10.000, Rarity-Gewichte, Perk-Kosten und Sushi-Rezepte. Andere Spiele und Einnahmen bleiben unverändert.
+- Bestehende Einstellungen werden nicht still überschrieben. Bestätigte Übernahme über „Balancing 1.2 übernehmen“ im RPG-Editor; erst Speichern macht Änderungen dauerhaft. Gekaufte Perks und Inventare bleiben erhalten.
+- RPG-Spielerverwaltung: Fischart und Menge gezielt löschen, einzelne Equipmentinstanzen löschen und gegebenenfalls ablegen. Sicherheitsabfrage, frische Kontosicherung vor Löschung, keine Perlenänderungen oder neuen Zuschauer-Löschbefehle.
+- Reproduzierbare Simulation mit 2,5 Millionen Dives und drei Zuschauerprofilen, inklusive Bericht zu Progressionszeiten, Bossanteilen und Balancing-Risiken: docs/RPG-ECONOMY-1.2.md. Veröffentlichung nach ausdrücklicher Freigabe.
+
 ## 2.1.10 – RPG-Teststand
 
 - Optional aktivierbare RPG-Erweiterung unter Punkte & Minigames → RPG. Inventar, Ausrüstung, Perks, zusätzliche Fischvorräte, Sushi und aktive Buffs werden beim vorhandenen Perlenkonto nach Twitch-ID gespeichert.

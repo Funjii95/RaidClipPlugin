@@ -24,10 +24,28 @@ public sealed partial class MainForm
         panel.Controls.Add(_rpgEnabled, 0, 0);
         panel.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "RPG-Balancing (JSON): Loot, Einsatzstufen, Items, Perks, Fischarten, Rezepte und Caps.\nAktivieren erfolgt ausschließlich über den Haken oben. Bestehende Konten bleiben erhalten.\nChat: !inventory, !equipment, !equip, !perks, !perk, !craft, !sushi, !stats." }, 0, 1);
         panel.Controls.Add(_rpgConfigJson, 0, 2);
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true };
+        var preset = NewActionButton("Balancing 1.2 übernehmen");
+        preset.Click += (_, _) =>
+        {
+            if (MessageBox.Show(this, "Lootwerte, Standard-Perkkosten und Rezeptkosten im Editor durch Balancing 1.2 ersetzen? Der Dive-Maximaleinsatz wird auf mindestens 10.000 erhöht. Eigene Itemdefinitionen, Fische, Attribute und Spielstände bleiben erhalten. Erst Speichern übernimmt die Einstellungen dauerhaft.",
+                "Balancing 1.2", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            try
+            {
+                var current = JsonSerializer.Deserialize<RpgConfig>(_rpgConfigJson.Text) ?? throw new InvalidOperationException("RPG-Einstellungen fehlen.");
+                _rpgConfigJson.Text = JsonSerializer.Serialize(RpgEconomyPreset.Apply12(current), new JsonSerializerOptions { WriteIndented = true });
+                if (_treasureSettings.SelectedObject is DiveAdventureConfig dive) { dive.MaximumBet = Math.Max(10000, dive.MaximumBet); _treasureSettings.Refresh(); }
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Balancing 1.2"); }
+        };
         var save = NewActionButton("RPG-Einstellungen speichern");
         save.Click += (_, _) => SaveMinigameSettingsFromControls();
-        panel.Controls.Add(save, 0, 3);
-        return panel;
+        actions.Controls.AddRange(new Control[] { save, preset });
+        panel.Controls.Add(actions, 0, 3);
+        var tabs = new TabControl { Dock = DockStyle.Fill };
+        AddMinigameTab(tabs, "Einstellungen", panel);
+        AddMinigameTab(tabs, "Spielerverwaltung", BuildRpgAdministrationPanel());
+        return tabs;
     }
     private static PropertyGrid NewAdventureGrid() => new()
     { Dock = DockStyle.Fill, ToolbarVisible = false, HelpVisible = true, PropertySort = PropertySort.NoSort };

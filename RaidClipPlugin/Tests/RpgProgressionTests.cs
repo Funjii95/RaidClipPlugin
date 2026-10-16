@@ -17,12 +17,12 @@ public sealed class RpgProgressionTests : IDisposable
         var store = new ViewerPointStore(_directory);
         var config = new RpgConfig { Enabled = true };
         var service = new RpgProgressionService(store, config);
-        await store.AddPointsAsync("42", "Otter", 1000, 0, Token);
+        await store.AddPointsAsync("42", "Otter", 2000, 0, Token);
         Assert.True((await service.BuyPerkAsync("42", "Otter", "buy1", "crit", Token)).Success);
         Assert.True((await service.BuyPerkAsync("42", "Otter", "buy2", "crit", Token)).Success);
         Assert.False((await service.BuyPerkAsync("42", "Otter", "buy3", "crit", Token)).Success);
         var profile = (await new ViewerPointStore(_directory).GetProfileAsync("42", Token)).Entry;
-        Assert.Equal(250, profile.Points);
+        Assert.Equal(500, profile.Points);
         Assert.Equal(2, profile.Rpg.Perks["crit"]);
     }
 
@@ -66,7 +66,7 @@ public sealed class RpgProgressionTests : IDisposable
         Assert.True((await service.CraftAsync("42", "Otter", "craft2", "fishing", Token)).Success);
         Assert.False((await service.ActivateSushiAsync("42", "Otter", "activate2", "fishing", Token)).Success);
         var profile = (await store.GetProfileAsync("42", Token)).Entry;
-        Assert.Equal(800, profile.Points);
+        Assert.Equal(500, profile.Points);
         Assert.Equal(1, profile.Rpg.Sushi["fishing"]);
         Assert.Equal(3, Assert.Single(profile.Rpg.Buffs).RemainingUses);
         RpgProgressionService.ConsumeBuffs(profile.Rpg, RpgActivity.Dive);

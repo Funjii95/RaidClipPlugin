@@ -25,7 +25,7 @@ public sealed partial class ViewerPointStore
     /// <summary>Authoritative local gameplay transaction. The callback only receives a detached
     /// account; it must have no external side effects. Currency and inventory commit together.</summary>
     internal async Task<RpgTransactionResult> ApplyRpgAsync(string userId, string displayName,
-        string actionId, Func<ViewerPointEntry, RpgMutation> mutate, CancellationToken token)
+        string actionId, Func<ViewerPointEntry, RpgMutation> mutate, CancellationToken token, bool backupBeforeCommit = false)
     {
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(actionId) || actionId.Length > 200)
             throw new ArgumentException("Twitch-ID und gültige Aktions-ID sind erforderlich.");
@@ -49,6 +49,8 @@ public sealed partial class ViewerPointStore
             // Capture an immutable pre-migration backup before the first RPG write.
             if (File.Exists(_filePath) && !File.Exists(_filePath + ".pre-rpg.bak"))
                 File.Copy(_filePath, _filePath + ".pre-rpg.bak", overwrite: false);
+            if (backupBeforeCommit && File.Exists(_filePath))
+                File.Copy(_filePath, _filePath + ".rpg-delete-" + Guid.NewGuid().ToString("N") + ".bak");
             _entries[userId] = draft;
             try { await SaveAsync(token); }
             catch

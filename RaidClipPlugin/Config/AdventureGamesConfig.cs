@@ -46,7 +46,7 @@ public class SoloAdventureConfig : StakeAdventureConfig
 
 public sealed class DiveAdventureConfig : SoloAdventureConfig
 {
-    public DiveAdventureConfig() { SmallChance = 25; LargeChance = 20; RareChance = 5; RareMultiplier = 6; }
+    public DiveAdventureConfig() { SmallChance = 25; LargeChance = 20; RareChance = 5; RareMultiplier = 6; MaximumBet = 10000; }
 }
 
 public sealed class RaceAdventureConfig : StakeAdventureConfig

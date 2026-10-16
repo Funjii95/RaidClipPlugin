@@ -58,10 +58,10 @@ public sealed class RpgAdventureIntegrationTests : IDisposable
         var store = new ViewerPointStore(_directory);
         await store.AddPointsAsync("42", "Otter", 20000, 0, Token);
         var service = new RpgAdventureService(store, config, new Lowest());
-        var results = await Task.WhenAll(Enumerable.Range(0, 20).Select(i => service.ExecuteAsync("42", "Otter", "dive" + i, RpgActivity.Dive, 5000, Token)));
+        var results = await Task.WhenAll(Enumerable.Range(0, 20).Select(i => service.ExecuteAsync("42", "Otter", "dive" + i, RpgActivity.Dive, 10000, Token)));
         var success = Assert.Single(results.Where(r => r.Success));
         Assert.Equal(ItemRarity.Legendary, success.Item!.Rarity);
-        Assert.Equal(15000, await store.GetPointsAsync("42", Token));
+        Assert.Equal(10000, await store.GetPointsAsync("42", Token));
         Assert.Single((await store.GetProfileAsync("42", Token)).Entry.Rpg.Inventory);
     }
 
@@ -151,9 +151,9 @@ public sealed class RpgAdventureIntegrationTests : IDisposable
         var messages = new List<string>();
         var service = new AdventureGameService(store, config, (text, _) => { messages.Add(text); return Task.CompletedTask; }, new Lowest());
         var message = new ChatMessage { Id = "same-dive", UserId = "42", UserName = "Otter" };
-        await service.HandleAsync(message, "!dive", new[] { "!dive", "5000" }, Token);
+        await service.HandleAsync(message, "!dive", new[] { "!dive", "10000" }, Token);
         service = new AdventureGameService(new(_directory), config, (text, _) => { messages.Add(text); return Task.CompletedTask; }, new Lowest());
-        await service.HandleAsync(message, "!dive", new[] { "!dive", "5000" }, Token);
+        await service.HandleAsync(message, "!dive", new[] { "!dive", "10000" }, Token);
         Assert.Single(messages.Where(m => m.Contains("LEGENDÄR!")));
     }
 
@@ -165,7 +165,7 @@ public sealed class RpgAdventureIntegrationTests : IDisposable
         var config = Configuration();
         var user = new ChatMessage { Id = "chat-perk", UserId = "42", UserName = "Otter" };
         var result = await new RpgChatCommand(store, config.Adventures.Rpg).ExecuteAsync(user, "!perk", new[] { "!perk", "crit" }, Token);
-        Assert.Contains("750", result);
+        Assert.Contains("500", result);
         Assert.Equal(1, (await store.GetProfileAsync("42", Token)).Entry.Rpg.Perks["crit"]);
         var app = new AppConfig { Minigame = config };
         var registry = new CommandRegistry(); registry.Update(app);

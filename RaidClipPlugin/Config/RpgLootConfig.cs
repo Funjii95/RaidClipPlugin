@@ -4,24 +4,24 @@ namespace RaidClipPlugin.Config;
 
 public sealed class RpgLootConfig
 {
-    public decimal BaseDropChance { get; set; } = 20;
+    public decimal BaseDropChance { get; set; } = 25;
     public decimal MaximumDropChance { get; set; } = 60;
     public decimal LuckChancePerPoint { get; set; } = 0.1m;
     public decimal MaximumLuckBonus { get; set; } = 10;
     public decimal EventBonus { get; set; }
     public decimal MaximumEventBonus { get; set; } = 10;
-    public long LegendaryMinimumStake { get; set; } = 5000;
+    public long LegendaryMinimumStake { get; set; } = 10000;
     public List<RpgRiskTier> RiskTiers { get; set; } = new()
     {
         new() { MinimumStake = 0, MaximumRarity = ItemRarity.Uncommon },
-        new() { MinimumStake = 100, MaximumRarity = ItemRarity.Rare, DropBonus = 2 },
-        new() { MinimumStake = 500, MaximumRarity = ItemRarity.Epic, DropBonus = 4 },
-        new() { MinimumStake = 2000, MaximumRarity = ItemRarity.Epic, DropBonus = 6 },
-        new() { MinimumStake = 5000, MaximumRarity = ItemRarity.Legendary, DropBonus = 8 }
+        new() { MinimumStake = 250, MaximumRarity = ItemRarity.Rare, DropBonus = 4 },
+        new() { MinimumStake = 1000, MaximumRarity = ItemRarity.Epic, DropBonus = 8 },
+        new() { MinimumStake = 5000, MaximumRarity = ItemRarity.Epic, DropBonus = 12 },
+        new() { MinimumStake = 10000, MaximumRarity = ItemRarity.Legendary, DropBonus = 15 }
     };
     public Dictionary<ItemRarity, int> RarityWeights { get; set; } = new()
-    { [ItemRarity.Common] = 6500, [ItemRarity.Uncommon] = 2500, [ItemRarity.Rare] = 800,
-        [ItemRarity.Epic] = 190, [ItemRarity.Legendary] = 10 };
+    { [ItemRarity.Common] = 6000, [ItemRarity.Uncommon] = 2900, [ItemRarity.Rare] = 850,
+        [ItemRarity.Epic] = 200, [ItemRarity.Legendary] = 50 };
     public List<RpgItem> Items { get; set; } = new()
     {
         new() { ItemId = "shell", DisplayName = "Alte Muschel", Rarity = ItemRarity.Common, IconId = "shell" },

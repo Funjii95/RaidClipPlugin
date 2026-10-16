@@ -10,15 +10,16 @@
     <AssemblyName>RaidClipPlugin</AssemblyName>
     <RootNamespace>RaidClipPlugin</RootNamespace>
     <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
-    <Version>2.1.10</Version>
-    <FileVersion>2.1.10.0</FileVersion>
-    <AssemblyVersion>2.1.10.0</AssemblyVersion>
+    <Version>2.1.11</Version>
+    <FileVersion>2.1.11.0</FileVersion>
+    <AssemblyVersion>2.1.11.0</AssemblyVersion>
   </PropertyGroup>
 
 
   <ItemGroup>
     <None Remove="Config\config.template.json" />
     <Compile Remove="Tests\**\*.cs" />
+    <Compile Remove="Tools\RpgEconomySimulation\**\*.cs" />
   </ItemGroup>
 
 
