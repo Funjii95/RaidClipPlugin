@@ -11,6 +11,24 @@ public sealed partial class MainForm
     private readonly PropertyGrid _treasureSettings = NewAdventureGrid();
     private readonly PropertyGrid _raceSettings = NewAdventureGrid();
     private readonly PropertyGrid _bossSettings = NewAdventureGrid();
+    private readonly CheckBox _rpgEnabled = new() { Text = "RPG-Erweiterung aktivieren", AutoSize = true };
+    private readonly TextBox _rpgConfigJson = new() { Dock = DockStyle.Fill, Multiline = true, ScrollBars = ScrollBars.Both,
+        WordWrap = false, Font = new Font("Consolas", 10) };
+    private Control BuildRpgSettingsPanel()
+    {
+        var panel = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, ColumnCount = 1, Padding = new Padding(12) };
+        panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+        panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 65));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        panel.Controls.Add(_rpgEnabled, 0, 0);
+        panel.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "RPG-Balancing (JSON): Loot, Einsatzstufen, Items, Perks, Fischarten, Rezepte und Caps.\nAktivieren erfolgt ausschließlich über den Haken oben. Bestehende Konten bleiben erhalten.\nChat: !inventory, !equipment, !equip, !perks, !perk, !craft, !sushi, !stats." }, 0, 1);
+        panel.Controls.Add(_rpgConfigJson, 0, 2);
+        var save = NewActionButton("RPG-Einstellungen speichern");
+        save.Click += (_, _) => SaveMinigameSettingsFromControls();
+        panel.Controls.Add(save, 0, 3);
+        return panel;
+    }
     private static PropertyGrid NewAdventureGrid() => new()
     { Dock = DockStyle.Fill, ToolbarVisible = false, HelpVisible = true, PropertySort = PropertySort.NoSort };
 
@@ -144,6 +162,8 @@ public sealed partial class MainForm
     private void LoadAdventureSettings(MinigameConfig config)
     {
         var copy = JsonSerializer.Deserialize<AdventureGamesConfig>(JsonSerializer.Serialize(config.Adventures))!;
+        _rpgEnabled.Checked = copy.Rpg.Enabled;
+        _rpgConfigJson.Text = JsonSerializer.Serialize(copy.Rpg, new JsonSerializerOptions { WriteIndented = true });
         _fishingSettings.SelectedObject = copy.Fishing;
         _treasureSettings.SelectedObject = copy.Treasure;
         _raceSettings.SelectedObject = copy.Race;
@@ -152,7 +172,11 @@ public sealed partial class MainForm
     private void ReadAdventureSettings(MinigameConfig config)
     {
         if (_fishingSettings.SelectedObject is not StakeAdventureConfig fishing) return;
+        var rpg = JsonSerializer.Deserialize<RpgConfig>(_rpgConfigJson.Text) ?? throw new InvalidOperationException("RPG-Einstellungen fehlen.");
+        rpg.Enabled = _rpgEnabled.Checked;
+        rpg.Validate();
         config.Adventures = JsonSerializer.Deserialize<AdventureGamesConfig>(JsonSerializer.Serialize(new AdventureGamesConfig {
+            Rpg = rpg,
             Fishing = (SoloAdventureConfig)fishing, Treasure = (DiveAdventureConfig)_treasureSettings.SelectedObject,
             Race = (RaceAdventureConfig)_raceSettings.SelectedObject, Boss = (BossAdventureConfig)_bossSettings.SelectedObject }))!;
     }

@@ -4,7 +4,7 @@ using RaidClipPlugin.Config;
 
 namespace RaidClipPlugin.Services;
 
-public sealed class ViewerPointStore
+public sealed partial class ViewerPointStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -612,17 +612,26 @@ public sealed class ViewerPointStore
         string game, long stake, long payout, long minimum, long maximum,
         int dailyGames, long dailyLoss, long dailyWin, long jackpotContribution,
         bool jackpotHit, long jackpotStart, int historyLimit,
-        CancellationToken cancellationToken, string? fishName = null, int fishGrams = 0)
+        CancellationToken cancellationToken, string? fishName = null, int fishGrams = 0,
+        Func<ViewerPointEntry, RpgMutation>? rpgMutation = null,
+        Func<ViewerPointEntry, long, long>? rpgPayout = null)
     {
         await _lock.WaitAsync(cancellationToken);
+        ViewerPointEntry? previousEntry = null;
+        var hadEntry = false;
+        var savedJackpot = _jackpot;
+        var savedHistory = _history.ToList();
+        var committing = false;
         try
         {
             await EnsureLoadedAsync(cancellationToken);
-            var entry = GetOrCreateEntry(userId, name, minimum);
+            hadEntry = _entries!.TryGetValue(userId, out previousEntry);
+            var entry = previousEntry is null ? new ViewerPointEntry { UserId = userId, DisplayName = name, Points = Math.Max(0, minimum) } : CloneEntry(previousEntry);
             ResetDaily(entry);
 
             var safeStake = Math.Max(0, stake);
-            var safePayout = Math.Max(0, payout);
+            if (rpgMutation is not null) PrepareRpg(entry);
+            var safePayout = Math.Max(0, rpgPayout?.Invoke(entry, payout) ?? payout);
             var safeMinimum = Math.Max(0, minimum);
             var safeMaximum = maximum > 0
                 ? Math.Max(safeMinimum, maximum)
@@ -652,6 +661,15 @@ public sealed class ViewerPointStore
                     "Die Auszahlung überschreitet das technische Punktelimit",
                     entry.Points, 0);
             var projectedBalance = entry.Points + balanceChange;
+
+            if (rpgMutation is not null)
+            {
+                var mutation = rpgMutation(entry);
+                if (!mutation.Success) return new(false, mutation.Error, previousEntry?.Points ?? Math.Max(0, minimum), 0);
+                if (File.Exists(_filePath) && !File.Exists(_filePath + ".pre-rpg.bak"))
+                    File.Copy(_filePath, _filePath + ".pre-rpg.bak");
+            }
+            committing = true;
 
             var jackpotWon = 0L;
             if (jackpotHit)
@@ -703,8 +721,33 @@ public sealed class ViewerPointStore
             var safeHistoryLimit = Math.Max(1, historyLimit);
             if (_history.Count > safeHistoryLimit)
                 _history.RemoveRange(safeHistoryLimit, _history.Count - safeHistoryLimit);
-            await SaveAllAsync(cancellationToken);
+            _entries![userId] = entry;
+            if (rpgMutation is null)
+            {
+                // Preserve the established jackpot/history persistence path for existing games.
+                await SaveAllAsync(cancellationToken);
+                committing = false;
+                return new CasinoApplyResult(true, "", entry.Points, jackpotWon);
+            }
+            // Currency and RPG are committed in the same authoritative file. History
+            // is ancillary: a history write failure must not turn a committed award into a retry.
+            await SaveAsync(cancellationToken);
+            committing = false;
+            try
+            {
+                await File.WriteAllTextAsync(_historyPath, JsonSerializer.Serialize(_history, JsonOptions), cancellationToken);
+            }
+            catch (Exception ex) { Console.WriteLine("Minigame-Zusatzdaten konnten nicht gespeichert werden: " + ex.Message); }
             return new CasinoApplyResult(true, "", entry.Points, jackpotWon);
+        }
+        catch
+        {
+            if (committing && rpgMutation is not null)
+            {
+                if (hadEntry) _entries![userId] = previousEntry!; else _entries!.Remove(userId);
+                _jackpot = savedJackpot; _history = savedHistory;
+            }
+            throw;
         }
         finally { _lock.Release(); }
     }
@@ -946,6 +989,7 @@ public sealed class ViewerPointStore
     private static ViewerPointEntry CloneEntry(ViewerPointEntry x) => new()
     {
         UserId=x.UserId, DisplayName=x.DisplayName, Points=x.Points,
+        Rpg = JsonSerializer.Deserialize<RpgProfile>(JsonSerializer.Serialize(x.Rpg ?? new(), JsonOptions), JsonOptions)!,
         RaceWins=x.RaceWins, BossDefeats=x.BossDefeats,
         FishCollection = x.FishCollection is null ? new() : new(x.FishCollection),
         BiggestFishGrams=x.BiggestFishGrams, BiggestFishName=x.BiggestFishName,
@@ -1031,19 +1075,14 @@ public sealed class ViewerPointStore
                 stream,
                 JsonOptions,
                 cancellationToken);
-            _entries = entries is null
-                ? new Dictionary<string, ViewerPointEntry>(StringComparer.Ordinal)
-                : new Dictionary<string, ViewerPointEntry>(
-                    entries,
-                    StringComparer.Ordinal);
+            if (entries is null || entries.Any(p => p.Value is null || p.Value.Rpg is { SchemaVersion: not 1 }))
+                throw new InvalidDataException("Die Punktedatei enthält keine gültigen Konten.");
+            _entries = new Dictionary<string, ViewerPointEntry>(entries, StringComparer.Ordinal);
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            Console.WriteLine(
-                "Minigame-Punktedatei konnte nicht geladen werden: " +
-                exception.Message);
-            _entries = new Dictionary<string, ViewerPointEntry>(
-                StringComparer.Ordinal);
+            throw new InvalidOperationException(
+                "Minigame-Punktedatei konnte nicht geladen werden. Zum Schutz der Spielstände werden keine Konten überschrieben.", exception);
         }
     }
 

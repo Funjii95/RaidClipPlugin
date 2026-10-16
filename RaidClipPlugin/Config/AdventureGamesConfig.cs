@@ -4,6 +4,7 @@ namespace RaidClipPlugin.Config;
 
 public sealed class AdventureGamesConfig
 {
+    public RpgConfig Rpg { get; set; } = new();
     public SoloAdventureConfig Fishing { get; set; } = new();
     public DiveAdventureConfig Treasure { get; set; } = new();
     public RaceAdventureConfig Race { get; set; } = new();

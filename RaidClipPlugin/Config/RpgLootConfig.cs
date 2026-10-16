@@ -1,0 +1,73 @@
+using RaidClipPlugin.Models;
+
+namespace RaidClipPlugin.Config;
+
+public sealed class RpgLootConfig
+{
+    public decimal BaseDropChance { get; set; } = 20;
+    public decimal MaximumDropChance { get; set; } = 60;
+    public decimal LuckChancePerPoint { get; set; } = 0.1m;
+    public decimal MaximumLuckBonus { get; set; } = 10;
+    public decimal EventBonus { get; set; }
+    public decimal MaximumEventBonus { get; set; } = 10;
+    public long LegendaryMinimumStake { get; set; } = 5000;
+    public List<RpgRiskTier> RiskTiers { get; set; } = new()
+    {
+        new() { MinimumStake = 0, MaximumRarity = ItemRarity.Uncommon },
+        new() { MinimumStake = 100, MaximumRarity = ItemRarity.Rare, DropBonus = 2 },
+        new() { MinimumStake = 500, MaximumRarity = ItemRarity.Epic, DropBonus = 4 },
+        new() { MinimumStake = 2000, MaximumRarity = ItemRarity.Epic, DropBonus = 6 },
+        new() { MinimumStake = 5000, MaximumRarity = ItemRarity.Legendary, DropBonus = 8 }
+    };
+    public Dictionary<ItemRarity, int> RarityWeights { get; set; } = new()
+    { [ItemRarity.Common] = 6500, [ItemRarity.Uncommon] = 2500, [ItemRarity.Rare] = 800,
+        [ItemRarity.Epic] = 190, [ItemRarity.Legendary] = 10 };
+    public List<RpgItem> Items { get; set; } = new()
+    {
+        new() { ItemId = "shell", DisplayName = "Alte Muschel", Rarity = ItemRarity.Common, IconId = "shell" },
+        new() { ItemId = "gloves", DisplayName = "Otterhandschuhe", Rarity = ItemRarity.Common, Kind = RpgItemKind.Equipment,
+            Slot = EquipmentSlot.Gloves, Attributes = new() { Damage = 1 }, IconId = "gloves" },
+        new() { ItemId = "trident", DisplayName = "Dreizack der Strömung", Rarity = ItemRarity.Uncommon, Kind = RpgItemKind.Equipment,
+            Slot = EquipmentSlot.Weapon, Attributes = new() { Damage = 3 }, IconId = "trident" },
+        new() { ItemId = "boots", DisplayName = "Flossenschuhe", Rarity = ItemRarity.Uncommon, Kind = RpgItemKind.Equipment,
+            Slot = EquipmentSlot.Boots, Attributes = new() { DiveLuck = 2 }, IconId = "boots" },
+        new() { ItemId = "helmet", DisplayName = "Perlenhelm", Rarity = ItemRarity.Rare, Kind = RpgItemKind.Equipment,
+            Slot = EquipmentSlot.Helmet, Attributes = new() { FishingLuck = 3 }, IconId = "helmet" },
+        new() { ItemId = "chest", DisplayName = "Rüstung der Tiefe", Rarity = ItemRarity.Epic, Kind = RpgItemKind.Equipment,
+            Slot = EquipmentSlot.Chest, Attributes = new() { BossDamage = 5 }, IconId = "chest" },
+        new() { ItemId = "amulet", DisplayName = "Amulett der Gezeiten", Rarity = ItemRarity.Legendary, Kind = RpgItemKind.Equipment,
+            Slot = EquipmentSlot.Amulet, Attributes = new() { PearlBonus = 5, Luck = 5 }, IconId = "amulet" },
+        new() { ItemId = "sushi-fighter", DisplayName = "Sushi des Kämpfers", Rarity = ItemRarity.Rare, Kind = RpgItemKind.Consumable,
+            ConsumableRecipeId = "fighter", IconId = "sushi-fighter" },
+        new() { ItemId = "royal-treasure", DisplayName = "Versunkener Königsschatz", Rarity = ItemRarity.Epic, IconId = "royal-treasure" },
+        new() { ItemId = "current-ring", DisplayName = "Ring der Strömung", Rarity = ItemRarity.Uncommon, Slot = EquipmentSlot.Ring1,
+            Attributes = new() { CritChance = 1 }, IconId = "current-ring" },
+        new() { ItemId = "ocean-ring", DisplayName = "Ring der kleinen Strömung", Rarity = ItemRarity.Rare, Slot = EquipmentSlot.Ring1,
+            Attributes = new() { CritChance = 2 }, IconId = "ocean-ring" },
+        new() { ItemId = "deep-ring", DisplayName = "Ring des Tiefenmeeres", Rarity = ItemRarity.Epic, Slot = EquipmentSlot.Ring1,
+            Attributes = new() { CritChance = 4, Luck = 5 }, IconId = "deep-ring" },
+        new() { ItemId = "leviathan-seal", DisplayName = "Leviathans Siegel", Rarity = ItemRarity.Legendary, Slot = EquipmentSlot.Ring1,
+            Attributes = new() { CritChance = 6, CritDamage = 15, BossDamage = 5 }, IconId = "leviathan-seal" }
+    };
+
+    public void Validate()
+    {
+        if (BaseDropChance is < 0 or > 100 || MaximumDropChance is < 0 or > 100 ||
+            LuckChancePerPoint is < 0 or > 10 || MaximumLuckBonus is < 0 or > 100 ||
+            MaximumEventBonus is < 0 or > 100 || LegendaryMinimumStake < 1 ||
+            RiskTiers.Count == 0 || !RiskTiers.Any(t => t.MinimumStake == 0) ||
+            RiskTiers.Select(t => t.MinimumStake).Distinct().Count() != RiskTiers.Count ||
+            RiskTiers.Any(t => t.MinimumStake < 0 || !Enum.IsDefined(t.MaximumRarity) || t.DropBonus is < 0 or > 100) ||
+            RarityWeights.Any(p => p.Value is < 0 or > 1000000 || !Enum.IsDefined(p.Key)) ||
+            Items.Select(i => i.ItemId).Distinct().Count() != Items.Count ||
+            Items.Any(i => string.IsNullOrWhiteSpace(i.ItemId) || !Enum.IsDefined(i.Rarity) || !Enum.IsDefined(i.Kind) || i.Slot.HasValue && !Enum.IsDefined(i.Slot.Value)))
+            throw new InvalidOperationException("Ungültige RPG-Lootkonfiguration.");
+    }
+}
+
+public sealed class RpgRiskTier
+{
+    public long MinimumStake { get; set; }
+    public ItemRarity MaximumRarity { get; set; }
+    public decimal DropBonus { get; set; }
+}
