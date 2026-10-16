@@ -32,6 +32,8 @@ public sealed class CommandRegistry
                 role = ParseRole(roleOverride, role);
             if (module == "music" && role != CommandRole.Broadcaster)
                 role = CommandRole.Moderator;
+            if ((id is "heist.start" or "adventure.boss" || id.StartsWith("event.start.", StringComparison.Ordinal)) &&
+                role != CommandRole.Broadcaster) role = CommandRole.Moderator;
             if (!config.Commands.IsCommandEnabled(id))
                 enabled = false;
             list.Add(new ChatCommandDefinition(id, normalized,
@@ -43,6 +45,32 @@ public sealed class CommandRegistry
         }
 
         var m = config.Minigame;
+        Add("adventure.collection", "!sammlung", null, "fishing", "Fischen", "Fischsammlung",
+            "Zeigt deine gesammelten Fische und den größten Fang.", "!sammlung", "!sammlung", m.Enabled && m.PointsEnabled, order:53);
+        Add("event.start.boss", "!start boss", null, "boss", "Bosskampf", "Boss-Event starten",
+            "Startet den Bosskampf (Mods/Broadcaster).", "!start boss", "!start boss",
+            m.Enabled && m.PointsEnabled && m.Adventures.Boss.Enabled, CommandRole.Moderator, order:52);
+        Add("event.start.race", "!start rennen", new[] { "!start race" }, "race", "Rennen", "Renn-Event starten",
+            "Startet ein Rennen (Mods/Broadcaster).", "!start rennen <Betrag|all>", "!start rennen 100",
+            m.Enabled && m.PointsEnabled && m.Adventures.Race.Enabled, CommandRole.Moderator, order:52);
+        Add("event.start.heist", "!start heist", null, "heist", "Heist", "Heist-Event starten",
+            "Startet einen Heist (Mods/Broadcaster).", "!start heist", "!start heist",
+            config.Heist.Enabled, CommandRole.Moderator, order:62);
+        foreach (var game in new[] {
+            ("fishing", "!fischen", "Fischen", m.Adventures.Fishing.Enabled, "<Betrag|all>", "Wirft die Angel aus und gewinnt mit etwas Glück Punkte."),
+            ("treasure", "!schatzsuche", "Schatzsuche", m.Adventures.Treasure.Enabled, "<Betrag|all>", "Erkundet eine Höhle auf der Suche nach Beute."),
+            ("race", "!rennen", "Rennen", m.Adventures.Race.Enabled, "<Betrag|all>", "Tritt einem gemeinsamen Rennen um den Einsatz-Topf bei."),
+            ("boss", "!boss", "Bosskampf", m.Adventures.Boss.Enabled, "", "Startet einen Bosskampf oder zeigt den aktiven Boss an.") })
+            Add("adventure." + game.Item1, game.Item2, null, game.Item1, game.Item3, game.Item3,
+                game.Item6, (game.Item2 + " " + game.Item5).Trim(), game.Item2,
+                m.Enabled && m.PointsEnabled && game.Item4,
+                game.Item1 == "boss" ? CommandRole.Moderator : CommandRole.Viewer, order:50);
+        Add("adventure.race.join", "!joinrace", null, "race", "Rennen", "Rennen beitreten",
+            "Tritt dem offenen Rennen zum festgelegten Einsatz bei.", "!joinrace", "!joinrace",
+            m.Enabled && m.PointsEnabled && m.Adventures.Race.Enabled, order:51);
+        Add("adventure.boss.join", "!joinboss", null, "boss", "Bosskampf", "Boss angreifen",
+            "Greift den aktiven Boss an (ohne Einsatz).", "!joinboss", "!joinboss",
+            m.Enabled && m.PointsEnabled && m.Adventures.Boss.Enabled, order:51);
         Add("commands.list", "!command", new[] { "!commands", config.Commands.Command }
                 .Where(c => !Normalize(c).Equals("!command", StringComparison.OrdinalIgnoreCase)),
             "commands", "Befehle", "Befehlsliste",
@@ -99,7 +127,7 @@ public sealed class CommandRegistry
 
         Add("heist.start", config.Heist.StartCommand, null, "heist", "Heist", "Heist starten",
             "Startet einen gemeinsamen Raubzug um den Jackpot.", config.Heist.StartCommand,
-            config.Heist.StartCommand, config.Heist.Enabled, userCooldown:config.Heist.UserCooldownMinutes*60,
+            config.Heist.StartCommand, config.Heist.Enabled, CommandRole.Moderator, userCooldown:config.Heist.UserCooldownMinutes*60,
             globalCooldown:config.Heist.GlobalCooldownMinutes*60, order:60);
         Add("heist.join", config.Heist.JoinCommand, null, "heist", "Heist", "Heist beitreten",
             "Tritt der laufenden Beitrittsphase bei.", config.Heist.JoinCommand,

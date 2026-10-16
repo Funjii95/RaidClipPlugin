@@ -1,3 +1,20 @@
+## 2.1.3
+
+- Lokale transparente OBS-Browserquelle unter http://127.0.0.1:18769/ für Boss-Lebenspunkte, Rennteilnehmer und Countdowns. Nur bei laufendem Minigame-Modul aktiv, ausschließlich lesend und ohne Änderungen an OBS selbst.
+- Neuer Reiter „Event-Steuerung“ mit Live-Status, Start-/Abbruchbuttons und kopierbarer OBS-Adresse. Manuelle Rennabbrüche buchen keine Einsätze ab; Bossabbrüche zahlen keine Belohnungen aus.
+- Chattexte für Fischen, Schatzsuche, Rennen und Bosskampf direkt in den Spiel-Einstellungen anpassbar. Platzhalter je Nachricht; leere Texte werden nicht gesendet.
+- Persistente Fischsammlung mit fünf Arten, seltenen Fängen und größtem Fang. !sammlung zeigt die eigene Sammlung; !profil enthält Rennsiege, Boss-Siege, Artenzahl und größten Fisch. Statistiken werden gemeinsam mit der erfolgreichen Punkte-Abrechnung gespeichert.
+
+- Boss und Heist können nur Mods/Broadcaster starten (auch über die direkten Befehle). Rennen kann jeder berechtigte Zuschauer mit ausreichendem Guthaben starten. !joinboss und !joinrace stehen Zuschauern offen; beim Heist gelten die bestehenden Teilnahmerechte. Niedrigere Rollen-Overrides umgehen die Startsperre nicht.
+
+- Gemeinsamer Event-Start für Mods/Broadcaster: !start boss, !start rennen <Betrag|all> (Alias !start race) und !start heist. Bestehende Aktivierungen, Sperren und Event-Cooldowns bleiben wirksam; Beitritte unverändert mit !joinboss, !joinrace und !joinheist.
+
+- Vier neue Minigames mit eigenen Einstellungsreitern: !fischen und !schatzsuche mit Einsatz, Cooldown und Zufallsbeute; !rennen <Einsatz> mit gemeinsamer Beitrittsphase und !joinrace; !boss und !joinboss für einen kooperativen, einsatzfreien Bosskampf mit geteilter Belohnung.
+- Bosskampf optional automatisch alle X Minuten bei laufendem Modul starten. Aktive Kämpfe werden nicht überlagert; Rundenpause und Zeitlimit gelten. Auto-Start ist standardmäßig deaktiviert, Intervall 15 Minuten.
+- Rennen: gleicher Einsatz für alle; gemeinsame Abrechnung erst nach Beitrittsphase. Bei zu wenig Teilnehmern, Abbruch oder nicht mehr erfüllten Guthaben-/Tageslimits werden keine Einsätze abgebucht. Gewinne/Verluste werden im Verlauf gespeichert. Offene Runden werden bei Modul-/Programmende verworfen, ohne Einsätze zu verlieren.
+- Heist-Beitritt heißt standardmäßig !joinheist statt !join. Bestehende Einstellungen mit !join werden migriert; eigene andere Befehle bleiben erhalten. !joinrace und !joinboss sind unabhängig; bestehende Giveaway-Aliase bleiben unverändert.
+- Neue Befehle erscheinen rollenabhängig in !command und unterstützen die Modul-Navigation und Deaktivierung. Einsatzspiele berücksichtigen Tages- und Kontolimits, der kostenlose Bosskampf das Kontolimit.
+
 ## 2.1.2
 
 - !command und !commands antworten auch dann auf manuelle Eingaben, wenn der Broadcaster selbst als Bot-Sendekonto verwendet wird. Das interne IsBot-Merkmal hatte diese Eingaben fälschlich unterdrückt. Berechtigungen und Cooldown bleiben aktiv; eigene Listenantworten lösen keine neue Ausgabe aus.

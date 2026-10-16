@@ -5,6 +5,11 @@ public sealed class ViewerPointEntry
     public string UserId { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public long Points { get; set; }
+    public int RaceWins { get; set; }
+    public int BossDefeats { get; set; }
+    public Dictionary<string, int> FishCollection { get; set; } = new();
+    public int BiggestFishGrams { get; set; }
+    public string BiggestFishName { get; set; } = "";
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.Now;
     public int WatchMinutes { get; set; }
     public int GamesPlayed { get; set; }

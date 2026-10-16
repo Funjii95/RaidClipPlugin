@@ -287,6 +287,7 @@ public sealed class HeistService : IAsyncDisposable
         x.Equals(user.UserLogin,StringComparison.OrdinalIgnoreCase)||x.Equals(user.UserName,StringComparison.OrdinalIgnoreCase));
     private async Task<bool> IsAllowedAsync(ChatMessage user,CancellationToken token,bool starting=false)
     {
+        if (starting) return EventStartCommand.IsAllowed(user, _broadcasterId);
         if (user.CommandAuthorization == CommandAuthorization.Allowed) return true;
         if (user.CommandAuthorization == CommandAuthorization.Denied) return false;
         if(user.IsBroadcaster||user.UserId==_broadcasterId)return true;

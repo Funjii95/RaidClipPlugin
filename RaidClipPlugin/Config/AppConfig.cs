@@ -168,6 +168,7 @@ public class PermitConfig
 
 public class MinigameConfig
 {
+    public AdventureGamesConfig Adventures { get; set; } = new();
     public bool Enabled { get; set; } = false;
     public bool PointsEnabled { get; set; } = true;
     public long PointsPerInterval { get; set; } = 10;

@@ -2338,6 +2338,11 @@ private enum CloseChoice
         AddMinigameTab(tabs, "Chat-Commands", commandsFlow);
         AddMinigameTab(tabs, "Daily", dailyFlow);
         AddMinigameTab(tabs, "Casino-Spiele", casinoLayout);
+        AddMinigameTab(tabs, "Event-Steuerung", BuildAdventureControlPanel());
+        AddMinigameTab(tabs, "Fischen", BuildAdventurePanel(_fishingSettings, "!fischen <Betrag|all>: Stiefel, kleiner Fisch, großer Fang oder legendärer Fisch. Auszahlung: 0x / 1x / 2x / 8x Einsatz. Chancen: 50% / 30% / 17% / 3%."));
+        AddMinigameTab(tabs, "Schatzsuche", BuildAdventurePanel(_treasureSettings, "!schatzsuche <Betrag|all>: Falle, kleine Truhe, Schatzkammer oder Königsschatz. Auszahlung: 0x / 1x / 2x / 6x Einsatz. Chancen: 50% / 25% / 20% / 5%."));
+        AddMinigameTab(tabs, "Rennen", BuildAdventurePanel(_raceSettings, "!rennen <Betrag|all> startet ein Rennen. Weitere Teilnehmer: !joinrace. Nach der Beitrittsphase gewinnt ein zufälliger Teilnehmer den Topf. Mindestens 2 Teilnehmer; Einsätze werden erst bei der Auswertung gemeinsam abgebucht. Bei Abbruch keine Abbuchung."));
+        AddMinigameTab(tabs, "Bosskampf", BuildAdventurePanel(_bossSettings, "!boss startet manuell, !joinboss greift an (10–30 Schaden, Nutzer-Cooldown). Bei Sieg wird der Topf gleichmäßig geteilt. Kein Einsatz. Optional Auto-Start alle X Minuten bei laufendem Modul; Zeitlimit und Rundenpause werden berücksichtigt."));
         AddMinigameTab(tabs, "Heist", BuildHeistSettingsPanel());
         AddMinigameTab(tabs, "Duel", BuildDuelSettingsPanel());
         AddMinigameTab(tabs, "Limits & Fairness", limitsFlow);
@@ -4865,6 +4870,16 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.1.3
+- OBS-Eventanzeige, Event-Steuerung mit Abbruchbuttons und anpassbare Spiel-Chattexte.
+- Fischsammlung mit seltenen Arten: !sammlung. Renn-/Bossstatistiken und größter Fang in !profil.
+- Event-Start für Mods/Broadcaster: !start boss, !start rennen <Einsatz> und !start heist.
+- Neu: Fischen, Schatzsuche, gemeinsames Rennen und Bosskampf mit eigenen Einstellungsreitern.
+- Boss optional alle X Minuten automatisch starten; Angriffe mit !joinboss, Rennen beitreten mit !joinrace.
+- Heist-Beitritt auf !joinheist umgestellt; bisheriges !join wird automatisch migriert.
+- Einsätze, Cooldowns und Limits berücksichtigt. Abgebrochene Rennen verlieren keine Einsätze; neue Befehle in !command integriert.
+""",
+                """
 Version 2.1.2
 - !command und !commands funktionieren auch bei identischem Broadcaster- und Bot-Konto. Manuelle Eingaben werden nicht mehr als Bot-Nachrichten verworfen.
 """,
@@ -5357,6 +5372,7 @@ Version 2.0.6
                 _minigameEnabledCheck.Checked = config.Minigame.Enabled;
                 _pointsEnabledCheck.Checked = config.Minigame.PointsEnabled;
                 _gambleEnabledCheck.Checked = config.Minigame.GambleEnabled;
+                LoadAdventureSettings(config.Minigame);
                 _currencySingularBox.Text = config.Minigame.CurrencySingular;
                 _currencyPluralBox.Text = config.Minigame.CurrencyPlural;
                 _pointsCommandPunkteCheck.Checked = config.Minigame.PointsCommandPunkteEnabled;
@@ -5477,6 +5493,7 @@ Version 2.0.6
             _minigameEnabledCheck.Checked = config.Minigame.Enabled;
             _pointsEnabledCheck.Checked = config.Minigame.PointsEnabled;
             _gambleEnabledCheck.Checked = config.Minigame.GambleEnabled;
+            LoadAdventureSettings(config.Minigame);
             _coinflipEnabledCheck.Checked = config.Minigame.CoinflipEnabled;
             _slotsEnabledCheck.Checked = config.Minigame.SlotsEnabled;
             _rouletteEnabledCheck.Checked = config.Minigame.RouletteEnabled;
@@ -5756,6 +5773,7 @@ Version 2.0.6
 
     private void ReadMinigameSettings(AppConfig config)
     {
+        ReadAdventureSettings(config.Minigame);
         config.Minigame.Enabled = _minigameEnabledCheck.Checked;
         config.Minigame.PointsEnabled = _pointsEnabledCheck.Checked;
         config.Minigame.GambleEnabled = _gambleEnabledCheck.Checked;

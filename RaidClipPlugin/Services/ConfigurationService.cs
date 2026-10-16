@@ -741,6 +741,13 @@ public sealed class ConfigurationService
         Set(config.Commands, "points.lurk", pointsEnabled);
 
         var gamesEnabled = config.Minigame.Enabled;
+        var adventures = config.Minigame.Adventures;
+        Set(config.Commands, "adventure.fishing", gamesEnabled && pointsEnabled && adventures.Fishing.Enabled);
+        Set(config.Commands, "adventure.treasure", gamesEnabled && pointsEnabled && adventures.Treasure.Enabled);
+        Set(config.Commands, "adventure.race", gamesEnabled && pointsEnabled && adventures.Race.Enabled);
+        Set(config.Commands, "adventure.race.join", gamesEnabled && pointsEnabled && adventures.Race.Enabled);
+        Set(config.Commands, "adventure.boss", gamesEnabled && pointsEnabled && adventures.Boss.Enabled);
+        Set(config.Commands, "adventure.boss.join", gamesEnabled && pointsEnabled && adventures.Boss.Enabled);
         Set(config.Commands, "casino.gamble", gamesEnabled && config.Minigame.GambleEnabled);
         Set(config.Commands, "casino.jackpot", gamesEnabled && config.Minigame.JackpotEnabled);
         Set(config.Commands, "casino.coinflip", gamesEnabled && config.Minigame.CoinflipEnabled);
@@ -770,6 +777,29 @@ public sealed class ConfigurationService
         bool synchronizeCommandOverrides = false)
     {
         config.UiTheme = (config.UiTheme ?? "RaidRed").Trim();
+        config.Minigame.Adventures ??= new();
+        config.Minigame.Adventures.Fishing ??= new();
+        config.Minigame.Adventures.Treasure ??= new();
+        config.Minigame.Adventures.Race ??= new();
+        config.Minigame.Adventures.Boss ??= new();
+        foreach (var adventure in new StakeAdventureConfig[] { config.Minigame.Adventures.Fishing,
+                     config.Minigame.Adventures.Treasure, config.Minigame.Adventures.Race })
+        {
+            adventure.MaximumBet = Math.Clamp(adventure.MaximumBet, 1, long.MaxValue / 500);
+            adventure.MinimumBet = Math.Clamp(adventure.MinimumBet, 1, adventure.MaximumBet);
+            adventure.CooldownSeconds = Math.Clamp(adventure.CooldownSeconds, 1, 86400);
+        }
+        var race = config.Minigame.Adventures.Race;
+        race.JoinSeconds = Math.Clamp(race.JoinSeconds, 5, 600);
+        race.MaximumPlayers = Math.Clamp(race.MaximumPlayers, 2, 500);
+        race.RoundCooldownSeconds = Math.Clamp(race.RoundCooldownSeconds, 1, 86400);
+        var boss = config.Minigame.Adventures.Boss;
+        boss.HitPoints = Math.Clamp(boss.HitPoints, 10, 1000000);
+        boss.DurationSeconds = Math.Clamp(boss.DurationSeconds, 10, 1800);
+        boss.AttackCooldownSeconds = Math.Clamp(boss.AttackCooldownSeconds, 1, 86400);
+        boss.RewardPool = Math.Clamp(boss.RewardPool, 0, 1000000000);
+        boss.RoundCooldownSeconds = Math.Clamp(boss.RoundCooldownSeconds, 1, 86400);
+        boss.AutoStartMinutes = Math.Clamp(boss.AutoStartMinutes, 1, 1440);
         if (config.UiTheme is not ("DarkPurple" or "DarkBlue" or "LightModern" or "RaidRed" or "NeonGreen" or "TwitchPurple"))
             config.UiTheme = "RaidRed";
         config.UiAccentColor = NormalizeAccentColor(config.UiAccentColor);
@@ -881,6 +911,8 @@ public sealed class ConfigurationService
             .ToList();
         config.Heist.StartCommand = NormalizeCommand(config.Heist.StartCommand);
         config.Heist.JoinCommand = NormalizeCommand(config.Heist.JoinCommand);
+        if (config.Heist.JoinCommand.Equals("!join", StringComparison.OrdinalIgnoreCase))
+            config.Heist.JoinCommand = "!joinheist";
         config.Duel.DuelCommand = NormalizeCommand(config.Duel.DuelCommand);
         config.Duel.AcceptCommand = NormalizeCommand(config.Duel.AcceptCommand);
         config.Duel.DenyCommand = NormalizeCommand(config.Duel.DenyCommand);

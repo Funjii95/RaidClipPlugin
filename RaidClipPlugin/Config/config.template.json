@@ -311,7 +311,7 @@
   "Heist": {
     "Enabled": false,
     "StartCommand": "!heist",
-    "JoinCommand": "!join",
+    "JoinCommand": "!joinheist",
     "MinimumParticipants": 3,
     "MaximumParticipants": 50,
     "JoinDurationSeconds": 60,
