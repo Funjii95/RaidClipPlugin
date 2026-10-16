@@ -104,3 +104,19 @@ describe("isolierte Mockaktionen", () => {
     expect(s.boss.hp).toBeGreaterThan(0);
   });
 });
+
+it("dismantling dive loot dismisses its reveal and cannot reward twice", async () => {
+  const source = new MockRpgDataSource(() => 1000, () => 0);
+  const dive = await source.dispatch({type: "dive", stake: 250});
+  if (dive.result?.kind !== "dive") throw Error("Expected dive");
+  const id = dive.result.items[0].instanceId;
+  // Dismantling another item must not dismiss the current loot.
+  const unrelated = await source.dispatch({type: "dismantle", id: "demo-shell"});
+  expect(unrelated.result).toBeDefined();
+  const after = await source.dispatch({type: "dismantle", id});
+  expect(after.result).toBeUndefined();
+  expect(after.inventory.some(item => item.instanceId === id)).toBe(false);
+  expect(after.player.pearls).toBe(unrelated.player.pearls + 25);
+  await expect(source.dispatch({type: "dismantle", id})).rejects.toThrow();
+  expect(source.getSnapshot().player.pearls).toBe(after.player.pearls);
+});

@@ -140,3 +140,24 @@ test("configuration and helper as first script, reduced motion", async ({
     );
   }
 });
+
+for (const view of ["panel", "mobile"]) {
+  test(`${view}: dismantled dive loot closes the reveal`, async ({page}) => {
+    await page.setViewportSize({width: view === "panel" ? 320 : 390, height: 500});
+    await page.addInitScript(() => { Math.random = () => 0; });
+    await page.route("https://extension-files.twitch.tv/**", route => route.fulfill({contentType:"text/javascript",body:""}));
+    await page.goto(`/${view}.html`);
+    await page.getByLabel("Animationen aus").check();
+    await page.getByRole("button", {name:"Abenteuer",exact:true}).click();
+    await page.getByRole("button", {name:"Tauchgang starten"}).click();
+    const reveal = page.locator(".reveal");
+    await expect(reveal.getByRole("heading",{name:"Alte Muschel"})).toBeVisible();
+    await reveal.getByRole("button",{name:/Zerlegen/}).click();
+    await expect(reveal).toHaveCount(0);
+    await page.getByRole("button",{name:"Inventar",exact:true}).click();
+    await expect(page.locator('[data-instance-id="loot-1"]')).toHaveCount(0);
+    await expect(page.locator('[data-instance-id="demo-shell"]')).toHaveCount(1);
+    await page.getByRole("button",{name:"Abenteuer",exact:true}).click();
+    await expect(reveal).toHaveCount(0);
+  });
+}

@@ -117,6 +117,14 @@ export class MockRpgDataSource implements RpgDataSource {
         if (i.favorite || Object.values(s.equipment).includes(i.instanceId))
           throw Error("Favorisierte oder ausgerüstete Items sind geschützt.");
         s.inventory = s.inventory.filter((x) => x !== i);
+        // A removed inventory instance must also disappear from the loot reveal.
+        if (s.result?.kind === "dive") {
+          const wasLoot = s.result.items.some(item => item.instanceId === i.instanceId);
+          if (wasLoot) {
+            s.result.items = s.result.items.filter(item => item.instanceId !== i.instanceId);
+            if (s.result.items.length === 0) s.result = undefined;
+          }
+        }
         s.player.pearls += 25;
         break;
       }

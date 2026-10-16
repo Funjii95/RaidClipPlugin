@@ -21,3 +21,13 @@ Ausgeführt unter Windows, Node 24.19.0, pnpm 11.25.0, Chromium via Playwright 1
 | Bestehendes Plugin            | Keine C#-Dateien, Dienste, Konfigurationen oder Spielstanddateien verändert; alle hinzugefügten Dateien unter twitch-extension/     |
 
 Keine Aussage über echte Twitch-Authentifizierung oder erfolgreiche Einbettung auf einem Kanal: Twitch-Helper im Browser automatisiert gestubbt; keine Developer-Console-/Kanal-/iOS-/Android-Tests durchgeführt. Zertifikatsimport wurde nicht am Benutzerkonto vorgenommen. Der echte Kanaltest anhand README steht aus. Das C#-Projekt wurde nicht gebaut; es ist von dieser isolierten Frontend-Änderung unberührt.
+
+## Nachprüfung: zerlegte Tauchbeute (16.10.2026)
+
+Fehlerbehebung: Beim Zerlegen eines Fundstücks wird dieselbe Iteminstanz auch aus dem Tauchergebnis entfernt. Nach dem letzten Fundstück schließt sich die Lootanzeige. Zerlegen anderer Inventargegenstände verändert das aktuelle Tauchergebnis nicht; wiederholtes Zerlegen vergibt keine weiteren Perlen.
+
+- TypeScript/Vite-Build erfolgreich (JS 238,61 kB / 75,45 kB gzip).
+- Logiktests: 9/9 bestanden.
+- Chromium-Browsertests: 5/5 bestanden, 7,8 Sekunden; neuer Ablauf auf Panel und Mobil geprüft, einschließlich Wechsel ins Inventar und zurück.
+- Neue Tests verwenden garantierte Mockbeute; kein produktives Backend kontaktiert.
+- Aktualisiertes ZIP für manuellen Hosted-Test-Upload vorbereitet, nicht automatisch hochgeladen.
