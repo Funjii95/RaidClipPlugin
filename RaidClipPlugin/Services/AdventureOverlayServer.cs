@@ -12,15 +12,21 @@ public sealed class AdventureOverlayServer
 {
     public const string Url = "http://127.0.0.1:18769/";
     private readonly Func<AdventureStatus> _status;
-    public AdventureOverlayServer(Func<AdventureStatus> status) => _status = status;
+    private readonly string _url;
+    public AdventureOverlayServer(Func<AdventureStatus> status, int port = 18769)
+    {
+        if (port is < 1 or > 65535) throw new ArgumentOutOfRangeException(nameof(port));
+        _status = status;
+        _url = $"http://127.0.0.1:{port}/";
+    }
     public async Task RunAsync(CancellationToken token)
     {
         using var listener = new HttpListener();
-        listener.Prefixes.Add(Url);
+        listener.Prefixes.Add(_url);
         try
         {
             listener.Start();
-            Console.WriteLine("Event-Overlay bereit: " + Url);
+            Console.WriteLine("Event-Overlay bereit: " + _url);
             using var stop = token.Register(listener.Stop);
             while (!token.IsCancellationRequested)
             {

@@ -12,6 +12,8 @@ public sealed class AdventureGamesConfig
 
 public class StakeAdventureConfig
 {
+    [DisplayName("Cooldown-Text"), Description("{user}, {command}, {remaining} (Sekunden)")]
+    public string CooldownMessage { get; set; } = "@{user}, {command} ist in {remaining} Sekunden wieder verfügbar.";
     [DisplayName("Ergebnistext"), Description("{user}, {outcome}, {stake}, {payout}, {currency}, {balance}")]
     public string ResultMessage { get; set; } = "@{user}, {outcome} Einsatz: {stake}, Auszahlung: {payout} {currency}. Stand: {balance}.";
     [DisplayName("Aktiviert")] public bool Enabled { get; set; } = true;

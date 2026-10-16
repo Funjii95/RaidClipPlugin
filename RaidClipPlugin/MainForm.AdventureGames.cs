@@ -13,6 +13,28 @@ public sealed partial class MainForm
     private static PropertyGrid NewAdventureGrid() => new()
     { Dock = DockStyle.Fill, ToolbarVisible = false, HelpVisible = true, PropertySort = PropertySort.NoSort };
 
+    internal static void StyleAdventureGrid(PropertyGrid grid, Color input, Color surface,
+        Color text, Color muted, Color border, Color selection)
+    {
+        grid.BackColor = surface;
+        grid.ForeColor = text;
+        grid.ViewBackColor = input;
+        grid.ViewForeColor = text;
+        grid.ViewBorderColor = border;
+        grid.HelpBackColor = surface;
+        grid.HelpForeColor = text;
+        grid.HelpBorderColor = border;
+        grid.LineColor = border;
+        grid.CategoryForeColor = text;
+        grid.CategorySplitterColor = surface;
+        grid.DisabledItemForeColor = muted;
+        grid.SelectedItemWithFocusBackColor = selection;
+        grid.SelectedItemWithFocusForeColor = text;
+        grid.CommandsBackColor = surface;
+        grid.CommandsForeColor = text;
+        grid.CommandsBorderColor = border;
+    }
+
     private Control BuildAdventureControlPanel()
     {
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(14) };
@@ -32,7 +54,7 @@ public sealed partial class MainForm
             {
                 if (_minigame is null) { MessageBox.Show(this, "Bitte zuerst das Minigame-Modul starten."); return; }
                 button.Enabled = false;
-                try { await _minigame.ControlAdventureAsync(action, (long)stake.Value, _shutdown?.Token ?? CancellationToken.None); }
+                try { await _minigame.ControlAdventureAsync(action, (long)stake.Value, _shutdown?.Token ?? CancellationToken.None, _broadcaster); }
                 catch (Exception ex) { AppendLog("Event-Steuerung: " + ex.Message); MessageBox.Show(this, ex.Message, "Event-Steuerung"); }
                 finally { button.Enabled = true; }
             };

@@ -14,13 +14,13 @@ Erfolgreiche Fänge sammeln Rotfedern, Hechte und seltene Goldene Kois, Mondaale
 
 Die Einstellungen stehen unter **Punkte & Minigames** in eigenen Reitern. Punkte und Minigames müssen aktiviert sein. Alle Befehle erscheinen bei aktivem Modul in `!command`; bestehende Rollen- und Deaktivierungseinstellungen gelten weiterhin.
 
-Boss- und Heist-Start sind Mods/Broadcastern vorbehalten, auch bei direktem `!boss` oder `!heist`. Ein Rennen kann jeder Zuschauer mit ausreichenden Punkten starten. Gemeinsame Startbefehle für Mods/Broadcaster: `!start boss`, `!start rennen <Einsatz>` und `!start heist`.
+Boss- und Heist-Start sind Mods/Broadcastern vorbehalten, auch bei direktem `!boss` oder `!heist`. Ein Rennen kann jeder Zuschauer mit ausreichenden Punkten starten. Gemeinsame Startbefehle für Mods/Broadcaster: `!start boss`, `!start race <Einsatz>` und `!start heist`.
 
 | Spiel | Start | Teilnahme |
 | --- | --- | --- |
 | Fischen | `!fischen <Betrag\|all>` | Sofortiges Solospiel |
 | Schatzsuche | `!schatzsuche <Betrag\|all>` | Sofortiges Solospiel |
-| Rennen | `!rennen <Betrag\|all>` | `!joinrace` |
+| Rennen | `!start race <Betrag\|all>` | `!joinrace` |
 | Bosskampf | `!boss` oder automatisch | `!joinboss` (angreifen) |
 | Bestehender Heist | `!heist` | `!joinheist` |
 

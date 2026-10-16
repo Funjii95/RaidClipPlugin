@@ -8,6 +8,36 @@ namespace RaidClipPlugin.Tests;
 public sealed class AdventureGameTests
 {
     [Fact]
+    public async Task FishingCooldownShowsRemainingTimeWithoutExtendingOrChargingAgain()
+    {
+        using var f = new Fixture(1); await f.Seed("a");
+        f.Config.Adventures.Fishing.CooldownSeconds = 30;
+        await f.Send("a", "!fischen 100");
+        f.Now = f.Now.AddSeconds(10);
+        await f.Send("a", "!fischen 100");
+        Assert.Contains("20 Sekunden", f.Messages.Last());
+        Assert.Equal(900, await f.Balance("a"));
+        f.Now = f.Now.AddSeconds(20);
+        await f.Send("a", "!fischen 100");
+        Assert.Equal(800, await f.Balance("a"));
+        Assert.DoesNotContain("wieder verfügbar", f.Messages.Last());
+    }
+    [Fact]
+    public async Task PluginRaceStartUsesConnectedBroadcasterNameAndId()
+    {
+        using var f = new Fixture(); await f.Seed("42812664");
+        var messages = new List<string>();
+        var service = new AdventureGameService(f.Points, f.Config,
+            (text, _) => { messages.Add(text); return Task.CompletedTask; }, broadcasterId: "42812664");
+        await service.ControlAsync("race", 100, default, new TwitchUser("42812664", "funjii", "Funjii"));
+        Assert.Contains(messages, m => m.Contains("@Funjii ist im Rennen"));
+        Assert.DoesNotContain(messages, m => m.Contains("@Streamer"));
+        Assert.Equal(1, service.Status.RacePlayers);
+        Assert.Equal(1000, await f.Balance("42812664"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ControlAsync("race", 100, default,
+            new TwitchUser("wrong", "other", "Other")));
+    }
+    [Fact]
     public async Task CollectionAndBiggestFishPersistAcrossStoreReload()
     {
         using var f = new Fixture(100); await f.Seed("a");
@@ -43,7 +73,7 @@ public sealed class AdventureGameTests
         Assert.Equal(60, f.Service.Status.BossHp);
         await f.Service.ControlAsync("cancelboss", 0, default);
         Assert.False(f.Service.Status.BossActive);
-        await f.Seed("a"); await f.Send("a", "!rennen 100");
+        await f.Seed("a"); await f.Send("a", "!start race 100");
         Assert.True(f.Service.Status.RaceActive);
         Assert.Equal(1, f.Service.Status.RacePlayers);
         await f.Service.ControlAsync("cancelrace", 0, default);
@@ -61,7 +91,7 @@ public sealed class AdventureGameTests
         await f.Send("a", "!joinboss"); await f.Send("b", "!joinboss");
         Assert.Equal(1, (await f.Points.GetProfileAsync("a", default)).Entry.BossDefeats);
         Assert.Equal(1, (await f.Points.GetProfileAsync("b", default)).Entry.BossDefeats);
-        await f.Send("a", "!rennen 100"); await f.Send("b", "!joinrace");
+        await f.Send("a", "!start race 100"); await f.Send("b", "!joinrace");
         f.Now = f.Now.AddSeconds(6); await f.Service.TickAsync(default);
         Assert.Equal(1, (await f.Points.GetProfileAsync("b", default)).Entry.RaceWins);
         Assert.Equal(0, (await f.Points.GetProfileAsync("a", default)).Entry.RaceWins);
@@ -85,19 +115,24 @@ public sealed class AdventureGameTests
     public async Task OverlayOnlyServesReadOnlyLoopbackStateAndStopsCleanly()
     {
         using var cts = new CancellationTokenSource();
-        var server = new AdventureOverlayServer(() => new AdventureStatus(BossActive:true, BossHp:42, BossMaxHp:100));
+        var reservation = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        reservation.Start();
+        var port = ((System.Net.IPEndPoint)reservation.LocalEndpoint).Port;
+        reservation.Stop();
+        var url = $"http://127.0.0.1:{port}/";
+        var server = new AdventureOverlayServer(() => new AdventureStatus(BossActive:true, BossHp:42, BossMaxHp:100), port);
         var run = server.RunAsync(cts.Token);
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            var html = await http.GetStringAsync(AdventureOverlayServer.Url);
+            var html = await http.GetStringAsync(url);
             Assert.Contains("!joinboss", html); Assert.Contains("background:transparent", html);
-            var json = await http.GetStringAsync(AdventureOverlayServer.Url + "state");
+            var json = await http.GetStringAsync(url + "state");
             var status = System.Text.Json.JsonSerializer.Deserialize<AdventureStatus>(json)!;
             Assert.True(status.BossActive); Assert.Equal(42, status.BossHp);
-            using var post = await http.PostAsync(AdventureOverlayServer.Url + "state", null);
+            using var post = await http.PostAsync(url + "state", null);
             Assert.Equal(System.Net.HttpStatusCode.NotFound, post.StatusCode);
-            using var unknown = await http.GetAsync(AdventureOverlayServer.Url + "unknown");
+            using var unknown = await http.GetAsync(url + "unknown");
             Assert.Equal(System.Net.HttpStatusCode.NotFound, unknown.StatusCode);
         }
         finally { cts.Cancel(); await run.WaitAsync(TimeSpan.FromSeconds(5)); }
@@ -111,7 +146,7 @@ public sealed class AdventureGameTests
         await f.Send("mod", "!boss", moderator: true);
         await f.Send("a", "!joinboss");
         Assert.Contains(f.Messages, m => m.Contains("@a trifft"));
-        await f.Send("a", "!rennen 100");
+        await f.Send("a", "!start race 100");
         Assert.Contains(f.Messages, m => m.Contains("Rennen eröffnet"));
         var config = new AppConfig(); config.Minigame.Enabled = true; config.Heist.Enabled = true;
         config.Commands.CommandRoleOverrides["adventure.boss"] = "Viewer";
@@ -144,6 +179,13 @@ public sealed class AdventureGameTests
         public Task Send(string id, string text, CommandAuthorization authorization = CommandAuthorization.Default, bool moderator = false)
         {
             var parsed = ChatMinigameService.ParseMinigameCommand(text);
+            if (parsed.Command == "!start")
+            {
+                var translated = EventStartCommand.Translate(parsed.Parts)!;
+                return Service.HandleAsync(new ChatMessage { Id = Guid.NewGuid().ToString(), UserId = id,
+                    UserName = id, UserLogin = id, Text = text, IsModerator = moderator, CommandAuthorization = authorization },
+                    translated[0], translated, default);
+            }
             return Service.HandleAsync(new ChatMessage { Id = Guid.NewGuid().ToString(), UserId = id, UserName = id,
                 UserLogin = id, Text = text, IsModerator = moderator, CommandAuthorization = authorization }, parsed.Command, parsed.Parts, default);
         }
@@ -166,7 +208,8 @@ public sealed class AdventureGameTests
         await f.Send("a", command + " 100");
         await f.Send("a", command + " 100");
         Assert.Equal(expected, await f.Balance("a"));
-        Assert.Single(f.Messages);
+        Assert.Equal(2, f.Messages.Count);
+        Assert.Contains("Sekunden wieder verfügbar", f.Messages.Last());
     }
 
     [Theory]
@@ -213,7 +256,7 @@ public sealed class AdventureGameTests
     public async Task RaceUsesDedicatedJoinCommandAndAtomicPotWithoutDuplicateEntries()
     {
         using var f = new Fixture(0); await f.Seed("a"); await f.Seed("b");
-        await f.Send("a", "!rennen 100");
+        await f.Send("a", "!start race 100");
         await f.Send("b", "!joinrace"); await f.Send("b", "!joinrace");
         Assert.Equal(1000, await f.Balance("a")); Assert.Equal(1000, await f.Balance("b"));
         f.Now = f.Now.AddSeconds(6); await f.Service.TickAsync(default); await f.Service.TickAsync(default);
@@ -226,7 +269,7 @@ public sealed class AdventureGameTests
     public async Task RaceCancelsWithoutChargingAnybodyWhenBalanceChanges()
     {
         using var f = new Fixture(0); await f.Seed("a"); await f.Seed("b");
-        await f.Send("a", "!rennen 100"); await f.Send("b", "!joinrace");
+        await f.Send("a", "!start race 100"); await f.Send("b", "!joinrace");
         await f.Points.RemovePointsAsync("b", "b", 950, 0, default);
         f.Now = f.Now.AddSeconds(6); await f.Service.TickAsync(default);
         Assert.Equal(1000, await f.Balance("a")); Assert.Equal(50, await f.Balance("b"));
@@ -237,10 +280,10 @@ public sealed class AdventureGameTests
     public async Task RaceCancelAndMissingParticipantsNeverLoseStakes()
     {
         using var f = new Fixture(); await f.Seed("a");
-        await f.Send("a", "!rennen 100"); await f.Service.CancelAsync();
+        await f.Send("a", "!start race 100"); await f.Service.CancelAsync();
         f.Now = f.Now.AddMinutes(2); await f.Service.TickAsync(default);
         Assert.Equal(1000, await f.Balance("a"));
-        await f.Send("a", "!rennen 100"); f.Now = f.Now.AddSeconds(6); await f.Service.TickAsync(default);
+        await f.Send("a", "!start race 100"); f.Now = f.Now.AddSeconds(6); await f.Service.TickAsync(default);
         Assert.Equal(1000, await f.Balance("a"));
         Assert.Contains(f.Messages, s => s.Contains("weniger als 2"));
     }
@@ -294,7 +337,7 @@ public sealed class AdventureGameTests
     public async Task ParallelRaceJoinsAndSettlementDoNotDuplicateMoney()
     {
         using var f = new Fixture(0); await f.Seed("a"); await f.Seed("b");
-        await f.Send("a", "!rennen 100");
+        await f.Send("a", "!start race 100");
         await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => f.Send("b", "!joinrace")));
         f.Now = f.Now.AddSeconds(6);
         await Task.WhenAll(f.Service.TickAsync(default), f.Service.TickAsync(default));

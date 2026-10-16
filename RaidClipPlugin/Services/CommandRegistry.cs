@@ -50,16 +50,15 @@ public sealed class CommandRegistry
         Add("event.start.boss", "!start boss", null, "boss", "Bosskampf", "Boss-Event starten",
             "Startet den Bosskampf (Mods/Broadcaster).", "!start boss", "!start boss",
             m.Enabled && m.PointsEnabled && m.Adventures.Boss.Enabled, CommandRole.Moderator, order:52);
-        Add("event.start.race", "!start rennen", new[] { "!start race" }, "race", "Rennen", "Renn-Event starten",
-            "Startet ein Rennen (Mods/Broadcaster).", "!start rennen <Betrag|all>", "!start rennen 100",
-            m.Enabled && m.PointsEnabled && m.Adventures.Race.Enabled, CommandRole.Moderator, order:52);
+        Add("adventure.race", "!start race", null, "race", "Rennen", "Rennen starten",
+            "Startet ein gemeinsames Rennen.", "!start race <Betrag|all>", "!start race 100",
+            m.Enabled && m.PointsEnabled && m.Adventures.Race.Enabled, order:50);
         Add("event.start.heist", "!start heist", null, "heist", "Heist", "Heist-Event starten",
             "Startet einen Heist (Mods/Broadcaster).", "!start heist", "!start heist",
             config.Heist.Enabled, CommandRole.Moderator, order:62);
         foreach (var game in new[] {
             ("fishing", "!fischen", "Fischen", m.Adventures.Fishing.Enabled, "<Betrag|all>", "Wirft die Angel aus und gewinnt mit etwas Glück Punkte."),
             ("treasure", "!schatzsuche", "Schatzsuche", m.Adventures.Treasure.Enabled, "<Betrag|all>", "Erkundet eine Höhle auf der Suche nach Beute."),
-            ("race", "!rennen", "Rennen", m.Adventures.Race.Enabled, "<Betrag|all>", "Tritt einem gemeinsamen Rennen um den Einsatz-Topf bei."),
             ("boss", "!boss", "Bosskampf", m.Adventures.Boss.Enabled, "", "Startet einen Bosskampf oder zeigt den aktiven Boss an.") })
             Add("adventure." + game.Item1, game.Item2, null, game.Item1, game.Item3, game.Item3,
                 game.Item6, (game.Item2 + " " + game.Item5).Trim(), game.Item2,

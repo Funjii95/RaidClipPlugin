@@ -1080,6 +1080,11 @@ private enum CloseChoice
         {
             switch (control)
             {
+                case PropertyGrid properties:
+                    StyleAdventureGrid(properties, InputColor, SurfaceColor, TextColor,
+                        MutedTextColor, BorderColor, AccentDarkColor);
+                    // PropertyGrid owns its editor/help controls and styles them through these properties.
+                    continue;
                 case Button button:
                     StyleButton(button);
                     break;
@@ -2341,7 +2346,7 @@ private enum CloseChoice
         AddMinigameTab(tabs, "Event-Steuerung", BuildAdventureControlPanel());
         AddMinigameTab(tabs, "Fischen", BuildAdventurePanel(_fishingSettings, "!fischen <Betrag|all>: Stiefel, kleiner Fisch, großer Fang oder legendärer Fisch. Auszahlung: 0x / 1x / 2x / 8x Einsatz. Chancen: 50% / 30% / 17% / 3%."));
         AddMinigameTab(tabs, "Schatzsuche", BuildAdventurePanel(_treasureSettings, "!schatzsuche <Betrag|all>: Falle, kleine Truhe, Schatzkammer oder Königsschatz. Auszahlung: 0x / 1x / 2x / 6x Einsatz. Chancen: 50% / 25% / 20% / 5%."));
-        AddMinigameTab(tabs, "Rennen", BuildAdventurePanel(_raceSettings, "!rennen <Betrag|all> startet ein Rennen. Weitere Teilnehmer: !joinrace. Nach der Beitrittsphase gewinnt ein zufälliger Teilnehmer den Topf. Mindestens 2 Teilnehmer; Einsätze werden erst bei der Auswertung gemeinsam abgebucht. Bei Abbruch keine Abbuchung."));
+        AddMinigameTab(tabs, "Rennen", BuildAdventurePanel(_raceSettings, "!start race <Betrag|all> startet ein Rennen. Weitere Teilnehmer: !joinrace. Nach der Beitrittsphase gewinnt ein zufälliger Teilnehmer den Topf. Mindestens 2 Teilnehmer; Einsätze werden erst bei der Auswertung gemeinsam abgebucht. Bei Abbruch keine Abbuchung."));
         AddMinigameTab(tabs, "Bosskampf", BuildAdventurePanel(_bossSettings, "!boss startet manuell, !joinboss greift an (10–30 Schaden, Nutzer-Cooldown). Bei Sieg wird der Topf gleichmäßig geteilt. Kein Einsatz. Optional Auto-Start alle X Minuten bei laufendem Modul; Zeitlimit und Rundenpause werden berücksichtigt."));
         AddMinigameTab(tabs, "Heist", BuildHeistSettingsPanel());
         AddMinigameTab(tabs, "Duel", BuildDuelSettingsPanel());
@@ -4870,10 +4875,16 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.1.4
+- Fischen und Schatzsuche melden verbleibende Cooldown-Sekunden statt wiederholte Aufrufe still zu ignorieren; Text anpassbar.
+- Rennstart im Plugin zeigt den verbundenen Twitch-Namen statt des Platzhalters Streamer.
+- Neue Spiel-Einstellungen: Tabellen, Hilfebereich, Auswahl und Rahmen folgen jetzt dem gewählten Theme, ohne grelle Standardflächen.
+""",
+                """
 Version 2.1.3
 - OBS-Eventanzeige, Event-Steuerung mit Abbruchbuttons und anpassbare Spiel-Chattexte.
 - Fischsammlung mit seltenen Arten: !sammlung. Renn-/Bossstatistiken und größter Fang in !profil.
-- Event-Start für Mods/Broadcaster: !start boss, !start rennen <Einsatz> und !start heist.
+- Event-Start für Mods/Broadcaster: !start boss, !start race <Einsatz> und !start heist.
 - Neu: Fischen, Schatzsuche, gemeinsames Rennen und Bosskampf mit eigenen Einstellungsreitern.
 - Boss optional alle X Minuten automatisch starten; Angriffe mit !joinboss, Rennen beitreten mit !joinrace.
 - Heist-Beitritt auf !joinheist umgestellt; bisheriges !join wird automatisch migriert.
