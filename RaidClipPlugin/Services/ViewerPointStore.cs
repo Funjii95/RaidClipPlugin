@@ -598,10 +598,12 @@ public sealed partial class ViewerPointStore
         try
         {
             await EnsureLoadedAsync(cancellationToken);
-            var ordered = _entries!.Values.OrderByDescending(x => x.Points)
-                .ThenBy(x => x.UserId).ToArray();
-            var index = Array.FindIndex(ordered, x => x.UserId == userId);
-            var entry = index >= 0 ? CloneEntry(ordered[index]) : new ViewerPointEntry
+            // Dictionary keys are the authoritative Twitch IDs. An old/missing
+            // duplicate UserId field must not hide an otherwise existing inventory.
+            var ordered = _entries!.OrderByDescending(x => x.Value.Points)
+                .ThenBy(x => x.Key).ToArray();
+            var index = Array.FindIndex(ordered, x => x.Key == userId);
+            var entry = index >= 0 ? CloneEntry(ordered[index].Value) : new ViewerPointEntry
             { UserId = userId, Points = 0 };
             return new ViewerProfileResult(entry, index >= 0 ? index + 1 : 0);
         }
@@ -668,6 +670,7 @@ public sealed partial class ViewerPointStore
                 if (!mutation.Success) return new(false, mutation.Error, previousEntry?.Points ?? Math.Max(0, minimum), 0);
                 if (File.Exists(_filePath) && !File.Exists(_filePath + ".pre-rpg.bak"))
                     File.Copy(_filePath, _filePath + ".pre-rpg.bak");
+                EnsureItemSystemBackup();
             }
             committing = true;
 
@@ -989,7 +992,8 @@ public sealed partial class ViewerPointStore
     private static ViewerPointEntry CloneEntry(ViewerPointEntry x) => new()
     {
         UserId=x.UserId, DisplayName=x.DisplayName, Points=x.Points,
-        Rpg = JsonSerializer.Deserialize<RpgProfile>(JsonSerializer.Serialize(x.Rpg ?? new(), JsonOptions), JsonOptions)!,
+        Rpg = x.Rpg is null ? throw new InvalidDataException("Das gespeicherte RPG-Profil ist null.") :
+            JsonSerializer.Deserialize<RpgProfile>(JsonSerializer.Serialize(x.Rpg, JsonOptions), JsonOptions)!,
         RaceWins=x.RaceWins, BossDefeats=x.BossDefeats,
         FishCollection = x.FishCollection is null ? new() : new(x.FishCollection),
         BiggestFishGrams=x.BiggestFishGrams, BiggestFishName=x.BiggestFishName,
@@ -1070,11 +1074,9 @@ public sealed partial class ViewerPointStore
         try
         {
             await using var stream = File.OpenRead(_filePath);
-            var entries = await JsonSerializer.DeserializeAsync<
-                Dictionary<string, ViewerPointEntry>>(
-                stream,
-                JsonOptions,
-                cancellationToken);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+            ValidatePersistedInventories(document.RootElement);
+            var entries = document.RootElement.Deserialize<Dictionary<string, ViewerPointEntry>>(JsonOptions);
             if (entries is null || entries.Any(p => p.Value is null || p.Value.Rpg is { SchemaVersion: not 1 }))
                 throw new InvalidDataException("Die Punktedatei enthält keine gültigen Konten.");
             _entries = new Dictionary<string, ViewerPointEntry>(entries, StringComparer.Ordinal);

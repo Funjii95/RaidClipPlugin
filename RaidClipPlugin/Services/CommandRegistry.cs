@@ -45,15 +45,9 @@ public sealed class CommandRegistry
         }
 
         var m = config.Minigame;
-        foreach (var (command, aliases, usage) in new[] {
-            ("!inventory", new[] { "!inventar" }, "[Seite]"),
-            ("!equipment", new[] { "!ausrüstung" }, ""),
-            ("!equip", Array.Empty<string>(), "<Item-ID> <Slot>"),
-            ("!perks", Array.Empty<string>(), ""), ("!perk", Array.Empty<string>(), "<ID>"),
-            ("!sushi", Array.Empty<string>(), "[Rezept]"), ("!craft", Array.Empty<string>(), "<Rezept>"),
-            ("!stats", Array.Empty<string>(), "") })
-            Add("rpg." + command[1..], command, aliases, "points", "RPG", command[1..],
-                "RPG-Inventar, Charakter und permanente Entwicklung.", (command + " " + usage).Trim(), command,
+        foreach (var definition in RpgCommandCatalog.Definitions)
+            Add("rpg." + definition.Command[1..], definition.Command, definition.Aliases, "points", "RPG", definition.Command[1..],
+                "RPG-Inventar, Charakter und permanente Entwicklung.", (definition.Command + " " + definition.Usage).Trim(), definition.Command,
                 m.Enabled && m.PointsEnabled && m.Adventures.Rpg.Enabled, userCooldown:2, order:54);
         Add("adventure.collection", "!sammlung", null, "fishing", "Fischen", "Fischsammlung",
             "Zeigt deine gesammelten Fische und den größten Fang.", "!sammlung", "!sammlung", m.Enabled && m.PointsEnabled, order:53);

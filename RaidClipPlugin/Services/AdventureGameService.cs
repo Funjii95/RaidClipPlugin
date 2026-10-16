@@ -31,6 +31,7 @@ public sealed class AdventureGameService
         MinigameConfig Config, Dictionary<string, string> Players);
     private sealed class BossRound
     {
+        public string Id = Guid.NewGuid().ToString("N");
         public required BossAdventureConfig Config;
         public required DateTimeOffset End;
         public int Hp;
@@ -130,7 +131,13 @@ public sealed class AdventureGameService
             var settings = _config.Adventures;
             if (RpgChatCommand.Recognizes(command))
             {
-                if (Cooling("rpgview:" + message.UserId, 2)) return;
+                var rpgCooldown = "rpgview:" + message.UserId;
+                if (Cooling(rpgCooldown, 2))
+                {
+                    var remaining = Math.Max(1, (int)Math.Ceiling((_cooldowns[rpgCooldown] - _now()).TotalSeconds));
+                    await Say($"🦦 @{message.UserName}, bitte {remaining} Sekunden bis zum nächsten RPG-Befehl warten.", token);
+                    return;
+                }
                 await Say(await new RpgChatCommand(_points, settings.Rpg).ExecuteAsync(message, command, parts, token), token);
                 DataChanged?.Invoke();
                 return;
@@ -149,9 +156,8 @@ public sealed class AdventureGameService
                 var rpgResult = await new RpgAdventureService(_points, _config, _random, _now).ExecuteAsync(
                     message.UserId, message.UserName, actionId, command == "!fish" ? RpgActivity.Fishing : RpgActivity.Dive, rpgStake, token);
                 if (rpgResult.Success) DataChanged?.Invoke();
-                var found = rpgResult.Item is null ? "" : $" Fund: {rpgResult.Item.DisplayName} ({rpgResult.Item.Rarity}).";
                 await Say(rpgResult.Success ? Format(gameConfig.ResultMessage, ("user", message.UserName),
-                    ("outcome", rpgResult.Outcome + found), ("stake", rpgStake), ("payout", rpgResult.Payout),
+                    ("outcome", RpgChatPresentation.AdventureOutcome(rpgResult, command == "!fish" ? RpgActivity.Fishing : RpgActivity.Dive)), ("stake", rpgStake), ("payout", rpgResult.Payout),
                     ("currency", Currency), ("balance", rpgResult.Balance)) : $"@{message.UserName}, {rpgResult.Error}", token);
                 if (rpgResult.Success && rpgResult.Item?.Rarity == ItemRarity.Legendary)
                     await Say(Format(settings.Rpg.LegendaryMessage, ("user", message.UserName), ("item", rpgResult.Item.DisplayName)), token);
@@ -163,7 +169,9 @@ public sealed class AdventureGameService
                 var profile = await _points.GetProfileAsync(message.UserId, token);
                 if (settings.Rpg.Enabled && profile.Entry.Rpg.LegacyFishImported)
                 {
-                    await Say($"@{message.UserName}, RPG-Fischvorrat: " + string.Join(", ", profile.Entry.Rpg.Fish.Select(p => $"{p.Key}: {p.Value.Quantity}x")), token);
+                    var stocks = profile.Entry.Rpg.Fish.Where(p => p.Value.Quantity > 0).Select(p =>
+                        $"{settings.Rpg.FishSpecies.SingleOrDefault(f => f.Id == p.Key)?.Name ?? p.Key}: {p.Value.Quantity}×").ToArray();
+                    await Say($"🎣 @{message.UserName}, Fischvorrat: " + (stocks.Length == 0 ? "Noch keine Fische. Nutze !fish <Einsatz>." : string.Join(", ", stocks)), token);
                     return;
                 }
                 var fish = profile.Entry.FishCollection ?? new();
@@ -304,6 +312,7 @@ public sealed class AdventureGameService
         }
         var damage = _random.NextInclusive(10, 30);
         var critical = false;
+        var extraHits = 0;
         if (_config.Adventures.Rpg.Enabled)
         {
             var mutation = await _points.ApplyRpgAsync(user.UserId, user.UserName,
@@ -312,9 +321,9 @@ public sealed class AdventureGameService
                     var clock = _now();
                     if (account.Rpg.Cooldowns.TryGetValue("!attack", out var until) && clock < until)
                         return new(false, $"Angriff in {Math.Ceiling((until - clock).TotalSeconds)} Sekunden wieder möglich.");
-                    var stats = CharacterStatService.Calculate(account.Rpg, _config.Adventures.Rpg, RpgActivity.Boss);
-                    damage = CharacterStatService.BossDamage(damage, stats, _random.NextInclusive(0, 9999) / 100m, out critical, _config.Adventures.Rpg.BaseCritMultiplier);
-                    RpgProgressionService.ConsumeBuffs(account.Rpg, RpgActivity.Boss);
+                    var hit = RpgPassiveService.BossAttack(damage, account.Rpg, _config.Adventures.Rpg, _random, clock);
+                    damage = hit.Damage; critical = hit.Critical; extraHits = hit.ExtraHits;
+                    RpgPassiveService.ConsumeBuffs(account.Rpg, RpgActivity.Boss, _config.Adventures.Rpg, _random, clock);
                     account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(Math.Clamp(_boss.Config.AttackCooldownSeconds, 1, 86400));
                     return new(true);
                 }, token);
@@ -322,15 +331,35 @@ public sealed class AdventureGameService
         }
         _boss.Players[user.UserId] = user.UserName;
         _boss.Hp = Math.Max(0, _boss.Hp - damage);
-        if (_boss.Hp > 0) { await Say(Format(_boss.Config.AttackMessage, ("user", user.UserName), ("damage", damage), ("hp", _boss.Hp)), token); return new(true, user.UserId, damage, critical, _boss.Hp, false, 0, ""); }
+        if (_boss.Hp > 0)
+        {
+            var template = _boss.Config.AttackMessage;
+            var attackText = Format(template, ("user", user.UserName), ("damage", damage), ("hp", _boss.Hp), ("critical", critical ? "Kritischer Treffer!" : ""));
+            if (critical && !string.IsNullOrWhiteSpace(attackText) && !template.Contains("{critical}", StringComparison.OrdinalIgnoreCase)) attackText += " Kritischer Treffer!";
+            if (extraHits > 0 && !string.IsNullOrWhiteSpace(attackText)) attackText += $" {extraHits} Zusatztreffer enthalten.";
+            if (_config.Adventures.Rpg.Enabled && !string.IsNullOrWhiteSpace(attackText)) attackText = "⚔️ " + attackText;
+            await Say(attackText, token);
+            return new(true, user.UserId, damage, critical, _boss.Hp, false, 0, "");
+        }
         var finished = _boss;
         _boss = null;
         _nextBoss = _now().AddSeconds(Math.Clamp(finished.Config.RoundCooldownSeconds, 1, 86400));
         var reward = Math.Clamp(finished.Config.RewardPool, 0, 1000000000) / finished.Players.Count;
         await _points.AddPointsToUsersAsync(finished.Players.Select(p => (p.Key, p.Value)), reward,
             _config.MinimumPoints, Maximum, token, "Bosskampf", _config.HistoryLimit);
+        if (_config.Adventures.Rpg.Enabled)
+        {
+            var lootService = new RpgBossLootService(_points, _config.Adventures.Rpg, _random);
+            foreach (var player in finished.Players)
+            {
+                var found = await lootService.AwardAsync(player.Key, player.Value, finished.Id, Math.Clamp(finished.Config.HitPoints, 10, 1000000), finished.Players.Count, _now(), token);
+                if (found is not null) await Say($"{(found.Rarity == ItemRarity.Legendary ? "💎" : "⚔️")} @{player.Value} findet {found.DisplayName} [{found.Rarity}]! Details: !inv.", token);
+            }
+        }
         DataChanged?.Invoke();
-        await Say(Format(finished.Config.WinMessage, ("count", finished.Players.Count), ("reward", reward), ("currency", Currency)), token);
+        var winText = Format(finished.Config.WinMessage, ("count", finished.Players.Count), ("reward", reward), ("currency", Currency));
+        if (_config.Adventures.Rpg.Enabled && !string.IsNullOrWhiteSpace(winText)) winText = "⚔️ " + winText;
+        await Say(winText, token);
         return new(true, user.UserId, damage, critical, 0, true, 0, "");
     }
     public async Task TickAsync(CancellationToken token)

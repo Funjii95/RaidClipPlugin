@@ -16,7 +16,8 @@ public static class CharacterStatService
         var factor = sum > 0 ? Math.Min(1, total / sum) : 0;
         return (perks * factor, equipment * factor, sushi * factor);
     }
-    public static RpgAttributes Calculate(RpgProfile profile, RpgConfig config, RpgActivity activity)
+    public static RpgAttributes Calculate(RpgProfile profile, RpgConfig config, RpgActivity activity, bool includeEffects = true,
+        DateTimeOffset? now = null, long stake = 0)
     {
         var result = new RpgAttributes();
         foreach (var pair in profile.Perks)
@@ -27,9 +28,26 @@ public static class CharacterStatService
         foreach (var id in profile.Equipment.Values.Distinct())
         {
             var item = profile.Inventory.SingleOrDefault(i => i.InstanceId == id);
-            if (item is not null) Add(result, item.Attributes);
+            if (item is not null)
+            {
+                Add(result, item.Attributes);
+                if (includeEffects)
+                foreach (var effect in item.Effects.Where(e => !e.RequiresCritical && (!e.Activity.HasValue || e.Activity == activity) && stake >= e.MinimumStake &&
+                    (!profile.Cooldowns.TryGetValue("effect:" + item.InstanceId + ":" + e.Id, out var until) || (now ?? DateTimeOffset.UtcNow) >= until)))
+                {
+                    switch (effect.Trigger)
+                    {
+                        case RpgEffectTrigger.DoubleAttack when activity == RpgActivity.Boss: result.DoubleAttackChance += effect.Chance; break;
+                        case RpgEffectTrigger.TripleAttack when activity == RpgActivity.Boss: result.TripleAttackChance += effect.Chance; break;
+                        case RpgEffectTrigger.ExtraLoot when activity == RpgActivity.Dive: result.ExtraLootChance += effect.Chance; break;
+                        case RpgEffectTrigger.SushiPreservation: result.SushiPreservationChance += effect.Chance; break;
+                    }
+                }
+            }
         }
         foreach (var buff in profile.Buffs.Where(b => b.Activity == activity && b.RemainingUses > 0)) Add(result, buff.Attributes);
+        foreach (var progress in RpgSetService.Progress(profile, config))
+        foreach (var bonus in progress.Set.Bonuses.Where(b => progress.Equipped >= b.RequiredPieces)) Add(result, bonus.Attributes);
         result.CritChance = Math.Clamp(result.CritChance, 0, Math.Clamp(config.CritChanceCap, 0, 100));
         result.CritDamage = Math.Clamp(result.CritDamage, 0, Math.Clamp(config.CritDamageCap, 0, 1000));
         result.Luck = Math.Clamp(result.Luck, 0, Math.Clamp(config.LuckCap, 0, 1000));
@@ -37,7 +55,11 @@ public static class CharacterStatService
         result.FishingLuck = Math.Clamp(result.FishingLuck, 0, Math.Clamp(config.LuckCap, 0, 1000));
         result.Damage = Math.Clamp(result.Damage, 0, Math.Clamp(config.DamageBonusCap, 0, 1000));
         result.BossDamage = Math.Clamp(result.BossDamage, 0, Math.Clamp(config.DamageBonusCap, 0, 1000));
-        result.PearlBonus = Math.Clamp(result.PearlBonus, 0, Math.Clamp(config.DamageBonusCap, 0, 1000));
+        result.PearlBonus = Math.Clamp(result.PearlBonus, 0, Math.Clamp(config.PearlBonusCap, 0, 15));
+        result.DoubleAttackChance = Math.Clamp(result.DoubleAttackChance, 0, Math.Clamp(config.DoubleAttackChanceCap, 0, 20));
+        result.TripleAttackChance = Math.Clamp(result.TripleAttackChance, 0, Math.Clamp(config.TripleAttackChanceCap, 0, 5));
+        result.ExtraLootChance = Math.Clamp(result.ExtraLootChance, 0, Math.Clamp(config.ExtraLootChanceCap, 0, 10));
+        result.SushiPreservationChance = Math.Clamp(result.SushiPreservationChance, 0, Math.Clamp(config.SushiPreservationChanceCap, 0, 20));
         return result;
     }
 
@@ -47,6 +69,8 @@ public static class CharacterStatService
         a.CritDamage += b.CritDamage * count; a.Luck += b.Luck * count;
         a.BossDamage += b.BossDamage * count; a.PearlBonus += b.PearlBonus * count;
         a.FishingLuck += b.FishingLuck * count; a.DiveLuck += b.DiveLuck * count;
+        a.DoubleAttackChance += b.DoubleAttackChance * count; a.TripleAttackChance += b.TripleAttackChance * count;
+        a.ExtraLootChance += b.ExtraLootChance * count; a.SushiPreservationChance += b.SushiPreservationChance * count;
     }
 
     public static int BossDamage(int baseDamage, RpgAttributes stats, decimal rollPercent, out bool critical, decimal baseCritMultiplier = 1.5m)

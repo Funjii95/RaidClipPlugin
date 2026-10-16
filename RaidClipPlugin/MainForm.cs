@@ -4876,6 +4876,21 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.13 – Item-System 2.0, Sets und verständlicher RPG-Chat
+
+- Kompaktes !inv mit Slot-Symbolen; vollständige deutsche Itemdetails über !item <Nummer> [Seite]. Spezialeffekte mit echten Chancen und Stärken jetzt auch beim Ausrüsten. Keine internen Instanz-IDs im regulären Chat; Setstatus und alle Werte bleiben strukturiert verfügbar.
+
+- Neue Sets „Wächter der Tiefsee“ und „Schatzjäger des Ozeans“, fünf besondere Legendarys, kumulative Setboni, !sets und !unequip <Slot>. Neue Dropquellen mit eigenen Boss-Legendary-Sicherungen. Bestehende Spielstände bleiben erhalten; Katalog in RPG-Einstellungen vorbereiten und speichern.
+
+- RPG Item-System 2.0: zufällige Werte nur für neue dynamische Ausrüstung, passive Doppel-/Dreifachangriffe, Extra-Loot und Sushi-Erhaltung. Gemeinsame Caps, Perlenbonus nur auf Gewinne. Bestehende Items bleiben erhalten; Vorlage unter RPG-Einstellungen vorbereiten und speichern.
+
+- Kurzes Inventar: !inv, !item <Nummer>, !equip <Nummer> [ring1|ring2], !gear. Automatische Slotwahl, sichere Nummernprüfung bei Inventaränderungen; interne IDs bleiben erhalten.
+- !buyperk als Alias für !perk, gemeinsame Registrierung und klare Syntax-/Cooldownhinweise. Käufe zeigen Restperlen und nächste Upgrade-Kosten.
+- Inventar mit Werten/Status und vollständigen Itemdetails über !item; Seiten statt stiller Kürzung, lange Aktionsantworten über !rpgtext ohne erneute Aktion.
+- Konkrete Texte für Crafting, Sushi-Aktivierung, Perkkäufe und Equipment mit tatsächlichen Kosten, Boni und Aufladungen.
+- Verständliche Status-/Übersichtsseiten, echte Fischfunde und sichtbare Boss-Crits; keine Änderungen an der Spielbalance.
+""",
+                """
 Version 2.1.12 – Economy 1.2 und Glücksrad
 - Glücksrad: keine Giveaway-Steuerung mehr im Rad-Reiter, eigene Vorschau und direkt erreichbare Bildauswahl.
 - Neue Balancing-Standardwerte, bewusste Preset-Übernahme und RPG-Spielerverwaltung für Fische/Equipment mit Sicherung vor dem Löschen.

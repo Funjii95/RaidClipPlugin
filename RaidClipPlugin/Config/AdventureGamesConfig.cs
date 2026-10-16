@@ -65,7 +65,8 @@ public sealed class BossAdventureConfig
     [DisplayName("Angriffs-Cooldown-Text"), Description("{user}, {remaining} (Sekunden)")]
     public string AttackCooldownMessage { get; set; } = "@{user}, du kannst in {remaining} Sekunden wieder mit !attack angreifen.";
     [DisplayName("Starttext")] public string StartMessage { get; set; } = "Ein Perlenwächter erscheint! {hp} LP, {seconds} Sekunden. Alle greifen mit !attack an! Belohnungstopf: {reward} {currency}.";
-    [DisplayName("Angriffstext")] public string AttackMessage { get; set; } = "@{user} trifft für {damage}! Boss: {hp} LP.";
+    [DisplayName("Angriffstext"), Description("{user}, {damage}, {hp}, {critical}. Kritische Treffer werden ohne {critical} automatisch im selben Chattext gekennzeichnet.")]
+    public string AttackMessage { get; set; } = "@{user} trifft für {damage}! Boss: {hp} LP.";
     [DisplayName("Siegtext")] public string WinMessage { get; set; } = "Boss besiegt! {count} Kämpfer teilen die Beute: je {reward} {currency} (Kontolimit gilt).";
     [DisplayName("Zeitablauftext")] public string TimeoutMessage { get; set; } = "Der Boss entkommt! Zeit abgelaufen – keine Belohnung, kein Einsatz verloren.";
     [DisplayName("Abbruchtext")] public string CancelMessage { get; set; } = "Bosskampf manuell abgebrochen – keine Belohnung, kein Einsatz verloren.";

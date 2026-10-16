@@ -14,6 +14,10 @@ public static class RarityPresentation
 
 public sealed class RpgAttributes
 {
+    public decimal DoubleAttackChance { get; set; }
+    public decimal TripleAttackChance { get; set; }
+    public decimal ExtraLootChance { get; set; }
+    public decimal SushiPreservationChance { get; set; }
     public decimal Damage { get; set; }
     public decimal CritChance { get; set; }
     public decimal CritDamage { get; set; }
@@ -26,6 +30,11 @@ public sealed class RpgAttributes
 
 public sealed class RpgItem
 {
+    public string SetId { get; set; } = "";
+    public List<RpgActivity> DropActivities { get; set; } = new() { RpgActivity.Dive };
+    public List<RpgItemEffect> Effects { get; set; } = new();
+    // Definition-only generation rules. Cleared on generated instances; never applied on load.
+    public RpgItemGeneration? Generation { get; set; }
     public string InstanceId { get; set; } = Guid.NewGuid().ToString("N");
     public string ItemId { get; set; } = "";
     public string DisplayName { get; set; } = "";

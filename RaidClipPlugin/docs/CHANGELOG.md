@@ -1,3 +1,30 @@
+## 2.1.13 – Item-System 2.0, Sets und verständlicher RPG-Chat
+
+- RPG-Chat übersichtlicher: !inv und !gear zeigen kurze nummerierte Einträge mit Slot-Symbol und Ausrüstungsmarkierung. !item <Nummer> [Seite] bündelt alle Werte, deutschen Slot/Typ, Spezialeffekte, Setboni und Status ohne interne IDs.
+- Deutsche Attributnamen für Glück, Krit, Mehrfachangriffe und Abenteuerboni. Ausrüstungsbestätigungen enthalten echte Spezialeffekte samt Chance/Stärke und gegebenenfalls den Setnamen aus dem erfolgreichen Transaktionsergebnis. Vollständige Details bleiben auf gezielt abrufbaren Folgeseiten erhalten, keine automatische Nachrichtenserie.
+
+- Zwei vierteilige epische Sets „Wächter der Tiefsee“ und „Schatzjäger des Ozeans“ mit gewürfelten Attributen und kumulativen 2-/3-/4-Teile-Boni. Nur tatsächlich angelegte unterschiedliche Definitionen zählen; alle Boni unterliegen bestehenden Caps.
+- Fünf eigenständige Legendarys mit festen Werten und Spezialeffekten, einschließlich Crit-gebundenem Siegel und Dreifachangriff zu je 35 % Zusatzschaden. Neue !sets-Übersicht und !unequip <Slot>; Setfortschritt in Itemdetails und Ausrüstung.
+- Quellenbezogener Loot: hochwertige Dives, 2 % Bossloot je Teilnehmer (Legendarys nur mit expliziter Freigabe und Mindest-LP/-Teilnehmerzahl), 0,5 % Ausrüstungsfund bei erfolgreichen Angelaktionen. Keine Änderung der Fisch-/Perlen-Basisauszahlungen. Button „Sets & Legenden vorbereiten“ ergänzt bestehende Konfigurationen. Dokumentation: docs/RPG-SETS-AND-LEGENDARIES.md.
+
+- Item-System 2.0: optionale zufällige Instanzattribute und persistente passive Effekte, zentrale Effektdefinitionen und slotbezogene Vorlagen. Bestehende Items bleiben unverändert; Button „Dynamische Items vorbereiten“ für künftige Funde. Details: docs/RPG-ITEM-SYSTEM-2.md.
+- Doppel-/Dreifachangriffe mit klarer Priorität ohne zusätzliche Aktionen, Extra-Itemwurf mit identischem Legendary-Gating und finite Sushi-Erhaltung. Gemeinsame Effektcaps; Perlenbonus maximal 15 % ausschließlich auf Nettogewinne, nicht auf Einsatzrückzahlungen. Automatische datenbasierte Effektbeschreibungen und zusätzliche Sicherung vor erster RPG-Schreiboperation.
+
+- Nummeriertes Inventar: !inv, !item <Nummer>, !equip <Nummer> [Slot] und !gear. Automatische Slotwahl, freie Ringplätze und explizites Ersetzen per ring1/ring2. Veraltete Inventarnummern werden sicher abgelehnt; vollständige IDs und API bleiben erhalten. Details: docs/RPG-NUMBERED-INVENTORY.md.
+
+- !perk <ID> bleibt der Kaufbefehl; !buyperk <ID> ist jetzt ein gleichwertiger Alias mit identischen Rechten/Deaktivierung. Registrierung, Alias-Erkennung und Syntax stammen aus einem gemeinsamen RPG-Befehlskatalog.
+- Perk-Erfolg zeigt tatsächlichen Kontostand und nächste Upgrade-Kosten beziehungsweise Maximallevel. Falsche Syntax, unbekannte Perk-IDs und der RPG-Cooldown erhalten konkrete Hinweise. Neue !rpg-Hilfe für RPG-Aufrufe; andere unbekannte Bot-/Custom-Befehle werden nicht abgefangen. Keine Änderung an Preisen oder Balance.
+
+- Inventar zeigt Attribute, kurze Inventarnummer und Ausrüstungsstatus; !item <Nummer|ID> [Seite] ergänzt vollständige Details. Profilabruf nutzt den tatsächlichen Twitch-ID-Kontoschlüssel, damit ein fehlendes redundantes UserId-Feld vorhandene Items nicht versteckt.
+- Zentrale vollständige Seitenausgabe statt Kürzen langer Inhalte. !rpgtext [Seite] liest längere gespeicherte Antworten ohne erneute Aktion (15 Minuten, pro Konto). Getrennte Meldungen für Leerstand, Lade-, Daten- und Darstellungsfehler; keine automatischen Reparaturen oder Ersatz-IDs für defekte Items.
+- Einheitliche RPG-Emojis, vollständige Zahlenpräzision und erweiterte Status-/Itemtests. Ursachen und Testumfang: docs/RPG-CHAT-DISPLAY.md.
+
+- Konkrete Erfolgstexte für Sushi-Herstellung, Sushi-Aktivierung, Perk-Käufe und Ausrüsten statt „erledigt“. Zutaten, Kosten, erhaltene Menge, Level, Boni, Aktivität und Aufladungen stammen aus dem erfolgreichen Transaktionsergebnis.
+- Optionale DisplayName-Felder für eigene Rezept-/Perknamen im RPG-Editor; bestehende Konfigurationen verwenden lesbare Standardnamen beziehungsweise ihre eigene ID als Rückfall.
+- Verständliche Leerzustände, Fischvorräte mit Namen statt nur IDs und kompakte Seiten für Inventar, Equipment, Perks und Sushi-Status. Weitere Sushi-Seiten mit !sushi status <Seite>; keine automatische Nachrichtenserie.
+- RPG-Angelergebnisse nennen den tatsächlich ausgewählten Fisch und dessen Seltenheit, statt die monetäre Auszahlungsstufe irreführend als legendären Fang zu bezeichnen. Boss-Crits sind im bestehenden Angriffstext erkennbar; optionaler Platzhalter {critical}, leere Meldungen bleiben stumm.
+- Keine Balanceänderungen, zusätzlichen Abbuchungen oder Belohnungen. Bestehende Daten, Idempotenz und Cooldowns bleiben erhalten. Keine automatische Veröffentlichung.
+
 ## 2.1.12 – Economy 1.2, RPG-Verwaltung und Glücksrad
 
 - Oberflächentests mit gemeinsamen WinForms-/Prozesszuständen isoliert, um konkurrierende Fensterinitialisierungen im Build zu vermeiden. Version 2.1.11 wurde wegen fehlgeschlagener CI-Tests nicht als Download veröffentlicht.

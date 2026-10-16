@@ -1,9 +1,23 @@
 using RaidClipPlugin.Models;
+using RaidClipPlugin.Services;
 
 namespace RaidClipPlugin.Config;
 
 public sealed class RpgLootConfig
 {
+    public RpgLootConfig()
+    {
+        foreach (var item in Items.Where(i => i.Slot.HasValue))
+            item.Generation = RpgItemGenerationService.DefaultRules(item.Slot!.Value, item.Rarity);
+        Items.AddRange(RpgEquipmentCatalog.Items());
+    }
+    public List<RpgItemEffect> Effects { get; set; } = new()
+    {
+        new() { Id = "double", Name = "Zorn der Strömung", Trigger = RpgEffectTrigger.DoubleAttack, Chance = 4, Activity = RpgActivity.Boss },
+        new() { Id = "triple", Name = "Zorn des Leviathans", Trigger = RpgEffectTrigger.TripleAttack, Chance = 2, Activity = RpgActivity.Boss },
+        new() { Id = "extra-loot", Name = "Schatzgespür", Trigger = RpgEffectTrigger.ExtraLoot, Chance = 3, Activity = RpgActivity.Dive },
+        new() { Id = "sushi-save", Name = "Sparsame Pfoten", Trigger = RpgEffectTrigger.SushiPreservation, Chance = 5 }
+    };
     public decimal BaseDropChance { get; set; } = 25;
     public decimal MaximumDropChance { get; set; } = 60;
     public decimal LuckChancePerPoint { get; set; } = 0.1m;
@@ -52,6 +66,7 @@ public sealed class RpgLootConfig
 
     public void Validate()
     {
+        RpgItemGenerationService.Validate(this);
         if (BaseDropChance is < 0 or > 100 || MaximumDropChance is < 0 or > 100 ||
             LuckChancePerPoint is < 0 or > 10 || MaximumLuckBonus is < 0 or > 100 ||
             MaximumEventBonus is < 0 or > 100 || LegendaryMinimumStake < 1 ||
