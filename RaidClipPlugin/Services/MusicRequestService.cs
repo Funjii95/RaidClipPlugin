@@ -34,6 +34,7 @@ public sealed class MusicRequestService : IDisposable
     private readonly SemaphoreSlim _processingLock = new(1, 1);
     private MusicRequestConfig _config;
     private bool _disposed;
+    private readonly SongRequestPermits _songRequestPermits = new();
 
     public event Action<MusicRequestEntry>? RequestUpdated;
 
@@ -360,11 +361,32 @@ public sealed class MusicRequestService : IDisposable
     public async Task ProcessChatMessageAsync(
         ChatMessage message, CancellationToken cancellationToken)
     {
-        if (!CanUseMusicCommands(message, _broadcasterId)) return;
         try
         {
+            var moderator = CanUseMusicCommands(message, _broadcasterId);
+            var parts = message.Text.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length > 0 && parts[0].Equals("!srpermit", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!moderator) return;
+                if (parts.Length != 2 || !System.Text.RegularExpressions.Regex.IsMatch(parts[1].TrimStart('@'), "^[A-Za-z0-9_]{1,25}$"))
+                {
+                    await SendChatOnceAsync("Nutzung: !srpermit @name – erlaubt Musikwünsche per Chat für 5 Minuten.", cancellationToken);
+                    return;
+                }
+                var user = await _twitch.GetUserAsync(parts[1].TrimStart('@'), cancellationToken);
+                if (user is null)
+                {
+                    await SendChatOnceAsync("Dieser Twitch-Nutzer wurde nicht gefunden.", cancellationToken);
+                    return;
+                }
+                _songRequestPermits.Grant(user.Id, DateTimeOffset.UtcNow);
+                await SendChatOnceAsync($"🎵 @{user.DisplayName}, du darfst jetzt 5 Minuten lang !sr für Musikwünsche verwenden.", cancellationToken);
+                return;
+            }
+            if (!moderator && !_songRequestPermits.IsAllowed(message.UserId, DateTimeOffset.UtcNow)) return;
             if (await TryProcessSongRequestCommandAsync(
                     message, cancellationToken)) return;
+            if (!moderator) return;
             await ProcessModeratorCommandCoreAsync(message, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

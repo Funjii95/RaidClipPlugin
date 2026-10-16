@@ -43,6 +43,8 @@ public sealed class CommandPermissionService
             .Select(item => item.Definition)
             .FirstOrDefault();
         if (definition is null) return;
+        // Music requests have their own role check including temporary !srpermit grants.
+        if (definition.CommandId == "music.request") return;
 
         var explicitlyConfigured = definition.ModuleId.Equals("custom", StringComparison.Ordinal) ||
             _config.CommandRoleOverrides.ContainsKey(definition.CommandId);

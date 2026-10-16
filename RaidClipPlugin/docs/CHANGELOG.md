@@ -1,3 +1,7 @@
+## 2.0.29
+
+- Moderatoren und Broadcaster können mit !srpermit @name einem Nutzer fünf Minuten lang Musikwünsche per !sr und dessen Aliasen erlauben. Verwaltungsbefehle bleiben gesperrt; erneute Freigabe setzt die Frist auf fünf Minuten. Freigaben enden beim Modulneustart.
+
 ## 2.0.28
 
 - „Nochmal abspielen“ startet ausdrücklich bei Position 0 und prüft den vollständigen Spotify-Playerstatus. Bei ausbleibender Bestätigung werden Konto, Gerät und Wiedergabestatus protokolliert.
