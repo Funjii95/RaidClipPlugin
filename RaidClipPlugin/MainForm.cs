@@ -4876,7 +4876,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
-Version 2.1.11 – Economy 1.2 und Glücksrad
+Version 2.1.12 – Economy 1.2 und Glücksrad
 - Glücksrad: keine Giveaway-Steuerung mehr im Rad-Reiter, eigene Vorschau und direkt erreichbare Bildauswahl.
 - Neue Balancing-Standardwerte, bewusste Preset-Übernahme und RPG-Spielerverwaltung für Fische/Equipment mit Sicherung vor dem Löschen.
 """,
