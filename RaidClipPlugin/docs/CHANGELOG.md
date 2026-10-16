@@ -1,3 +1,9 @@
+## 2.1.9
+
+- Eigenständiges Glücksrad unter Giveaways → Glücksrad, unabhängig von Teilnehmern und Gewinnern. 2–100 frei bearbeitbare Text-/Aktionsfelder, gleiche Chancen je Feld, einstellbare Drehdauer, Drehen und Anzeige leeren. Keine automatischen Aktionen, Chatnachrichten oder Punkteänderungen.
+- Eigene transparente OBS-Browserquelle http://127.0.0.1:18770/ (740 × 850), lokal und ausschließlich lesend. Start über Browserquelle starten oder Drehen; Twitch-/Giveaway-Verbindung nicht erforderlich. Ergebnis wird im Plugin bestimmt und von der Animation dargestellt.
+- Optional eigenes PNG-/JPG-Design bis 10 MB und 8192 × 8192 Pixel. Bild wird mittig kreisförmig beschnitten und mitgedreht; Texte bleiben darüber. Lokale Auslieferung ohne Upload; Dateipfad wird nicht im Browserstatus veröffentlicht. Felder, Drehdauer und Bildpfad separat speicherbar.
+
 ## 2.1.8
 
 - Timer-Reiter: „Auswahl testen (Chat)“ sendet den markierten Timertext sofort mit der eingestellten Farbe. Nutzt auch ungespeicherte Änderungen und funktioniert unabhängig von Timer-Aktivierung, Intervall und Mindestzuschauern. Keine Änderung am automatischen Zeitplan; Twitch-Verbindung erforderlich. Test sendet in den echten Chat.

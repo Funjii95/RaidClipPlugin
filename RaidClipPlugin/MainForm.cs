@@ -4875,6 +4875,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.1.9
+- Eigenständiges Glücksrad im Giveaway-Reiter mit eigenen Textfeldern, Drehdauer, OBS-Browserquelle und optionalem PNG-/JPG-Design.
+""",
+                """
 Version 2.1.8
 - Timer-Testbutton: ausgewählten Text sofort mit eingestellter Farbe im Chat testen, ohne den Zeitplan zu verändern.
 """,
