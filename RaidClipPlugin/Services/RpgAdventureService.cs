@@ -7,6 +7,7 @@ public sealed record RpgAdventureResult(bool Success, string PlayerId, long Stak
     string Error, string Outcome, RpgItem? Item, int RemainingCooldown, IReadOnlyList<string> AppliedBuffs)
 {
     public IReadOnlyList<RpgItem> AdditionalItems { get; init; } = Array.Empty<RpgItem>();
+    public RpgEnemyResult? Enemy { get; init; }
 }
 
 public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig config,
@@ -19,6 +20,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
         RpgActivity activity, long stake, CancellationToken token)
     {
         var rpg = config.Adventures.Rpg;
+        points.ConfigureHotTime(rpg);
         if (!config.Enabled || !config.PointsEnabled || !rpg.Enabled || activity == RpgActivity.Boss)
             return new(false, userId, stake, 0, 0, "RPG-Aktion ist deaktiviert.", "", null, 0, Array.Empty<string>());
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(requestId) || requestId.Length > 200)
@@ -36,6 +38,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
             _random.NextInclusive(1, 3) switch { 1 => "Goldener Koi", 2 => "Mondaal", _ => "Kraken" } : null;
         var grams = fishName is null ? 0 : _random.NextInclusive(tier == 3 ? 5000 : 100, tier == 3 ? 20000 : 4000);
         RpgItem? loot = null;
+        RpgEnemyResult? enemy = null;
         var additional = new List<RpgItem>();
         var remaining = 0;
         var applied = Array.Empty<string>();
@@ -53,11 +56,17 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                 if (account.Rpg.Cooldowns.TryGetValue(command, out var until) && clock < until)
                 { remaining = (int)Math.Ceiling((until - clock).TotalSeconds); return new(false, $"Cooldown: noch {remaining} Sekunden."); }
                 var stats = CharacterStatService.Calculate(account.Rpg, rpg, activity);
+                if(rpg.Health.Enabled)
+                {
+                    RpgHealthService.Refresh(account.Rpg,rpg.Health,clock);
+                    if(!fishing && account.Rpg.Health.CurrentHp<=0)
+                        return new(false,"Du hast 0 HP. Erst heilen, dann tauchen: !hp. Kein Einsatz abgebucht.");
+                }
                 applied = account.Rpg.Buffs.Where(b => b.Activity == activity && b.RemainingUses > 0).Select(b => b.RecipeId).ToArray();
                 if (!fishing)
                 {
                     var sources = CharacterStatService.DiveLuckSources(account.Rpg, rpg);
-                    loot = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment).Item;
+                    loot = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime)).Item;
                     void StoreLoot(RpgItem found)
                     {
                         if (found.Kind == RpgItemKind.Consumable)
@@ -70,9 +79,11 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                     if (loot is not null) StoreLoot(loot);
                     if (RpgPassiveService.TryProc(account.Rpg, rpg, activity, RpgEffectTrigger.ExtraLoot, _random, clock, stake) > 0)
                     {
-                        var extra = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment).Item;
+                        var extra = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime)).Item;
                         if (extra is not null) { StoreLoot(extra); additional.Add(extra); }
                     }
+                    enemy=new RpgEnemyService(_random).Encounter(account.Rpg,rpg,stake,clock,points.HotTime.DropBonus(rpg.HotTime));
+                    if(enemy?.Loot is not null) { StoreLoot(enemy.Loot); additional.Add(enemy.Loot); }
                 }
                 else if (fishName is not null)
                 {
@@ -87,7 +98,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                     if (!account.Rpg.Fish.TryGetValue(id, out var fish)) account.Rpg.Fish[id] = fish = new() { FishId = id, FirstCaughtAt = clock };
                     fish.Quantity = checked(fish.Quantity + 1); fish.LastCaughtAt = clock;
                     loot = new() { ItemId = id, DisplayName = species[index].Name, Rarity = species[index].Rarity, IconId = species[index].IconId, FoundAt = clock };
-                    var equipment = new RpgLootService(_random).RollReward(rpg.DiveLoot, clock, RpgActivity.Fishing, rpg.FishingEquipmentChance, ItemRarity.Epic).Item;
+                    var equipment = new RpgLootService(_random).RollReward(rpg.DiveLoot, clock, RpgActivity.Fishing, rpg.FishingEquipmentChance, ItemRarity.Epic,points.HotTime.DropBonus(rpg.HotTime)).Item;
                     if (equipment is not null) { account.Rpg.Inventory.Add(equipment); additional.Add(equipment); }
                 }
                 RpgPassiveService.ConsumeBuffs(account.Rpg, activity, rpg, _random, clock, stake);
@@ -99,10 +110,12 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
             {
                 var stats = CharacterStatService.Calculate(account.Rpg, rpg, activity);
                 payout = RpgPassiveService.RewardPayout(basePayout, stake, stats.PearlBonus);
+                var net=Math.Max(0,payout-stake);
+                payout=checked(payout-net+points.RewardAmount(net,fishing?RpgRewardSource.Fishing:RpgRewardSource.DiveNetWin));
                 return payout;
-            });
+            },RpgRewardSource.AlreadyBoosted);
         return new(result.Success, userId, stake, payout, result.Balance, result.Error, outcome,
             result.Success ? loot : null, remaining, result.Success ? applied : Array.Empty<string>())
-            { AdditionalItems = result.Success ? additional : Array.Empty<RpgItem>() };
+            { AdditionalItems = result.Success ? additional : Array.Empty<RpgItem>(),Enemy=result.Success?enemy:null };
     }
 }

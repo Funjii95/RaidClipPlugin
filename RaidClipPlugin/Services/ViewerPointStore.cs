@@ -19,8 +19,16 @@ public sealed partial class ViewerPointStore
     private Dictionary<string, ViewerPointEntry>? _entries;
     private List<MinigameHistoryEntry> _history = new();
     private long _jackpot;
+    public RpgHotTimeService HotTime { get; }
+    private RpgHotTimeConfig _hotTimeConfig = new() { Enabled=false };
+    public void ConfigureHotTime(RpgConfig config)
+    {
+        var copy=JsonSerializer.Deserialize<RpgHotTimeConfig>(JsonSerializer.Serialize(config.HotTime))!;
+        copy.Enabled &= config.Enabled;copy.Validate();_hotTimeConfig=copy;
+    }
+    public long RewardAmount(long amount,RpgRewardSource source)=>HotTime.Apply(new(amount,source),_hotTimeConfig).Amount;
 
-    public ViewerPointStore(string? storageDirectory = null)
+    public ViewerPointStore(string? storageDirectory = null, Func<DateTimeOffset>? hotTimeClock = null)
     {
         var directory = storageDirectory ?? Path.Combine(
             Environment.GetFolderPath(
@@ -28,6 +36,7 @@ public sealed partial class ViewerPointStore
             "RaidClipPlugin",
             "minigame");
         Directory.CreateDirectory(directory);
+        HotTime = new(directory,hotTimeClock);
         _filePath = Path.Combine(directory, "viewer-points.json");
         _historyPath = Path.Combine(directory, "history.json");
         _statePath = Path.Combine(directory, "state.json");
@@ -71,11 +80,9 @@ public sealed partial class ViewerPointStore
         long amount,
         long minimumPoints,
         CancellationToken cancellationToken,
-        long maximumPoints = long.MaxValue) =>
+        long maximumPoints = long.MaxValue, RpgRewardSource source = RpgRewardSource.Administrative) =>
         ChangePointsAsync(
-            userId, displayName, current => amount > 0 && current > long.MaxValue - amount
-                ? long.MaxValue
-                : current + amount,
+            userId, displayName, current => { var reward=RewardAmount(amount,source);return reward>0&&current>long.MaxValue-reward?long.MaxValue:current+reward; },
             minimumPoints, maximumPoints, cancellationToken);
 
     public Task<long> RemovePointsAsync(
@@ -354,7 +361,7 @@ public sealed partial class ViewerPointStore
         long amount,
         long minimumPoints,
         long maximumPoints,
-        CancellationToken cancellationToken, string? historyGame = null, int historyLimit = 500)
+        CancellationToken cancellationToken, string? historyGame = null, int historyLimit = 500, RpgRewardSource source = RpgRewardSource.Administrative)
     {
         if (amount <= 0 && historyGame is null)
         {
@@ -377,6 +384,7 @@ public sealed partial class ViewerPointStore
             await EnsureLoadedAsync(cancellationToken);
             var floor = Math.Max(0, minimumPoints);
             var ceiling = Math.Max(floor, maximumPoints);
+            amount=RewardAmount(amount,source);
             foreach (var recipient in recipients)
             {
                 var entry = GetOrCreateEntry(
@@ -443,7 +451,7 @@ public sealed partial class ViewerPointStore
                     int.MaxValue,
                     (long)entry.WatchMinutes + Math.Max(0, minutes));
                 entry.Points = Math.Clamp(
-                    entry.Points + Math.Max(0, recipient.Points),
+                    (long)Math.Min(long.MaxValue,(decimal)entry.Points + Math.Max(0, RewardAmount(recipient.Points,RpgRewardSource.Activity))),
                     floor,
                     ceiling);
                 entry.DisplayName = recipient.DisplayName;
@@ -539,6 +547,7 @@ public sealed partial class ViewerPointStore
                 int.MaxValue,
                 (long)Math.Max(0, entry.WatchMinutes) +
                 Math.Max(0, minutes));
+            points=RewardAmount(points,RpgRewardSource.Activity);
             entry.Points = Math.Clamp(
                 points > 0 && entry.Points > long.MaxValue - points
                     ? long.MaxValue
@@ -565,6 +574,7 @@ public sealed partial class ViewerPointStore
                 return new DailyClaimResult(false, entry.Points,
                     TimeSpan.FromHours(24) - (now - last));
             entry.LastDailyUtc = now;
+            var before=entry.Points;bonus=RewardAmount(bonus,RpgRewardSource.Activity);
             entry.Points = Math.Clamp(
                 bonus > 0 && entry.Points > long.MaxValue - bonus
                     ? long.MaxValue
@@ -572,7 +582,7 @@ public sealed partial class ViewerPointStore
                 minimum, maximum);
             entry.UpdatedAt = DateTimeOffset.Now;
             await SaveAsync(cancellationToken);
-            return new DailyClaimResult(true, entry.Points, TimeSpan.Zero);
+            return new DailyClaimResult(true, entry.Points, TimeSpan.Zero) { ActualAward=entry.Points-before };
         }
         finally { _lock.Release(); }
     }
@@ -616,7 +626,7 @@ public sealed partial class ViewerPointStore
         bool jackpotHit, long jackpotStart, int historyLimit,
         CancellationToken cancellationToken, string? fishName = null, int fishGrams = 0,
         Func<ViewerPointEntry, RpgMutation>? rpgMutation = null,
-        Func<ViewerPointEntry, long, long>? rpgPayout = null)
+        Func<ViewerPointEntry, long, long>? rpgPayout = null, RpgRewardSource rewardSource = RpgRewardSource.MinigameNetWin)
     {
         await _lock.WaitAsync(cancellationToken);
         ViewerPointEntry? previousEntry = null;
@@ -634,6 +644,8 @@ public sealed partial class ViewerPointStore
             var safeStake = Math.Max(0, stake);
             if (rpgMutation is not null) PrepareRpg(entry);
             var safePayout = Math.Max(0, rpgPayout?.Invoke(entry, payout) ?? payout);
+            var netReward=Math.Max(0,safePayout-safeStake);
+            safePayout=(long)Math.Min(long.MaxValue,(decimal)safePayout-netReward+RewardAmount(netReward,rewardSource));
             var safeMinimum = Math.Max(0, minimum);
             var safeMaximum = maximum > 0
                 ? Math.Max(safeMinimum, maximum)
@@ -656,7 +668,8 @@ public sealed partial class ViewerPointStore
                 return new CasinoApplyResult(false,
                     "Tägliches Gewinnlimit erreicht", entry.Points, 0);
 
-            var totalPayout = (long)safePayout + jackpotCandidate;
+            if(safePayout>long.MaxValue-jackpotCandidate)return new CasinoApplyResult(false,"Die Auszahlung überschreitet das technische Punktelimit",entry.Points,0);
+            var totalPayout = safePayout + jackpotCandidate;
             var balanceChange = totalPayout - safeStake;
             if (balanceChange > 0 && entry.Points > long.MaxValue - balanceChange)
                 return new CasinoApplyResult(false,
@@ -730,7 +743,7 @@ public sealed partial class ViewerPointStore
                 // Preserve the established jackpot/history persistence path for existing games.
                 await SaveAllAsync(cancellationToken);
                 committing = false;
-                return new CasinoApplyResult(true, "", entry.Points, jackpotWon);
+                return new CasinoApplyResult(true, "", entry.Points, jackpotWon) { ActualPayout=safePayout-jackpotWon };
             }
             // Currency and RPG are committed in the same authoritative file. History
             // is ancillary: a history write failure must not turn a committed award into a retry.
@@ -741,7 +754,7 @@ public sealed partial class ViewerPointStore
                 await File.WriteAllTextAsync(_historyPath, JsonSerializer.Serialize(_history, JsonOptions), cancellationToken);
             }
             catch (Exception ex) { Console.WriteLine("Minigame-Zusatzdaten konnten nicht gespeichert werden: " + ex.Message); }
-            return new CasinoApplyResult(true, "", entry.Points, jackpotWon);
+            return new CasinoApplyResult(true, "", entry.Points, jackpotWon) { ActualPayout=safePayout-jackpotWon };
         }
         catch
         {

@@ -1,3 +1,12 @@
+## 2.1.15 – RPG-Überleben, Unterwassergegner und Hot Time
+
+- Kleine Unterwassergegner bei `!dive`: standardmäßig 15 % Begegnungschance (10–20 % einstellbar), fünf einsatzabhängige Gegnerstufen, automatische HP-Kämpfe und EXP bei Sieg. Gegnerbonusbeute verwendet den besseren von zwei normalen Lootwürfen mit unveränderten Legendary-Grenzen. Kampf, HP, EXP und Beute werden mit dem Tauchgang atomar gespeichert; keine zusätzlichen Perlenverluste. Einstellungen im RPG-Bereich unter „Unterwassergegner“. Details: `docs/RPG-UNDERWATER-ENEMIES.md`.
+- RPG-HP und Überleben: 100 Basis-HP, +2 MaxHP pro Level; Boss-Gegenangriffe, persistente Todessperre und atomare Belohnungen nur für Überlebende. `!hp`, erweiterte `!stats`, persönliche Chat-Heilung (10 HP/30 s), zeitbasierte Regeneration (2 HP/Minute), konfigurierbare HP-/EXP-Regeln und isolierte Debugaktionen. Laufende HP-Bosse werden nach Neustart aus Metadaten und gespeicherten Angriffen rekonstruiert. Details: `docs/RPG-HEALTH-AND-SURVIVAL.md`.
+- Neustartfeste fünfminütige Hot Time nach echten Community-Boss-Siegen, ohne Stapeln oder Auslösen durch administrative Tests. Relativer Basis-Dropbonus und klassifizierte Perlenbelohnungen mit unveränderten Legendary-/Einsatzgrenzen und Caps; keine Boni auf Einsatzrückzahlungen, Admin-/Transfer- oder Salvage-Beträge.
+- Grafischer Hot-Time-Bereich mit Haken/Zahlenfeldern, Nachrichten, Restlaufzeit und Beenden. Standardwerte: +50 % relative Basis-Dropchance und +100 % geeignete Perlenbelohnung.
+- Isoliertes, standardmäßig deaktiviertes RPG Debug Center für lokale Administratoren: Drop-Editor, Item-Generator, Kampftests, Fortschritt, Sets, Test-Hot-Time und seedbasierte Simulationen. Eigener Testdatenspeicher und Testkonfiguration, keine produktiven Zuschaueränderungen.
+- Validierte atomare Konfigurationsspeicherung, Backups und grafische Wiederherstellung. Details und Einschränkungen: docs/RPG-HOT-TIME-AND-DEBUG.md.
+
 ## 2.1.14 – Items sicher gegen Perlen zerlegen
 
 - !salvage <Nummer>, !salvage duplicates und !salvage all common zeigen genaue Vorschau und Perlenbetrag; identischer Befehl mit confirm bestätigt binnen 60 Sekunden. Sammelbefehle überspringen Sets, Legendarys, angelegte und geschützte Items; unterschiedliche Rolls sind keine Duplikate.

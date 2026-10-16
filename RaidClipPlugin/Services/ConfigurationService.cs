@@ -81,6 +81,8 @@ public sealed class ConfigurationService
         Normalize(config, synchronizeCommandOverrides: true);
         config.Minigame.Adventures.Fishing.Validate("Fischen (!fish)");
         config.Minigame.Adventures.Treasure.Validate("Schatzsuche (!dive)");
+        ValidateGuiSettings(config);
+        config.Minigame.Adventures.Rpg.Validate();
 
 
         var settings = new GuiSettings
@@ -390,6 +392,7 @@ public sealed class ConfigurationService
             MergeMissingSettings(settings, path);
             EnsureRequiredSettingsSections(settings);
             var json = JsonSerializer.Serialize(settings, JsonOptions);
+            ValidateSettingsSnapshot(JsonSerializer.Deserialize<GuiSettings>(json,JsonOptions) ?? throw new InvalidDataException("Leere Einstellungen."));
             var tempPath = Path.Combine(
                 directory,
                 "settings." + Guid.NewGuid().ToString("N") + ".tmp");
@@ -413,10 +416,13 @@ public sealed class ConfigurationService
                     stream.Flush(true);
       }
 
+                ValidateSettingsSnapshot(JsonSerializer.Deserialize<GuiSettings>(File.ReadAllText(tempPath),JsonOptions) ?? throw new InvalidDataException("Leere temporäre Einstellungen."));
                 if (File.Exists(path))
-                    File.Copy(path, backupPath, true);
-
-                File.Copy(tempPath, path, true);
+                {
+                    ValidateSettingsSnapshot(JsonSerializer.Deserialize<GuiSettings>(File.ReadAllText(path),JsonOptions) ?? throw new InvalidDataException("Vorhandene Einstellungen sind beschädigt. Bitte Sicherung wiederherstellen."));
+                    File.Replace(tempPath,path,backupPath);
+                }
+                else File.Move(tempPath,path);
 
                 var verified = JsonSerializer.Deserialize<GuiSettings>(
                     File.ReadAllText(path, System.Text.Encoding.UTF8),
@@ -460,6 +466,19 @@ public sealed class ConfigurationService
 }
 
 
+    private static void ValidateSettingsSnapshot(GuiSettings settings)
+    {
+        if(settings.Minigame is null||settings.Heist is null||settings.Duel is null||settings.Commands is null||settings.MusicRequests is null||settings.Moderation is null)
+            throw new InvalidDataException("Wichtige Einstellungsbereiche fehlen.");
+        ValidateMinigameSettings(settings.Minigame);settings.Minigame.Adventures.Rpg.Validate();
+        ValidateMusicRequestSettings(settings.MusicRequests);ValidateDuelSettings(settings.Duel);
+    }
+    public void RestoreLastValidSettings()
+    {
+        SettingsLock.Wait();
+        try { RpgAtomicFile.Restore<GuiSettings>(UserSettingsPath,ValidateSettingsSnapshot); }
+        finally { SettingsLock.Release(); }
+    }
     private static void ApplySavedGuiSettings(AppConfig config)
     {
         if (!File.Exists(UserSettingsPath))

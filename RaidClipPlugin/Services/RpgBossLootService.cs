@@ -15,8 +15,10 @@ public sealed class RpgBossLootService(ViewerPointStore points, RpgConfig config
         config.Validate(); RpgItem? item = null;
         var result = await points.ApplyRpgAsync(userId, name, "bossloot:" + encounterId, account =>
         {
+            if(config.Health.Enabled && account.Rpg.Health.BossId==encounterId && account.Rpg.Health.Defeated)
+                return new(false,"Besiegte Teilnehmer erhalten keine Bossbeute.");
             item = new RpgLootService(random).RollReward(config.DiveLoot, now, RpgActivity.Boss, config.BossLootChance,
-                MaximumRarity(config, initialHp, participants)).Item;
+                MaximumRarity(config, initialHp, participants),points.HotTime.DropBonus(config.HotTime)).Item;
             if (item is not null) account.Rpg.Inventory.Add(item);
             return new(true);
         }, token);

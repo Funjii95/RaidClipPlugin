@@ -14,7 +14,7 @@ public sealed class RpgLootService(IDuelRandom? random = null)
 {
     private readonly IDuelRandom _random = random ?? new CryptoDuelRandom();
 
-    public static LootChanceBreakdown Chances(long paidStake, decimal effectiveLuck, RpgLootConfig config, decimal sushiLuck = 0, decimal equipmentLuck = 0)
+    public static LootChanceBreakdown Chances(long paidStake, decimal effectiveLuck, RpgLootConfig config, decimal sushiLuck = 0, decimal equipmentLuck = 0, decimal hotTimePercent = 0)
     {
         config.Validate();
         if (paidStake < 0) throw new ArgumentOutOfRangeException(nameof(paidStake));
@@ -29,21 +29,30 @@ public sealed class RpgLootService(IDuelRandom? random = null)
         var factor = combined > 0 ? bonus / combined : 0;
         var luck = perkPoints * factor;
         var eventBonus = Math.Clamp(config.EventBonus, 0, config.MaximumEventBonus);
-        return new(config.BaseDropChance, tier.DropBonus, luck, eventBonus,
-            Math.Clamp(config.BaseDropChance + tier.DropBonus + bonus + eventBonus, 0, config.MaximumDropChance), maximum,
+        var hotBonus=config.BaseDropChance*Math.Clamp(hotTimePercent,0,200)/100;
+        return new(config.BaseDropChance, tier.DropBonus, luck, eventBonus+hotBonus,
+            Math.Clamp(config.BaseDropChance + hotBonus + tier.DropBonus + bonus + eventBonus, 0, Math.Min(100,config.MaximumDropChance)), maximum,
             sushiPoints * factor, equipmentPoints * factor);
     }
 
-    public RpgLootResult Roll(long paidStake, decimal effectiveLuck, RpgLootConfig config, DateTimeOffset now, decimal sushiLuck = 0, decimal equipmentLuck = 0)
+    public RpgLootResult Roll(long paidStake, decimal effectiveLuck, RpgLootConfig config, DateTimeOffset now, decimal sushiLuck = 0, decimal equipmentLuck = 0, decimal hotTimePercent = 0)
     {
-        var chances = Chances(paidStake, effectiveLuck, config, sushiLuck, equipmentLuck);
+        var chances = Chances(paidStake, effectiveLuck, config, sushiLuck, equipmentLuck,hotTimePercent);
         return Select(config, now, chances, RpgActivity.Dive);
     }
-    public RpgLootResult RollReward(RpgLootConfig config, DateTimeOffset now, RpgActivity activity, decimal chance, ItemRarity maximum)
+    public RpgLootResult RollReward(RpgLootConfig config, DateTimeOffset now, RpgActivity activity, decimal chance, ItemRarity maximum, decimal hotTimePercent=0)
     {
         config.Validate();
         if (activity == RpgActivity.Dive || chance is < 0 or > 100 || !Enum.IsDefined(maximum)) throw new ArgumentException("Ungültige Belohnungs-Lootquelle.");
-        return Select(config, now, new(chance, 0, 0, 0, chance, maximum), activity);
+        var total=Math.Min(Math.Min(100,config.MaximumDropChance),chance*(1+Math.Clamp(hotTimePercent,0,200)/100));
+        return Select(config, now, new(chance, 0, 0, total-chance, total, maximum), activity);
+    }
+    public RpgLootResult RollEnemy(long paidStake,decimal luck,RpgLootConfig config,DateTimeOffset now,decimal sushi=0,decimal equipment=0,decimal hotTimePercent=0)
+    {
+        // Best of two, but only one reward. Same stake gates, pool and item generation.
+        var first=Roll(paidStake,luck,config,now,sushi,equipment,hotTimePercent);
+        var second=Roll(paidStake,luck,config,now,sushi,equipment,hotTimePercent);
+        return first.Item is null || second.Item is not null && second.Item.Rarity>first.Item.Rarity ? second : first;
     }
     private RpgLootResult Select(RpgLootConfig config, DateTimeOffset now, LootChanceBreakdown chances, RpgActivity activity)
     {

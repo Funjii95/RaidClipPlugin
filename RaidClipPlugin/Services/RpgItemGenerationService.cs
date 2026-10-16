@@ -63,10 +63,15 @@ public static class RpgItemGenerationService
                 throw new InvalidOperationException("Ungültige dynamische Itemregeln: " + item.ItemId);
         }
     }
-    public static void Generate(RpgItem item, RpgLootConfig config, IDuelRandom random)
+    public static void Generate(RpgItem item, RpgLootConfig config, IDuelRandom random, string? requiredEffectId=null)
     {
-        if (item.Generation is not { } rules) return;
+        if (item.Generation is not { } rules)
+        {
+            if(requiredEffectId is not null&&!item.Effects.Any(e=>e.Id==requiredEffectId))throw new InvalidOperationException("Der gewählte Effekt gehört nicht zu diesem festen Item.");
+            return;
+        }
         var count = Counts(item.Rarity);
+        if(requiredEffectId is not null&&(!rules.GenerateEffect||count.EffectsMax==0||!rules.EffectIds.Contains(requiredEffectId)))throw new InvalidOperationException("Der gewählte Effekt ist für diese Itemdefinition/Seltenheit nicht erlaubt.");
         var candidates = rules.Attributes.ToList(); item.Attributes = new();
         var selected = rules.AttributeCount ?? random.NextInclusive(count.Min, count.Max);
         for (var i = 0; i < selected; i++)
@@ -75,9 +80,10 @@ public static class RpgItemGenerationService
             Attributes[range.Attribute].SetValue(item.Attributes, (decimal)random.NextInclusive(range.Minimum, range.Maximum));
         }
         item.Effects.Clear();
-        if (rules.GenerateEffect && rules.EffectIds.Count > 0 && random.NextInclusive(count.EffectsMin, count.EffectsMax) > 0)
+        if (requiredEffectId is not null || rules.GenerateEffect && rules.EffectIds.Count > 0 && random.NextInclusive(count.EffectsMin, count.EffectsMax) > 0)
         {
-            var effect = JsonSerializer.Deserialize<RpgItemEffect>(JsonSerializer.Serialize(config.Effects.Single(e => e.Id == rules.EffectIds[random.NextInclusive(0, rules.EffectIds.Count - 1)])))!;
+            var effectId=requiredEffectId??rules.EffectIds[random.NextInclusive(0,rules.EffectIds.Count-1)];
+            var effect = JsonSerializer.Deserialize<RpgItemEffect>(JsonSerializer.Serialize(config.Effects.Single(e => e.Id == effectId)))!;
             // Rarity-specific chance ranges apply to newly generated attack effects only.
             if (effect.Trigger == RpgEffectTrigger.DoubleAttack)
                 effect.Chance = random.NextInclusive(rules.DoubleAttackMinimumChance, rules.DoubleAttackMaximumChance);

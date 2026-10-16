@@ -69,6 +69,9 @@ public sealed class RpgBuff
 
 public sealed class RpgProfile
 {
+    public int PlayerLevel { get; set; } = 1;
+    public long Experience { get; set; }
+    public RpgHealthState Health { get; set; } = new();
     public int SchemaVersion { get; set; } = 1;
     public bool LegacyFishImported { get; set; }
     public List<RpgItem> Inventory { get; set; } = new();
@@ -80,4 +83,17 @@ public sealed class RpgProfile
     public Dictionary<string, DateTimeOffset> Cooldowns { get; set; } = new();
     // Tokens are retained: retrying an old successful request must never award twice.
     public HashSet<string> CompletedActions { get; set; } = new();
+}
+
+public sealed class RpgHealthState
+{
+    // Nullable distinguishes legacy profiles from an injured player at zero HP.
+    public int? CurrentHp { get; set; }
+    public int AppliedMaximumHp { get; set; }
+    public DateTimeOffset? LastPassiveRegen { get; set; }
+    public DateTimeOffset? LastChatHeal { get; set; }
+    public string BossId { get; set; } = "";
+    public bool Defeated { get; set; }
+    public long BossDamage { get; set; }
+    public int BossRemainingHp { get; set; }
 }

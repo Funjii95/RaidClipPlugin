@@ -21,6 +21,7 @@ public static class RpgCommandCatalog
         new("!sushi", Array.Empty<string>(), "[Rezept|status <Seite>]"),
         new("!craft", Array.Empty<string>(), "<Rezept>"),
         new("!stats", Array.Empty<string>(), ""),
+        new("!hp", Array.Empty<string>(), ""),
         new("!rpg", Array.Empty<string>(), "[hilfe]"),
     });
     public static RpgCommandDefinition? Find(string command) => Definitions.FirstOrDefault(d =>

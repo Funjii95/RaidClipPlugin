@@ -70,7 +70,9 @@ public static class RpgChatPresentation
         if (activity == RpgActivity.Fishing)
             return (result.Item is null ? "🎣 Diesmal kein Fisch gefangen." : $"🎣 Gefangen: 1× {Label(ItemName(result.Item))} ({result.Item.Rarity}).") +
                 (result.AdditionalItems.Count > 0 ? " Ausrüstung gefunden: " + string.Join(", ", result.AdditionalItems.Select(i => Label(ItemName(i)))) + "." : "");
-        return (result.Item?.Rarity == ItemRarity.Legendary ? "💎 " : "🦦 ") + result.Outcome + (result.Item is null ? "" : $" Fund: {Label(ItemName(result.Item))} ({result.Item.Rarity})" +
+        var enemyText=result.Enemy is {} enemy ? $"⚔️ {Label(enemy.Name)}: " + (enemy.Victory ? $"besiegt, +{enemy.Experience} EXP" : "Kampf verloren, keine Gegnerbeute/EXP") +
+            $", -{enemy.DamageTaken} HP, ❤️ {enemy.CurrentHp}/{enemy.MaximumHp}. " : "";
+        return enemyText + (result.Item?.Rarity == ItemRarity.Legendary ? "💎 " : "🦦 ") + result.Outcome + (result.Item is null ? "" : $" Fund: {Label(ItemName(result.Item))} ({result.Item.Rarity})" +
             (result.Item.Slot.HasValue ? " – " + Bonuses(result.Item.Attributes) : "") + ".") +
             (result.AdditionalItems.Count > 0 ? " Extra-Fund: " + string.Join(", ", result.AdditionalItems.Select(i => Label(ItemName(i)) + " [" + i.Rarity + "]")) + "." : "");
     }

@@ -67,6 +67,10 @@ public sealed partial class MainForm
         var tabs = new TabControl { Dock = DockStyle.Fill };
         AddMinigameTab(tabs, "Einstellungen", panel);
         AddMinigameTab(tabs, "Spielerverwaltung", BuildRpgAdministrationPanel());
+        AddMinigameTab(tabs, "Hot Time", BuildHotTimePanel());
+        AddMinigameTab(tabs, "HP & Überleben", BuildRpgHealthPanel());
+        AddMinigameTab(tabs, "Unterwassergegner", BuildRpgEnemyPanel());
+        AddMinigameTab(tabs, "RPG Debug Center", BuildRpgDebugPanel());
         return tabs;
     }
     private static PropertyGrid NewAdventureGrid() => new()
@@ -203,6 +207,9 @@ public sealed partial class MainForm
     {
         var copy = JsonSerializer.Deserialize<AdventureGamesConfig>(JsonSerializer.Serialize(config.Adventures))!;
         _rpgEnabled.Checked = copy.Rpg.Enabled;
+        _hotTimeSettings.SelectedObject = copy.Rpg.HotTime;
+        _healthSettings.SelectedObject = copy.Rpg.Health;
+        _enemySettings.SelectedObject = copy.Rpg.Enemies;
         _rpgConfigJson.Text = JsonSerializer.Serialize(copy.Rpg, new JsonSerializerOptions { WriteIndented = true });
         _fishingSettings.SelectedObject = copy.Fishing;
         _treasureSettings.SelectedObject = copy.Treasure;
@@ -214,6 +221,9 @@ public sealed partial class MainForm
         if (_fishingSettings.SelectedObject is not StakeAdventureConfig fishing) return;
         var rpg = JsonSerializer.Deserialize<RpgConfig>(_rpgConfigJson.Text) ?? throw new InvalidOperationException("RPG-Einstellungen fehlen.");
         rpg.Enabled = _rpgEnabled.Checked;
+        if(_hotTimeSettings.SelectedObject is RpgHotTimeConfig hotTime)rpg.HotTime=JsonSerializer.Deserialize<RpgHotTimeConfig>(JsonSerializer.Serialize(hotTime))!;
+        if(_healthSettings.SelectedObject is RpgHealthConfig health)rpg.Health=JsonSerializer.Deserialize<RpgHealthConfig>(JsonSerializer.Serialize(health))!;
+        if(_enemySettings.SelectedObject is RpgEnemyConfig enemies)rpg.Enemies=JsonSerializer.Deserialize<RpgEnemyConfig>(JsonSerializer.Serialize(enemies))!;
         rpg.Validate();
         config.Adventures = JsonSerializer.Deserialize<AdventureGamesConfig>(JsonSerializer.Serialize(new AdventureGamesConfig {
             Rpg = rpg,

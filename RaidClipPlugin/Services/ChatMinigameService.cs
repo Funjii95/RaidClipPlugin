@@ -462,11 +462,13 @@ public sealed class ChatMinigameService : IDisposable
             {
                 await _points.AddPointsAsync(message.UserId, message.UserName,
                     _config.ChatMessagePoints, _config.MinimumPoints,
-                    cancellationToken, MaximumPoints);
+                    cancellationToken, MaximumPoints,RpgRewardSource.Activity);
                 DataChanged?.Invoke();
             }
 
             var parsedCommand = ParseMinigameCommand(message.Text);
+            if (!pointsBlacklisted && !parsedCommand.IsCommand)
+                await RpgHealthService.HealChatAsync(_points,_config.Adventures.Rpg,message,DateTimeOffset.UtcNow,cancellationToken);
             if (parsedCommand.IsCommand)
             {
                 await HandleCommandAsync(message, parsedCommand, cancellationToken);
@@ -719,11 +721,11 @@ public sealed class ChatMinigameService : IDisposable
                     message.UserName, _config.DailyBonusPoints,
                     _config.MinimumPoints, cancellationToken, MaximumPoints);
                 var text = daily.Success
-                    ? $"@{message.UserName} hat den täglichen Bonus abgeholt: +{FormatCurrency(_config.DailyBonusPoints)}."
+                    ? $"@{message.UserName} hat den täglichen Bonus abgeholt: +{FormatCurrency(daily.ActualAward??_config.DailyBonusPoints)}."
                     : $"@{message.UserName}, dein Daily ist wieder verfügbar in {(int)daily.Remaining.TotalHours:00}:{daily.Remaining.Minutes:00}.";
                 text = daily.Success
                     ? FormatDailyTemplate(_config.DailySuccessMessage, message,
-                        _config.DailyBonusPoints, daily.Balance, TimeSpan.Zero)
+                        daily.ActualAward??_config.DailyBonusPoints, daily.Balance, TimeSpan.Zero)
                     : FormatDailyTemplate(_config.DailyCooldownMessage, message,
                         _config.DailyBonusPoints, daily.Balance, daily.Remaining);
                 await TrySendChatAsync(text, cancellationToken);
@@ -945,6 +947,7 @@ public sealed class ChatMinigameService : IDisposable
                     message, "Coinflip", stake, payout, cancellationToken);
                 if (result.Success)
                 {
+                    payout=result.ActualPayout??payout;
                     var outcome = payout > 0 ? $"Gewinn {payout}" : "Verloren";
                     await TrySendChatAsync(
                         $"@{message.UserName}: {resultSide}! {outcome} · " +
@@ -981,6 +984,7 @@ public sealed class ChatMinigameService : IDisposable
                     : draw.Distinct().Count() == 2 ? _config.SlotsTwoMultiplier : 0m;
                 var payout = ToNonNegativeLong(stake * multiplier);
                 var result = await ApplyCasinoAsync(message, "Slots", stake, payout, cancellationToken);
+                payout=result.ActualPayout??payout;
                 if (result.Success) await TrySendChatAsync($"@{message.UserName} | {string.Join(" ", draw)} | Auszahlung {payout} | Stand {result.Balance}" + JackpotText(result), cancellationToken);
                 return;
             }
@@ -1042,6 +1046,7 @@ public sealed class ChatMinigameService : IDisposable
                     return;
                 }
 
+                roulettePayout=rouletteResult.ActualPayout??roulettePayout;
                 var rouletteOutcome = rouletteWon
                     ? $"Tipp {rouletteBet.DisplayName} gewinnt · Auszahlung " +
                       FormatCurrency(roulettePayout)
@@ -1210,6 +1215,7 @@ public sealed class ChatMinigameService : IDisposable
 
             Console.WriteLine(
                 $"!gamble erfolgreich verarbeitet für {message.UserName}; Stand {gambleResult.Balance}.");
+            gamblePayout=gambleResult.ActualPayout??gamblePayout;
             if (roll == 100 && gambleResult.JackpotWon > 0)
             {
                 Console.WriteLine(
@@ -1385,7 +1391,7 @@ public sealed class ChatMinigameService : IDisposable
 
             var balance = await _points.AddPointsAsync(
                 passiveEvent.UserId, passiveEvent.DisplayName, points,
-                _config.MinimumPoints, cancellationToken, MaximumPoints);
+                _config.MinimumPoints, cancellationToken, MaximumPoints,RpgRewardSource.Activity);
             Console.WriteLine(
                 $"Minigame: {passiveEvent.DisplayName} erhält {FormatCurrency(points)} " +
                 $"für {passiveEvent.Kind}. Neuer Stand: {balance}.");

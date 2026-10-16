@@ -4876,6 +4876,13 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.15 – RPG-Überleben, Unterwassergegner und Hot Time
+
+- Unterwassergegner bei !dive: 15 % Begegnungschance (10–20 % einstellbar), stärkere Gegner und mehr EXP je Einsatzstufe. Sieg gewährt Bonusbeute aus dem besseren von zwei Lootwürfen. HP-Kampf ohne zusätzliche Perlenverluste; atomare Speicherung und eigene RPG-Einstellungen.
+- Persistente RPG-Lebenspunkte, Boss-Gegenangriffe und Todessperre je Boss. Nur Überlebende erhalten Perlen, Beute und EXP. !hp und erweiterte !stats; Chat-Heilung, passive Regeneration sowie HP-Einstellungen und isolierte Debugtests.
+- Fünf Minuten Hot Time nach echten Boss-Siegen: standardmäßig +50 % relative Basis-Dropchance und doppelte geeignete Perlenbelohnungen, ohne Bonus auf Einsätze, Rückzahlungen oder Zerlegen. Persistenter Ablauf ohne Stapeln.
+- Grafische Hot-Time-Einstellungen und isoliertes RPG Debug Center für lokale Administratoren: Loot, Items, Kämpfe, Sets, Fortschritt und Simulationen. Produktive Spielstände bleiben unberührt; sichere Konfigurationsbackups und Wiederherstellung.
+
 2.1.14 – Items sicher gegen Perlen zerlegen
 
 - !salvage <Nummer>, duplicates oder all common: Vorschau und Perlenbetrag, danach mit confirm bestätigen. Schutz für angelegte, gesperrte und favorisierte Items; Sammelzerlegen überspringt Sets und Legendarys. Nur identische Rolls gelten als Duplikate.

@@ -9,6 +9,18 @@ public sealed record RpgTransactionResult(bool Success, string Error, long Balan
 
 public sealed partial class ViewerPointStore
 {
+    internal string BossRoundPath => Path.Combine(Path.GetDirectoryName(_filePath)!,"rpg-boss-round.json");
+    internal async Task<IReadOnlyList<(string Id,string Name,int BossHp)>> BossParticipantsAsync(string bossId,CancellationToken token)
+    {
+        await _lock.WaitAsync(token);
+        try
+        {
+            await EnsureLoadedAsync(token);
+            return _entries!.Values.Where(a=>a.Rpg?.Health?.BossId==bossId)
+                .Select(a=>(a.UserId,a.DisplayName,a.Rpg.Health.BossRemainingHp)).ToArray();
+        }
+        finally {_lock.Release();}
+    }
     private void EnsureItemSystemBackup()
     {
         if (File.Exists(_filePath) && !File.Exists(_filePath + ".pre-items-v2.bak"))

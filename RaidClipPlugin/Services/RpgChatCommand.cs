@@ -38,6 +38,12 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         if (!config.Enabled) return "🦦 RPG ist aktuell deaktiviert.";
         var progression = new RpgProgressionService(points, config);
         var id = string.IsNullOrWhiteSpace(user.Id) ? Guid.NewGuid().ToString("N") : user.Id;
+        if (command == "!hp")
+        {
+            if (!config.Health.Enabled) return "❤️ Das HP-System ist deaktiviert.";
+            var healthProfile = await RpgHealthService.ReadAsync(points,user.UserId,user.UserName,config.Health,DateTimeOffset.UtcNow,token);
+            return $"@{user.UserName} | " + RpgHealthService.Status(healthProfile,config.Health);
+        }
         if(command is "!salvage" or "!itemlock" or "!favorite")
         {
             var salvage=new RpgSalvageService(points,config,maximumBalance:maximumBalance);
@@ -146,8 +152,9 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         }
         if (command == "!stats")
         {
+            if(config.Health.Enabled) profile = await RpgHealthService.ReadAsync(points,user.UserId,user.UserName,config.Health,DateTimeOffset.UtcNow,token);
             var stats = CharacterStatService.Calculate(profile, config, RpgActivity.Boss);
-            return $"🦦 @{user.UserName}, effektive Boss-Werte (mit Caps): {RpgChatPresentation.Bonuses(stats)}. " +
+            return (config.Health.Enabled ? RpgHealthService.Status(profile,config.Health)+" " : "") + $"🦦 @{user.UserName}, effektive Boss-Werte (mit Caps): {RpgChatPresentation.Bonuses(stats)}. " +
                 $"Krit-Multiplikator: {RpgChatPresentation.Number(config.BaseCritMultiplier + stats.CritDamage / 100)}× nur bei kritischem Treffer. " +
                 "Dive-/Angelwerte mit passenden Buffs: " +
                 $"Tauchglück {RpgChatPresentation.Number(CharacterStatService.Calculate(profile, config, RpgActivity.Dive).DiveLuck)}, " +
@@ -168,7 +175,7 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
             "!salvage" => parts.Length>=2 && parts.Length<=4,
             "!itemlock" or "!favorite" => parts.Length is 2 or 3 && Page(parts[1]) && (parts.Length==2 || parts[2].Equals("on",StringComparison.OrdinalIgnoreCase) || parts[2].Equals("off",StringComparison.OrdinalIgnoreCase)),
             "!item" => parts.Length == 2 || parts.Length == 3 && Page(parts[2]),
-            "!stats" => parts.Length == 1,
+            "!stats" or "!hp" => parts.Length == 1,
             "!sushi" => parts.Length is 1 or 2 || parts.Length == 3 && parts[1] == "status" && Page(parts[2]),
             "!rpg" => true,
             _ => false

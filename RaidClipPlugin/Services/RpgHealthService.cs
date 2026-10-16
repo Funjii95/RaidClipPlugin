@@ -1,0 +1,80 @@
+using RaidClipPlugin.Config;
+using RaidClipPlugin.Models;
+
+namespace RaidClipPlugin.Services;
+
+/// <summary>Shared HP rules. Mutating helpers must run on the store's detached transaction draft.</summary>
+public static class RpgHealthService
+{
+    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked(c.BaseHp + (Math.Clamp(p.PlayerLevel,1,c.MaximumLevel)-1)*c.HpPerLevel);
+    public static void Refresh(RpgProfile p, RpgHealthConfig c, DateTimeOffset now)
+    {
+        c.Validate(); p.Health ??= new();
+        var h=p.Health; var max=Maximum(p,c);
+        if(h.CurrentHp is null) { h.CurrentHp=max; h.AppliedMaximumHp=max; h.LastPassiveRegen=now; }
+        if(c.HealLevelGain && h.AppliedMaximumHp>0 && max>h.AppliedMaximumHp)
+            h.CurrentHp=(int)Math.Min(max,(long)h.CurrentHp.Value+max-h.AppliedMaximumHp);
+        h.AppliedMaximumHp=max;
+        h.CurrentHp=Math.Clamp(h.CurrentHp.Value,0,max);
+        h.LastPassiveRegen ??= now;
+        if(now<h.LastPassiveRegen) h.LastPassiveRegen=now;
+        var intervals=(long)((now-h.LastPassiveRegen.Value).TotalSeconds/c.PassiveSeconds);
+        if(intervals>0)
+        {
+            var credited=c.CatchUpMinutes==0 ? intervals : Math.Min(intervals,(long)c.CatchUpMinutes*60/c.PassiveSeconds);
+            if(c.PassiveHealing) h.CurrentHp=(int)Math.Min(max,h.CurrentHp.Value+Math.Min(credited,max)*c.PassiveHp);
+            h.LastPassiveRegen=h.LastPassiveRegen.Value.AddSeconds(intervals*c.PassiveSeconds);
+        }
+    }
+    public static void Experience(RpgProfile p, RpgHealthConfig c, int amount, DateTimeOffset now)
+    {
+        Refresh(p,c,now);
+        p.Experience=checked(p.Experience+Math.Max(0,amount));
+        while(p.PlayerLevel<c.MaximumLevel && p.Experience >= (long)c.ExperiencePerLevel*p.PlayerLevel*(p.PlayerLevel+1)/2)
+            p.PlayerLevel++;
+        Refresh(p,c,now);
+    }
+    public static bool Eligible(RpgProfile p,string bossId) => p.Health.CurrentHp>0 && p.Health.BossId==bossId && !p.Health.Defeated;
+    // Integration point for a future authoritative underwater combat resolver. No currency or item mutation.
+    internal static void ResolveEnemy(RpgProfile p,RpgHealthConfig c,int damage,bool victory,int experience,DateTimeOffset now)
+    {
+        Refresh(p,c,now);
+        if(p.Health.CurrentHp<=0) throw new InvalidOperationException("Vor einem neuen Gegnerkampf erst heilen.");
+        if(damage<0 || experience<0) throw new ArgumentOutOfRangeException();
+        p.Health.CurrentHp=Math.Max(0,p.Health.CurrentHp!.Value-damage);
+        if(p.Health.CurrentHp==0 && !string.IsNullOrEmpty(p.Health.BossId))p.Health.Defeated=true;
+        if(victory && p.Health.CurrentHp>0) Experience(p,c,experience,now);
+    }
+    public static int CounterDamage(int initialBossHp,RpgHealthConfig c,IDuelRandom random)
+    {
+        var range=initialBossHp>=c.LegendaryThreshold ? (c.LegendaryMinimum,c.LegendaryMaximum) :
+            initialBossHp>=c.EliteThreshold ? (c.EliteMinimum,c.EliteMaximum) :
+            initialBossHp>=c.StrongThreshold ? (c.StrongMinimum,c.StrongMaximum) : (c.CommonMinimum,c.CommonMaximum);
+        return c.Counterattacks ? random.NextInclusive(range.Item1,range.Item2) : 0;
+    }
+    public static string Status(RpgProfile p,RpgHealthConfig c) =>
+        $"❤️ HP: {p.Health.CurrentHp}/{Maximum(p,c)} | Level {p.PlayerLevel} ({p.Experience} EXP) | " +
+        $"Passiv: +{(c.PassiveHealing?c.PassiveHp:0)} HP/{c.PassiveSeconds}s | Chat: +{(c.ChatHealing?c.ChatHp:0)} HP/{c.ChatCooldownSeconds}s." +
+        (p.Health.Defeated ? " Für den zuletzt angegriffenen Boss besiegt; Heilung hebt diese Sperre nicht auf." : "");
+    public static async Task HealChatAsync(ViewerPointStore points,RpgConfig config,ChatMessage message,DateTimeOffset now,CancellationToken token)
+    {
+        if(!config.Enabled || !config.Health.Enabled || message.IsBot || string.IsNullOrWhiteSpace(message.UserId) ||
+            string.IsNullOrWhiteSpace(message.Id) || string.IsNullOrWhiteSpace(message.Text) || message.Text.TrimStart().StartsWith('!')) return;
+        await points.ApplyRpgAsync(message.UserId,message.UserName,"hpchat:"+message.Id,a=>
+        {
+            Refresh(a.Rpg,config.Health,now);
+            var h=a.Rpg.Health;
+            if(config.Health.ChatHealing && (h.LastChatHeal is null || (now-h.LastChatHeal.Value).TotalSeconds>=config.Health.ChatCooldownSeconds))
+            {
+                h.CurrentHp=(int)Math.Min(Maximum(a.Rpg,config.Health),(long)h.CurrentHp!.Value+config.Health.ChatHp);
+                h.LastChatHeal=now;
+            }
+            return new(true);
+        },token);
+    }
+    public static async Task<RpgProfile> ReadAsync(ViewerPointStore points,string id,string name,RpgHealthConfig config,DateTimeOffset now,CancellationToken token)
+    {
+        await points.ApplyRpgAsync(id,name,"hpview:"+Guid.NewGuid().ToString("N"),a=>{Refresh(a.Rpg,config,now);return new(true);},token);
+        return (await points.GetProfileAsync(id,token)).Entry.Rpg;
+    }
+}
