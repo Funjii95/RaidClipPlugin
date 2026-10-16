@@ -279,19 +279,21 @@ public sealed class SpotifyService : IDisposable
         var url = ApiUrl + "/me/player/play" +
                   (string.IsNullOrWhiteSpace(deviceId) ? "" :
                       "?device_id=" + Uri.EscapeDataString(deviceId));
-        using var response = await SendAsync(() => CreatePlaybackRequest(url, track.Uri), cancellationToken);
+        using var response = await SendAsync(() => CreatePlaybackRequest(url, track.Uri, track.AlbumUri), cancellationToken);
         await EnsureSuccessAsync(response, "Spotify-Wiedergabe", cancellationToken);
         Console.WriteLine($"Spotify-Startbefehl für Track {track.Id} angenommen (HTTP {(int)response.StatusCode}).");
     }
 
-    internal static HttpRequestMessage CreatePlaybackRequest(string url, string trackUri) =>
+    internal static HttpRequestMessage CreatePlaybackRequest(string url, string trackUri, string albumUri = "") =>
         new(HttpMethod.Put, url)
         {
             // Buffer JSON so the request has a known Content-Length rather than a streamed body.
-            Content = new StringContent(JsonSerializer.Serialize(new
-            {
-                uris = new[] { trackUri }, position_ms = 0
-            }), Encoding.UTF8, "application/json")
+            Content = new StringContent(string.IsNullOrWhiteSpace(albumUri)
+                ? JsonSerializer.Serialize(new { uris = new[] { trackUri }, position_ms = 0 })
+                : JsonSerializer.Serialize(new
+                {
+                    context_uri = albumUri, offset = new { uri = trackUri }, position_ms = 0
+                }), Encoding.UTF8, "application/json")
         };
 
     public async Task TransferPlaybackAsync(
@@ -355,7 +357,9 @@ public sealed class SpotifyService : IDisposable
             isPlayable,
             externalUrl,
             item.TryGetProperty("is_local", out var local) && local.GetBoolean(),
-            item.TryGetProperty("type", out var type) ? type.GetString() ?? "" : "");
+            item.TryGetProperty("type", out var type) ? type.GetString() ?? "" : "",
+            item.TryGetProperty("album", out var album) && album.ValueKind == JsonValueKind.Object &&
+                album.TryGetProperty("uri", out var albumUri) ? albumUri.GetString() ?? "" : "");
     }
 
     private async Task<JsonDocument> SendJsonAsync(

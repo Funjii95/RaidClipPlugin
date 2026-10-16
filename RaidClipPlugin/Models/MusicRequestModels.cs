@@ -28,7 +28,8 @@ public sealed record SpotifyTrack(
     bool IsPlayable,
     string ExternalUrl,
     bool IsLocal = false,
-    string Type = "track");
+    string Type = "track",
+    string AlbumUri = "");
 
 public sealed record SpotifyDevice(
     string Id,
