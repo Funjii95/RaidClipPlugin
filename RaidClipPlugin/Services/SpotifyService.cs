@@ -237,7 +237,9 @@ public sealed class SpotifyService : IDisposable
         var root = document.RootElement;
         return root.TryGetProperty("is_playing", out var playing) && playing.ValueKind == JsonValueKind.True &&
             root.TryGetProperty("item", out var item) && item.ValueKind == JsonValueKind.Object &&
-            item.TryGetProperty("id", out var id) && id.GetString() == trackId;
+            ((item.TryGetProperty("id", out var id) && id.GetString() == trackId) ||
+             (item.TryGetProperty("linked_from", out var linked) && linked.ValueKind == JsonValueKind.Object &&
+              linked.TryGetProperty("id", out var originalId) && originalId.GetString() == trackId));
     }
 
     public async Task AddToQueueAsync(

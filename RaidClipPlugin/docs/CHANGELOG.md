@@ -1,3 +1,9 @@
+## 2.0.27
+
+- „Songlink kopieren“ im Rechtsklick-Menü der Musikwunsch-Warteschlange kopiert den Spotify-Link des ausgewählten Songs zur Fehlersuche.
+
+- Erneute Spotify-Wiedergabe wartet auf die tatsächliche Aktivierung des Zielgeräts und berücksichtigt marktbedingte Track-Ersatzversionen. Fehlermeldungen nennen das Zielgerät und den aktuell gemeldeten Song.
+
 ## 2.0.26
 
 - „Nochmal abspielen“ ermittelt das Spotify-Gerät neu, aktiviert es bei Bedarf und prüft den tatsächlichen Wiedergabestart. Erst nach Bestätigung wird der Song als laufend markiert; Fehler werden direkt angezeigt.

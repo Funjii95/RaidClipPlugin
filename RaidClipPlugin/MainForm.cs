@@ -4865,6 +4865,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.27
+- Songlink kopieren per Rechtsklick in der Musikwunsch-Warteschlange.
+- Spotify-Wiedergabe: Geräteaktivierung abwarten, Track-Verfügbarkeit erneut prüfen und Ersatzversionen berücksichtigen; genauere Fehlermeldungen.
+""",
+                """
 Version 2.0.26
 - Erneute Song-Wiedergabe mit aktueller Geräteauswahl und Bestätigung durch Spotify statt vorzeitigem Statuswechsel.
 - Duplikatprüfung korrigiert: Abgelehnte oder fehlgeschlagene Musikwünsche blockieren erneute Versuche nach einer Explicit-Freigabe nicht mehr.

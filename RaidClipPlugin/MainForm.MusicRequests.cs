@@ -401,6 +401,26 @@ public sealed partial class MainForm
         var menu = new ContextMenuStrip();
         var replay = menu.Items.Add("Nochmal abspielen");
         replay.Click += async (_, _) => await PlaySelectedMusicEntryAsync();
+        var copyLink = menu.Items.Add("Songlink kopieren");
+        copyLink.Click += (_, _) =>
+        {
+            var track = SelectedMusicEntry()?.Track;
+            if (track is null) return;
+            var link = !string.IsNullOrWhiteSpace(track.Id)
+                ? "https://open.spotify.com/track/" + Uri.EscapeDataString(track.Id)
+                : track.ExternalUrl;
+            if (string.IsNullOrWhiteSpace(link)) return;
+            try
+            {
+                Clipboard.SetText(link);
+                AppendLog("Spotify-Songlink kopiert: " + link);
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(this, "Der Songlink konnte nicht kopiert werden: " + exception.Message,
+                    "Songlink kopieren", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        };
         var allow = menu.Items.Add("Zukünftig erlauben");
         allow.Click += (_, _) => AllowSelectedExplicitTrack();
         _musicGrid.CellMouseDown += (_, e) =>
@@ -414,6 +434,8 @@ public sealed partial class MainForm
             var entry = SelectedMusicEntry();
             e.Cancel = entry is null;
             replay.Enabled = entry?.Track is not null && _spotify is not null;
+            copyLink.Enabled = entry?.Track is { } selectedTrack &&
+                (!string.IsNullOrWhiteSpace(selectedTrack.Id) || !string.IsNullOrWhiteSpace(selectedTrack.ExternalUrl));
             allow.Visible = entry?.Track?.Explicit == true;
             allow.Enabled = entry?.Track is { } track && !string.IsNullOrWhiteSpace(track.Id) &&
                 !ReadMusicList(_explicitExceptionsBox).Contains(track.Id, StringComparer.OrdinalIgnoreCase);
@@ -1036,24 +1058,43 @@ public sealed partial class MainForm
                 : devices.FirstOrDefault(item => item.Id == config.SelectedDeviceId);
             if (device is null)
                 throw new InvalidOperationException("Kein passendes Spotify-Gerät verfügbar. Bitte Spotify öffnen und unter Verbindung das Wiedergabegerät prüfen.");
+            AppendLog($"Erneute Wiedergabe auf Spotify-Gerät: {device.Name} ({device.Type}), aktiv: {device.IsActive}.");
+            var playableTrack = await _spotify.GetTrackAsync(entry.Track.Id, token);
+            if (playableTrack is null || !playableTrack.IsPlayable || playableTrack.IsLocal)
+                throw new InvalidOperationException("Dieser Song ist für das verbundene Spotify-Konto nicht abspielbar. Bitte Verfügbarkeit und Explicit-Einstellung in Spotify prüfen.");
             if (!device.IsActive)
             {
                 await _spotify.TransferPlaybackAsync(device.Id, token);
-                await Task.Delay(700, token);
+                var activated = false;
+                for (var attempt = 0; attempt < 10; attempt++)
+                {
+                    await Task.Delay(500, token);
+                    if ((await _spotify.GetDevicesAsync(token)).Any(item => item.Id == device.Id && item.IsActive))
+                    {
+                        activated = true;
+                        break;
+                    }
+                }
+                if (!activated)
+                    throw new InvalidOperationException($"Spotify-Gerät „{device.Name}“ wurde nicht aktiv. Bitte dort einen Song manuell starten und erneut versuchen.");
             }
-            await _spotify.PlayAsync(entry.Track, device.Id, token);
+            await _spotify.PlayAsync(playableTrack, device.Id, token);
             var started = false;
-            for (var attempt = 0; attempt < 6; attempt++)
+            for (var attempt = 0; attempt < 16; attempt++)
             {
                 await Task.Delay(500, token);
-                if (await _spotify.IsTrackPlayingAsync(entry.Track.Id, token))
+                if (await _spotify.IsTrackPlayingAsync(playableTrack.Id, token))
                 {
                     started = true;
                     break;
                 }
             }
             if (!started)
-                throw new InvalidOperationException("Spotify hat den Start des ausgewählten Songs nicht bestätigt. Bitte Gerät und Spotify-Wiedergabe prüfen.");
+            {
+                var current = await _spotify.GetCurrentTrackAsync(token);
+                throw new InvalidOperationException($"Spotify bestätigt die Wiedergabe auf „{device.Name}“ nicht. Aktuell gemeldeter Song: {current?.Name ?? "keiner"}. Bitte Spotify auf diesem Gerät öffnen und prüfen, ob der Song dort manuell spielbar ist.");
+            }
+            entry.Track = playableTrack;
             entry.Status = MusicRequestStatus.Playing;
             entry.FailureReason = "";
             await _musicStore.AddOrUpdateAsync(entry, true,
