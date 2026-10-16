@@ -102,4 +102,16 @@ public sealed class ChatTimerService
 
     public static bool ShouldPost(int minimumViewers, int currentViewers) =>
         Math.Max(0, currentViewers) >= Math.Max(0, minimumViewers);
+
+    public static Task SendTestAsync(ChatTimerEntryConfig entry, string broadcasterId, string senderId,
+        IChatTimerClient client, CancellationToken token)
+    {
+        var text = entry.Message.Trim();
+        if (text.Length is 0 or > 500)
+            throw new InvalidOperationException("Timer-Testtext muss 1 bis 500 Zeichen lang sein.");
+        // Deliberate manual test: no viewer lookup, schedule changes or enabled-state changes.
+        return string.IsNullOrEmpty(entry.AnnouncementColor)
+            ? client.SendChatMessageAsync(broadcasterId, senderId, text, token)
+            : client.SendChatAnnouncementAsync(broadcasterId, senderId, text, entry.AnnouncementColor, token);
+    }
 }

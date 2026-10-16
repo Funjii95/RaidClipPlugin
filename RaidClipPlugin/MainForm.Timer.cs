@@ -34,6 +34,7 @@ public sealed partial class MainForm
         "Auswahl löschen", 160);
     private readonly Button _saveTimerButton = NewHeistActionButton(
         "Timer speichern", 170);
+    private readonly Button _testTimerButton = NewHeistActionButton("Auswahl testen (Chat)", 200);
     private readonly Label _timerStatusLabel = new()
     {
         Text = "● Timer: Deaktiviert",
@@ -107,7 +108,8 @@ public sealed partial class MainForm
             Text = "Jeder Eintrag besitzt ein eigenes Intervall. Mindestzuschauer 0 " +
                    "bedeutet: unabhängig von der aktuellen Zuschauerzahl posten. " +
                    "Der erste Versand erfolgt nach Ablauf des eingestellten Intervalls. " +
-                   "Farben senden als Ankündigung: Bot benötigt Moderatorrechte und neue Twitch-Autorisierung.",
+                   "Farben senden als Ankündigung: Bot benötigt Moderatorrechte und neue Twitch-Autorisierung. " +
+                   "Test sendet den ausgewählten Text sofort in den echten Chat – unabhängig von Aktivierung, Intervall und Mindestzuschauern; auch ungespeicherte Änderungen.",
             AutoSize = true,
             MaximumSize = new Size(1050, 0),
             ForeColor = MutedTextColor,
@@ -125,7 +127,8 @@ public sealed partial class MainForm
             _timerEnabledCheck,
             _addTimerButton,
             _removeTimerButton,
-            _saveTimerButton
+            _saveTimerButton,
+            _testTimerButton
         });
 
         var adBreakPanel = BuildAdBreakSettingsPanel();
@@ -136,8 +139,8 @@ public sealed partial class MainForm
             Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1,
             Padding = new Padding(4)
         };
-        timerBody.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));
-        timerBody.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        timerBody.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
+        timerBody.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));
         timerBody.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         timerBody.Controls.Add(hint, 0, 0);
         timerBody.Controls.Add(actions, 0, 1);
@@ -222,6 +225,35 @@ public sealed partial class MainForm
                 if (!row.IsNewRow) _timerGrid.Rows.Remove(row);
         };
         _saveTimerButton.Click += (_, _) => SaveSettingsFromControls();
+        _testTimerButton.Click += async (_, _) => await TestSelectedTimerAsync();
+    }
+
+    private async Task TestSelectedTimerAsync()
+    {
+        if (_twitch is null || _twitchSession is null || _broadcaster is null)
+        { MessageBox.Show(this, "Bitte zuerst Plugin und Twitch-Verbindung starten.", "Timer-Test"); return; }
+        _timerGrid.EndEdit();
+        if (_timerGrid.SelectedRows.Count != 1)
+        { MessageBox.Show(this, "Bitte genau einen Timer zum Testen auswählen.", "Timer-Test"); return; }
+        var row = _timerGrid.SelectedRows[0];
+        var entry = new ChatTimerEntryConfig {
+            Message = row.Cells["Message"].Value?.ToString()?.Trim() ?? "",
+            AnnouncementColor = ChatAnnouncement.ColorFromLabel(row.Cells["AnnouncementColor"].Value?.ToString()) };
+        _testTimerButton.Enabled = false;
+        try
+        {
+            await ChatTimerService.SendTestAsync(entry, _broadcaster.Id, _twitchSession.UserId,
+                _twitch, _shutdown?.Token ?? CancellationToken.None);
+            _timerStatusLabel.Text = "● Timer-Test gesendet";
+            _timerStatusLabel.ForeColor = ActiveColor;
+            AppendLog("Ausgewählte Timer-Testnachricht erfolgreich gesendet; Timer-Zeitplan unverändert.");
+        }
+        catch (Exception ex)
+        {
+            AppendLog("Timer-Test fehlgeschlagen: " + ex.Message);
+            MessageBox.Show(this, ex.Message, "Timer-Test fehlgeschlagen", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        finally { _testTimerButton.Enabled = true; }
     }
 
     private void AddTimerRow(ChatTimerEntryConfig? entry = null)
