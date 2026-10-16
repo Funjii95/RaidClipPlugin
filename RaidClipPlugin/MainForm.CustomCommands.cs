@@ -208,7 +208,7 @@ public sealed partial class MainForm
     {
         var section = command.ModuleId switch
         {
-            "points" or "casino" or "heist" or "duel" => "minigame",
+            "points" or "casino" or "heist" or "duel" or "fishing" or "treasure" or "race" or "boss" => "minigame",
             "clips" or "discord" => "clips",
             "moderation" => "chat",
             "giveaway" => "giveaways",
@@ -226,6 +226,7 @@ public sealed partial class MainForm
         var tab = command.ModuleId switch
         {
             "heist" => "Heist", "duel" => "Duel", "casino" => "Casino-Spiele",
+            "fishing" => "Fischen", "treasure" => "Schatzsuche", "race" => "Rennen", "boss" => "Bosskampf",
             "points" when command.CommandId == "points.daily" => "Daily",
             "points" => "Punkte & Währung", "custom" => "Custom Commands",
             "clips" or "discord" => "Clips", _ => "Übersicht & Rechte"
@@ -257,6 +258,10 @@ public sealed partial class MainForm
             {
                 case "points": config.Minigame.PointsEnabled = false; break;
                 case "casino": config.Minigame.Enabled = false; break;
+                case "fishing": config.Minigame.Adventures.Fishing.Enabled = false; break;
+                case "treasure": config.Minigame.Adventures.Treasure.Enabled = false; break;
+                case "race": config.Minigame.Adventures.Race.Enabled = false; break;
+                case "boss": config.Minigame.Adventures.Boss.Enabled = false; break;
                 case "heist": config.Heist.Enabled = false; break;
                 case "duel": config.Duel.Enabled = false; break;
                 case "clips": config.ClipCommand.Enabled = false; break;

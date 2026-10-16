@@ -5,7 +5,7 @@ public sealed class HeistConfig
 {
     public bool Enabled { get; set; }
     public string StartCommand { get; set; } = "!heist";
-    public string JoinCommand { get; set; } = "!join";
+    public string JoinCommand { get; set; } = "!joinheist";
     public int MinimumParticipants { get; set; } = 3;
     public int MaximumParticipants { get; set; } = 50;
     public int JoinDurationSeconds { get; set; } = 60;

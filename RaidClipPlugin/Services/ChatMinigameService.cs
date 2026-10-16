@@ -12,6 +12,7 @@ public sealed class ChatMinigameService : IDisposable
     private MinigameConfig _config;
     private readonly TwitchService _twitch;
     private readonly ViewerPointStore _points;
+    private readonly AdventureGameService _adventures;
     private readonly CommandRegistry _commandRegistry;
     private readonly HeistService? _heist;
     private readonly DuelService? _duel;
@@ -266,6 +267,7 @@ public sealed class ChatMinigameService : IDisposable
     }
 
     public static bool IsGameCommand(string command) =>
+        AdventureGameService.Recognizes((command ?? "").Trim().ToLowerInvariant()) ||
         (command ?? "").Trim().ToLowerInvariant() is
             "!coinflip" or "!slots" or "!roulette" or "!gamble" or
             "!jackpot" or "!dumpjackpot" or "!addjackpot" or "!addjockpot";
@@ -322,6 +324,8 @@ public sealed class ChatMinigameService : IDisposable
         _config = config;
         _twitch = twitch;
         _points = points;
+        _adventures = new AdventureGameService(points, config, TrySendChatAsync, broadcasterId: broadcasterId);
+        _adventures.DataChanged += () => DataChanged?.Invoke();
         _commandsConfig = commandsConfig ?? new CommandsConfig();
         _commandRegistry = commandRegistry ?? new CommandRegistry();
         if (heistConfig is not null)
@@ -340,12 +344,14 @@ public sealed class ChatMinigameService : IDisposable
     {
         ArgumentNullException.ThrowIfNull(config);
         _config = config;
+        _adventures.UpdateConfig(config);
     }
 
     public void UpdateConfiguration(AppConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
         _config = config.Minigame;
+        _adventures.UpdateConfig(config.Minigame);
         _commandsConfig = config.Commands;
         _commandRegistry.Update(config);
         _heist?.UpdateConfig(config.Heist, config.Minigame);
@@ -354,6 +360,10 @@ public sealed class ChatMinigameService : IDisposable
 
     public Task RunTestHeistAsync(CancellationToken cancellationToken) =>
         _heist?.RunTestAsync(cancellationToken) ?? Task.CompletedTask;
+
+    public AdventureStatus AdventureStatus => _adventures.Status;
+    public Task ControlAdventureAsync(string action, long stake, CancellationToken token) =>
+        _adventures.ControlAsync(action, stake, token);
 
     public Task CancelHeistAsync(CancellationToken cancellationToken) =>
         _heist?.CancelAsync(true, cancellationToken) ?? Task.CompletedTask;
@@ -375,7 +385,8 @@ public sealed class ChatMinigameService : IDisposable
         {
             await Task.WhenAll(
                 RunPointAwardLoopAsync(cancellationToken),
-                RunHeartbeatLoopAsync(cancellationToken));
+                RunHeartbeatLoopAsync(cancellationToken),
+                _adventures.RunAsync(cancellationToken));
         }
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
@@ -610,10 +621,45 @@ public sealed class ChatMinigameService : IDisposable
             }
 
             // CommandListService is the sole handler for the command directory.
+            if (command == "!start")
+            {
+                if (!EventStartCommand.IsAllowed(message, _broadcasterId))
+                {
+                    await TrySendChatAsync($"@{message.UserName}, !start ist nur für Moderatoren und Broadcaster verfügbar.", cancellationToken);
+                    return;
+                }
+                var translated = EventStartCommand.Translate(parts);
+                if (translated is null)
+                {
+                    await TrySendChatAsync("Nutzung: !start boss | !start rennen <Betrag|all> | !start heist.", cancellationToken);
+                    return;
+                }
+                parts = translated;
+                command = parts[0];
+                // Preserve per-command disable switches; the shortcut must not bypass them.
+                var targetId = command == "!boss" ? "adventure.boss" : command == "!rennen" ? "adventure.race" : "heist.start";
+                var target = _commandRegistry.Commands.FirstOrDefault(c => c.CommandId == targetId);
+                if (target is null || !target.Enabled)
+                {
+                    await TrySendChatAsync("Dieses Event ist aktuell deaktiviert.", cancellationToken);
+                    return;
+                }
+                if (command == "!heist")
+                {
+                    if (_heist is not null) await _heist.StartAsync(message, cancellationToken);
+                    return;
+                }
+            }
             var directory = _commandRegistry.Commands.FirstOrDefault(c => c.CommandId == "commands.list");
             if (directory is not null && new[] { directory.CommandText }.Concat(directory.Aliases)
                     .Any(c => CommandRegistry.Normalize(c) == command)) return;
 
+            if (AdventureGameService.Recognizes(command))
+            {
+                await _adventures.HandleAsync(message, command, parts, cancellationToken);
+                DataChanged?.Invoke();
+                return;
+            }
             if (_duel?.Recognizes(command) == true)
             {
                 await _duel.ProcessAsync(message, cancellationToken);
@@ -739,7 +785,8 @@ public sealed class ChatMinigameService : IDisposable
                     $"@{message.UserName} | {_config.CurrencyPlural}: {e.Points:N0} | " +
                     $"Rang: #{p.Rank} | Watchtime: {e.WatchMinutes / 60}h | " +
                     $"Spiele: {e.GamesPlayed} | Gamble: {e.Wins}W/{e.Losses}L | " +
-                    $"Größter Gewinn: {FormatCurrency(e.BiggestWin)}",
+                    $"Größter Gewinn: {FormatCurrency(e.BiggestWin)} | Rennen: {e.RaceWins} Siege | Bosse: {e.BossDefeats} | " +
+                    $"Fische: {e.FishCollection?.Count ?? 0}/5 Arten | Größter Fang: {e.BiggestFishGrams / 1000.0:0.00} kg",
                     cancellationToken);
                 return;
             }

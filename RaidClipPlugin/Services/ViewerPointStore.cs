@@ -354,9 +354,9 @@ public sealed class ViewerPointStore
         long amount,
         long minimumPoints,
         long maximumPoints,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, string? historyGame = null, int historyLimit = 500)
     {
-        if (amount <= 0)
+        if (amount <= 0 && historyGame is null)
         {
             return 0;
         }
@@ -381,15 +381,29 @@ public sealed class ViewerPointStore
             {
                 var entry = GetOrCreateEntry(
                     recipient.UserId, recipient.DisplayName, floor);
+                var before = entry.Points;
                 var increased = entry.Points > long.MaxValue - amount
                     ? long.MaxValue
                     : entry.Points + amount;
                 entry.Points = Math.Clamp(increased, floor, ceiling);
                 entry.DisplayName = recipient.DisplayName;
                 entry.UpdatedAt = DateTimeOffset.Now;
+                if (historyGame is not null)
+                {
+                    if (historyGame == "Bosskampf") entry.BossDefeats = SaturatingIncrement(entry.BossDefeats);
+                    _history.Insert(0, new MinigameHistoryEntry { UserId = entry.UserId,
+                        DisplayName = recipient.DisplayName, Game = historyGame, Action = "Gemeinsame Belohnung",
+                        Change = entry.Points - before, Balance = entry.Points });
+                }
             }
 
-            await SaveAsync(cancellationToken);
+            if (historyGame is null) await SaveAsync(cancellationToken);
+            else
+            {
+                var limit = Math.Max(1, historyLimit);
+                if (_history.Count > limit) _history.RemoveRange(limit, _history.Count - limit);
+                await SaveAllAsync(cancellationToken);
+            }
             return recipients.Length;
         }
         finally
@@ -598,7 +612,7 @@ public sealed class ViewerPointStore
         string game, long stake, long payout, long minimum, long maximum,
         int dailyGames, long dailyLoss, long dailyWin, long jackpotContribution,
         bool jackpotHit, long jackpotStart, int historyLimit,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, string? fishName = null, int fishGrams = 0)
     {
         await _lock.WaitAsync(cancellationToken);
         try
@@ -674,6 +688,12 @@ public sealed class ViewerPointStore
             entry.BiggestWin = Math.Max(entry.BiggestWin, safePayout);
             entry.DisplayName = name;
             entry.UpdatedAt = DateTimeOffset.Now;
+            if (!string.IsNullOrWhiteSpace(fishName) && fishGrams > 0)
+            {
+                entry.FishCollection ??= new();
+                entry.FishCollection[fishName] = SaturatingIncrement(entry.FishCollection.GetValueOrDefault(fishName));
+                if (fishGrams > entry.BiggestFishGrams) { entry.BiggestFishGrams = fishGrams; entry.BiggestFishName = fishName; }
+            }
             _history.Insert(0, new MinigameHistoryEntry
             {
                 UserId = userId, DisplayName = name, Game = game,
@@ -685,6 +705,66 @@ public sealed class ViewerPointStore
                 _history.RemoveRange(safeHistoryLimit, _history.Count - safeHistoryLimit);
             await SaveAllAsync(cancellationToken);
             return new CasinoApplyResult(true, "", entry.Points, jackpotWon);
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<CasinoApplyResult> ResolveRaceAsync(
+        IReadOnlyList<(string UserId, string DisplayName)> players, int winnerIndex, long stake,
+        MinigameConfig config, CancellationToken cancellationToken)
+    {
+        if (players.Count < 2 || players.Select(p => p.UserId).Distinct().Count() != players.Count ||
+            winnerIndex < 0 || winnerIndex >= players.Count || stake <= 0)
+            return new(false, "Ungültige Rennrunde", 0, 0);
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            if (stake > long.MaxValue / players.Count) return new(false, "Renntopf zu groß", 0, 0);
+            var pot = stake * players.Count;
+            var entries = players.Select(p => GetOrCreateEntry(p.UserId, p.DisplayName, config.MinimumPoints)).ToArray();
+            for (var i = 0; i < entries.Length; i++)
+            {
+                var entry = entries[i];
+                ResetDaily(entry);
+                var win = i == winnerIndex ? pot - stake : 0;
+                var loss = i == winnerIndex ? 0 : stake;
+                if (entry.Points < stake || entry.Points - stake < config.MinimumPoints ||
+                    (config.DailyGambleLimitEnabled && entry.DailyGambles >= config.DailyGambleLimit) ||
+                    (config.DailyLossLimitEnabled && loss > Math.Max(0, config.DailyLossLimit - entry.DailyLoss)) ||
+                    (config.DailyWinLimitEnabled && win > Math.Max(0, config.DailyWinLimit - entry.DailyWin)) ||
+                    win > long.MaxValue - entry.Points ||
+                    (config.MaximumAccountEnabled && win > config.MaximumAccountPoints - entry.Points))
+                    return new(false, "Punktestand oder Tages-/Kontolimit eines Teilnehmers reicht nicht mehr aus. Keine Einsätze abgebucht.", 0, 0);
+            }
+            for (var i = 0; i < entries.Length; i++)
+            {
+                var entry = entries[i];
+                var change = i == winnerIndex ? pot - stake : -stake;
+                entry.Points += change;
+                entry.GamesPlayed = SaturatingIncrement(entry.GamesPlayed);
+                entry.DailyGambles = SaturatingIncrement(entry.DailyGambles);
+                if (change > 0)
+                {
+                    entry.RaceWins = SaturatingIncrement(entry.RaceWins);
+                    entry.Wins = SaturatingIncrement(entry.Wins);
+                    entry.DailyWin = entry.DailyWin > long.MaxValue - change ? long.MaxValue : entry.DailyWin + change;
+                    entry.BiggestWin = Math.Max(entry.BiggestWin, pot);
+                }
+                else
+                {
+                    entry.Losses = SaturatingIncrement(entry.Losses);
+                    entry.DailyLoss = entry.DailyLoss > long.MaxValue - stake ? long.MaxValue : entry.DailyLoss + stake;
+                }
+                entry.UpdatedAt = DateTimeOffset.Now;
+                _history.Insert(0, new MinigameHistoryEntry { UserId = entry.UserId,
+                    DisplayName = players[i].DisplayName, Game = "Rennen", Action = i == winnerIndex ? "Rennen gewonnen" : "Rennen verloren",
+                    Change = change, Balance = entry.Points });
+            }
+            var limit = Math.Max(1, config.HistoryLimit);
+            if (_history.Count > limit) _history.RemoveRange(limit, _history.Count - limit);
+            await SaveAllAsync(cancellationToken);
+            return new(true, "", entries[winnerIndex].Points, 0);
         }
         finally { _lock.Release(); }
     }
@@ -866,6 +946,9 @@ public sealed class ViewerPointStore
     private static ViewerPointEntry CloneEntry(ViewerPointEntry x) => new()
     {
         UserId=x.UserId, DisplayName=x.DisplayName, Points=x.Points,
+        RaceWins=x.RaceWins, BossDefeats=x.BossDefeats,
+        FishCollection = x.FishCollection is null ? new() : new(x.FishCollection),
+        BiggestFishGrams=x.BiggestFishGrams, BiggestFishName=x.BiggestFishName,
         UpdatedAt=x.UpdatedAt, WatchMinutes=x.WatchMinutes,
         GamesPlayed=x.GamesPlayed, Wins=x.Wins, Losses=x.Losses,
         BiggestWin=x.BiggestWin, LastDailyUtc=x.LastDailyUtc,

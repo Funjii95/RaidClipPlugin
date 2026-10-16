@@ -8,6 +8,18 @@ namespace RaidClipPlugin.Tests;
 public sealed class HeistServiceTests
 {
     [Fact]
+    public async Task ViewerCannotStartButCanJoinModeratorHeist()
+    {
+        await using var fixture = new HeistFixture(new HeistConfig { Enabled = true, AllowEveryone = true, JoinDurationSeconds = 10 });
+        await fixture.Service.StartAsync(new ChatMessage { UserId = "viewer", UserName = "Viewer",
+            CommandAuthorization = CommandAuthorization.Allowed }, default);
+        Assert.NotEqual(HeistState.Joining, fixture.Service.State);
+        Assert.Contains(fixture.Chat.Messages, m => m.Contains("keine Berechtigung"));
+        await fixture.Service.StartAsync(Message("moderator", moderator: true), default);
+        await fixture.Service.ProcessAsync(Message("viewer", text: "!joinheist"), "!joinheist", default);
+        Assert.Contains(fixture.Chat.Messages, m => m.StartsWith("@viewer nimmt"));
+    }
+    [Fact]
     public async Task BroadcasterUsingBotAccountCanStartHeist()
     {
         await using var fixture = new HeistFixture(new HeistConfig { Enabled = true, JoinDurationSeconds = 10 });
@@ -41,7 +53,7 @@ public sealed class HeistServiceTests
         await using var fixture = new HeistFixture(new HeistConfig { Enabled = true, JoinDurationSeconds = 10 });
         await fixture.Service.StartAsync(Message("moderator", moderator: true), default);
         fixture.Chat.Messages.Clear();
-        await fixture.Service.ProcessAsync(Message("broadcaster", broadcaster: true, text: "!join"), "!join", default);
+        await fixture.Service.ProcessAsync(Message("broadcaster", broadcaster: true, text: "!joinheist"), "!joinheist", default);
         Assert.Contains(fixture.Chat.Messages, message => message.StartsWith("@broadcaster nimmt", StringComparison.Ordinal));
     }
 

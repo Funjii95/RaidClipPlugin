@@ -8,6 +8,20 @@ namespace RaidClipPlugin.Tests;
 public sealed class CommandRegistryTests
 {
     [Fact]
+    public void AllNewCommandsAreRegisteredWithoutJoinCollisionAndCorrectRoles()
+    {
+        var config = new AppConfig(); config.Minigame.Enabled = true; config.Heist.Enabled = true;
+        var registry = new CommandRegistry(); registry.Update(config);
+        foreach (var command in new[] { "!fischen", "!schatzsuche", "!rennen", "!joinrace", "!joinboss", "!joinheist", "!sammlung", "!profil" })
+            Assert.Contains(registry.VisibleFor(new ChatMessage()), c => c.CommandText == command);
+        foreach (var command in new[] { "!boss", "!heist", "!start boss", "!start rennen", "!start heist" })
+        {
+            Assert.DoesNotContain(registry.VisibleFor(new ChatMessage()), c => c.CommandText == command);
+            Assert.Contains(registry.VisibleFor(new ChatMessage { IsModerator = true }), c => c.CommandText == command);
+        }
+        Assert.DoesNotContain(registry.FindCollisions(false), c => c.Command is "!joinheist" or "!joinrace" or "!joinboss");
+    }
+    [Fact]
     public void ConfiguredHeistCommandsAppearImmediately()
     {
         var config=new AppConfig(); config.Heist.Enabled=true; config.Heist.StartCommand="raid"; config.Heist.JoinCommand="crew";
