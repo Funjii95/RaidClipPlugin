@@ -4876,6 +4876,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.17 – Heist-Startkollision
+
+- Behebt den Modulstart mit gespeichertem !start heist: Der Heist-Start wird nicht mehr doppelt registriert und fälschlich als Command-Kollision gemeldet.
+
 2.1.16 – Modulstart trotz fehlender Tip-Anbieter
 
 - Fehlende oder unvollständige Tip-Anbieter pausieren nur Tips statt alle Module. Status und Botlog zeigen Hinweise. Eigener Speichern-Knopf bei den Tip-Anbietern.

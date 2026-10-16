@@ -57,6 +57,9 @@ public sealed class CommandRegistry
         Add("adventure.race", "!start race", null, "race", "Rennen", "Rennen starten",
             "Startet ein gemeinsames Rennen.", "!start race <Betrag|all>", "!start race 100",
             m.Enabled && m.PointsEnabled && m.Adventures.Race.Enabled, order:50);
+        // The configurable primary command may already be this shortcut.
+        // Keep one authoritative entry, not two owners for the same action.
+        if (Normalize(config.Heist.StartCommand) != "!start heist")
         Add("event.start.heist", "!start heist", null, "heist", "Heist", "Heist-Event starten",
             "Startet einen Heist (Mods/Broadcaster).", "!start heist", "!start heist",
             config.Heist.Enabled, CommandRole.Moderator, order:62);
@@ -130,7 +133,8 @@ public sealed class CommandRegistry
 
         Add("heist.start", config.Heist.StartCommand, null, "heist", "Heist", "Heist starten",
             "Startet einen gemeinsamen Raubzug um den Jackpot.", config.Heist.StartCommand,
-            config.Heist.StartCommand, config.Heist.Enabled, CommandRole.Moderator, userCooldown:config.Heist.UserCooldownMinutes*60,
+            config.Heist.StartCommand, config.Heist.Enabled && (Normalize(config.Heist.StartCommand) != "!start heist" ||
+                config.Commands.IsCommandEnabled("event.start.heist")), CommandRole.Moderator, userCooldown:config.Heist.UserCooldownMinutes*60,
             globalCooldown:config.Heist.GlobalCooldownMinutes*60, order:60);
         Add("heist.join", config.Heist.JoinCommand, null, "heist", "Heist", "Heist beitreten",
             "Tritt der laufenden Beitrittsphase bei.", config.Heist.JoinCommand,

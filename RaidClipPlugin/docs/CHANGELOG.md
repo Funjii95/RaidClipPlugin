@@ -1,3 +1,7 @@
+## 2.1.17 – Heist-Startkollision
+
+- Ein gespeicherter Heist-Startbefehl `!start heist` wird nicht mehr zusätzlich als eigener Event-Shortcut registriert. Beseitigt die falsche Heist-gegen-Heist-Kollision beim Modulstart; echte Konflikte und Deaktivierungsschalter bleiben erhalten.
+
 ## 2.1.16 – Modulstart trotz fehlender Tip-Anbieter
 
 - Fehlende Tip-Anbieter oder Zugangsdaten pausieren nur den betroffenen Tip-Empfang und verhindern weder Modulstart noch Speichern. Warnhinweise erscheinen im Tip-Status und Botlog. Andere gültige Anbieter bleiben aktiv; gespeicherte Anbieter-Einstellungen werden nicht automatisch überschrieben.
