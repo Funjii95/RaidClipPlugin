@@ -4865,6 +4865,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.28
+- Erneute Wiedergabe ab Position 0 mit vollständigem Spotify-Playerstatus und detaillierter Rückmeldung bei ausbleibendem Start.
+- Warteschlange: Rechtsklick → Zur Blacklist hinzufügen → Song, Künstler oder Nutzer.
+""",
+                """
 Version 2.0.27
 - Songlink kopieren per Rechtsklick in der Musikwunsch-Warteschlange.
 - Spotify-Wiedergabe: Geräteaktivierung abwarten, Track-Verfügbarkeit erneut prüfen und Ersatzversionen berücksichtigen; genauere Fehlermeldungen.

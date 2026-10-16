@@ -230,7 +230,7 @@ public sealed class SpotifyService : IDisposable
     public async Task<bool> IsTrackPlayingAsync(string trackId, CancellationToken cancellationToken)
     {
         using var response = await SendAsync(() => new HttpRequestMessage(HttpMethod.Get,
-            ApiUrl + "/me/player/currently-playing"), cancellationToken);
+            ApiUrl + "/me/player"), cancellationToken);
         if (response.StatusCode == HttpStatusCode.NoContent) return false;
         await EnsureSuccessAsync(response, "Spotify-Wiedergabe prüfen", cancellationToken);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
@@ -240,6 +240,23 @@ public sealed class SpotifyService : IDisposable
             ((item.TryGetProperty("id", out var id) && id.GetString() == trackId) ||
              (item.TryGetProperty("linked_from", out var linked) && linked.ValueKind == JsonValueKind.Object &&
               linked.TryGetProperty("id", out var originalId) && originalId.GetString() == trackId));
+    }
+
+    public async Task<string> GetPlaybackDiagnosticAsync(CancellationToken cancellationToken)
+    {
+        using var response = await SendAsync(() => new HttpRequestMessage(HttpMethod.Get,
+            ApiUrl + "/me/player"), cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NoContent)
+            return "Spotify meldet keinen Player-Status (HTTP 204).";
+        await EnsureSuccessAsync(response, "Spotify-Playerstatus", cancellationToken);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        var root = document.RootElement;
+        var device = root.TryGetProperty("device", out var d) && d.ValueKind == JsonValueKind.Object &&
+            d.TryGetProperty("name", out var name) ? name.GetString() : "unbekannt";
+        var song = root.TryGetProperty("item", out var item) && item.ValueKind == JsonValueKind.Object &&
+            item.TryGetProperty("name", out var title) ? title.GetString() : "keiner";
+        var playing = root.TryGetProperty("is_playing", out var p) && p.ValueKind == JsonValueKind.True;
+        return $"Spotify-Konto: {AccountName}; Gerät: {device}; Song: {song}; Wiedergabe aktiv: {playing}.";
     }
 
     public async Task AddToQueueAsync(
@@ -265,9 +282,10 @@ public sealed class SpotifyService : IDisposable
         using var response = await SendAsync(() => new HttpRequestMessage(
             HttpMethod.Put, url)
         {
-            Content = JsonContent.Create(new { uris = new[] { track.Uri } })
+            Content = JsonContent.Create(new { uris = new[] { track.Uri }, position_ms = 0 })
         }, cancellationToken);
         await EnsureSuccessAsync(response, "Spotify-Wiedergabe", cancellationToken);
+        Console.WriteLine($"Spotify-Startbefehl für Track {track.Id} angenommen (HTTP {(int)response.StatusCode}).");
     }
 
     public async Task TransferPlaybackAsync(

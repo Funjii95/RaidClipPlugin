@@ -423,6 +423,14 @@ public sealed partial class MainForm
         };
         var allow = menu.Items.Add("Zukünftig erlauben");
         allow.Click += (_, _) => AllowSelectedExplicitTrack();
+        var blacklist = new ToolStripMenuItem("Zur Blacklist hinzufügen");
+        var blacklistTrack = blacklist.DropDownItems.Add("Song");
+        blacklistTrack.Click += (_, _) => BlacklistSelectedMusicTrack();
+        var blacklistArtist = blacklist.DropDownItems.Add("Künstler");
+        blacklistArtist.Click += (_, _) => BlacklistSelectedMusicArtist();
+        var blacklistUser = blacklist.DropDownItems.Add("Nutzer");
+        blacklistUser.Click += (_, _) => BlacklistSelectedMusicUser();
+        menu.Items.Add(blacklist);
         _musicGrid.CellMouseDown += (_, e) =>
         {
             if (e.Button != MouseButtons.Right || e.RowIndex < 0) return;
@@ -433,6 +441,9 @@ public sealed partial class MainForm
         {
             var entry = SelectedMusicEntry();
             e.Cancel = entry is null;
+            blacklistTrack.Enabled = entry?.Track is not null;
+            blacklistArtist.Enabled = !string.IsNullOrWhiteSpace(entry?.Track?.Artist);
+            blacklistUser.Enabled = !string.IsNullOrWhiteSpace(entry?.UserLogin);
             replay.Enabled = entry?.Track is not null && _spotify is not null;
             copyLink.Enabled = entry?.Track is { } selectedTrack &&
                 (!string.IsNullOrWhiteSpace(selectedTrack.Id) || !string.IsNullOrWhiteSpace(selectedTrack.ExternalUrl));
@@ -1091,8 +1102,9 @@ public sealed partial class MainForm
             }
             if (!started)
             {
-                var current = await _spotify.GetCurrentTrackAsync(token);
-                throw new InvalidOperationException($"Spotify bestätigt die Wiedergabe auf „{device.Name}“ nicht. Aktuell gemeldeter Song: {current?.Name ?? "keiner"}. Bitte Spotify auf diesem Gerät öffnen und prüfen, ob der Song dort manuell spielbar ist.");
+                var diagnostic = await _spotify.GetPlaybackDiagnosticAsync(token);
+                AppendLog(diagnostic);
+                throw new InvalidOperationException($"Spotify hat den Startbefehl angenommen, bestätigt den Songstart aber nicht. Zielgerät: „{device.Name}“. {diagnostic}");
             }
             entry.Track = playableTrack;
             entry.Status = MusicRequestStatus.Playing;
