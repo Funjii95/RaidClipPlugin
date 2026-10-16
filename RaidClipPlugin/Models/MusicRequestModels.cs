@@ -68,7 +68,8 @@ public sealed record MusicRequestRedemption(
     string UserInput,
     DateTimeOffset RedeemedAt,
     string Status,
-    string Role = "");
+    string Role = "",
+    MusicPlaybackMode? PlaybackModeOverride = null);
 
 public sealed class MusicRequestEntry
 {

@@ -1,3 +1,9 @@
+## 2.0.30
+
+- !srnow <Songname oder Spotify-Link> startet Musikwünsche für Moderatoren und Broadcaster im Modus „Sofort“. Der globale Wiedergabemodus bleibt unverändert; !srpermit gewährt keinen Zugriff auf !srnow.
+
+- Rechtsklick → „Erneut in die Warteschlange hinzufügen“ legt nach bestätigtem Spotify-Start einen neuen Musikwunsch-Eintrag mit „Sofort“ an. Der ursprüngliche Verlauf und die globale Wiedergabeeinstellung bleiben erhalten; es wird keine Kanalpunkte-Einlösung erneut verarbeitet.
+
 ## 2.0.29
 
 - Moderatoren und Broadcaster können mit !srpermit @name einem Nutzer fünf Minuten lang Musikwünsche per !sr und dessen Aliasen erlauben. Verwaltungsbefehle bleiben gesperrt; erneute Freigabe setzt die Frist auf fünf Minuten. Freigaben enden beim Modulneustart.
