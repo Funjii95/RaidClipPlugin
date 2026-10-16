@@ -25,6 +25,9 @@ public sealed class SpotifyService : IDisposable
     private readonly string _tokenPath;
     private MusicRequestConfig _config;
     private SpotifyToken? _token;
+    private readonly SemaphoreSlim _playbackLock = new(1, 1);
+    private CancellationTokenSource? _returnCancellation;
+    private SpotifyReturnPoint? _returnPoint;
 
     public bool IsConnected => _token is not null;
     public string AccountName { get; private set; } = "";
@@ -276,25 +279,144 @@ public sealed class SpotifyService : IDisposable
         SpotifyTrack track, string? deviceId,
         CancellationToken cancellationToken)
     {
+        await _playbackLock.WaitAsync(cancellationToken);
+        try
+        {
+        var previous = _returnPoint ?? await ReadReturnPointAsync(cancellationToken);
+        CancelPendingReturn();
+        _returnPoint = null;
         var url = ApiUrl + "/me/player/play" +
                   (string.IsNullOrWhiteSpace(deviceId) ? "" :
                       "?device_id=" + Uri.EscapeDataString(deviceId));
         using var response = await SendAsync(() => CreatePlaybackRequest(url, track.Uri, track.AlbumUri), cancellationToken);
         await EnsureSuccessAsync(response, "Spotify-Wiedergabe", cancellationToken);
         Console.WriteLine($"Spotify-Startbefehl für Track {track.Id} angenommen (HTTP {(int)response.StatusCode}).");
+        if (previous is { IsPlaying: true } && previous.Track.Id != track.Id &&
+            (string.IsNullOrEmpty(deviceId) || previous.DeviceId == deviceId))
+        {
+            _returnPoint = previous;
+            var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _returnCancellation = lifetime;
+            _ = ReturnAfterTrackAsync(track, previous, lifetime);
+            Console.WriteLine($"Spotify-Rückkehr gemerkt: {previous.Track.Name} bei {previous.PositionMs / 1000}s.");
+        }
+        }
+        finally { _playbackLock.Release(); }
     }
 
-    internal static HttpRequestMessage CreatePlaybackRequest(string url, string trackUri, string albumUri = "") =>
+    internal static HttpRequestMessage CreatePlaybackRequest(string url, string trackUri, string albumUri = "", int positionMs = 0) =>
         new(HttpMethod.Put, url)
         {
             // Buffer JSON so the request has a known Content-Length rather than a streamed body.
             Content = new StringContent(string.IsNullOrWhiteSpace(albumUri)
-                ? JsonSerializer.Serialize(new { uris = new[] { trackUri }, position_ms = 0 })
+                ? JsonSerializer.Serialize(new { uris = new[] { trackUri }, position_ms = positionMs })
                 : JsonSerializer.Serialize(new
                 {
-                    context_uri = albumUri, offset = new { uri = trackUri }, position_ms = 0
+                    context_uri = albumUri, offset = new { uri = trackUri }, position_ms = positionMs
                 }), Encoding.UTF8, "application/json")
         };
+
+    internal sealed record SpotifyReturnPoint(SpotifyTrack Track, string ContextUri,
+        string DeviceId, int PositionMs, bool IsPlaying);
+
+    public void CancelPendingReturn()
+    {
+        try { _returnCancellation?.Cancel(); }
+        catch (ObjectDisposedException) { }
+        _returnPoint = null;
+    }
+
+    private async Task<SpotifyReturnPoint?> ReadReturnPointAsync(CancellationToken token)
+    {
+        using var response = await SendAsync(() => new HttpRequestMessage(HttpMethod.Get,
+            ApiUrl + "/me/player"), token);
+        if (response.StatusCode == HttpStatusCode.NoContent) return null;
+        await EnsureSuccessAsync(response, "Spotify-Rückkehrpunkt lesen", token);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(token));
+        var root = json.RootElement;
+        if (!root.TryGetProperty("item", out var item) || item.ValueKind != JsonValueKind.Object ||
+            !item.TryGetProperty("type", out var type) || type.GetString() != "track") return null;
+        var context = root.TryGetProperty("context", out var c) && c.ValueKind == JsonValueKind.Object &&
+            c.TryGetProperty("uri", out var uri) ? uri.GetString() ?? "" : "";
+        var device = root.TryGetProperty("device", out var d) && d.ValueKind == JsonValueKind.Object &&
+            d.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "";
+        return new(ParseTrack(item), context, device,
+            root.TryGetProperty("progress_ms", out var progress) && progress.TryGetInt32(out var ms) ? ms : 0,
+            root.TryGetProperty("is_playing", out var playing) && playing.ValueKind == JsonValueKind.True);
+    }
+
+    internal static bool IsNaturalTrackEnd(SpotifyReturnPoint last, SpotifyReturnPoint? current) =>
+        last.IsPlaying && last.Track.DurationMs > 0 &&
+        last.Track.DurationMs - last.PositionMs <= 5000 &&
+        (current is null || (current.DeviceId == last.DeviceId && current.IsPlaying &&
+            current.ContextUri == last.ContextUri && current.Track.Id != last.Track.Id));
+
+    private async Task ReturnAfterTrackAsync(SpotifyTrack requested, SpotifyReturnPoint saved,
+        CancellationTokenSource lifetime)
+    {
+        var token = lifetime.Token;
+        try
+        {
+            SpotifyReturnPoint? last = null;
+            var observed = false;
+            var attempts = 0;
+            while (true)
+            {
+                await Task.Delay(1000, token);
+                var current = await ReadReturnPointAsync(token);
+                if (!observed)
+                {
+                    if (current?.Track.Id != requested.Id)
+                    {
+                        if (++attempts >= 16) return;
+                        continue;
+                    }
+                    observed = true;
+                }
+                if (current?.Track.Id == requested.Id)
+                {
+                    if (!string.IsNullOrEmpty(saved.DeviceId) && current.DeviceId != saved.DeviceId) return;
+                    last = current;
+                    continue;
+                }
+                // A manual song/device change or pause must not trigger an unsolicited return.
+                if (last is null || !IsNaturalTrackEnd(last, current)) return;
+                await _playbackLock.WaitAsync(token);
+                try
+                {
+                    token.ThrowIfCancellationRequested();
+                    var context = string.IsNullOrWhiteSpace(saved.ContextUri)
+                        ? saved.Track.AlbumUri : saved.ContextUri;
+                    var url = ApiUrl + "/me/player/play?device_id=" + Uri.EscapeDataString(saved.DeviceId);
+                    using var response = await SendAsync(() => CreatePlaybackRequest(url,
+                        saved.Track.Uri, context, saved.PositionMs), token);
+                    await EnsureSuccessAsync(response, "Spotify-Rückkehr", token);
+                    var confirmed = false;
+                    for (var attempt = 0; attempt < 8; attempt++)
+                    {
+                        await Task.Delay(1000, token);
+                        if (await IsTrackPlayingAsync(saved.Track.Id, token)) { confirmed = true; break; }
+                    }
+                    Console.WriteLine(confirmed
+                        ? $"Spotify-Rückkehr bestätigt: {saved.Track.Name} bei {saved.PositionMs / 1000}s."
+                        : "Spotify hat die Rückkehr zum vorherigen Song nicht bestätigt.");
+                }
+                finally { _playbackLock.Release(); }
+                return;
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception exception) { Console.WriteLine("Spotify-Rückkehr fehlgeschlagen: " + exception.Message); }
+        finally
+        {
+            if (ReferenceEquals(_returnCancellation, lifetime))
+            {
+                _returnCancellation = null;
+                _returnPoint = null;
+            }
+            lifetime.Dispose();
+        }
+    }
 
     public async Task TransferPlaybackAsync(
         string deviceId, CancellationToken cancellationToken)
@@ -495,6 +617,7 @@ public sealed class SpotifyService : IDisposable
 
     public void Dispose()
     {
+        CancelPendingReturn();
         _http.Dispose();
         _tokenLock.Dispose();
         _connectLock.Dispose();

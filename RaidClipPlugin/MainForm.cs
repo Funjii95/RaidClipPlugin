@@ -4865,6 +4865,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.33
+- Nach dem natürlichen Ende eines Sofortstarts zum zuvor laufenden Song an gespeicherter Position zurückkehren. Rückkehrpunkt gilt bis Modul-/Programmneustart; keine vollständige Warteschlangen-Rekonstruktion.
+""",
+                """
 Version 2.0.32
 - !srnow und Nochmal abspielen starten den exakten Song direkt im Album-Kontext. Live mit Holz auf FUNJII bestätigt; Spotify kann danach im Album fortfahren.
 """,

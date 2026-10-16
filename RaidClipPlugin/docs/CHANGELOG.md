@@ -1,3 +1,9 @@
+## 2.0.33
+
+- Rückkehr auf FUNJII live geprüft: „Narcoleptic“ bei 2:57 vorgemerkt, „Holz“ sofort gestartet und nach dessen Testende zu „Narcoleptic“ zurückgekehrt; Wiedergabe von Spotify bestätigt.
+
+- Vor einem Sofortstart wird der laufende Song mit Position, Gerät und Playlist-/Album-Kontext im Arbeitsspeicher vorgemerkt. Nach dem erkannten natürlichen Ende des Wunschs wird der unterbrochene Song an dieser Position fortgesetzt. Weitere Sofortstarts behalten den ursprünglichen Rückkehrpunkt. Manuelle Kontext-/Gerätewechsel brechen die Rückkehr ab; Pause löst keine Rückkehr aus. Neustart oder Modulstopp verwirft den Rückkehrpunkt. Die vollständige Spotify-Warteschlange wird nicht rekonstruiert.
+
 ## 2.0.32
 
 - !srnow und „Nochmal abspielen“ starten den gewünschten Song direkt über seinen Album-Kontext und den exakten Track als Startpunkt. Dies umgeht das beobachtete Desktop-Verhalten, bei dem Tracklisten-Startbefehle trotz HTTP 204 die Wiedergabe leeren. Live-Test mit „Holz“ auf FUNJII erfolgreich bestätigt. Kein Einreihen/Überspringen; nach dem Song kann Spotify im Album fortfahren.
