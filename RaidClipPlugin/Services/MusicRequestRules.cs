@@ -18,14 +18,15 @@ public static class MusicRequestRules
     public static string? ValidateTrack(
         MusicRequestConfig config,
         SpotifyTrack track,
-        IEnumerable<string> openTrackIds)
+        IEnumerable<string> openTrackIds,
+        bool explicitImmediateRequest = false)
     {
         if (track.Type != "track" || track.IsLocal || !track.IsPlayable ||
             string.IsNullOrWhiteSpace(track.Uri)) return "not-playable";
         if (track.DurationMs > TimeSpan.FromMinutes(
                 config.MaximumTrackDurationMinutes).TotalMilliseconds)
             return "too-long";
-        if (track.Explicit && !config.AllowExplicitTracks &&
+        if (track.Explicit && !explicitImmediateRequest && !config.AllowExplicitTracks &&
             !(config.AllowedExplicitTrackIds ?? new()).Contains(track.Id, StringComparer.OrdinalIgnoreCase))
             return "explicit";
         if (config.TrackBlacklist.Contains(track.Id,
@@ -40,7 +41,7 @@ public static class MusicRequestRules
                 track.Name.Contains(term,
                     StringComparison.OrdinalIgnoreCase)))
             return "blacklist";
-        if (!config.AllowDuplicateTracks && openTrackIds.Contains(
+        if (!explicitImmediateRequest && !config.AllowDuplicateTracks && openTrackIds.Contains(
                 track.Id, StringComparer.Ordinal)) return "duplicate";
         return null;
     }

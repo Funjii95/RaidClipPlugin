@@ -402,7 +402,7 @@ public sealed partial class MainForm
         var replay = menu.Items.Add("Nochmal abspielen");
         replay.Click += async (_, _) => await PlaySelectedMusicEntryAsync();
         var requeue = menu.Items.Add("Erneut in die Warteschlange hinzufügen");
-        requeue.Click += async (_, _) => await PlaySelectedMusicEntryAsync(asNewImmediateEntry: true);
+        requeue.Click += async (_, _) => await PlaySelectedMusicEntryAsync(asNewQueuedEntry: true);
         var copyLink = menu.Items.Add("Songlink kopieren");
         copyLink.Click += (_, _) =>
         {
@@ -1049,7 +1049,7 @@ public sealed partial class MainForm
             ? _musicGrid.SelectedRows[0].Tag as MusicRequestEntry : null;
 
 
-    private async Task PlaySelectedMusicEntryAsync(bool asNewImmediateEntry = false)
+    private async Task PlaySelectedMusicEntryAsync(bool asNewQueuedEntry = false)
     {
         if (_musicReplayBusy) return;
         var entry = SelectedMusicEntry();
@@ -1092,6 +1092,13 @@ public sealed partial class MainForm
                 if (!activated)
                     throw new InvalidOperationException($"Spotify-Gerät „{device.Name}“ wurde nicht aktiv. Bitte dort einen Song manuell starten und erneut versuchen.");
             }
+            if (asNewQueuedEntry)
+            {
+                // Like a regular queued request: do not interrupt or verify current playback.
+                await _spotify.AddToQueueAsync(playableTrack, device.Id, token);
+            }
+            else
+            {
             await _spotify.PlayAsync(playableTrack, device.Id, token);
             var started = false;
             for (var attempt = 0; attempt < 16; attempt++)
@@ -1109,7 +1116,8 @@ public sealed partial class MainForm
                 AppendLog(diagnostic);
                 throw new InvalidOperationException($"Spotify hat den Startbefehl angenommen, bestätigt den Songstart aber nicht. Zielgerät: „{device.Name}“. {diagnostic}");
             }
-            if (asNewImmediateEntry)
+            }
+            if (asNewQueuedEntry)
             {
                 var now = DateTimeOffset.UtcNow;
                 entry = new MusicRequestEntry
@@ -1120,22 +1128,23 @@ public sealed partial class MainForm
                     DisplayName = entry.DisplayName, Role = entry.Role,
                     UserInput = playableTrack.ExternalUrl,
                     RedeemedAt = now, UpdatedAt = now,
-                    PlaybackMode = MusicPlaybackMode.PlayImmediately
+                    PlaybackMode = MusicPlaybackMode.AddToQueue
                 };
             }
             entry.Track = playableTrack;
-            entry.Status = MusicRequestStatus.Playing;
+            entry.Status = asNewQueuedEntry ? MusicRequestStatus.Queued : MusicRequestStatus.Playing;
             entry.FailureReason = "";
             await _musicStore.AddOrUpdateAsync(entry, true,
                 _shutdown?.Token ?? CancellationToken.None);
             await RefreshMusicGridAsync();
-            if (asNewImmediateEntry)
-                AppendLog($"Musikwunsch erneut als Sofort-Wiedergabe hinzugefügt: {playableTrack.Name}.");
+            if (asNewQueuedEntry)
+                AppendLog($"Musikwunsch erneut zur Spotify-Warteschlange hinzugefügt: {playableTrack.Name}.");
         }
         catch (Exception exception)
         {
-            AppendLog("Song konnte nicht abgespielt werden: " + exception.Message);
-            MessageBox.Show(this, exception.Message, "Song konnte nicht abgespielt werden",
+            var action = asNewQueuedEntry ? "Song konnte nicht eingereiht werden" : "Song konnte nicht abgespielt werden";
+            AppendLog(action + ": " + exception.Message);
+            MessageBox.Show(this, exception.Message, action,
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         finally { _musicReplayBusy = false; }
