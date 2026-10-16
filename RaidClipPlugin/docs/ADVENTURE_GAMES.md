@@ -18,10 +18,10 @@ Boss- und Heist-Start sind Mods/Broadcastern vorbehalten, auch bei direktem `!bo
 
 | Spiel | Start | Teilnahme |
 | --- | --- | --- |
-| Fischen | `!fischen <Betrag\|all>` | Sofortiges Solospiel |
-| Schatzsuche | `!schatzsuche <Betrag\|all>` | Sofortiges Solospiel |
+| Fischen | `!fish <Betrag\|all>` | Sofortiges Solospiel |
+| Schatzsuche | `!dive <Betrag\|all>` | Sofortiges Solospiel |
 | Rennen | `!start race <Betrag\|all>` | `!joinrace` |
-| Bosskampf | `!boss` oder automatisch | `!joinboss` (angreifen) |
+| Bosskampf | `!boss` oder automatisch | `!attack` (angreifen) |
 | Bestehender Heist | `!heist` | `!joinheist` |
 
 ## Fischen und Schatzsuche
@@ -30,6 +30,8 @@ Einsatzgrenzen und Nutzer-Cooldown sind pro Spiel einstellbar. `all` setzt das v
 
 - Fischen: 50% 0x, 30% 1x, 17% 2x, 3% 8x.
 - Schatzsuche: 50% 0x, 25% 1x, 20% 2x, 5% 6x.
+
+Diese Werte sind die Standardwerte. In den Reitern Fischen und Schatzsuche sind alle vier Chancen und Auszahlungsfaktoren getrennt einstellbar. Chancen: je 0–100 %, zusammen genau 100 %. Faktoren: 0–100, auch Dezimalwerte wie 1,5. Die Auszahlung enthält den Einsatz und wird auf ganze Punkte abgerundet. Ungültige Einstellungen werden vor dem Speichern abgelehnt. Die Seltenheit eines Fischs richtet sich nach der Ergebnisstufe, nicht nach dem Auszahlungsfaktor.
 
 Die Spiele nutzen die vorhandenen Tageslimits und das Kontolimit. Ergebnisse werden im Verlauf gespeichert.
 
@@ -41,7 +43,7 @@ Es werden keine Einsätze vorab reserviert. Bei der Auswertung werden Guthaben u
 
 ## Bosskampf
 
-`!boss` startet einen Boss oder zeigt den bereits aktiven Boss an. `!joinboss` verursacht 10–30 Schaden; weitere Angriffe sind nach dem eingestellten Nutzer-Cooldown möglich. Es gibt keinen Einsatz. Bei einem Sieg wird der Belohnungstopf auf die unterschiedlichen Angreifer gleichmäßig aufgeteilt, abgerundet auf ganze Punkte. Kontolimits können die tatsächlich gutgeschriebene Belohnung begrenzen. Bei Zeitablauf gibt es keine Belohnung.
+`!boss` startet einen Boss oder zeigt den bereits aktiven Boss an. `!attack` verursacht 10–30 Schaden; weitere Angriffe sind nach dem eingestellten Nutzer-Cooldown möglich. Es gibt keinen Einsatz. Bei einem Sieg wird der Belohnungstopf auf die unterschiedlichen Angreifer gleichmäßig aufgeteilt, abgerundet auf ganze Punkte. Kontolimits können die tatsächlich gutgeschriebene Belohnung begrenzen. Bei Zeitablauf gibt es keine Belohnung.
 
 Unter **Bosskampf** lassen sich **Automatisch starten** und **Auto-Start alle X Minuten** einstellen. Standard: deaktiviert, 15 Minuten. Der erste automatische Start erfolgt nach dem Intervall ab Modulstart bzw. Speichern der Einstellungen. Jeder Bossstart setzt das nächste Intervall neu. Aktive Kämpfe werden nicht überlagert; die Rundenpause kann einen Auto-Start verzögern. Der Zeitplan besteht nur bei laufendem Plugin/Modul und wird nicht über Neustarts gespeichert.
 

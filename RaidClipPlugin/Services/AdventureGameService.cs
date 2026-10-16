@@ -41,7 +41,7 @@ public sealed class AdventureGameService
 
     public void UpdateConfig(MinigameConfig config) { _config = config; ScheduleAutoBoss(); }
     private void ScheduleAutoBoss() => _nextAutoBoss = _now().AddMinutes(Math.Clamp(_config.Adventures.Boss.AutoStartMinutes, 1, 1440));
-    public static bool Recognizes(string command) => command is "!fischen" or "!sammlung" or "!schatzsuche" or "!startrace" or "!joinrace" or "!boss" or "!joinboss";
+    public static bool Recognizes(string command) => command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!boss" or "!attack" or "!joinboss";
     public async Task RunAsync(CancellationToken token)
     {
         var overlay = new AdventureOverlayServer(() => Status).RunAsync(token);
@@ -123,28 +123,29 @@ public sealed class AdventureGameService
         try
         {
             await TickCoreAsync(token);
+            if (command == "!joinboss") command = "!attack";
             var settings = _config.Adventures;
             if (command == "!sammlung")
             {
                 if (Cooling("collection:" + message.UserId, 15)) return;
                 var profile = await _points.GetProfileAsync(message.UserId, token);
                 var fish = profile.Entry.FishCollection ?? new();
-                await Say($"@{message.UserName}, Fischsammlung: " + (fish.Count == 0 ? "Noch keine Fänge. Nutze !fischen <Einsatz>." :
+                await Say($"@{message.UserName}, Fischsammlung: " + (fish.Count == 0 ? "Noch keine Fänge. Nutze !fish <Einsatz>." :
                     string.Join(", ", fish.OrderBy(p => p.Key).Select(p => $"{p.Key}: {p.Value}x")) + $" | Größter Fang: {profile.Entry.BiggestFishName} ({profile.Entry.BiggestFishGrams / 1000.0:0.00} kg)."), token);
                 return;
             }
-            if (command is "!boss" or "!joinboss")
+            if (command is "!boss" or "!attack")
             {
                 if (!settings.Boss.Enabled) return;
-                if (parts.Length != 1) { await Say("Nutzung: !boss zum Starten, !joinboss zum Angreifen – ohne Einsatz.", token); return; }
+                if (parts.Length != 1) { await Say("Nutzung: !boss zum Starten, !attack zum Angreifen – ohne Einsatz.", token); return; }
                 if (command == "!boss")
                 {
                     if (!EventStartCommand.IsAllowed(message, _broadcasterId))
                     {
-                        await Say($"@{message.UserName}, nur Mods/Broadcaster dürfen den Boss starten. Mit !joinboss kannst du einem aktiven Kampf beitreten.", token);
+                        await Say($"@{message.UserName}, nur Mods/Broadcaster dürfen den Boss starten. Mit !attack kannst du einen aktiven Boss angreifen.", token);
                         return;
                     }
-                    if (_boss is not null) await Say($"Boss aktiv: {_boss.Hp} LP. Mit !joinboss angreifen!", token);
+                    if (_boss is not null) await Say($"Boss aktiv: {_boss.Hp} LP. Mit !attack angreifen!", token);
                     else if (_now() < _nextBoss) await Say("Der nächste Boss erscheint nach der Rundenpause.", token);
                     else await SpawnBossAsync(token);
                 }
@@ -152,7 +153,7 @@ public sealed class AdventureGameService
                 else await AttackBossAsync(message, token);
                 return;
             }
-            var game = command == "!fischen" ? settings.Fishing : command == "!schatzsuche" ? settings.Treasure : settings.Race;
+            StakeAdventureConfig game = command == "!fish" ? settings.Fishing : command == "!dive" ? settings.Treasure : settings.Race;
             if (!game.Enabled) return;
             if (command == "!joinrace" && _race is null) { await Say("Aktuell läuft keine Beitrittsphase. Rennen mit !start race <Betrag> starten.", token); return; }
             var balance = await _points.GetPointsAsync(message.UserId, token);
@@ -179,12 +180,13 @@ public sealed class AdventureGameService
                 return;
             }
             var roll = _random.NextInclusive(1, 100);
-            var (multiplier, outcome) = SoloOutcome(command, roll);
-            var payout = checked(stake * multiplier);
-            var fishName = command == "!fischen" && multiplier > 0 ? roll <= 80 ? "Rotfeder" : roll <= 97 ? "Hecht" : roll == 98 ? "Goldener Koi" : roll == 99 ? "Mondaal" : "Kraken" : null;
-            var fishGrams = fishName is null ? 0 : _random.NextInclusive(multiplier >= 8 ? 5000 : 100, multiplier >= 8 ? 20000 : 4000);
+            var (multiplier, outcome, tier) = SoloOutcome(command, roll, (SoloAdventureConfig)game);
+            var payout = checked((long)decimal.Floor(stake * multiplier));
+            var fishName = command == "!fish" && tier > 0 ? tier == 1 ? "Rotfeder" : tier == 2 ? "Hecht" :
+                _random.NextInclusive(1, 3) switch { 1 => "Goldener Koi", 2 => "Mondaal", _ => "Kraken" } : null;
+            var fishGrams = fishName is null ? 0 : _random.NextInclusive(tier == 3 ? 5000 : 100, tier == 3 ? 20000 : 4000);
             var result = await _points.ApplyCasinoAsync(message.UserId, message.UserName,
-                command == "!fischen" ? "Fischen" : "Schatzsuche", stake, payout,
+                command == "!fish" ? "Fischen" : "Schatzsuche", stake, payout,
                 _config.MinimumPoints, Maximum,
                 _config.DailyGambleLimitEnabled ? _config.DailyGambleLimit : 0,
                 _config.DailyLossLimitEnabled ? _config.DailyLossLimit : 0,
@@ -198,9 +200,18 @@ public sealed class AdventureGameService
         }
         finally { PublishStatus(); _gate.Release(); }
     }
-    internal static (long Multiplier, string Text) SoloOutcome(string command, int roll) => command == "!fischen"
-        ? roll <= 50 ? (0, "Ein alter Stiefel – kein Fang!") : roll <= 80 ? (1, "Ein kleiner Fisch – Einsatz zurück!") : roll <= 97 ? (2, "Ein prächtiger Fang!") : (8, "Ein legendärer Fisch beißt an!")
-        : roll <= 50 ? (0, "Die Höhle war eine Falle – keine Beute!") : roll <= 75 ? (1, "Eine kleine Truhe deckt deinen Einsatz!") : roll <= 95 ? (2, "Du entdeckst eine Schatzkammer!") : (6, "Du findest den versunkenen Königsschatz!");
+    internal static (decimal Multiplier, string Text, int Tier) SoloOutcome(string command, int roll, SoloAdventureConfig config)
+    {
+        config.Validate(command);
+        if (roll is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(roll));
+        var tier = roll <= config.LossChance ? 0 : roll <= config.LossChance + config.SmallChance ? 1 :
+            roll <= config.LossChance + config.SmallChance + config.LargeChance ? 2 : 3;
+        var multipliers = new[] { config.LossMultiplier, config.SmallMultiplier, config.LargeMultiplier, config.RareMultiplier };
+        var texts = command == "!fish"
+            ? new[] { "Ein alter Stiefel – kein Fang!", "Ein kleiner Fisch!", "Ein prächtiger Fang!", "Ein legendärer Fisch beißt an!" }
+            : new[] { "Die Höhle war eine Falle!", "Du findest eine kleine Truhe!", "Du entdeckst eine Schatzkammer!", "Du findest den versunkenen Königsschatz!" };
+        return (multipliers[tier], texts[tier], tier);
+    }
 
     private async Task JoinRaceAsync(ChatMessage user, long stake, CancellationToken token)
     {
@@ -233,7 +244,13 @@ public sealed class AdventureGameService
     private async Task AttackBossAsync(ChatMessage user, CancellationToken token)
     {
         if (_boss is null) return;
-        if (Cooling("!boss:" + user.UserId, _boss.Config.AttackCooldownSeconds)) return;
+        var cooldownKey = "!boss:" + user.UserId;
+        if (Cooling(cooldownKey, _boss.Config.AttackCooldownSeconds))
+        {
+            var remaining = Math.Max(1, (int)Math.Ceiling((_cooldowns[cooldownKey] - _now()).TotalSeconds));
+            await Say(Format(_boss.Config.AttackCooldownMessage, ("user", user.UserName), ("remaining", remaining)), token);
+            return;
+        }
         _boss.Players[user.UserId] = user.UserName;
         var damage = _random.NextInclusive(10, 30);
         _boss.Hp = Math.Max(0, _boss.Hp - damage);

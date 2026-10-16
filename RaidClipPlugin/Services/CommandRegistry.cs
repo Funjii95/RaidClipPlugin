@@ -57,8 +57,8 @@ public sealed class CommandRegistry
             "Startet einen Heist (Mods/Broadcaster).", "!start heist", "!start heist",
             config.Heist.Enabled, CommandRole.Moderator, order:62);
         foreach (var game in new[] {
-            ("fishing", "!fischen", "Fischen", m.Adventures.Fishing.Enabled, "<Betrag|all>", "Wirft die Angel aus und gewinnt mit etwas Glück Punkte."),
-            ("treasure", "!schatzsuche", "Schatzsuche", m.Adventures.Treasure.Enabled, "<Betrag|all>", "Erkundet eine Höhle auf der Suche nach Beute."),
+            ("fishing", "!fish", "Fischen", m.Adventures.Fishing.Enabled, "<Betrag|all>", "Wirft die Angel aus und gewinnt mit etwas Glück Punkte."),
+            ("treasure", "!dive", "Schatzsuche", m.Adventures.Treasure.Enabled, "<Betrag|all>", "Erkundet eine Höhle auf der Suche nach Beute."),
             ("boss", "!boss", "Bosskampf", m.Adventures.Boss.Enabled, "", "Startet einen Bosskampf oder zeigt den aktiven Boss an.") })
             Add("adventure." + game.Item1, game.Item2, null, game.Item1, game.Item3, game.Item3,
                 game.Item6, (game.Item2 + " " + game.Item5).Trim(), game.Item2,
@@ -67,8 +67,8 @@ public sealed class CommandRegistry
         Add("adventure.race.join", "!joinrace", null, "race", "Rennen", "Rennen beitreten",
             "Tritt dem offenen Rennen zum festgelegten Einsatz bei.", "!joinrace", "!joinrace",
             m.Enabled && m.PointsEnabled && m.Adventures.Race.Enabled, order:51);
-        Add("adventure.boss.join", "!joinboss", null, "boss", "Bosskampf", "Boss angreifen",
-            "Greift den aktiven Boss an (ohne Einsatz).", "!joinboss", "!joinboss",
+        Add("adventure.boss.join", "!attack", new[] { "!joinboss" }, "boss", "Bosskampf", "Boss angreifen",
+            "Greift den aktiven Boss an (ohne Einsatz).", "!attack", "!attack",
             m.Enabled && m.PointsEnabled && m.Adventures.Boss.Enabled, order:51);
         Add("commands.list", "!command", new[] { "!commands", config.Commands.Command }
                 .Where(c => !Normalize(c).Equals("!command", StringComparison.OrdinalIgnoreCase)),

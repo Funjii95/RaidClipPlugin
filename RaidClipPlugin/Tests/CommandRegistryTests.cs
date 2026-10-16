@@ -12,7 +12,7 @@ public sealed class CommandRegistryTests
     {
         var config = new AppConfig(); config.Minigame.Enabled = true; config.Heist.Enabled = true;
         var registry = new CommandRegistry(); registry.Update(config);
-        foreach (var command in new[] { "!fischen", "!schatzsuche", "!start race", "!joinrace", "!joinboss", "!joinheist", "!sammlung", "!profil" })
+        foreach (var command in new[] { "!fish", "!dive", "!start race", "!joinrace", "!attack", "!joinheist", "!sammlung", "!profil" })
             Assert.Contains(registry.VisibleFor(new ChatMessage()), c => c.CommandText == command);
         foreach (var command in new[] { "!boss", "!heist", "!start boss", "!start heist" })
         {

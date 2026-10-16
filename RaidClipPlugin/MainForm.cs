@@ -2344,10 +2344,10 @@ private enum CloseChoice
         AddMinigameTab(tabs, "Daily", dailyFlow);
         AddMinigameTab(tabs, "Casino-Spiele", casinoLayout);
         AddMinigameTab(tabs, "Event-Steuerung", BuildAdventureControlPanel());
-        AddMinigameTab(tabs, "Fischen", BuildAdventurePanel(_fishingSettings, "!fischen <Betrag|all>: Stiefel, kleiner Fisch, großer Fang oder legendärer Fisch. Auszahlung: 0x / 1x / 2x / 8x Einsatz. Chancen: 50% / 30% / 17% / 3%."));
-        AddMinigameTab(tabs, "Schatzsuche", BuildAdventurePanel(_treasureSettings, "!schatzsuche <Betrag|all>: Falle, kleine Truhe, Schatzkammer oder Königsschatz. Auszahlung: 0x / 1x / 2x / 6x Einsatz. Chancen: 50% / 25% / 20% / 5%."));
+        AddMinigameTab(tabs, "Fischen", BuildAdventurePanel(_fishingSettings, "!fish <Betrag|all>: Stiefel, kleiner Fisch, großer Fang oder legendärer Fisch. Chancen je Stufe und Auszahlungsfaktoren unten einstellbar. Summe: 100 %. Faktoren inklusive Einsatz; 1x = Einsatz zurück. Bruchteile werden abgerundet."));
+        AddMinigameTab(tabs, "Schatzsuche", BuildAdventurePanel(_treasureSettings, "!dive <Betrag|all>: Falle, kleine Truhe, Schatzkammer oder Königsschatz. Chancen je Stufe und Auszahlungsfaktoren unten einstellbar. Summe: 100 %. Faktoren inklusive Einsatz; 1x = Einsatz zurück. Bruchteile werden abgerundet."));
         AddMinigameTab(tabs, "Rennen", BuildAdventurePanel(_raceSettings, "!start race <Betrag|all> startet ein Rennen. Weitere Teilnehmer: !joinrace. Nach der Beitrittsphase gewinnt ein zufälliger Teilnehmer den Topf. Mindestens 2 Teilnehmer; Einsätze werden erst bei der Auswertung gemeinsam abgebucht. Bei Abbruch keine Abbuchung."));
-        AddMinigameTab(tabs, "Bosskampf", BuildAdventurePanel(_bossSettings, "!boss startet manuell, !joinboss greift an (10–30 Schaden, Nutzer-Cooldown). Bei Sieg wird der Topf gleichmäßig geteilt. Kein Einsatz. Optional Auto-Start alle X Minuten bei laufendem Modul; Zeitlimit und Rundenpause werden berücksichtigt."));
+        AddMinigameTab(tabs, "Bosskampf", BuildAdventurePanel(_bossSettings, "!boss startet manuell, !attack greift an (Alias !joinboss; 10–30 Schaden, Nutzer-Cooldown). Bei Sieg wird der Topf gleichmäßig geteilt. Kein Einsatz. Optional Auto-Start alle X Minuten bei laufendem Modul; Zeitlimit und Rundenpause werden berücksichtigt."));
         AddMinigameTab(tabs, "Heist", BuildHeistSettingsPanel());
         AddMinigameTab(tabs, "Duel", BuildDuelSettingsPanel());
         AddMinigameTab(tabs, "Limits & Fairness", limitsFlow);
@@ -4874,6 +4874,14 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             Environment.NewLine + Environment.NewLine,
             new[]
             {
+                """
+Version 2.1.5
+- Chancen für !fish und !dive werden zur einfacheren Einstellung als x/100 angezeigt und eingegeben.
+- Gewinnchancen und Auszahlungsfaktoren für jede Ergebnisstufe von !fish und !dive einstellbar; Chancen müssen zusammen 100 % ergeben.
+- Spielbefehle umbenannt: !fish statt !fischen und !dive statt !schatzsuche. Einsätze und Spielregeln unverändert.
+- Boss-Angriffe geben eine anpassbare Cooldown-Meldung mit verbleibenden Sekunden aus.
+- Boss-Angriff heißt jetzt !attack; !joinboss bleibt kompatibler Alias mit gemeinsamem Cooldown.
+""",
                 """
 Version 2.1.4
 - Fischen und Schatzsuche melden verbleibende Cooldown-Sekunden statt wiederholte Aufrufe still zu ignorieren; Text anpassbar.

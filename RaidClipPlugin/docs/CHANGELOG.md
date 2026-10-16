@@ -1,3 +1,15 @@
+## 2.1.5
+
+- Einstellbare Chancen für !fish und !dive werden als x/100 angezeigt (z. B. 33/100). Eingabe als Zahl oder x/100 möglich; Summe muss 100/100 ergeben.
+
+- !fish und !dive: vier Ergebnis-Chancen (je 0–100 %, Summe genau 100 %) und Auszahlungsfaktoren (0–100, auch Dezimalwerte) pro Spiel einstellbar. Auszahlung enthält den Einsatz; Bruchteile werden abgerundet. Bisherige Wahrscheinlichkeiten bleiben Standardwerte, auch bei alten gespeicherten Einstellungen. Seltene Fischarten richten sich nach der Ergebnisstufe, nicht dem Auszahlungsfaktor.
+
+- Spielbefehle heißen jetzt !fish <Betrag|all> (Fischen) und !dive <Betrag|all> (Schatzsuche). Befehlsliste, Cooldown-Hinweise, Oberfläche und Dokumentation aktualisiert; Spielregeln und gespeicherte Sammlungen unverändert.
+
+- Boss-Angriffe während des Cooldowns melden die verbleibenden Sekunden. Der Text ist im Bosskampf-Reiter über „Angriffs-Cooldown-Text“ mit {user} und {remaining} anpassbar. !attack und !joinboss teilen die Sperre; blockierte Versuche verursachen keinen Schaden und verlängern sie nicht.
+
+- Boss-Angriff auf !attack umgestellt, !joinboss bleibt Alias. Beide teilen denselben Cooldown. Befehlsliste, OBS-Hinweis und Oberfläche angepasst; bisheriger Standard-Starttext wird aktualisiert, eigene Texte bleiben unverändert.
+
 ## 2.1.4
 
 - Wiederholte !fischen- und !schatzsuche-Aufrufe geben während des Cooldowns die verbleibenden Sekunden aus. Der Hinweis ist in den Spiel-Einstellungen anpassbar ({user}, {command}, {remaining}); erneute Versuche verlängern die Sperre nicht und buchen keine Punkte ab.
