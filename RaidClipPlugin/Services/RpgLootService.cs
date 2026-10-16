@@ -1,0 +1,51 @@
+using System.Text.Json;
+using RaidClipPlugin.Config;
+using RaidClipPlugin.Models;
+
+namespace RaidClipPlugin.Services;
+
+public sealed record LootChanceBreakdown(decimal Base, decimal Stake, decimal Luck, decimal Event, decimal Total, ItemRarity MaximumRarity,
+    decimal Sushi = 0, decimal Equipment = 0);
+public sealed record RpgLootResult(RpgItem? Item, LootChanceBreakdown Chances);
+
+/// <summary>Pure trusted loot calculation. The caller must supply the stake actually
+/// debited by its transaction, not an unverified amount from chat or a frontend.</summary>
+public sealed class RpgLootService(IDuelRandom? random = null)
+{
+    private readonly IDuelRandom _random = random ?? new CryptoDuelRandom();
+
+    public static LootChanceBreakdown Chances(long paidStake, decimal effectiveLuck, RpgLootConfig config, decimal sushiLuck = 0, decimal equipmentLuck = 0)
+    {
+        config.Validate();
+        if (paidStake < 0) throw new ArgumentOutOfRangeException(nameof(paidStake));
+        var tier = config.RiskTiers.Where(t => t.MinimumStake <= paidStake).MaxBy(t => t.MinimumStake)!;
+        var maximum = tier.MaximumRarity;
+        if (paidStake < config.LegendaryMinimumStake && maximum == ItemRarity.Legendary) maximum = ItemRarity.Epic;
+        var perkPoints = Math.Clamp(effectiveLuck, 0, 1000);
+        var sushiPoints = Math.Clamp(sushiLuck, 0, 1000);
+        var equipmentPoints = Math.Clamp(equipmentLuck, 0, 1000);
+        var combined = perkPoints + sushiPoints + equipmentPoints;
+        var bonus = Math.Min(combined * config.LuckChancePerPoint, config.MaximumLuckBonus);
+        var factor = combined > 0 ? bonus / combined : 0;
+        var luck = perkPoints * factor;
+        var eventBonus = Math.Clamp(config.EventBonus, 0, config.MaximumEventBonus);
+        return new(config.BaseDropChance, tier.DropBonus, luck, eventBonus,
+            Math.Clamp(config.BaseDropChance + tier.DropBonus + bonus + eventBonus, 0, config.MaximumDropChance), maximum,
+            sushiPoints * factor, equipmentPoints * factor);
+    }
+
+    public RpgLootResult Roll(long paidStake, decimal effectiveLuck, RpgLootConfig config, DateTimeOffset now, decimal sushiLuck = 0, decimal equipmentLuck = 0)
+    {
+        var chances = Chances(paidStake, effectiveLuck, config, sushiLuck, equipmentLuck);
+        // Gate the complete candidate table BEFORE either rarity or item selection.
+        var eligible = config.RarityWeights.Where(p => p.Key <= chances.MaximumRarity && p.Value > 0 && config.Items.Any(i => i.Rarity == p.Key)).OrderBy(p => p.Key).ToArray();
+        if (eligible.Length == 0 || _random.NextInclusive(1, 10000) > chances.Total * 100) return new(null, chances);
+        var roll = _random.NextInclusive(1, eligible.Sum(p => p.Value));
+        var selected = eligible[0].Key;
+        foreach (var pair in eligible) { selected = pair.Key; roll -= pair.Value; if (roll <= 0) break; }
+        var candidates = config.Items.Where(i => i.Rarity == selected).ToArray();
+        var item = JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(candidates[_random.NextInclusive(0, candidates.Length - 1)]))!;
+        item.InstanceId = Guid.NewGuid().ToString("N"); item.FoundAt = now;
+        return new(item, chances);
+    }
+}

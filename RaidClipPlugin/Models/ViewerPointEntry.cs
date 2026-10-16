@@ -5,6 +5,7 @@ public sealed class ViewerPointEntry
     public string UserId { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public long Points { get; set; }
+    public RpgProfile Rpg { get; set; } = new();
     public int RaceWins { get; set; }
     public int BossDefeats { get; set; }
     public Dictionary<string, int> FishCollection { get; set; } = new();

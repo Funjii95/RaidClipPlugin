@@ -1,3 +1,13 @@
+## 2.1.10 – RPG-Teststand
+
+- Optional aktivierbare RPG-Erweiterung unter Punkte & Minigames → RPG. Inventar, Ausrüstung, Perks, zusätzliche Fischvorräte, Sushi und aktive Buffs werden beim vorhandenen Perlenkonto nach Twitch-ID gespeichert.
+- Dive-Loot mit zentralen Einsatzstufen und Legendary-Mindestbetrag, unabhängigen Seltenheitsgewichten, ausrüstbaren Gegenständen, Schätzen und Verbrauchsgegenständen. Kostenloses !dive bei aktiviertem RPG; bisherige bezahlte Perlen-Auszahlungen bleiben Grundlage.
+- !inventory/!inventar [Seite], !equipment/!ausrüstung, !equip <Item-ID> <Slot>, !perks, !perk <ID>, !craft <Rezept>, !sushi [Rezept], !stats. In die bestehende Befehlsliste integriert.
+- Zentral berechnete, begrenzte Charakterboni wirken bei Loot und Bossangriffen; Perlenbonus erhöht die konfigurierte Auszahlung. Permanente Perks kosten progressiv mehr. Sushi wird hergestellt und separat aktiviert, wirkt standardmäßig drei gültige Aktionen und stapelt identische aktive Buffs nicht.
+- Alte Fischsammlungen werden einmalig zusätzlich in den verbrauchbaren RPG-Vorrat übernommen; historische Fangzahlen bleiben erhalten. Unveränderte Sicherung vor der ersten RPG-Speicherung, Abbruch statt Kontenreset bei beschädigter Punktedatei.
+- Atomare gemeinsame Speicherung von Solo-Perlen, Loot, Cooldown und Buff-Verbrauch; persistente Aktions-IDs verhindern wiederholte Belohnungen. Kein öffentliches Backend und keine Twitch Extension.
+- RPG ist standardmäßig deaktiviert. Zum Testen unter Punkte & Minigames → RPG aktivieren und speichern. Balancing-Editor zunächst JSON-basiert. Noch kein Live-/Langzeit-Balancing; bei Verbindungsabbrüchen ist die Nachzustellung besonderer Chatmeldungen nicht garantiert. Details und Testanleitung: docs/RPG-IMPLEMENTATION.md.
+
 ## 2.1.9
 
 - Eigenständiges Glücksrad unter Giveaways → Glücksrad, unabhängig von Teilnehmern und Gewinnern. 2–100 frei bearbeitbare Text-/Aktionsfelder, gleiche Chancen je Feld, einstellbare Drehdauer, Drehen und Anzeige leeren. Keine automatischen Aktionen, Chatnachrichten oder Punkteänderungen.

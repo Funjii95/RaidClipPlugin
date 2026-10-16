@@ -2344,6 +2344,7 @@ private enum CloseChoice
         AddMinigameTab(tabs, "Daily", dailyFlow);
         AddMinigameTab(tabs, "Casino-Spiele", casinoLayout);
         AddMinigameTab(tabs, "Event-Steuerung", BuildAdventureControlPanel());
+        AddMinigameTab(tabs, "RPG", BuildRpgSettingsPanel());
         AddMinigameTab(tabs, "Fischen", BuildAdventurePanel(_fishingSettings, "!fish <Betrag|all>: Stiefel, kleiner Fisch, großer Fang oder legendärer Fisch. Chancen je Stufe und Auszahlungsfaktoren unten einstellbar. Summe: 100 %. Faktoren inklusive Einsatz; 1x = Einsatz zurück. Bruchteile werden abgerundet."));
         AddMinigameTab(tabs, "Schatzsuche", BuildAdventurePanel(_treasureSettings, "!dive <Betrag|all>: Falle, kleine Truhe, Schatzkammer oder Königsschatz. Chancen je Stufe und Auszahlungsfaktoren unten einstellbar. Summe: 100 %. Faktoren inklusive Einsatz; 1x = Einsatz zurück. Bruchteile werden abgerundet."));
         AddMinigameTab(tabs, "Rennen", BuildAdventurePanel(_raceSettings, "!start race <Betrag|all> startet ein Rennen. Weitere Teilnehmer: !joinrace. Nach der Beitrittsphase gewinnt ein zufälliger Teilnehmer den Topf. Mindestens 2 Teilnehmer; Einsätze werden erst bei der Auswertung gemeinsam abgebucht. Bei Abbruch keine Abbuchung."));
@@ -4874,6 +4875,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             Environment.NewLine + Environment.NewLine,
             new[]
             {
+                """
+Version 2.1.10 – RPG-Teststand
+- Optionales RPG mit dauerhaftem Inventar, Loot-Einsatzstufen, Ausrüstung, Perks, Fischvorrat und Sushi für drei gültige Aktionen.
+- Neue RPG-Befehle, Boss-Crits und gemeinsames Perlenkonto; RPG-Reiter mit Aktivierung und zentralem Balancing-Editor.
+""",
                 """
 Version 2.1.9
 - Eigenständiges Glücksrad im Giveaway-Reiter mit eigenen Textfeldern, Drehdauer, OBS-Browserquelle und optionalem PNG-/JPG-Design.

@@ -4,6 +4,9 @@ using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
+public sealed record BossAttackResult(bool Success, string PlayerId, int Damage, bool Critical, int BossHp,
+    bool Defeated, int RemainingCooldown, string Error);
+
 public sealed class AdventureGameService
 {
     public event Action? DataChanged;
@@ -41,7 +44,7 @@ public sealed class AdventureGameService
 
     public void UpdateConfig(MinigameConfig config) { _config = config; ScheduleAutoBoss(); }
     private void ScheduleAutoBoss() => _nextAutoBoss = _now().AddMinutes(Math.Clamp(_config.Adventures.Boss.AutoStartMinutes, 1, 1440));
-    public static bool Recognizes(string command) => command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!boss" or "!attack" or "!joinboss";
+    public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!boss" or "!attack" or "!joinboss";
     public async Task RunAsync(CancellationToken token)
     {
         var overlay = new AdventureOverlayServer(() => Status).RunAsync(token);
@@ -125,10 +128,44 @@ public sealed class AdventureGameService
             await TickCoreAsync(token);
             if (command == "!joinboss") command = "!attack";
             var settings = _config.Adventures;
+            if (RpgChatCommand.Recognizes(command))
+            {
+                if (Cooling("rpgview:" + message.UserId, 2)) return;
+                await Say(await new RpgChatCommand(_points, settings.Rpg).ExecuteAsync(message, command, parts, token), token);
+                DataChanged?.Invoke();
+                return;
+            }
+            if (settings.Rpg.Enabled && command is "!fish" or "!dive")
+            {
+                var gameConfig = command == "!fish" ? settings.Fishing : settings.Treasure;
+                long rpgStake = 0;
+                var availablePoints = Math.Max(0, await _points.GetPointsAsync(message.UserId, token) - Math.Max(0, _config.MinimumPoints));
+                var validStake = parts.Length == 1 && command == "!dive" || parts.Length == 2 &&
+                    (parts[1].Equals("all", StringComparison.OrdinalIgnoreCase) ?
+                        (rpgStake = Math.Min(availablePoints, gameConfig.MaximumBet)) > 0 :
+                        long.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out rpgStake));
+                if (!validStake) { await Say($"@{message.UserName}, Nutzung: {command} [Betrag|all].", token); return; }
+                var actionId = string.IsNullOrWhiteSpace(message.Id) ? Guid.NewGuid().ToString("N") : message.Id;
+                var rpgResult = await new RpgAdventureService(_points, _config, _random, _now).ExecuteAsync(
+                    message.UserId, message.UserName, actionId, command == "!fish" ? RpgActivity.Fishing : RpgActivity.Dive, rpgStake, token);
+                if (rpgResult.Success) DataChanged?.Invoke();
+                var found = rpgResult.Item is null ? "" : $" Fund: {rpgResult.Item.DisplayName} ({rpgResult.Item.Rarity}).";
+                await Say(rpgResult.Success ? Format(gameConfig.ResultMessage, ("user", message.UserName),
+                    ("outcome", rpgResult.Outcome + found), ("stake", rpgStake), ("payout", rpgResult.Payout),
+                    ("currency", Currency), ("balance", rpgResult.Balance)) : $"@{message.UserName}, {rpgResult.Error}", token);
+                if (rpgResult.Success && rpgResult.Item?.Rarity == ItemRarity.Legendary)
+                    await Say(Format(settings.Rpg.LegendaryMessage, ("user", message.UserName), ("item", rpgResult.Item.DisplayName)), token);
+                return;
+            }
             if (command == "!sammlung")
             {
                 if (Cooling("collection:" + message.UserId, 15)) return;
                 var profile = await _points.GetProfileAsync(message.UserId, token);
+                if (settings.Rpg.Enabled && profile.Entry.Rpg.LegacyFishImported)
+                {
+                    await Say($"@{message.UserName}, RPG-Fischvorrat: " + string.Join(", ", profile.Entry.Rpg.Fish.Select(p => $"{p.Key}: {p.Value.Quantity}x")), token);
+                    return;
+                }
                 var fish = profile.Entry.FishCollection ?? new();
                 await Say($"@{message.UserName}, Fischsammlung: " + (fish.Count == 0 ? "Noch keine Fänge. Nutze !fish <Einsatz>." :
                     string.Join(", ", fish.OrderBy(p => p.Key).Select(p => $"{p.Key}: {p.Value}x")) + $" | Größter Fang: {profile.Entry.BiggestFishName} ({profile.Entry.BiggestFishGrams / 1000.0:0.00} kg)."), token);
@@ -241,20 +278,51 @@ public sealed class AdventureGameService
             await Say(Format(c.StartMessage, ("hp", _boss.Hp), ("seconds", Math.Clamp(c.DurationSeconds, 10, 1800)), ("reward", Math.Clamp(c.RewardPool, 0, 1000000000)), ("currency", Currency)), token);
         }
     }
-    private async Task AttackBossAsync(ChatMessage user, CancellationToken token)
+    public async Task<BossAttackResult> ExecuteBossAttackAsync(string verifiedUserId, string displayName, string requestId, CancellationToken token)
     {
-        if (_boss is null) return;
+        if (string.IsNullOrWhiteSpace(verifiedUserId) || string.IsNullOrWhiteSpace(requestId)) throw new ArgumentException("Twitch-ID und Aktions-ID fehlen.");
+        await _gate.WaitAsync(token);
+        try
+        {
+            if (!_config.Enabled || !_config.PointsEnabled || !_config.Adventures.Boss.Enabled)
+                return new(false, verifiedUserId, 0, false, _boss?.Hp ?? 0, false, 0, "Bosskampf ist deaktiviert.");
+            await TickCoreAsync(token);
+            return await AttackBossAsync(new() { UserId = verifiedUserId, UserName = displayName, Id = requestId }, token);
+        }
+        finally { PublishStatus(); _gate.Release(); }
+    }
+
+    private async Task<BossAttackResult> AttackBossAsync(ChatMessage user, CancellationToken token)
+    {
+        if (_boss is null) return new(false, user.UserId, 0, false, 0, false, 0, "Kein Boss aktiv.");
         var cooldownKey = "!boss:" + user.UserId;
         if (Cooling(cooldownKey, _boss.Config.AttackCooldownSeconds))
         {
             var remaining = Math.Max(1, (int)Math.Ceiling((_cooldowns[cooldownKey] - _now()).TotalSeconds));
             await Say(Format(_boss.Config.AttackCooldownMessage, ("user", user.UserName), ("remaining", remaining)), token);
-            return;
+            return new(false, user.UserId, 0, false, _boss.Hp, false, remaining, "Angriffs-Cooldown aktiv.");
+        }
+        var damage = _random.NextInclusive(10, 30);
+        var critical = false;
+        if (_config.Adventures.Rpg.Enabled)
+        {
+            var mutation = await _points.ApplyRpgAsync(user.UserId, user.UserName,
+                string.IsNullOrWhiteSpace(user.Id) ? Guid.NewGuid().ToString("N") : user.Id, account =>
+                {
+                    var clock = _now();
+                    if (account.Rpg.Cooldowns.TryGetValue("!attack", out var until) && clock < until)
+                        return new(false, $"Angriff in {Math.Ceiling((until - clock).TotalSeconds)} Sekunden wieder möglich.");
+                    var stats = CharacterStatService.Calculate(account.Rpg, _config.Adventures.Rpg, RpgActivity.Boss);
+                    damage = CharacterStatService.BossDamage(damage, stats, _random.NextInclusive(0, 9999) / 100m, out critical, _config.Adventures.Rpg.BaseCritMultiplier);
+                    RpgProgressionService.ConsumeBuffs(account.Rpg, RpgActivity.Boss);
+                    account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(Math.Clamp(_boss.Config.AttackCooldownSeconds, 1, 86400));
+                    return new(true);
+                }, token);
+            if (!mutation.Success) { await Say($"@{user.UserName}, {mutation.Error}", token); return new(false, user.UserId, 0, false, _boss.Hp, false, 0, mutation.Error); }
         }
         _boss.Players[user.UserId] = user.UserName;
-        var damage = _random.NextInclusive(10, 30);
         _boss.Hp = Math.Max(0, _boss.Hp - damage);
-        if (_boss.Hp > 0) { await Say(Format(_boss.Config.AttackMessage, ("user", user.UserName), ("damage", damage), ("hp", _boss.Hp)), token); return; }
+        if (_boss.Hp > 0) { await Say(Format(_boss.Config.AttackMessage, ("user", user.UserName), ("damage", damage), ("hp", _boss.Hp)), token); return new(true, user.UserId, damage, critical, _boss.Hp, false, 0, ""); }
         var finished = _boss;
         _boss = null;
         _nextBoss = _now().AddSeconds(Math.Clamp(finished.Config.RoundCooldownSeconds, 1, 86400));
@@ -263,6 +331,7 @@ public sealed class AdventureGameService
             _config.MinimumPoints, Maximum, token, "Bosskampf", _config.HistoryLimit);
         DataChanged?.Invoke();
         await Say(Format(finished.Config.WinMessage, ("count", finished.Players.Count), ("reward", reward), ("currency", Currency)), token);
+        return new(true, user.UserId, damage, critical, 0, true, 0, "");
     }
     public async Task TickAsync(CancellationToken token)
     {
