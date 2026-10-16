@@ -41,7 +41,7 @@ public sealed class AdventureGameService
 
     public void UpdateConfig(MinigameConfig config) { _config = config; ScheduleAutoBoss(); }
     private void ScheduleAutoBoss() => _nextAutoBoss = _now().AddMinutes(Math.Clamp(_config.Adventures.Boss.AutoStartMinutes, 1, 1440));
-    public static bool Recognizes(string command) => command is "!fischen" or "!sammlung" or "!schatzsuche" or "!rennen" or "!joinrace" or "!boss" or "!joinboss";
+    public static bool Recognizes(string command) => command is "!fischen" or "!sammlung" or "!schatzsuche" or "!startrace" or "!joinrace" or "!boss" or "!joinboss";
     public async Task RunAsync(CancellationToken token)
     {
         var overlay = new AdventureOverlayServer(() => Status).RunAsync(token);
@@ -63,7 +63,7 @@ public sealed class AdventureGameService
         try { _race = null; _boss = null; }
         finally { PublishStatus(); _gate.Release(); }
     }
-    public async Task ControlAsync(string action, long stake, CancellationToken token)
+    public async Task ControlAsync(string action, long stake, CancellationToken token, TwitchUser? broadcaster = null)
     {
         if (action is "cancelrace" or "cancelboss")
         {
@@ -88,9 +88,11 @@ public sealed class AdventureGameService
             finally { PublishStatus(); _gate.Release(); }
             return;
         }
-        var command = action == "boss" ? "!boss" : "!rennen";
+        var command = action == "boss" ? "!boss" : "!startrace";
+        if (action != "boss" && (broadcaster is null || broadcaster.Id != _broadcasterId))
+            throw new InvalidOperationException("Das verbundene Twitch-Konto konnte nicht zugeordnet werden. Bitte Module neu verbinden.");
         var parts = action == "boss" ? new[] { command } : new[] { command, stake.ToString(CultureInfo.InvariantCulture) };
-        await HandleAsync(new ChatMessage { UserId = _broadcasterId, UserName = "Streamer", UserLogin = "streamer",
+        await HandleAsync(new ChatMessage { UserId = _broadcasterId, UserName = broadcaster?.DisplayName ?? _broadcasterId, UserLogin = broadcaster?.Login ?? "",
             IsBroadcaster = true, Text = string.Join(' ', parts) }, command, parts, token);
     }
     private long Maximum => _config.MaximumAccountEnabled ? _config.MaximumAccountPoints : long.MaxValue;
@@ -152,7 +154,7 @@ public sealed class AdventureGameService
             }
             var game = command == "!fischen" ? settings.Fishing : command == "!schatzsuche" ? settings.Treasure : settings.Race;
             if (!game.Enabled) return;
-            if (command == "!joinrace" && _race is null) { await Say("Aktuell läuft keine Beitrittsphase. Rennen mit !rennen <Betrag> starten.", token); return; }
+            if (command == "!joinrace" && _race is null) { await Say("Aktuell läuft keine Beitrittsphase. Rennen mit !start race <Betrag> starten.", token); return; }
             var balance = await _points.GetPointsAsync(message.UserId, token);
             var available = Math.Max(0, balance - Math.Max(0, _config.MinimumPoints));
             var max = Math.Clamp(game.MaximumBet, 1, long.MaxValue / 500);
@@ -165,11 +167,17 @@ public sealed class AdventureGameService
                 : long.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out stake));
             if (!valid || stake < min || stake > max || stake > available)
             {
-                await Say($"@{message.UserName}, Nutzung: {command} <Betrag|all>. Einsatz {min}–{max} {Currency}, verfügbar: {available}.", token);
+                await Say($"@{message.UserName}, Nutzung: {(command == "!startrace" ? "!start race" : command)} <Betrag|all>. Einsatz {min}–{max} {Currency}, verfügbar: {available}.", token);
                 return;
             }
-            if (command is "!rennen" or "!joinrace") { await JoinRaceAsync(message, stake, token); return; }
-            if (Cooling(command + ":" + message.UserId, game.CooldownSeconds)) return;
+            if (command is "!startrace" or "!joinrace") { await JoinRaceAsync(message, stake, token); return; }
+            var cooldownKey = command + ":" + message.UserId;
+            if (Cooling(cooldownKey, game.CooldownSeconds))
+            {
+                var remaining = Math.Max(1, (int)Math.Ceiling((_cooldowns[cooldownKey] - _now()).TotalSeconds));
+                await Say(Format(game.CooldownMessage, ("user", message.UserName), ("command", command), ("remaining", remaining)), token);
+                return;
+            }
             var roll = _random.NextInclusive(1, 100);
             var (multiplier, outcome) = SoloOutcome(command, roll);
             var payout = checked(stake * multiplier);
@@ -207,7 +215,7 @@ public sealed class AdventureGameService
         if (_race.Stake != stake) { await Say($"@{user.UserName}, für dieses Rennen gilt ein Einsatz von {_race.Stake}. Beitritt mit !joinrace.", token); return; }
         if (_race.Players.ContainsKey(user.UserId)) { await Say($"@{user.UserName}, du bist bereits im Rennen.", token); return; }
         if (_race.Players.Count >= _race.MaximumPlayers) { await Say("Das Rennen ist voll.", token); return; }
-        if (Cooling("!rennen:" + user.UserId, _config.Adventures.Race.CooldownSeconds)) return;
+        if (Cooling("!startrace:" + user.UserId, _config.Adventures.Race.CooldownSeconds)) return;
         _race.Players.Add(user.UserId, user.UserName);
         await Say(Format(_race.Config.Adventures.Race.JoinMessage, ("user", user.UserName), ("count", _race.Players.Count), ("stake", stake), ("currency", Currency)), token);
     }

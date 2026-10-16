@@ -362,8 +362,8 @@ public sealed class ChatMinigameService : IDisposable
         _heist?.RunTestAsync(cancellationToken) ?? Task.CompletedTask;
 
     public AdventureStatus AdventureStatus => _adventures.Status;
-    public Task ControlAdventureAsync(string action, long stake, CancellationToken token) =>
-        _adventures.ControlAsync(action, stake, token);
+    public Task ControlAdventureAsync(string action, long stake, CancellationToken token, TwitchUser? broadcaster = null) =>
+        _adventures.ControlAsync(action, stake, token, broadcaster);
 
     public Task CancelHeistAsync(CancellationToken cancellationToken) =>
         _heist?.CancelAsync(true, cancellationToken) ?? Task.CompletedTask;
@@ -623,21 +623,21 @@ public sealed class ChatMinigameService : IDisposable
             // CommandListService is the sole handler for the command directory.
             if (command == "!start")
             {
-                if (!EventStartCommand.IsAllowed(message, _broadcasterId))
+                if (!EventStartCommand.IsAllowed(message, _broadcasterId, parts))
                 {
-                    await TrySendChatAsync($"@{message.UserName}, !start ist nur für Moderatoren und Broadcaster verfügbar.", cancellationToken);
+                    await TrySendChatAsync($"@{message.UserName}, Boss-/Heist-Starts sind nur für Mods/Broadcaster. Rennen: !start race <Einsatz|all>.", cancellationToken);
                     return;
                 }
                 var translated = EventStartCommand.Translate(parts);
                 if (translated is null)
                 {
-                    await TrySendChatAsync("Nutzung: !start boss | !start rennen <Betrag|all> | !start heist.", cancellationToken);
+                    await TrySendChatAsync("Nutzung: !start boss | !start race <Betrag|all> | !start heist.", cancellationToken);
                     return;
                 }
                 parts = translated;
                 command = parts[0];
                 // Preserve per-command disable switches; the shortcut must not bypass them.
-                var targetId = command == "!boss" ? "adventure.boss" : command == "!rennen" ? "adventure.race" : "heist.start";
+                var targetId = command == "!boss" ? "adventure.boss" : command == "!startrace" ? "adventure.race" : "heist.start";
                 var target = _commandRegistry.Commands.FirstOrDefault(c => c.CommandId == targetId);
                 if (target is null || !target.Enabled)
                 {
@@ -650,6 +650,7 @@ public sealed class ChatMinigameService : IDisposable
                     return;
                 }
             }
+            else if (command == "!startrace") return; // Internal dispatch token, not a public command.
             var directory = _commandRegistry.Commands.FirstOrDefault(c => c.CommandId == "commands.list");
             if (directory is not null && new[] { directory.CommandText }.Concat(directory.Aliases)
                     .Any(c => CommandRegistry.Normalize(c) == command)) return;

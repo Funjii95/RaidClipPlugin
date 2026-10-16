@@ -1,3 +1,13 @@
+## 2.1.4
+
+- Wiederholte !fischen- und !schatzsuche-Aufrufe geben während des Cooldowns die verbleibenden Sekunden aus. Der Hinweis ist in den Spiel-Einstellungen anpassbar ({user}, {command}, {remaining}); erneute Versuche verlängern die Sperre nicht und buchen keine Punkte ab.
+
+- Rennstart heißt !start race <Betrag|all> und bleibt für Zuschauer mit genügend Punkten verfügbar. Boss-/Heist-Starts bleiben Mods/Broadcastern vorbehalten. Beitritt bleibt !joinrace; Oberfläche, Befehlsliste und Hinweise entsprechend aktualisiert.
+
+- Rennstart über die Event-Steuerung verwendet den tatsächlichen Twitch-Anzeigenamen und Login des verbundenen Broadcasters statt „Streamer“. Nutzer-ID bleibt unverändert; bei fehlender oder unpassender Kontozuordnung wird kein Rennen gestartet.
+
+- Einstellungen für Fischen, Schatzsuche, Rennen und Bosskampf übernehmen jetzt die Theme-Farben auch in Tabelle, Hilfebereich, Auswahl und Rahmen. Helle Standardflächen und unlesbarer Hilfetext im dunklen Design beseitigt; Theme-Wechsel aktualisieren die Farben.
+
 ## 2.1.3
 
 - Lokale transparente OBS-Browserquelle unter http://127.0.0.1:18769/ für Boss-Lebenspunkte, Rennteilnehmer und Countdowns. Nur bei laufendem Minigame-Modul aktiv, ausschließlich lesend und ohne Änderungen an OBS selbst.
