@@ -1,3 +1,9 @@
+## 2.0.28
+
+- „Nochmal abspielen“ startet ausdrücklich bei Position 0 und prüft den vollständigen Spotify-Playerstatus. Bei ausbleibender Bestätigung werden Konto, Gerät und Wiedergabestatus protokolliert.
+
+- Das Rechtsklick-Menü der Musikwunsch-Warteschlange enthält „Zur Blacklist hinzufügen“ mit Song, Künstler und Nutzer. Die ausgewählte Sperre wird gespeichert.
+
 ## 2.0.27
 
 - „Songlink kopieren“ im Rechtsklick-Menü der Musikwunsch-Warteschlange kopiert den Spotify-Link des ausgewählten Songs zur Fehlersuche.
