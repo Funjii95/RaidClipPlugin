@@ -293,9 +293,7 @@ public sealed class MusicRequestService : IDisposable
             $"Spotify-Track gefunden: {track.Name} von {track.Artist}.");
         var validationReason = MusicRequestRules.ValidateTrack(
             _config, track, existing.Where(item =>
-                    item.Track is not null &&
-                    (MusicRequestRules.IsOpen(item) ||
-                     item.UpdatedAt > DateTimeOffset.UtcNow.AddHours(-6)))
+                    MusicRequestRules.IsDuplicateCandidate(item, DateTimeOffset.UtcNow))
                 .Select(item => item.Track!.Id));
         if (validationReason is not null)
             return CreateValidationFailure(validationReason, entry, track);

@@ -1,3 +1,9 @@
+## 2.0.26
+
+- „Nochmal abspielen“ ermittelt das Spotify-Gerät neu, aktiviert es bei Bedarf und prüft den tatsächlichen Wiedergabestart. Erst nach Bestätigung wird der Song als laufend markiert; Fehler werden direkt angezeigt.
+
+- Abgelehnte, fehlgeschlagene und übersprungene Musikwünsche blockieren einen erneuten Versuch nicht mehr als vermeintliche Warteschlangen-Duplikate. Tatsächlich eingereihte, laufende und kürzlich abgeschlossene Songs bleiben geschützt.
+
 ## 2.0.25
 
 - Die gespeicherten Explicit-Freigaben sind als bearbeitbare Ausnahmeliste unter Musikwünsche → Filter & Limits sichtbar. Track-IDs können entfernt werden, um einzelne Freigaben zu widerrufen.

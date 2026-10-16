@@ -9,6 +9,20 @@ public sealed class MusicRequestRulesTests
 {
     private const string Id = "4iV5W9uYEdYUVa79Axb7Rh";
 
+    [Theory]
+    [InlineData(MusicRequestStatus.Rejected, false)]
+    [InlineData(MusicRequestStatus.Failed, false)]
+    [InlineData(MusicRequestStatus.Skipped, false)]
+    [InlineData(MusicRequestStatus.Queued, true)]
+    [InlineData(MusicRequestStatus.Playing, true)]
+    [InlineData(MusicRequestStatus.Completed, true)]
+    public void OnlyActuallyQueuedOrPlayedTracksBlockDuplicates(MusicRequestStatus status, bool expected)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var entry = new MusicRequestEntry { Track = Track(), Status = status, UpdatedAt = now };
+        Assert.Equal(expected, MusicRequestRules.IsDuplicateCandidate(entry, now));
+    }
+
     [Fact]
     public void ExplicitExceptionAllowsOnlySelectedTrackAndKeepsBlacklist()
     {
