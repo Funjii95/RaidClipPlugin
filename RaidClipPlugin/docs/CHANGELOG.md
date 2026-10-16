@@ -1,4 +1,4 @@
-## 2.0.33
+## 2.1.0
 
 - Rückkehr auf FUNJII live geprüft: „Narcoleptic“ bei 2:57 vorgemerkt, „Holz“ sofort gestartet und nach dessen Testende zu „Narcoleptic“ zurückgekehrt; Wiedergabe von Spotify bestätigt.
 

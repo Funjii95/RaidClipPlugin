@@ -4865,7 +4865,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
-Version 2.0.33
+Version 2.1.0
 - Nach dem natürlichen Ende eines Sofortstarts zum zuvor laufenden Song an gespeicherter Position zurückkehren. Rückkehrpunkt gilt bis Modul-/Programmneustart; keine vollständige Warteschlangen-Rekonstruktion.
 """,
                 """
