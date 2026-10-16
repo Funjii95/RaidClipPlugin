@@ -436,6 +436,9 @@ public sealed class MusicRequestService : IDisposable
         message.IsBroadcaster || message.IsModerator ||
         (!string.IsNullOrEmpty(broadcasterId) && message.UserId == broadcasterId);
 
+    public bool HasSongRequestPermit(string userId) =>
+        _songRequestPermits.IsAllowed(userId, DateTimeOffset.UtcNow);
+
     private async Task<bool> TryProcessSongRequestCommandAsync(
         ChatMessage message, CancellationToken cancellationToken)
     {

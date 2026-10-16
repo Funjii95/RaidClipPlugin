@@ -8,6 +8,101 @@ namespace RaidClipPlugin.Tests;
 public sealed class CustomCommandTests
 {
     [Fact]
+    public async Task CommandDirectoryHasOneDefinitionAndHonorsConfiguredAliasAndDisable()
+    {
+        var config = new AppConfig();
+        config.Commands.Command = "!hilfe";
+        var registry = new CommandRegistry();
+        registry.Update(config);
+        var definition = Assert.Single(registry.Commands.Where(c => c.CommandId == "commands.list"));
+        Assert.Equal("!command", definition.CommandText);
+        Assert.Contains("!commands", definition.Aliases);
+        Assert.Contains("!hilfe", definition.Aliases);
+        Assert.Empty(registry.FindCollisions(false).Where(c => c.Command == "!commands"));
+        var fake = new FakeTwitch();
+        var service = new CommandListService(registry, "channel", "bot", fake, fake, _ => false);
+        Assert.True(await service.HandleMessageAsync(Message("!hilfe"), CancellationToken.None));
+        Assert.Single(fake.Messages);
+        config.Commands.Enabled = false;
+        registry.Update(config);
+        var disabledFake = new FakeTwitch();
+        var disabled = new CommandListService(registry, "channel", "bot", disabledFake, disabledFake, _ => false);
+        Assert.True(await disabled.HandleMessageAsync(Message("!command"), CancellationToken.None));
+        Assert.Empty(disabledFake.Messages);
+    }
+    [Fact]
+    public async Task CommandListFiltersDisabledAndModeratorCommandsAndIncludesCustom()
+    {
+        var config = new AppConfig();
+        config.Minigame.PointsEnabled = true;
+        config.Commands.CustomCommandsEnabled = true;
+        config.Commands.CustomCommands.Add(new() { Id = "hello", Enabled = true, Command = "!hello", Response = "Hi" });
+        config.Commands.CommandEnabledOverrides["points.daily"] = false;
+        var registry = new CommandRegistry();
+        registry.Update(config);
+        var fake = new FakeTwitch();
+        var service = new CommandListService(registry, "channel", "bot", fake, fake, _ => false);
+        var available = await service.AvailableAsync(Message("!command"), CancellationToken.None);
+        Assert.Contains(available, c => c.CommandText == "!command");
+        Assert.Contains(available, c => c.CommandText == "!hello");
+        Assert.DoesNotContain(available, c => c.CommandText == "!addpoints" || c.CommandText == "!daily");
+    }
+
+    [Fact]
+    public async Task CommandListPermitOnlyAddsRegularMusicRequest()
+    {
+        var config = new AppConfig();
+        config.MusicRequests.Enabled = true;
+        config.MusicRequests.ChatCommandEnabled = true;
+        var registry = new CommandRegistry();
+        registry.Update(config);
+        var fake = new FakeTwitch();
+        var denied = new CommandListService(registry, "channel", "bot", fake, fake, _ => false);
+        Assert.DoesNotContain(await denied.AvailableAsync(Message("!command"), CancellationToken.None), c => c.ModuleId == "music");
+        var permitted = new CommandListService(registry, "channel", "bot", fake, fake, _ => true);
+        var available = await permitted.AvailableAsync(Message("!command"), CancellationToken.None);
+        Assert.Contains(available, c => c.CommandId == "music.request");
+        Assert.DoesNotContain(available, c => c.ModuleId == "music" && c.CommandId != "music.request");
+    }
+
+    [Fact]
+    public async Task CommandListAnswersOnceAndSupportsAlias()
+    {
+        var registry = new CommandRegistry();
+        registry.Update(new AppConfig());
+        var fake = new FakeTwitch();
+        var service = new CommandListService(registry, "channel", "bot", fake, fake, _ => false);
+        Assert.False(await service.HandleMessageAsync(Message("!commandfoo"), CancellationToken.None));
+        Assert.True(await service.HandleMessageAsync(Message("!commands"), CancellationToken.None));
+        Assert.True(await service.HandleMessageAsync(Message("!command"), CancellationToken.None));
+        Assert.Contains("Deine Befehle", Assert.Single(fake.Messages));
+        Assert.True(fake.Messages[0].Length <= 480);
+    }
+
+    [Fact]
+    public async Task CommandListChecksFollowerRoleAndPaginatesWithoutLosingCommands()
+    {
+        var config = new AppConfig();
+        config.Commands.CustomCommandsEnabled = true;
+        config.Commands.CustomCommands.Add(new() { Id = "followers", Enabled = true,
+            Command = "!followersonly", RequiredRole = "Follower", Response = "Hi" });
+        for (var i = 0; i < 80; i++)
+            config.Commands.CustomCommands.Add(new() { Id = "c" + i, Enabled = true,
+                Command = "!example" + i, Response = "Hi" });
+        var registry = new CommandRegistry();
+        registry.Update(config);
+        var fake = new FakeTwitch();
+        var service = new CommandListService(registry, "channel", "bot", fake, fake, _ => false);
+        var available = await service.AvailableAsync(Message("!command"), CancellationToken.None);
+        Assert.DoesNotContain(available, c => c.CommandText == "!followersonly");
+        var pages = CommandListService.BuildPages(available);
+        Assert.True(pages.Count > 1);
+        Assert.All(pages, page => Assert.True(page.Length <= 350));
+        var all = string.Join(" | ", pages).Split(" | ");
+        Assert.All(available, command => Assert.Contains(command.Usage, all));
+    }
+
+    [Fact]
     public async Task RaidExampleSendsExactConfiguredResponse()
     {
         var fake = new FakeTwitch();
