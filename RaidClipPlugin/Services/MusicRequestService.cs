@@ -194,7 +194,7 @@ public sealed class MusicRequestService : IDisposable
             Role = string.IsNullOrEmpty(redemption.Role) ? "Unbekannt" : redemption.Role,
             UserInput = redemption.UserInput.Trim(),
             RedeemedAt = redemption.RedeemedAt,
-            PlaybackMode = _config.PlaybackMode,
+            PlaybackMode = redemption.PlaybackModeOverride ?? _config.PlaybackMode,
             Status = MusicRequestStatus.Checking
         };
         if (string.IsNullOrEmpty(redemption.Role))
@@ -232,7 +232,7 @@ public sealed class MusicRequestService : IDisposable
         entry.Track = result.Track;
         entry.FailureReason = result.FailureReason;
         entry.Status = result.Success
-            ? _config.PlaybackMode == MusicPlaybackMode.AddToQueue
+            ? entry.PlaybackMode == MusicPlaybackMode.AddToQueue
                 ? MusicRequestStatus.Queued : MusicRequestStatus.Playing
             : result.IsTemporaryFailure
                 ? MusicRequestStatus.Failed : MusicRequestStatus.Rejected;
@@ -307,7 +307,7 @@ public sealed class MusicRequestService : IDisposable
         if (!device.IsActive && _config.ActivateSelectedDevice)
             await _spotify.TransferPlaybackAsync(device.Id, cancellationToken);
 
-        if (_config.PlaybackMode == MusicPlaybackMode.AddToQueue)
+        if (entry.PlaybackMode == MusicPlaybackMode.AddToQueue)
         {
             await _spotify.AddToQueueAsync(track, device.Id, cancellationToken);
             Console.WriteLine("Track wurde zur Spotify-Warteschlange hinzugefügt.");
@@ -354,7 +354,7 @@ public sealed class MusicRequestService : IDisposable
         var retry = new MusicRequestRedemption(
             entry.RedemptionId, entry.RewardId, entry.RewardName,
             entry.UserId, entry.UserLogin, entry.DisplayName,
-            entry.UserInput, entry.RedeemedAt, "unfulfilled", entry.Role);
+            entry.UserInput, entry.RedeemedAt, "unfulfilled", entry.Role, entry.PlaybackMode);
         await ProcessMusicRequestAsync(retry, cancellationToken);
     }
 
@@ -415,7 +415,9 @@ public sealed class MusicRequestService : IDisposable
             StringSplitOptions.TrimEntries);
         if (parts.Length == 0) return false;
         var command = parts[0];
-        var matches = command.Equals(
+        var immediate = command.Equals("!srnow", StringComparison.OrdinalIgnoreCase);
+        if (immediate && !CanUseMusicCommands(message, _broadcasterId)) return true;
+        var matches = immediate || command.Equals(
                 _config.ChatCommand, StringComparison.OrdinalIgnoreCase) ||
             (_config.ChatCommandAliases ?? new List<string>()).Contains(
                 command, StringComparer.OrdinalIgnoreCase);
@@ -424,7 +426,7 @@ public sealed class MusicRequestService : IDisposable
         if (parts.Length < 2 || string.IsNullOrWhiteSpace(parts[1]))
         {
             await SendChatOnceAsync(
-                $"@{message.UserName}, Nutzung: {_config.ChatCommand} <Spotify-Link oder Songname>.",
+                $"@{message.UserName}, Nutzung: {(immediate ? "!srnow" : _config.ChatCommand)} <Spotify-Link oder Songname>.",
                 cancellationToken);
             return true;
         }
@@ -438,7 +440,8 @@ public sealed class MusicRequestService : IDisposable
             message.UserName,
             parts[1],
             message.ReceivedAt,
-            "unfulfilled", GetMusicChatRole(message));
+            "unfulfilled", GetMusicChatRole(message),
+            immediate ? MusicPlaybackMode.PlayImmediately : null);
         var accepted = await EnqueueAsync(redemption, cancellationToken);
         if (!accepted)
         {

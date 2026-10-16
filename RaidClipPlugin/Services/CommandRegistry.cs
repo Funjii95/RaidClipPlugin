@@ -151,6 +151,9 @@ public sealed class CommandRegistry
         }
 
         var music=config.MusicRequests;
+        Add("music.requestnow", "!srnow", null, "music", "Musik", "Musikwunsch sofort starten",
+            "Spielt einen Musikwunsch sofort ab, unabhängig vom globalen Modus.", "!srnow <Song|Spotify-Link>", "!srnow Holz 257ers",
+            music.Enabled && music.ChatCommandEnabled, CommandRole.Moderator, order:98);
         Add("music.permit", "!srpermit", null, "music", "Musik", "Musikwunsch erlauben",
             "Erlaubt einem Nutzer Musikwünsche per Chat für fünf Minuten.", "!srpermit @name", "!srpermit @Funjii",
             music.Enabled && music.ChatCommandEnabled, CommandRole.Moderator, order:99);

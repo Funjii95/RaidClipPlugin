@@ -4865,6 +4865,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.30
+- !srnow <Song oder Spotify-Link>: sofortige Wiedergabe für Mods/Broadcaster unabhängig vom allgemeinen Modus.
+- Warteschlange: Erneut hinzufügen startet den ausgewählten Song sofort und legt nach bestätigtem Start einen neuen Eintrag an.
+""",
+                """
 Version 2.0.29
 - !srpermit @name: Moderatoren/Broadcaster erlauben einem Nutzer für fünf Minuten Musikwunsch-Chatbefehle; keine Freigabe für Skip oder andere Verwaltungsbefehle.
 """,

@@ -401,6 +401,8 @@ public sealed partial class MainForm
         var menu = new ContextMenuStrip();
         var replay = menu.Items.Add("Nochmal abspielen");
         replay.Click += async (_, _) => await PlaySelectedMusicEntryAsync();
+        var requeue = menu.Items.Add("Erneut in die Warteschlange hinzufügen");
+        requeue.Click += async (_, _) => await PlaySelectedMusicEntryAsync(asNewImmediateEntry: true);
         var copyLink = menu.Items.Add("Songlink kopieren");
         copyLink.Click += (_, _) =>
         {
@@ -445,6 +447,7 @@ public sealed partial class MainForm
             blacklistArtist.Enabled = !string.IsNullOrWhiteSpace(entry?.Track?.Artist);
             blacklistUser.Enabled = !string.IsNullOrWhiteSpace(entry?.UserLogin);
             replay.Enabled = entry?.Track is not null && _spotify is not null;
+            requeue.Enabled = replay.Enabled && !_musicReplayBusy;
             copyLink.Enabled = entry?.Track is { } selectedTrack &&
                 (!string.IsNullOrWhiteSpace(selectedTrack.Id) || !string.IsNullOrWhiteSpace(selectedTrack.ExternalUrl));
             allow.Visible = entry?.Track?.Explicit == true;
@@ -1046,7 +1049,7 @@ public sealed partial class MainForm
             ? _musicGrid.SelectedRows[0].Tag as MusicRequestEntry : null;
 
 
-    private async Task PlaySelectedMusicEntryAsync()
+    private async Task PlaySelectedMusicEntryAsync(bool asNewImmediateEntry = false)
     {
         if (_musicReplayBusy) return;
         var entry = SelectedMusicEntry();
@@ -1106,12 +1109,28 @@ public sealed partial class MainForm
                 AppendLog(diagnostic);
                 throw new InvalidOperationException($"Spotify hat den Startbefehl angenommen, bestätigt den Songstart aber nicht. Zielgerät: „{device.Name}“. {diagnostic}");
             }
+            if (asNewImmediateEntry)
+            {
+                var now = DateTimeOffset.UtcNow;
+                entry = new MusicRequestEntry
+                {
+                    RedemptionId = "manual:" + Guid.NewGuid().ToString("N"),
+                    RewardName = "Manuell erneut hinzugefügt",
+                    UserId = entry.UserId, UserLogin = entry.UserLogin,
+                    DisplayName = entry.DisplayName, Role = entry.Role,
+                    UserInput = playableTrack.ExternalUrl,
+                    RedeemedAt = now, UpdatedAt = now,
+                    PlaybackMode = MusicPlaybackMode.PlayImmediately
+                };
+            }
             entry.Track = playableTrack;
             entry.Status = MusicRequestStatus.Playing;
             entry.FailureReason = "";
             await _musicStore.AddOrUpdateAsync(entry, true,
                 _shutdown?.Token ?? CancellationToken.None);
             await RefreshMusicGridAsync();
+            if (asNewImmediateEntry)
+                AppendLog($"Musikwunsch erneut als Sofort-Wiedergabe hinzugefügt: {playableTrack.Name}.");
         }
         catch (Exception exception)
         {
