@@ -4865,6 +4865,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.29
+- !srpermit @name: Moderatoren/Broadcaster erlauben einem Nutzer für fünf Minuten Musikwunsch-Chatbefehle; keine Freigabe für Skip oder andere Verwaltungsbefehle.
+""",
+                """
 Version 2.0.28
 - Erneute Wiedergabe ab Position 0 mit vollständigem Spotify-Playerstatus und detaillierter Rückmeldung bei ausbleibendem Start.
 - Warteschlange: Rechtsklick → Zur Blacklist hinzufügen → Song, Künstler oder Nutzer.

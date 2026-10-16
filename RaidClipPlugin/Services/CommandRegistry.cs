@@ -151,6 +151,9 @@ public sealed class CommandRegistry
         }
 
         var music=config.MusicRequests;
+        Add("music.permit", "!srpermit", null, "music", "Musik", "Musikwunsch erlauben",
+            "Erlaubt einem Nutzer Musikwünsche per Chat für fünf Minuten.", "!srpermit @name", "!srpermit @Funjii",
+            music.Enabled && music.ChatCommandEnabled, CommandRole.Moderator, order:99);
         Add("music.request", music.ChatCommand, music.ChatCommandAliases, "music", "Musik", "Musikwunsch",
             "Wünscht einen Song.", music.ChatCommand+" <Song|Spotify-Link>", music.ChatCommand+" Songname",
             music.Enabled && music.ChatCommandEnabled, CommandRole.Moderator, userCooldown:music.UserCooldownMinutes*60, order:100);
