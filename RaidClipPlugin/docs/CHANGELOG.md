@@ -1,3 +1,9 @@
+## 2.1.1
+
+- Alte und neue Befehlslisten-Registrierung zusammengeführt: !command und !commands verwenden genau einen aktiven Handler und einen Registry-Eintrag. Ein zuvor konfigurierter Listenbefehl bleibt als Alias erhalten; Deaktivierung wird berücksichtigt.
+
+- !command (Alias !commands) zeigt eine dynamische Liste aktivierter, sichtbarer Befehle passend zur Rolle des Aufrufers, inklusive Custom Commands und Follower-Prüfung. !sr wird Zuschauern nur mit aktiver !srpermit-Freigabe angezeigt; Musik-Verwaltung bleibt Mods/Broadcaster vorbehalten. Lange Listen sind über !command <Seite> abrufbar; ein globaler 5-Sekunden-Cooldown verhindert Spam.
+
 ## 2.1.0
 
 - Rückkehr auf FUNJII live geprüft: „Narcoleptic“ bei 2:57 vorgemerkt, „Holz“ sofort gestartet und nach dessen Testende zu „Narcoleptic“ zurückgekehrt; Wiedergabe von Spotify bestätigt.

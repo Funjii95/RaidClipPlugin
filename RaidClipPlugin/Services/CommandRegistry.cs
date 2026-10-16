@@ -43,6 +43,10 @@ public sealed class CommandRegistry
         }
 
         var m = config.Minigame;
+        Add("commands.list", "!command", new[] { "!commands", config.Commands.Command }
+                .Where(c => !Normalize(c).Equals("!command", StringComparison.OrdinalIgnoreCase)),
+            "commands", "Befehle", "Befehlsliste",
+            "Listet die für dich verfügbaren Befehle auf.", "!command [Seite]", "!command 1", config.Commands.Enabled, order:0);
         Add("points.de", "!punkte", null, "points", "Punkte", "Punktestand",
             "Zeigt deinen aktuellen Punktestand.", "!punkte", "!punkte",
             m.PointsEnabled && m.PointsCommandPunkteEnabled, userCooldown:m.PointsCommandCooldownSeconds, order:10);
@@ -111,11 +115,6 @@ public sealed class CommandRegistry
         Add("duel.deny", config.Duel.DenyCommand, null, "duel", "Duel", "Duel ablehnen",
             "Lehnt eine offene Duel-Anfrage ab.", config.Duel.DenyCommand,
             config.Duel.DenyCommand, config.Duel.Enabled, order:67);
-        Add("commands.list", config.Commands.Command, null, "commands", "Commands", "Command-Liste",
-            "Zeigt verfügbare Chat-Commands.", config.Commands.Command+" [Seite|Modul]",
-            config.Commands.Command+" heist", config.Commands.Enabled,
-            userCooldown:config.Commands.UserCooldownSeconds,
-            globalCooldown:config.Commands.GlobalCooldownSeconds, order:1);
 
         Add("clips.create", config.ClipCommand.Command, config.ClipCommand.Aliases, "clips", "Clips", "Clip erstellen",
             "Erstellt einen Twitch-Clip.", config.ClipCommand.Command+" [Titel]",

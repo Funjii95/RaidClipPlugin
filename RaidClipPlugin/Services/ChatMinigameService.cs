@@ -609,12 +609,10 @@ public sealed class ChatMinigameService : IDisposable
                 return;
             }
 
-            if (_commandsConfig.Enabled &&
-                command == CommandRegistry.Normalize(_commandsConfig.Command))
-            {
-                await HandleCommandsCommandAsync(message, parts, cancellationToken);
-                return;
-            }
+            // CommandListService is the sole handler for the command directory.
+            var directory = _commandRegistry.Commands.FirstOrDefault(c => c.CommandId == "commands.list");
+            if (directory is not null && new[] { directory.CommandText }.Concat(directory.Aliases)
+                    .Any(c => CommandRegistry.Normalize(c) == command)) return;
 
             if (_duel?.Recognizes(command) == true)
             {

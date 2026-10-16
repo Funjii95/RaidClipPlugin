@@ -390,13 +390,16 @@ public sealed partial class MainForm
             session.UserId, config.Commands, twitch, twitch, _commandRegistry);
         _customCommandService = new CustomCommandService(broadcaster.Id,
             session.UserId, config.Commands, twitch, twitch);
+        var commandList = new CommandListService(_commandRegistry, broadcaster.Id,
+            session.UserId, twitch, twitch, userId => _musicRequests?.HasSongRequestPermit(userId) == true);
         _chatModeration!.MessageAuthorizing += message =>
             _commandPermissions.AuthorizeAsync(message, cancellationToken);
-        _chatModeration.MessageReceived += message =>
+        _chatModeration.MessageReceived += async message =>
         {
             if (!_commandRegistry.IsCommandEnabledForMessage(message.Text))
-                return Task.CompletedTask;
-            return _customCommandService.HandleMessageAsync(message, cancellationToken);
+                return;
+            if (await commandList.HandleMessageAsync(message, cancellationToken)) return;
+            await _customCommandService.HandleMessageAsync(message, cancellationToken);
         };
     }
 
