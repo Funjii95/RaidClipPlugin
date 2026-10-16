@@ -1,6 +1,6 @@
 # RPG Economy & Balancing 1.2 – lokaler Prüfbericht
 
-Stand: 16.10.2026. **Veröffentlichung nach ausdrücklicher Freigabe als Version 2.1.11.**
+Stand: 16.10.2026. **Veröffentlichung nach ausdrücklicher Freigabe als Version 2.1.12.**
 
 ## Umsetzung und Schutz bestehender Einstellungen
 

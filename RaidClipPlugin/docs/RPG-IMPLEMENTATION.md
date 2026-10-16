@@ -29,7 +29,7 @@ Neue Profile erhalten Schema 1 im bestehenden `viewer-points.json`. Fehlendes RP
 
 ## Arbeitsstand
 
-Die Kernfunktionen wurden als 2.1.10 (RPG-Teststand) veröffentlicht. RPG bleibt standardmäßig deaktiviert. Die separate Glücksrad-Layoutkorrektur (getrennte Anzeige, Vorschau und Bildauswahl) und Economy 1.2 werden nach Freigabe mit 2.1.11 veröffentlicht.
+Die Kernfunktionen wurden als 2.1.10 (RPG-Teststand) veröffentlicht. RPG bleibt standardmäßig deaktiviert. Die separate Glücksrad-Layoutkorrektur (getrennte Anzeige, Vorschau und Bildauswahl) und Economy 1.2 werden nach Freigabe mit 2.1.12 veröffentlicht.
 
 ## Implementierte Mechaniken
 

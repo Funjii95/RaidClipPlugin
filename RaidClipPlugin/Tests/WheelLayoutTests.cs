@@ -4,12 +4,20 @@ using Xunit;
 
 namespace RaidClipPlugin.Tests;
 
+[Collection("WinForms")]
 public sealed class WheelLayoutTests
 {
     private static void Sta(Action action)
     {
         Exception? failure = null;
-        var thread = new Thread(() => { try { action(); } catch (Exception ex) { failure = ex; } });
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var thread = new Thread(() =>
+        {
+            try { action(); }
+            catch (Exception ex) { failure = ex; }
+            finally { Console.SetOut(originalOut); Console.SetError(originalError); }
+        });
         thread.SetApartmentState(ApartmentState.STA); thread.Start();
         Assert.True(thread.Join(TimeSpan.FromSeconds(20)));
         if (failure is not null) throw new Exception("Glücksrad-UI-Test fehlgeschlagen", failure);

@@ -2,6 +2,7 @@ using Xunit;
 
 namespace RaidClipPlugin.Tests;
 
+[Collection("WinForms")]
 public sealed class MainFormStartupTests
 {
     [Fact]

@@ -1,4 +1,6 @@
-## 2.1.11 – Economy 1.2, RPG-Verwaltung und Glücksrad
+## 2.1.12 – Economy 1.2, RPG-Verwaltung und Glücksrad
+
+- Oberflächentests mit gemeinsamen WinForms-/Prozesszuständen isoliert, um konkurrierende Fensterinitialisierungen im Build zu vermeiden. Version 2.1.11 wurde wegen fehlgeschlagener CI-Tests nicht als Download veröffentlicht.
 
 - Glücksrad-Oberfläche vom Giveaway getrennt: Giveaway-Buttons, Teilnehmerliste und Giveaway-Status werden im Glücksrad-Reiter ausgeblendet. Mehr Platz, sichtbare native Vorschau samt Drehanimation und direkt erreichbare PNG-/JPG-Bildauswahl; Bildänderungen erscheinen sofort in der Vorschau. Giveaway-Ansicht wird beim Zurückwechseln wiederhergestellt.
 
