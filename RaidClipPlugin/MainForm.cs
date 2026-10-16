@@ -4875,6 +4875,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.1.7
+- Neue Spiel-Reiter: echte Checkboxen für Aktiviert und automatischen Bossstart statt True/False-Zeilen.
+""",
+                """
 Version 2.1.6
 - Gewinnchancen: Gesamtbelegung und Restbudget für die Niete live anzeigen; Einzelwerte wieder als Zahlen.
 """,

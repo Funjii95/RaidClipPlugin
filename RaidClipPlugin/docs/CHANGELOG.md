@@ -1,3 +1,7 @@
+## 2.1.7
+
+- Aktiviert-/Auto-Start-Schalter in Fischen, Schatzsuche, Rennen und Bosskampf als echte Checkboxen statt True/False-Zeilen. Werte werden beim Laden und Speichern übernommen; Zahlen und Texte bleiben in der Tabelle editierbar. Checkboxen folgen dem gewählten Theme.
+
 ## 2.1.6
 
 - Fischen/Schatzsuche: Live-Gesamtübersicht der vergebenen Chancen, fehlenden/überschüssigen Punkte und des verbleibenden Budgets für die Niete. Einzelne Chancen wieder als einfache Zahlen dargestellt; keine automatische Änderung der Niete.
