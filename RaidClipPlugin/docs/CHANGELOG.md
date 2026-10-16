@@ -1,3 +1,7 @@
+## 2.1.8
+
+- Timer-Reiter: „Auswahl testen (Chat)“ sendet den markierten Timertext sofort mit der eingestellten Farbe. Nutzt auch ungespeicherte Änderungen und funktioniert unabhängig von Timer-Aktivierung, Intervall und Mindestzuschauern. Keine Änderung am automatischen Zeitplan; Twitch-Verbindung erforderlich. Test sendet in den echten Chat.
+
 ## 2.1.7
 
 - Aktiviert-/Auto-Start-Schalter in Fischen, Schatzsuche, Rennen und Bosskampf als echte Checkboxen statt True/False-Zeilen. Werte werden beim Laden und Speichern übernommen; Zahlen und Texte bleiben in der Tabelle editierbar. Checkboxen folgen dem gewählten Theme.

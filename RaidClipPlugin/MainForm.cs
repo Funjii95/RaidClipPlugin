@@ -4875,6 +4875,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.1.8
+- Timer-Testbutton: ausgewählten Text sofort mit eingestellter Farbe im Chat testen, ohne den Zeitplan zu verändern.
+""",
+                """
 Version 2.1.7
 - Neue Spiel-Reiter: echte Checkboxen für Aktiviert und automatischen Bossstart statt True/False-Zeilen.
 """,
