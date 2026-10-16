@@ -28,7 +28,9 @@ public sealed class CommandListService
             !new[] { directory.CommandText }.Concat(directory.Aliases)
                 .Contains(parts[0], StringComparer.OrdinalIgnoreCase)) return false;
         if (!directory.Enabled) return true;
-        if (message.IsBot || message.CommandAuthorization == CommandAuthorization.Denied) return true;
+        // IsBot also marks human input when broadcaster and sending account are identical.
+        // Replies start with @user rather than a command, so they cannot trigger this handler again.
+        if (message.CommandAuthorization == CommandAuthorization.Denied) return true;
         await _gate.WaitAsync(token);
         try
         {
