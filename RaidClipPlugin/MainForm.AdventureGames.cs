@@ -82,16 +82,39 @@ public sealed partial class MainForm
 
     private Control BuildAdventurePanel(PropertyGrid grid, string description)
     {
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1, Padding = new Padding(12) };
+        var solo = ReferenceEquals(grid, _fishingSettings) || ReferenceEquals(grid, _treasureSettings);
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = solo ? 4 : 3, ColumnCount = 1, Padding = new Padding(12) };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 90));
+        if (solo) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         layout.Controls.Add(new Label { Text = description + "\nBenötigt aktivierte Punkte und Minigames. Bestehende Tages- und Kontolimits gelten für Einsatzspiele.", Dock = DockStyle.Fill }, 0, 0);
-        layout.Controls.Add(grid, 0, 1);
+        if (solo)
+        {
+            var summary = new Label { Dock = DockStyle.Fill, AutoSize = false, Padding = new Padding(4), TextAlign = ContentAlignment.MiddleLeft };
+            void UpdateSummary()
+            {
+                if (grid.SelectedObject is not SoloAdventureConfig settings) return;
+                summary.Text = ChanceSummary(settings);
+            }
+            grid.PropertyValueChanged += (_, _) => UpdateSummary();
+            grid.SelectedObjectsChanged += (_, _) => UpdateSummary();
+            layout.Controls.Add(summary, 0, 1);
+            UpdateSummary();
+        }
+        layout.Controls.Add(grid, 0, solo ? 2 : 1);
         var save = NewActionButton("Einstellungen speichern");
         save.Click += (_, _) => SaveMinigameSettingsFromControls();
-        layout.Controls.Add(save, 0, 2);
+        layout.Controls.Add(save, 0, solo ? 3 : 2);
         return layout;
+    }
+    internal static string ChanceSummary(SoloAdventureConfig settings)
+    {
+        var finds = (long)settings.SmallChance + settings.LargeChance + settings.RareChance;
+        var total = finds + settings.LossChance;
+        var balance = total == 100 ? "vollständig" : total < 100 ? $"noch {100 - total} frei" : $"{total - 100} zu viel";
+        var lossBudget = finds <= 100 ? $"{100 - finds}/100" : $"0/100 (Fundstufen bereits {finds - 100} über 100)";
+        return $"Gesamt vergeben: {total}/100 – {balance}\nFundstufen ohne Niete: {finds}/100 · Für Niete übrig: {lossBudget} · Niete aktuell: {settings.LossChance}/100";
     }
     private void LoadAdventureSettings(MinigameConfig config)
     {

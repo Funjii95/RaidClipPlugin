@@ -4875,6 +4875,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.1.6
+- Gewinnchancen: Gesamtbelegung und Restbudget für die Niete live anzeigen; Einzelwerte wieder als Zahlen.
+""",
+                """
 Version 2.1.5
 - Chancen für !fish und !dive werden zur einfacheren Einstellung als x/100 angezeigt und eingegeben.
 - Gewinnchancen und Auszahlungsfaktoren für jede Ergebnisstufe von !fish und !dive einstellbar; Chancen müssen zusammen 100 % ergeben.

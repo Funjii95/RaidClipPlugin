@@ -24,10 +24,10 @@ public class StakeAdventureConfig
 
 public class SoloAdventureConfig : StakeAdventureConfig
 {
-    [Category("Gewinnchancen"), DisplayName("Stufe 1 – Niete"), TypeConverter(typeof(ChanceOutOf100Converter))] public int LossChance { get; set; } = 50;
-    [Category("Gewinnchancen"), DisplayName("Stufe 2 – Kleiner Fund"), TypeConverter(typeof(ChanceOutOf100Converter))] public int SmallChance { get; set; } = 30;
-    [Category("Gewinnchancen"), DisplayName("Stufe 3 – Großer Fund"), TypeConverter(typeof(ChanceOutOf100Converter))] public int LargeChance { get; set; } = 17;
-    [Category("Gewinnchancen"), DisplayName("Stufe 4 – Seltener Fund"), TypeConverter(typeof(ChanceOutOf100Converter))] public int RareChance { get; set; } = 3;
+    [Category("Gewinnchancen"), DisplayName("Stufe 1 – Niete")] public int LossChance { get; set; } = 50;
+    [Category("Gewinnchancen"), DisplayName("Stufe 2 – Kleiner Fund")] public int SmallChance { get; set; } = 30;
+    [Category("Gewinnchancen"), DisplayName("Stufe 3 – Großer Fund")] public int LargeChance { get; set; } = 17;
+    [Category("Gewinnchancen"), DisplayName("Stufe 4 – Seltener Fund")] public int RareChance { get; set; } = 3;
     [Category("Auszahlungen"), DisplayName("Stufe 1 – Faktor")] public decimal LossMultiplier { get; set; }
     [Category("Auszahlungen"), DisplayName("Stufe 2 – Faktor")] public decimal SmallMultiplier { get; set; } = 1;
     [Category("Auszahlungen"), DisplayName("Stufe 3 – Faktor")] public decimal LargeMultiplier { get; set; } = 2;

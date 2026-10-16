@@ -1,3 +1,7 @@
+## 2.1.6
+
+- Fischen/Schatzsuche: Live-Gesamtübersicht der vergebenen Chancen, fehlenden/überschüssigen Punkte und des verbleibenden Budgets für die Niete. Einzelne Chancen wieder als einfache Zahlen dargestellt; keine automatische Änderung der Niete.
+
 ## 2.1.5
 
 - Einstellbare Chancen für !fish und !dive werden als x/100 angezeigt (z. B. 33/100). Eingabe als Zahl oder x/100 möglich; Summe muss 100/100 ergeben.

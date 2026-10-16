@@ -8,13 +8,26 @@ namespace RaidClipPlugin.Tests;
 public sealed class SoloChanceTests
 {
     [Theory]
+    [InlineData(0, 33, 30, 4, "67/100", "33/100", "noch 33 frei")]
+    [InlineData(33, 33, 30, 4, "100/100", "33/100", "vollständig")]
+    [InlineData(50, 33, 30, 4, "117/100", "33/100", "17 zu viel")]
+    public void ChanceOverviewShowsTotalAndRemainingForLoss(int loss, int small, int large, int rare, string total, string remaining, string balance)
+    {
+        var config = new SoloAdventureConfig { LossChance = loss, SmallChance = small, LargeChance = large, RareChance = rare };
+        var text = MainForm.ChanceSummary(config);
+        Assert.Contains("Gesamt vergeben: " + total, text);
+        Assert.Contains("Für Niete übrig: " + remaining, text);
+        Assert.Contains(balance, text);
+        Assert.Equal(loss, config.LossChance);
+    }
+    [Theory]
     [InlineData("33", 33)] [InlineData("33/100", 33)] [InlineData(" 3 / 100 ", 3)]
     [InlineData("0/100", 0)] [InlineData("100/100", 100)]
     public void ChanceDisplayAcceptsBothFormats(string input, int expected)
     {
-        var property = System.ComponentModel.TypeDescriptor.GetProperties(typeof(SoloAdventureConfig))[nameof(SoloAdventureConfig.LossChance)]!;
-        Assert.Equal(expected, property.Converter.ConvertFromString(input));
-        Assert.Equal($"{expected}/100", property.Converter.ConvertToString(expected));
+        var converter = new ChanceOutOf100Converter();
+        Assert.Equal(expected, converter.ConvertFromString(input));
+        Assert.Equal($"{expected}/100", converter.ConvertToString(expected));
     }
 
     [Theory]
