@@ -3,7 +3,7 @@ using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
-public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config)
+public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, long maximumBalance = long.MaxValue)
 {
     public static bool Recognizes(string command) => RpgCommandCatalog.Find(command) is not null;
     public async Task<string> ExecuteAsync(ChatMessage user, string command, string[] parts, CancellationToken token)
@@ -38,6 +38,31 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config)
         if (!config.Enabled) return "🦦 RPG ist aktuell deaktiviert.";
         var progression = new RpgProgressionService(points, config);
         var id = string.IsNullOrWhiteSpace(user.Id) ? Guid.NewGuid().ToString("N") : user.Id;
+        if(command is "!salvage" or "!itemlock" or "!favorite")
+        {
+            var salvage=new RpgSalvageService(points,config,maximumBalance:maximumBalance);
+            if(command != "!salvage")
+            {
+                var enabled=parts.Length<3 || parts[2].Equals("on",StringComparison.OrdinalIgnoreCase);
+                var changed=await salvage.SetProtectionAsync(user.UserId,user.UserName,id,int.Parse(parts[1]),command=="!favorite",enabled,token);
+                return changed.Success ? $"🦦 @{user.UserName}, Gegenstand {parts[1]}: " + (command=="!favorite" ? "Favorit" : "Zerlegesperre") + (enabled ? " aktiviert." : " aufgehoben.") : $"🦦 @{user.UserName}, {changed.Error}";
+            }
+            var confirm=parts[^1].Equals("confirm",StringComparison.OrdinalIgnoreCase);
+            var selection=string.Join(" ",parts.Skip(1).Take(parts.Length-1-(confirm?1:0))).ToLowerInvariant();
+            if(confirm)
+            {
+                var pending=salvage.PendingQuote(user.UserId,selection);
+                if(pending is null) return $"🦦 @{user.UserName}, keine passende gültige Vorschau. Zuerst !salvage {selection} verwenden.";
+                var result=await salvage.ConfirmAsync(user.UserId,user.UserName,id,pending.Token,token);
+                return result.Success ? $"🦦 @{user.UserName}, {result.Count} Gegenstand/Gegenstände zerlegt: +{RpgChatPresentation.Number(result.Award)} Perlen. Stand: {RpgChatPresentation.Number(result.Balance)}. Neue Nummern: !inv." : $"🦦 @{user.UserName}, {result.Error}";
+            }
+            var preview=await salvage.PreviewAsync(user.UserId,selection,token);
+            if(!preview.Success) return $"🦦 @{user.UserName}, {preview.Error}";
+            var quote=preview.Quote!;
+            return $"🦦 @{user.UserName}, Zerlegevorschau: {quote.Items.Count} Item(s), insgesamt {RpgChatPresentation.Number(quote.Total)} Perlen. " +
+                $"Bestätigen binnen {config.Salvage.ConfirmationSeconds}s: !salvage {selection} confirm. " +
+                string.Join(" | ",quote.Items.Select(i=>$"{i.Number}. {i.Name} [{i.Rarity}]: {RpgChatPresentation.Number(i.Value)} Perlen – {i.Details}"+(i.RequiresWarning?" ⚠ Legendary/Setteil geht unwiderruflich verloren!":"")));
+        }
         if (command == "!unequip")
         {
             var slot = Enum.Parse<EquipmentSlot>(parts[1], true);
@@ -87,6 +112,9 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config)
             var detailPage = parts.Length == 3 && int.TryParse(parts[2], out var requestedDetail) ? Math.Max(1, requestedDetail) : 1;
             return ListPage(user.UserName, "💍 Itemdetails", new[] { ItemLine(item, profile, true),
                 "Vollständige Werte: " + RpgChatPresentation.Bonuses(item.Attributes),
+                $"Zerlegewert: {RpgChatPresentation.Number(RpgSalvageService.Value(item,config.Salvage))} Perlen." +
+                    (item.IsLocked || item.IsFavorite ? " Gesperrt/favorisiert: nicht zerlegbar." : "") +
+                    (item.Rarity==ItemRarity.Legendary || !string.IsNullOrEmpty(item.SetId) ? " ⚠ Legendary/Setteil: ausdrückliche Bestätigung erforderlich; Sammelzerlegen ausgeschlossen." : "")
             }.Concat(item.Effects.Select(e => "Spezialeffekt – " + RpgPassiveService.Describe(e)))
                 .Concat(RpgSetService.Progress(profile, config).Where(p => p.Set.Id == item.SetId).SelectMany(RpgSetService.Describe))
                 .Concat(new[] { "Beschreibung: " + (string.IsNullOrWhiteSpace(item.Description) ? "Keine Beschreibung hinterlegt." : item.Description),
@@ -137,6 +165,8 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config)
             "!equip" => parts.Length == 2 || parts.Length == 3 && Enum.TryParse<EquipmentSlot>(parts[2], true, out var slot) && Enum.IsDefined(slot),
             "!inventory" or "!equipment" or "!perks" or "!rpgtext" or "!sets" => parts.Length == 1 || parts.Length == 2 && Page(parts[1]),
             "!unequip" => parts.Length == 2 && Enum.TryParse<EquipmentSlot>(parts[1], true, out var unequipSlot) && Enum.IsDefined(unequipSlot),
+            "!salvage" => parts.Length>=2 && parts.Length<=4,
+            "!itemlock" or "!favorite" => parts.Length is 2 or 3 && Page(parts[1]) && (parts.Length==2 || parts[2].Equals("on",StringComparison.OrdinalIgnoreCase) || parts[2].Equals("off",StringComparison.OrdinalIgnoreCase)),
             "!item" => parts.Length == 2 || parts.Length == 3 && Page(parts[2]),
             "!stats" => parts.Length == 1,
             "!sushi" => parts.Length is 1 or 2 || parts.Length == 3 && parts[1] == "status" && Page(parts[2]),
@@ -149,6 +179,8 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config)
         var slots = profile.Equipment.Where(p => p.Value == item.InstanceId).Select(p => RpgChatPresentation.SlotName(p.Key)).ToArray();
         var displayName = RpgChatPresentation.ItemName(item);
         var line = (profile.Inventory.IndexOf(item) + 1) + ". " + (item.Slot is null && item.Rarity == ItemRarity.Legendary ? "💎" : RpgChatPresentation.ItemIcon(item.Slot)) + " " + displayName + $" [{item.Rarity}]";
+        if(item.IsLocked) line+=" 🔒";
+        if(item.IsFavorite) line+=" ⭐";
         if (!detail) return line + (slots.Length > 0 ? " ✓ ausgerüstet: " + string.Join(", ", slots) : "") +
             (item.Slot.HasValue ? "" : " (" + RpgChatPresentation.KindName(item) + ")");
         return line + " | " + RpgChatPresentation.KindName(item) + (item.Slot.HasValue ? " – " + RpgChatPresentation.SlotName(item.Slot.Value) : "; nicht ausrüstbar") +

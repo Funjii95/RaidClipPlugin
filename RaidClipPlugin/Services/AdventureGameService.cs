@@ -138,7 +138,7 @@ public sealed class AdventureGameService
                     await Say($"🦦 @{message.UserName}, bitte {remaining} Sekunden bis zum nächsten RPG-Befehl warten.", token);
                     return;
                 }
-                await Say(await new RpgChatCommand(_points, settings.Rpg).ExecuteAsync(message, command, parts, token), token);
+                await Say(await new RpgChatCommand(_points, settings.Rpg, Maximum).ExecuteAsync(message, command, parts, token), token);
                 DataChanged?.Invoke();
                 return;
             }

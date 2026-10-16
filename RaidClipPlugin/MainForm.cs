@@ -4876,6 +4876,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.14 – Items sicher gegen Perlen zerlegen
+
+- !salvage <Nummer>, duplicates oder all common: Vorschau und Perlenbetrag, danach mit confirm bestätigen. Schutz für angelegte, gesperrte und favorisierte Items; Sammelzerlegen überspringt Sets und Legendarys. Nur identische Rolls gelten als Duplikate.
+- !itemlock und !favorite schützen Gegenstände. Konfigurierbare Zerlegewerte in Itemdetails; atomare Gutschrift mit Backup, Kontolimitprüfung und Wiederholungsschutz.
+
 2.1.13 – Item-System 2.0, Sets und verständlicher RPG-Chat
 
 - Kompaktes !inv mit Slot-Symbolen; vollständige deutsche Itemdetails über !item <Nummer> [Seite]. Spezialeffekte mit echten Chancen und Stärken jetzt auch beim Ausrüsten. Keine internen Instanz-IDs im regulären Chat; Setstatus und alle Werte bleiben strukturiert verfügbar.

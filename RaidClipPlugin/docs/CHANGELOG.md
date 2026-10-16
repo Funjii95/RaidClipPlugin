@@ -1,3 +1,9 @@
+## 2.1.14 – Items sicher gegen Perlen zerlegen
+
+- !salvage <Nummer>, !salvage duplicates und !salvage all common zeigen genaue Vorschau und Perlenbetrag; identischer Befehl mit confirm bestätigt binnen 60 Sekunden. Sammelbefehle überspringen Sets, Legendarys, angelegte und geschützte Items; unterschiedliche Rolls sind keine Duplikate.
+- Konfigurierbare, deterministische Zerlegewerte nach Seltenheit; Itemdetails zeigen Preis und Warnhinweise. !itemlock <Nummer> [on|off] und !favorite <Nummer> [on|off] schützen Items dauerhaft.
+- Entfernung und volle Perlengutschrift erfolgen atomar mit Kontolimitprüfung, Backup und Wiederholungsschutz. Veränderte Inventare/Items/Werte verwerfen die Vorschau; fehlgeschlagene Speicherung erhält Items und Perlen. Wiederverwendbarer lokaler Service für die spätere Extension, keine öffentliche API.
+
 ## 2.1.13 – Item-System 2.0, Sets und verständlicher RPG-Chat
 
 - RPG-Chat übersichtlicher: !inv und !gear zeigen kurze nummerierte Einträge mit Slot-Symbol und Ausrüstungsmarkierung. !item <Nummer> [Seite] bündelt alle Werte, deutschen Slot/Typ, Spezialeffekte, Setboni und Status ohne interne IDs.

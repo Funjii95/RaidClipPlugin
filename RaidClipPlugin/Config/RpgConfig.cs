@@ -4,6 +4,7 @@ namespace RaidClipPlugin.Config;
 
 public sealed class RpgConfig
 {
+    public RpgSalvageConfig Salvage { get; set; } = new();
     public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets();
     public decimal BossLootChance { get; set; } = 2;
     public bool BossLegendaryEnabled { get; set; }
@@ -13,6 +14,7 @@ public sealed class RpgConfig
     public void Validate()
     {
         DiveLoot.Validate();
+        Salvage.Validate();
         if (BossLootChance is < 0 or > 100 || FishingEquipmentChance is < 0 or > 100 || BossLegendaryMinimumHp < 1 || BossLegendaryMinimumPlayers < 1 ||
             Sets.Select(s => s.Id).Distinct().Count() != Sets.Count || Sets.Any(s => string.IsNullOrWhiteSpace(s.Id) || s.ItemIds.Count == 0 ||
                 s.ItemIds.Distinct().Count() != s.ItemIds.Count || s.Bonuses.Any(b => b.RequiredPieces < 1 || b.RequiredPieces > s.ItemIds.Count)))

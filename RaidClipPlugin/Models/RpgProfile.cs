@@ -30,6 +30,9 @@ public sealed class RpgAttributes
 
 public sealed class RpgItem
 {
+    public long? SalvageValue { get; set; }
+    public bool IsLocked { get; set; }
+    public bool IsFavorite { get; set; }
     public string SetId { get; set; } = "";
     public List<RpgActivity> DropActivities { get; set; } = new() { RpgActivity.Dive };
     public List<RpgItemEffect> Effects { get; set; } = new();
