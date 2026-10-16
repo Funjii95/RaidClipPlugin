@@ -4865,6 +4865,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+Version 2.0.32
+- !srnow und Nochmal abspielen starten den exakten Song direkt im Album-Kontext. Live mit Holz auf FUNJII bestätigt; Spotify kann danach im Album fortfahren.
+""",
+                """
 Version 2.0.31
 - !sr ohne Freigabe erklärt Zuschauern die Freischaltung über !srpermit und die Kanalpunkte-Alternative.
 - Erneut in die Warteschlange hinzufügen reiht den Song regulär ein, ohne Sofortstart. Nochmal abspielen und !srnow starten weiterhin sofort.

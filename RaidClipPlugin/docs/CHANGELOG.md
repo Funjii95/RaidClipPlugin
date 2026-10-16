@@ -1,3 +1,7 @@
+## 2.0.32
+
+- !srnow und „Nochmal abspielen“ starten den gewünschten Song direkt über seinen Album-Kontext und den exakten Track als Startpunkt. Dies umgeht das beobachtete Desktop-Verhalten, bei dem Tracklisten-Startbefehle trotz HTTP 204 die Wiedergabe leeren. Live-Test mit „Holz“ auf FUNJII erfolgreich bestätigt. Kein Einreihen/Überspringen; nach dem Song kann Spotify im Album fortfahren.
+
 ## 2.0.31
 
 - Zuschauer ohne aktive !srpermit-Freigabe erhalten bei !sr und dessen Aliasen einen Hinweis auf die fünfminütige Moderator-Freigabe und Musikwünsche über Kanalpunkte.

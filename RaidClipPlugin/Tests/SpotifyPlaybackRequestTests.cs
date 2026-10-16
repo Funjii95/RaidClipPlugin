@@ -8,6 +8,19 @@ namespace RaidClipPlugin.Tests;
 public sealed class SpotifyPlaybackRequestTests
 {
     [Fact]
+    public async Task AlbumStartTargetsExactTrackWithoutQueueOrTrackList()
+    {
+        using var request = SpotifyService.CreatePlaybackRequest(
+            "https://api.spotify.com/v1/me/player/play?device_id=test",
+            "spotify:track:test", "spotify:album:test");
+        using var json = JsonDocument.Parse(await request.Content!.ReadAsStringAsync());
+        Assert.Equal("spotify:album:test", json.RootElement.GetProperty("context_uri").GetString());
+        Assert.Equal("spotify:track:test", json.RootElement.GetProperty("offset").GetProperty("uri").GetString());
+        Assert.Equal(0, json.RootElement.GetProperty("position_ms").GetInt32());
+        Assert.False(json.RootElement.TryGetProperty("uris", out _));
+    }
+
+    [Fact]
     public async Task StartRequestContainsBufferedTrackAndStartPosition()
     {
         const string url = "https://api.spotify.com/v1/me/player/play?device_id=test";
