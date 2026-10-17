@@ -10,6 +10,7 @@ public sealed record BossAttackResult(bool Success, string PlayerId, int Damage,
 public sealed class AdventureGameService
 {
     public event Action? DataChanged;
+    public Func<CommunityOverlayState>? CommunityOverlay { get; set; }
     private readonly ViewerPointStore _points;
     private readonly Func<string, CancellationToken, Task> _send;
     private readonly IDuelRandom _random;
@@ -39,9 +40,13 @@ public sealed class AdventureGameService
     public AdventureStatus Status => Volatile.Read(ref _status);
     private void PublishStatus() => Volatile.Write(ref _status, new(
         _boss is not null, _boss?.Hp ?? 0, _boss is null ? 0 : Math.Clamp(_boss.Config.HitPoints, 10, 1000000),
-        _boss?.Players.Count ?? 0, _boss?.End, _race is not null, _race?.Players.Count ?? 0, _race?.Stake ?? 0, _race?.End));
+        _boss?.Players.Count ?? 0, _boss?.End, _race is not null, _race?.Players.Count ?? 0, _race?.Stake ?? 0, _race?.End,
+        _boss?.Id??"",_boss?.End.AddSeconds(-Math.Clamp(_boss.Config.DurationSeconds,10,1800)),_race?.Id??"",_race?.End.AddSeconds(-Math.Clamp(_race.Config.Adventures.Race.JoinSeconds,5,600))));
     private sealed record RaceRound(long Stake, DateTimeOffset End, int MaximumPlayers,
-        MinigameConfig Config, Dictionary<string, string> Players);
+        MinigameConfig Config, Dictionary<string, string> Players)
+    {
+        public string Id {get;}=Guid.NewGuid().ToString("N");
+    }
     private sealed class BossRound
     {
         public string Id = Guid.NewGuid().ToString("N");
@@ -72,7 +77,7 @@ public sealed class AdventureGameService
     public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!boss" or "!attack" or "!joinboss";
     public async Task RunAsync(CancellationToken token)
     {
-        var overlay = new AdventureOverlayServer(() => Status).RunAsync(token);
+        var overlay = new AdventureOverlayServer(() => Status,community:()=>CommunityOverlay?.Invoke()??new CommunityOverlayEventManager().Read(Status,_now())).RunAsync(token);
         try
         {
             while (true)

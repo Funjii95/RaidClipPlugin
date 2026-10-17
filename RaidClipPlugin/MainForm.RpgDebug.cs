@@ -55,6 +55,9 @@ public sealed partial class MainForm
         }
         FlowLayoutPanel Row(params Control[] controls){var row=new FlowLayoutPanel {Dock=DockStyle.Top,AutoSize=true,AutoScroll=true,WrapContents=true};row.Controls.AddRange(controls);return row;}
         Panel Page(string name){var panel=new Panel {Dock=DockStyle.Fill,AutoScroll=true};AddMinigameTab(tabs,name,panel);return panel;}
+        var heistPreview=Page("Heist-Overlay");var previewButton=NewActionButton("Isolierte Heist-Vorschau öffnen");
+        previewButton.Click+=(_,_)=>OpenHeistPreview();
+        heistPreview.Controls.Add(Row(previewButton,new Label{AutoSize=true,Text="Nur Mockdaten: Teilnehmer, Countdown, Erfolg/Niederlage und Boss-/Rennkonflikt testen. Keine echten Perlen oder Twitch-Nachrichten."}));
         var loot=Page("Drop-Editor");var lootActions=Row();var roll=NewActionButton("Lootwurf testen");var legendary=NewActionButton("Legendary-Drop erzwingen");lootActions.Controls.AddRange(new Control[]{roll,legendary});loot.Controls.Add(options);loot.Controls.Add(lootActions);
         roll.Click+=async(_,_)=>await Run(async()=>await session.RollLootAsync(cancel.Token));
         legendary.Click+=async(_,_)=>await Run(async()=>{session.Options.OnlyRarity=ItemRarity.Legendary;session.Options.LootMode=RpgDebugLootMode.Garantiert;session.Options.Stake=Math.Max(10000,session.Options.LegendaryMinimumStake);session.Config.Adventures.Rpg.DiveLoot.RiskTiers=new(){new(){MinimumStake=0,MaximumRarity=ItemRarity.Legendary}};var result=await session.RollLootAsync(cancel.Token);return result;});

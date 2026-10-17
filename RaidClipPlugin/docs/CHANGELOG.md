@@ -1,3 +1,11 @@
+## 2.1.22 – Heist-OBS-Overlay und Gegner-Einstellungen
+
+- Gemeinsame Event-Browserquelle um animierte Unterwasser-Heists mit eigenen SVG-Otter-Piraten, Countdown, Crew, Schatzkammer und tatsächlichen Jackpot-Auszahlungen erweitert. Keine neue Heist-Ökonomie; echte Punkteverteilung bleibt im vorhandenen Service.
+- Zentraler Präsentationsmanager priorisiert Boss, Rennen, Heist und Ergebnisse, mit begrenzter Warteschlange, Verfallszeit, Wiederholungsschutz und gemeinsamem Zeitstempel bei Reload. Hot-Time-Banner verwendet bestehende Boni und Endzeiten, ohne Bossanzeigen zu überdecken.
+- Neuer Heist-Reiter „OBS-Overlay“ mit Formularfeldern, auswählbarer OBS-Szene/Browserquelle und sicherer lokaler Mockvorschau; zusätzlicher Einstieg im RPG Debug Center. Read-only Loopback-Daten und interne Event-Snapshots für spätere Extension-Adapter; keine öffentliche API.
+- Startdiagnose: Der letzte Fehler am 17.10.2026 um 17:10:40 betraf ungültige Unterwassergegner-Einstellungen; nach dem App-Neustart waren die gespeicherten Werte wieder gültig. Der genaue damalige Wert ist im alten Protokoll nicht enthalten. Neuer Tabelleneditor ersetzt den fehleranfälligen generischen Collection-Editor, begrenzt Chance/Runden und erzeugt eindeutige neue Einsatzstufen. Präzise Validierungsfehler und Wiederherstellung des zuletzt geladenen Gegnerstands ohne App-Neustart; keine stillen Balanceänderungen oder Kontenänderungen.
+- 646 Tests bestanden; Einrichtung, Funktionen und bekannte Grenzen: `docs/HEIST-OBS-OVERLAY.md`.
+
 ## 2.1.21 – Loot Expansion 3.0
 
 - 52 zusätzliche Definitionen: 34 Ausrüstungsteile, acht Teile für zwei neue Sets und zehn passive Sammlerschätze. Alte Instanzen und die vorhandene Krone des Abgrunds bleiben erhalten.

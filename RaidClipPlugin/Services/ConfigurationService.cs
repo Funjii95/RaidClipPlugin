@@ -868,6 +868,7 @@ public sealed class ConfigurationService
             config.ModuleHealth.RestartWindowMinutes, 1, 60);
         config.LiveChat = LiveChatService.NormalizeConfig(config.LiveChat);
         config.Heist ??= new HeistConfig();
+        config.Heist.Overlay ??= new HeistOverlayConfig();
         config.Duel ??= new DuelConfig();
         FillEmptyStringPropertiesFromDefaults(config.Heist);
         FillEmptyStringPropertiesFromDefaults(config.Duel);
@@ -1208,6 +1209,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException("Der Heist benötigt mindestens 3 Teilnehmer.");
         if (heist.MaximumParticipants < heist.MinimumParticipants || heist.MaximumParticipants > 500)
             throw new InvalidOperationException("Die maximale Heist-Teilnehmerzahl muss zwischen Mindestteilnehmern und 500 liegen.");
+        heist.Overlay.Validate();
         if (heist.JoinDurationSeconds is < 10 or > 300)
             throw new InvalidOperationException("Die Heist-Beitrittszeit muss zwischen 10 und 300 Sekunden liegen.");
         if (heist.SuccessChancePercent is < 0 or > 100)

@@ -4876,6 +4876,13 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.22 – Heist-OBS-Overlay und Gegner-Einstellungen
+
+- Heist mit Otter-Piraten, Countdown und Schatzkammer in der gemeinsamen Browserquelle. Echte Jackpot-Punkte werden weiterhin vom vorhandenen Heist-Service verteilt.
+- Priorisierte Anzeige für Boss, Rennen und Heist, begrenzte Warteschlange sowie Hot-Time-Banner mit echten Restzeiten.
+- Neuer Heist-Reiter OBS-Overlay mit auswählbaren Quellen, Animationseinstellungen und sicherer Mockvorschau ohne echte Konten.
+- Unterwassergegner mit sicherem Tabelleneditor, genauen Fehlermeldungen und Wiederherstellung ohne App-Neustart. Ungültige Gegnerwerte werden nicht still zurückgesetzt.
+
 2.1.21 – Loot Expansion 3.0
 
 - 52 neue Definitionen: Ausrüstung, zwei zusätzliche Sets und zehn passive Sammlerschätze ohne Kampfboni durch Besitz.

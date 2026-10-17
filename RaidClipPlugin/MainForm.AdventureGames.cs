@@ -226,7 +226,7 @@ public sealed partial class MainForm
         rpg.Enabled = _rpgEnabled.Checked;
         if(_hotTimeSettings.SelectedObject is RpgHotTimeConfig hotTime)rpg.HotTime=JsonSerializer.Deserialize<RpgHotTimeConfig>(JsonSerializer.Serialize(hotTime))!;
         if(_healthSettings.SelectedObject is RpgHealthConfig health)rpg.Health=JsonSerializer.Deserialize<RpgHealthConfig>(JsonSerializer.Serialize(health))!;
-        if(_enemySettings.SelectedObject is RpgEnemyConfig enemies)rpg.Enemies=JsonSerializer.Deserialize<RpgEnemyConfig>(JsonSerializer.Serialize(enemies))!;
+        if(_enemySettings.SelectedObject is RpgEnemyConfig)rpg.Enemies=ReadEnemyEditor();
         ReadRpgSushi(rpg);
         rpg.Validate();
         config.Adventures = JsonSerializer.Deserialize<AdventureGamesConfig>(JsonSerializer.Serialize(new AdventureGamesConfig {

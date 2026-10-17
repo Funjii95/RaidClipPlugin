@@ -17,11 +17,24 @@ public sealed class RpgEnemyConfig
     };
     public void Validate()
     {
-        if(EncounterChance is <10 or >20 || MaximumRounds is <1 or >20 || Tiers is null || Tiers.Count is <1 or >30 ||
-            !Tiers.Any(t=>t.MinimumStake==0) || Tiers.Select(t=>t.MinimumStake).Distinct().Count()!=Tiers.Count ||
-            Tiers.Any(t=>t.MinimumStake<0 || string.IsNullOrWhiteSpace(t.Name) || t.Name.Length>60 || t.HitPoints is <1 or >1000000 ||
-                t.MinimumDamage<0 || t.MaximumDamage<t.MinimumDamage || t.MaximumDamage>1000000 || t.Experience is <0 or >1000000))
-            throw new InvalidOperationException("Ungültige Unterwassergegner: Chance 10–20 %, gültige Einsatzstufen und Kampfwerte erforderlich.");
+        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+        void Fail(string detail)=>throw new InvalidOperationException("Unterwassergegner: "+detail+" Einstellungen unter RPG → Unterwassergegner korrigieren oder dort den zuletzt geladenen Stand wiederherstellen.");
+        if(EncounterChance is <10 or >20)Fail($"Begegnungschance {EncounterChance} % ist ungültig; erlaubt sind 10–20 %.");
+        if(MaximumRounds is <1 or >20)Fail($"Maximale Kampfrunden {MaximumRounds} sind ungültig; erlaubt sind 1–20.");
+        if(Tiers is null || Tiers.Count is <1 or >30)Fail("Es sind 1–30 Gegnerstufen erforderlich.");
+        if(Tiers!.Any(t=>t is null))Fail("Eine Gegnerstufe fehlt.");
+        if(!Tiers.Any(t=>t.MinimumStake==0))Fail("Die Basisstufe mit Mindesteinsatz 0 fehlt.");
+        var duplicate=Tiers.GroupBy(t=>t.MinimumStake).FirstOrDefault(g=>g.Count()>1);
+        if(duplicate is not null)Fail($"Mindesteinsatz {duplicate.Key} ist mehrfach vergeben ({string.Join(", ",duplicate.Select(t=>t.Name))}); jede Stufe benötigt einen eindeutigen Einsatz.");
+        for(var i=0;i<Tiers.Count;i++)
+        {
+            var t=Tiers[i];var label=$"Stufe {i+1} ({t.Name}): ";
+            if(t.MinimumStake<0)Fail(label+"Mindesteinsatz darf nicht negativ sein.");
+            if(string.IsNullOrWhiteSpace(t.Name) || t.Name.Length>60)Fail(label+"Name muss 1–60 Zeichen enthalten.");
+            if(t.HitPoints is <1 or >1000000)Fail(label+$"Lebenspunkte {t.HitPoints} sind ungültig; erlaubt sind 1–1.000.000.");
+            if(t.MinimumDamage<0 || t.MaximumDamage<t.MinimumDamage || t.MaximumDamage>1000000)Fail(label+$"Schadensbereich {t.MinimumDamage}–{t.MaximumDamage} ist ungültig; Maximum muss mindestens dem Minimum entsprechen (0–1.000.000).");
+            if(t.Experience is <0 or >1000000)Fail(label+$"EXP {t.Experience} sind ungültig; erlaubt sind 0–1.000.000.");
+        }
     }
 }
 

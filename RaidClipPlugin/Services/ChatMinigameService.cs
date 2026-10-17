@@ -306,6 +306,7 @@ public sealed class ChatMinigameService : IDisposable
     public event Action<int, long>? PointsAwarded;
     public event Action? DataChanged;
     public event Action<HeistStatus>? HeistStatusChanged;
+    private readonly CommunityOverlayEventManager _communityOverlay=new();
     public event Action<DuelStatus>? DuelStatusChanged;
 
     public ChatMinigameService(
@@ -330,7 +331,9 @@ public sealed class ChatMinigameService : IDisposable
         _commandRegistry = commandRegistry ?? new CommandRegistry();
         if (heistConfig is not null)
         {
+            _communityOverlay.Configure(heistConfig.Overlay);
             _heist = new HeistService(broadcasterId, chatUserId, heistConfig, config, twitch, points);
+            _heist.EventChanged += _communityOverlay.Update;
             _heist.StatusChanged += status => HeistStatusChanged?.Invoke(status);
         }
         if (duelConfig is not null)
@@ -338,6 +341,7 @@ public sealed class ChatMinigameService : IDisposable
             _duel = new DuelService(broadcasterId, chatUserId, duelConfig, config, twitch, points);
             _duel.StatusChanged += status => DuelStatusChanged?.Invoke(status);
         }
+        _adventures.CommunityOverlay=()=>_communityOverlay.Read(_adventures.Status,DateTimeOffset.UtcNow,_points.HotTime.Status,_config.Adventures.Rpg.HotTime);
     }
 
     public void UpdateConfig(MinigameConfig config)
@@ -355,6 +359,7 @@ public sealed class ChatMinigameService : IDisposable
         _commandsConfig = config.Commands;
         _commandRegistry.Update(config);
         _heist?.UpdateConfig(config.Heist, config.Minigame);
+        _communityOverlay.Configure(config.Heist.Overlay);
         _duel?.UpdateConfig(config.Duel, config.Minigame);
     }
 
