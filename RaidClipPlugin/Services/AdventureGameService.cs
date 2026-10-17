@@ -10,6 +10,7 @@ public sealed record BossAttackResult(bool Success, string PlayerId, int Damage,
 public sealed class AdventureGameService
 {
     public event Action? DataChanged;
+    public Func<CommunityOverlayState>? CommunityOverlay { get; set; }
     private readonly ViewerPointStore _points;
     private readonly Func<string, CancellationToken, Task> _send;
     private readonly IDuelRandom _random;
@@ -23,14 +24,32 @@ public sealed class AdventureGameService
     private DateTimeOffset _nextRace, _nextBoss;
     private DateTimeOffset _nextAutoBoss;
     private AdventureStatus _status = new();
+    private bool _recoverHealthBoss;
+    public sealed class HealthBossSnapshot
+    {
+        public bool Active {get;set;}
+        public string Id {get;set;}="";
+        public BossAdventureConfig Config {get;set;}=new();
+        public DateTimeOffset End {get;set;}
+    }
+    private void SaveHealthBoss(BossRound? boss)
+    {
+        if((!_config.Adventures.Rpg.Enabled || !_config.Adventures.Rpg.Health.Enabled) && (boss is not null || !File.Exists(_points.BossRoundPath)))return;
+        RpgAtomicFile.Save(_points.BossRoundPath,new HealthBossSnapshot {Active=boss is not null,Id=boss?.Id??"",Config=boss?.Config??new(),End=boss?.End??default},_=>{});
+    }
     public AdventureStatus Status => Volatile.Read(ref _status);
     private void PublishStatus() => Volatile.Write(ref _status, new(
         _boss is not null, _boss?.Hp ?? 0, _boss is null ? 0 : Math.Clamp(_boss.Config.HitPoints, 10, 1000000),
-        _boss?.Players.Count ?? 0, _boss?.End, _race is not null, _race?.Players.Count ?? 0, _race?.Stake ?? 0, _race?.End));
+        _boss?.Players.Count ?? 0, _boss?.End, _race is not null, _race?.Players.Count ?? 0, _race?.Stake ?? 0, _race?.End,
+        _boss?.Id??"",_boss?.End.AddSeconds(-Math.Clamp(_boss.Config.DurationSeconds,10,1800)),_race?.Id??"",_race?.End.AddSeconds(-Math.Clamp(_race.Config.Adventures.Race.JoinSeconds,5,600))));
     private sealed record RaceRound(long Stake, DateTimeOffset End, int MaximumPlayers,
-        MinigameConfig Config, Dictionary<string, string> Players);
+        MinigameConfig Config, Dictionary<string, string> Players)
+    {
+        public string Id {get;}=Guid.NewGuid().ToString("N");
+    }
     private sealed class BossRound
     {
+        public string Id = Guid.NewGuid().ToString("N");
         public required BossAdventureConfig Config;
         public required DateTimeOffset End;
         public int Hp;
@@ -40,14 +59,25 @@ public sealed class AdventureGameService
     public AdventureGameService(ViewerPointStore points, MinigameConfig config,
         Func<string, CancellationToken, Task> send, IDuelRandom? random = null,
         Func<DateTimeOffset>? now = null, string broadcasterId = "")
-    { _points = points; _config = config; _send = send; _random = random ?? new CryptoDuelRandom(); _now = now ?? (() => DateTimeOffset.UtcNow); _broadcasterId = broadcasterId; ScheduleAutoBoss(); }
+    {
+        _points = points; _config = config; _points.ConfigureHotTime(config.Adventures.Rpg); _send = send; _random = random ?? new CryptoDuelRandom(); _now = now ?? (() => DateTimeOffset.UtcNow); _broadcasterId = broadcasterId; ScheduleAutoBoss();
+        if(config.Adventures.Rpg.Enabled && config.Adventures.Rpg.Health.Enabled && File.Exists(points.BossRoundPath))
+        {
+            var saved=RpgAtomicFile.Load<HealthBossSnapshot>(points.BossRoundPath,_=>{});
+            if(saved.Active)
+            {
+                _boss=new(){Id=saved.Id,Config=saved.Config,End=saved.End,Hp=Math.Clamp(saved.Config.HitPoints,10,1000000)};
+                _recoverHealthBoss=true;
+            }
+        }
+    }
 
-    public void UpdateConfig(MinigameConfig config) { _config = config; ScheduleAutoBoss(); }
+    public void UpdateConfig(MinigameConfig config) { _config = config; _points.ConfigureHotTime(config.Adventures.Rpg); ScheduleAutoBoss(); }
     private void ScheduleAutoBoss() => _nextAutoBoss = _now().AddMinutes(Math.Clamp(_config.Adventures.Boss.AutoStartMinutes, 1, 1440));
     public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!boss" or "!attack" or "!joinboss";
     public async Task RunAsync(CancellationToken token)
     {
-        var overlay = new AdventureOverlayServer(() => Status).RunAsync(token);
+        var overlay = new AdventureOverlayServer(() => Status,community:()=>CommunityOverlay?.Invoke()??new CommunityOverlayEventManager().Read(Status,_now())).RunAsync(token);
         try
         {
             while (true)
@@ -82,8 +112,10 @@ public sealed class AdventureGameService
                 }
                 if (action == "cancelboss" && _boss is not null)
                 {
+                    await CloseBossSushiAsync(_boss,token);
                     var template = _boss.Config.CancelMessage;
                     _nextBoss = _now().AddSeconds(Math.Clamp(_boss.Config.RoundCooldownSeconds, 1, 86400));
+                    SaveHealthBoss(null);
                     _boss = null;
                     await Say(Format(template), token);
                 }
@@ -130,8 +162,14 @@ public sealed class AdventureGameService
             var settings = _config.Adventures;
             if (RpgChatCommand.Recognizes(command))
             {
-                if (Cooling("rpgview:" + message.UserId, 2)) return;
-                await Say(await new RpgChatCommand(_points, settings.Rpg).ExecuteAsync(message, command, parts, token), token);
+                var rpgCooldown = "rpgview:" + message.UserId;
+                if (Cooling(rpgCooldown, 2))
+                {
+                    var remaining = Math.Max(1, (int)Math.Ceiling((_cooldowns[rpgCooldown] - _now()).TotalSeconds));
+                    await Say($"🦦 @{message.UserName}, bitte {remaining} Sekunden bis zum nächsten RPG-Befehl warten.", token);
+                    return;
+                }
+                await Say(await new RpgChatCommand(_points, settings.Rpg, Maximum).ExecuteAsync(message, command, parts, token), token);
                 DataChanged?.Invoke();
                 return;
             }
@@ -140,7 +178,7 @@ public sealed class AdventureGameService
                 var gameConfig = command == "!fish" ? settings.Fishing : settings.Treasure;
                 long rpgStake = 0;
                 var availablePoints = Math.Max(0, await _points.GetPointsAsync(message.UserId, token) - Math.Max(0, _config.MinimumPoints));
-                var validStake = parts.Length == 1 && command == "!dive" || parts.Length == 2 &&
+                var validStake = parts.Length == 1 || parts.Length == 2 &&
                     (parts[1].Equals("all", StringComparison.OrdinalIgnoreCase) ?
                         (rpgStake = Math.Min(availablePoints, gameConfig.MaximumBet)) > 0 :
                         long.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out rpgStake));
@@ -149,9 +187,8 @@ public sealed class AdventureGameService
                 var rpgResult = await new RpgAdventureService(_points, _config, _random, _now).ExecuteAsync(
                     message.UserId, message.UserName, actionId, command == "!fish" ? RpgActivity.Fishing : RpgActivity.Dive, rpgStake, token);
                 if (rpgResult.Success) DataChanged?.Invoke();
-                var found = rpgResult.Item is null ? "" : $" Fund: {rpgResult.Item.DisplayName} ({rpgResult.Item.Rarity}).";
                 await Say(rpgResult.Success ? Format(gameConfig.ResultMessage, ("user", message.UserName),
-                    ("outcome", rpgResult.Outcome + found), ("stake", rpgStake), ("payout", rpgResult.Payout),
+                    ("outcome", RpgChatPresentation.AdventureOutcome(rpgResult, command == "!fish" ? RpgActivity.Fishing : RpgActivity.Dive)), ("stake", rpgStake), ("payout", rpgResult.Payout),
                     ("currency", Currency), ("balance", rpgResult.Balance)) : $"@{message.UserName}, {rpgResult.Error}", token);
                 if (rpgResult.Success && rpgResult.Item?.Rarity == ItemRarity.Legendary)
                     await Say(Format(settings.Rpg.LegendaryMessage, ("user", message.UserName), ("item", rpgResult.Item.DisplayName)), token);
@@ -163,7 +200,9 @@ public sealed class AdventureGameService
                 var profile = await _points.GetProfileAsync(message.UserId, token);
                 if (settings.Rpg.Enabled && profile.Entry.Rpg.LegacyFishImported)
                 {
-                    await Say($"@{message.UserName}, RPG-Fischvorrat: " + string.Join(", ", profile.Entry.Rpg.Fish.Select(p => $"{p.Key}: {p.Value.Quantity}x")), token);
+                    var stocks = profile.Entry.Rpg.Fish.Where(p => p.Value.Quantity > 0).Select(p =>
+                        $"{settings.Rpg.FishSpecies.SingleOrDefault(f => f.Id == p.Key)?.Name ?? p.Key}: {p.Value.Quantity}×").ToArray();
+                    await Say($"🎣 @{message.UserName}, Fischvorrat: " + (stocks.Length == 0 ? "Noch keine Fische. Nutze !fish <Einsatz>." : string.Join(", ", stocks)), token);
                     return;
                 }
                 var fish = profile.Entry.FishCollection ?? new();
@@ -274,6 +313,7 @@ public sealed class AdventureGameService
             if (_now() < _nextBoss) { await Say("Der nächste Boss erscheint nach der Rundenpause.", token); return; }
             var c = System.Text.Json.JsonSerializer.Deserialize<BossAdventureConfig>(System.Text.Json.JsonSerializer.Serialize(_config.Adventures.Boss))!;
             _boss = new() { Config = c, Hp = Math.Clamp(c.HitPoints, 10, 1000000), End = _now().AddSeconds(Math.Clamp(c.DurationSeconds, 10, 1800)) };
+            SaveHealthBoss(_boss);
             ScheduleAutoBoss();
             await Say(Format(c.StartMessage, ("hp", _boss.Hp), ("seconds", Math.Clamp(c.DurationSeconds, 10, 1800)), ("reward", Math.Clamp(c.RewardPool, 0, 1000000000)), ("currency", Currency)), token);
         }
@@ -287,12 +327,12 @@ public sealed class AdventureGameService
             if (!_config.Enabled || !_config.PointsEnabled || !_config.Adventures.Boss.Enabled)
                 return new(false, verifiedUserId, 0, false, _boss?.Hp ?? 0, false, 0, "Bosskampf ist deaktiviert.");
             await TickCoreAsync(token);
-            return await AttackBossAsync(new() { UserId = verifiedUserId, UserName = displayName, Id = requestId }, token);
+            return await AttackBossAsync(new() { UserId = verifiedUserId, UserName = displayName, Id = requestId }, token,false);
         }
         finally { PublishStatus(); _gate.Release(); }
     }
 
-    private async Task<BossAttackResult> AttackBossAsync(ChatMessage user, CancellationToken token)
+    private async Task<BossAttackResult> AttackBossAsync(ChatMessage user, CancellationToken token,bool communityVictory=true)
     {
         if (_boss is null) return new(false, user.UserId, 0, false, 0, false, 0, "Kein Boss aktiv.");
         var cooldownKey = "!boss:" + user.UserId;
@@ -304,17 +344,48 @@ public sealed class AdventureGameService
         }
         var damage = _random.NextInclusive(10, 30);
         var critical = false;
+        var extraHits = 0;
+        var hpEnabled = _config.Adventures.Rpg.Enabled && _config.Adventures.Rpg.Health.Enabled;
+        var receivedDamage = 0;
+        var lifeleechHealing = 0;
+        var healthText = "";
+        var playerDied = false;
         if (_config.Adventures.Rpg.Enabled)
         {
             var mutation = await _points.ApplyRpgAsync(user.UserId, user.UserName,
                 string.IsNullOrWhiteSpace(user.Id) ? Guid.NewGuid().ToString("N") : user.Id, account =>
                 {
                     var clock = _now();
+                    if (hpEnabled)
+                    {
+                        RpgHealthService.Refresh(account.Rpg,_config.Adventures.Rpg.Health,clock);
+                        var health=account.Rpg.Health;
+                        if(health.CurrentHp<=0 || health.BossId==_boss.Id && health.Defeated)
+                            return new(false,"Du bist besiegt. Für diesen Boss ist kein weiterer Angriff möglich; HP: !hp.");
+                    }
                     if (account.Rpg.Cooldowns.TryGetValue("!attack", out var until) && clock < until)
                         return new(false, $"Angriff in {Math.Ceiling((until - clock).TotalSeconds)} Sekunden wieder möglich.");
-                    var stats = CharacterStatService.Calculate(account.Rpg, _config.Adventures.Rpg, RpgActivity.Boss);
-                    damage = CharacterStatService.BossDamage(damage, stats, _random.NextInclusive(0, 9999) / 100m, out critical, _config.Adventures.Rpg.BaseCritMultiplier);
-                    RpgProgressionService.ConsumeBuffs(account.Rpg, RpgActivity.Boss);
+                    var hit = RpgPassiveService.BossAttack(damage, account.Rpg, _config.Adventures.Rpg, _random, clock);
+                    damage = hit.Damage; critical = hit.Critical; extraHits = hit.ExtraHits;
+                    if(hpEnabled)
+                    {
+                        var health=account.Rpg.Health;
+                        if(health.BossId!=_boss.Id) {health.BossId=_boss.Id;health.Defeated=false;health.BossDamage=0;}
+                        health.BossDamage=checked(health.BossDamage+Math.Min(damage,_boss.Hp));
+                        health.BossRemainingHp=Math.Max(0,_boss.Hp-damage);
+                        var combatStats=CharacterStatService.Calculate(account.Rpg,_config.Adventures.Rpg,RpgActivity.Boss,now:clock);
+                        lifeleechHealing=RpgSushiService.HealFromBossAttack(damage,_boss.Hp,account.Rpg,_config.Adventures.Rpg.Health,_boss.Id,clock,critical?combatStats.CriticalHealing:0);
+                        if(damage<_boss.Hp)
+                            receivedDamage=RpgBossDefenseService.Counter(RpgHealthService.CounterDamage(_boss.Config.HitPoints,_config.Adventures.Rpg.Health,_random),account.Rpg,_config.Adventures.Rpg,_random,clock);
+                        health.CurrentHp=Math.Max(0,health.CurrentHp!.Value-receivedDamage);
+                        playerDied=health.Defeated=health.CurrentHp==0;
+                        healthText=$" Gegenangriff: -{receivedDamage} HP. ❤️ {health.CurrentHp}/{RpgHealthService.Maximum(account.Rpg,_config.Adventures.Rpg.Health)} HP.";
+                        if(lifeleechHealing>0)healthText=$" Lifeleech: +{lifeleechHealing} HP."+healthText;
+                        if(playerDied) healthText+=" 💀 Besiegt: keine Belohnungen für diesen Boss!";
+                    }
+                    damage=Math.Min(damage,_boss.Hp);
+                    RpgPassiveService.ConsumeBuffs(account.Rpg, RpgActivity.Boss, _config.Adventures.Rpg, _random, clock);
+                    RpgSushiService.Participate(account.Rpg,_boss.Id,_boss.End,clock);
                     account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(Math.Clamp(_boss.Config.AttackCooldownSeconds, 1, 86400));
                     return new(true);
                 }, token);
@@ -322,16 +393,113 @@ public sealed class AdventureGameService
         }
         _boss.Players[user.UserId] = user.UserName;
         _boss.Hp = Math.Max(0, _boss.Hp - damage);
-        if (_boss.Hp > 0) { await Say(Format(_boss.Config.AttackMessage, ("user", user.UserName), ("damage", damage), ("hp", _boss.Hp)), token); return new(true, user.UserId, damage, critical, _boss.Hp, false, 0, ""); }
+        if (_boss.Hp > 0)
+        {
+            var template = _boss.Config.AttackMessage;
+            var attackText = Format(template, ("user", user.UserName), ("damage", damage), ("hp", _boss.Hp), ("critical", critical ? "Kritischer Treffer!" : ""));
+            if (critical && !string.IsNullOrWhiteSpace(attackText) && !template.Contains("{critical}", StringComparison.OrdinalIgnoreCase)) attackText += " Kritischer Treffer!";
+            if (extraHits > 0 && !string.IsNullOrWhiteSpace(attackText)) attackText += $" {extraHits} Zusatztreffer enthalten.";
+            if (_config.Adventures.Rpg.Enabled && !string.IsNullOrWhiteSpace(attackText)) attackText = "⚔️ " + attackText;
+            attackText += healthText;
+            await Say(attackText, token);
+            return new(true, user.UserId, damage, critical, _boss.Hp, false, 0, "");
+        }
         var finished = _boss;
+        if(hpEnabled)
+        {
+            await RewardSurvivorsAsync(finished,true,token);
+            SaveHealthBoss(null);
+            _boss=null;
+            _nextBoss=_now().AddSeconds(Math.Clamp(finished.Config.RoundCooldownSeconds,1,86400));
+            await Say("🏆 Boss besiegt! Überlebende Teilnehmer erhalten Perlen und " + _config.Adventures.Rpg.Health.VictoryExperience + " EXP; besiegte Teilnehmer erhalten nichts."+
+                (lifeleechHealing>0?$" @{user.UserName}: Lifeleech +{lifeleechHealing} HP.":""),token);
+            if(communityVictory) _points.HotTime.StartAfterBoss(finished.Id,_config.Adventures.Rpg.HotTime,true);
+            foreach(var text in _points.HotTime.PollMessages(_config.Adventures.Rpg.HotTime)) await Say(text,token);
+            DataChanged?.Invoke();
+            return new(true,user.UserId,damage,critical,0,true,0,"");
+        }
         _boss = null;
         _nextBoss = _now().AddSeconds(Math.Clamp(finished.Config.RoundCooldownSeconds, 1, 86400));
+        await CloseBossSushiAsync(finished,token);
         var reward = Math.Clamp(finished.Config.RewardPool, 0, 1000000000) / finished.Players.Count;
-        await _points.AddPointsToUsersAsync(finished.Players.Select(p => (p.Key, p.Value)), reward,
-            _config.MinimumPoints, Maximum, token, "Bosskampf", _config.HistoryLimit);
+        reward=_points.RewardAmount(reward,RpgRewardSource.Boss);
+        if(_config.Adventures.Rpg.Enabled)
+        {
+            foreach(var player in finished.Players)
+            {
+                var paid=await _points.ApplyRpgAsync(player.Key,player.Value,"bosscollect:"+finished.Id,a=>
+                {
+                    var bonus=RpgCollectorService.Calculate(a.Rpg,_config.Adventures.Rpg.DiveLoot).BossPearls;
+                    a.Points=Math.Max(a.Points,(long)Math.Min((decimal)Maximum,(decimal)a.Points+RpgCollectorService.Reward(reward,bonus)));
+                    return new(true);
+                },token);
+                if(!paid.Success)throw new InvalidOperationException(paid.Error);
+            }
+        }
+        else await _points.AddPointsToUsersAsync(finished.Players.Select(p => (p.Key, p.Value)), reward,
+            _config.MinimumPoints, Maximum, token, "Bosskampf", _config.HistoryLimit,RpgRewardSource.AlreadyBoosted);
+        if (_config.Adventures.Rpg.Enabled)
+        {
+            var lootService = new RpgBossLootService(_points, _config.Adventures.Rpg, _random);
+            foreach (var player in finished.Players)
+            {
+                var found = await lootService.AwardAsync(player.Key, player.Value, finished.Id, Math.Clamp(finished.Config.HitPoints, 10, 1000000), finished.Players.Count, _now(), token);
+                if (found is not null) await Say($"{(found.Rarity == ItemRarity.Legendary ? "💎" : "⚔️")} @{player.Value} findet {found.DisplayName} [{found.Rarity}]! Details: !inv.", token);
+            }
+        }
         DataChanged?.Invoke();
-        await Say(Format(finished.Config.WinMessage, ("count", finished.Players.Count), ("reward", reward), ("currency", Currency)), token);
+        var winText = Format(finished.Config.WinMessage, ("count", finished.Players.Count), ("reward", reward), ("currency", Currency));
+        if (_config.Adventures.Rpg.Enabled && !string.IsNullOrWhiteSpace(winText)) winText = "⚔️ " + winText;
+        await Say(winText, token);
+        if(_config.Adventures.Rpg.Enabled && communityVictory)
+        {
+            _points.HotTime.StartAfterBoss(finished.Id,_config.Adventures.Rpg.HotTime,true);
+            foreach(var text in _points.HotTime.PollMessages(_config.Adventures.Rpg.HotTime)) await Say(text,token);
+        }
         return new(true, user.UserId, damage, critical, 0, true, 0, "");
+    }
+    private async Task CloseBossSushiAsync(BossRound boss,CancellationToken token)
+    {
+        if(!_config.Adventures.Rpg.Enabled)return;
+        var participants=boss.Players.Select(p=>(Id:p.Key,Name:p.Value)).Concat((await _points.BossParticipantsAsync(boss.Id,token)).Select(p=>(p.Id,p.Name))).DistinctBy(p=>p.Id);
+        foreach(var p in participants)
+            await _points.ApplyRpgAsync(p.Id,p.Name,"sushiclose:"+boss.Id,a=>
+            {RpgSushiService.Close(a.Rpg,boss.Id,_now()<boss.End?_now():boss.End,_now(),_config.Adventures.Rpg.Health);return new(true);},token);
+    }
+    private async Task RewardSurvivorsAsync(BossRound boss,bool victory,CancellationToken token)
+    {
+        await CloseBossSushiAsync(boss,token);
+        var rpg=_config.Adventures.Rpg;
+        var survivors=new List<(string Id,string Name,long Damage)>();
+        foreach(var player in boss.Players)
+        {
+            var p=(await _points.GetProfileAsync(player.Key,token)).Entry.Rpg;
+            // Evaluate before lazy regeneration: healing must not resurrect a participant.
+            if(RpgHealthService.Eligible(p,boss.Id)) survivors.Add((player.Key,player.Value,p.Health.BossDamage));
+        }
+        var top=survivors.OrderByDescending(p=>p.Damage).ThenBy(p=>p.Id,StringComparer.Ordinal).FirstOrDefault().Id;
+        var reward=survivors.Count==0 || !victory ? 0 : _points.RewardAmount(Math.Clamp(boss.Config.RewardPool,0,1000000000)/survivors.Count,RpgRewardSource.Boss);
+        foreach(var player in survivors)
+        {
+            RpgItem? found=null;
+            var result=await _points.ApplyRpgAsync(player.Id,player.Name,"bosssurvival:"+boss.Id,a=>
+            {
+                if(!RpgHealthService.Eligible(a.Rpg,boss.Id)) return new(false,"Kein Belohnungsanspruch.");
+                var collectors=RpgCollectorService.Calculate(a.Rpg,rpg.DiveLoot);
+                var personalReward=RpgCollectorService.Reward(reward,collectors.BossPearls);
+                a.Points=Math.Max(a.Points,(long)Math.Min((decimal)Maximum,(decimal)a.Points+personalReward));
+                var experience=victory ? checked(rpg.Health.VictoryExperience+(player.Id==top?rpg.Health.TopExperience:0)) : rpg.Health.EscapeExperience;
+                RpgHealthService.Experience(a.Rpg,rpg.Health,checked((int)RpgCollectorService.Reward(experience,collectors.BossExperience)),_now());
+                if(victory && rpg.BossLootChance>0)
+                {
+                    found=new RpgLootService(_random).RollReward(rpg.DiveLoot,_now(),RpgActivity.Boss,rpg.BossLootChance,
+                        RpgBossLootService.MaximumRarity(rpg,boss.Config.HitPoints,boss.Players.Count),_points.HotTime.DropBonus(rpg.HotTime)).Item;
+                    if(found is not null) a.Rpg.Inventory.Add(found);
+                }
+                return new(true);
+            },token);
+            if(result.Success && found is not null) await Say($"⚔️ @{player.Name} findet {found.DisplayName} [{found.Rarity}]! Details: !inv.",token);
+        }
     }
     public async Task TickAsync(CancellationToken token)
     {
@@ -341,12 +509,29 @@ public sealed class AdventureGameService
     }
     private async Task TickCoreAsync(CancellationToken token)
     {
+        if(_recoverHealthBoss && _boss is not null)
+        {
+            var participants=await _points.BossParticipantsAsync(_boss.Id,token);
+            foreach(var p in participants){_boss.Players[p.Id]=p.Name;_boss.Hp=Math.Min(_boss.Hp,p.BossHp);}
+            _recoverHealthBoss=false;
+        }
+        if(_boss is not null && _boss.Hp==0 && _config.Adventures.Rpg.Enabled && _config.Adventures.Rpg.Health.Enabled)
+        {
+            await RewardSurvivorsAsync(_boss,true,token);
+            SaveHealthBoss(null);_boss=null;
+            _nextBoss=_now().AddSeconds(Math.Clamp(_config.Adventures.Boss.RoundCooldownSeconds,1,86400));
+        }
+        foreach(var text in _points.HotTime.PollMessages(_config.Adventures.Rpg.HotTime)) await Say(text,token);
         if (!_config.Enabled || !_config.PointsEnabled)
-        { _race = null; _boss = null; return; }
+        { if(_boss is not null)await CloseBossSushiAsync(_boss,token); SaveHealthBoss(null); _race = null; _boss = null; return; }
         if (!_config.Adventures.Race.Enabled) _race = null;
-        if (!_config.Adventures.Boss.Enabled) _boss = null;
+        if (!_config.Adventures.Boss.Enabled) {if(_boss is not null)await CloseBossSushiAsync(_boss,token);SaveHealthBoss(null);_boss = null;}
         if (_boss is not null && _now() >= _boss.End)
         {
+            if(_config.Adventures.Rpg.Enabled && _config.Adventures.Rpg.Health.Enabled)
+                await RewardSurvivorsAsync(_boss,false,token);
+            else await CloseBossSushiAsync(_boss,token);
+            SaveHealthBoss(null);
             _nextBoss = _now().AddSeconds(Math.Clamp(_boss.Config.RoundCooldownSeconds, 1, 86400));
             var template = _boss.Config.TimeoutMessage;
             _boss = null;

@@ -56,6 +56,11 @@ public sealed class HeistService : IAsyncDisposable
     private string _creator="";
     private int _remaining;
     private bool _disposed;
+    private string _eventId="";
+    private DateTimeOffset _startedAt,_joinEndsAt;
+    private HeistEventSnapshot? _snapshot;
+    public HeistEventSnapshot? Snapshot => Volatile.Read(ref _snapshot);
+    public event Action<HeistEventSnapshot>? EventChanged;
 
     public event Action<HeistStatus>? StatusChanged;
     public HeistState State { get; private set; }=HeistState.Inactive;
@@ -140,11 +145,12 @@ public sealed class HeistService : IAsyncDisposable
             _participants=new Dictionary<string,HeistParticipant>(StringComparer.Ordinal);
             _participants.Add(creator.UserId,new HeistParticipant(creator.UserId,creator.UserLogin,creator.UserName));
             _creator=creator.UserName; _remaining=_config.JoinDurationSeconds; State=HeistState.Joining;
+            _eventId=Guid.NewGuid().ToString("N");_startedAt=now;_joinEndsAt=now.AddSeconds(_config.JoinDurationSeconds);
             _creatorCooldowns[creator.UserId]=now;
             Console.WriteLine($"Heist gestartet. Ersteller: {creator.UserName}; Beitrittsphase: {_config.JoinDurationSeconds}s; Erfolgschance: {_config.SuccessChancePercent}%.");
             var jackpot=await _points.GetJackpotAsync(_minigame.JackpotStartValue,_sessionCts.Token);
-            StatusChanged?.Invoke(CurrentStatus(jackpot));
-            await SendAsync(Format(_config.StartMessage,creator.UserName,1,jackpot,1),_sessionCts.Token);
+            Publish(jackpot);
+            if(_config.SendStartMessages)await SendAsync(Format(_config.StartMessage,creator.UserName,1,jackpot,1),_sessionCts.Token);
             _sessionTask=RunSessionAsync(_sessionCts.Token);
         }
         finally { _gate.Release(); }
@@ -169,7 +175,7 @@ public sealed class HeistService : IAsyncDisposable
         try
         {
             var jackpot=await _points.GetJackpotAsync(_minigame.JackpotStartValue,cancellationToken);
-            if(State!=HeistState.Joining||_participants is null)
+            if(State!=HeistState.Joining||_participants is null||DateTimeOffset.UtcNow>=_joinEndsAt)
             { await SendAsync(Format(_config.NoActiveHeistMessage,user.UserName,0,jackpot,0),cancellationToken); return; }
             if(_participants.ContainsKey(user.UserId))
             { Console.WriteLine($"Doppelter Heist-Beitritt abgelehnt: {user.UserName}."); await SendAsync(Format(_config.AlreadyJoinedMessage,user.UserName,_participants.Count,jackpot,CalculateShare(jackpot,_participants.Count)),cancellationToken); return; }
@@ -179,7 +185,7 @@ public sealed class HeistService : IAsyncDisposable
             Console.WriteLine($"Heist-Beitritt: {user.UserName}; Teilnehmer: {_participants.Count}.");
             if(_config.SendParticipantJoinMessages)
                 await SendAsync(Format(_config.JoinMessage,user.UserName,_participants.Count,jackpot,CalculateShare(jackpot,_participants.Count)),cancellationToken);
-            StatusChanged?.Invoke(CurrentStatus(jackpot));
+            Publish(jackpot);
         }
         finally { _gate.Release(); }
     }
@@ -192,10 +198,10 @@ public sealed class HeistService : IAsyncDisposable
             while(_remaining>0)
             {
                 await Task.Delay(TimeSpan.FromSeconds(1),cancellationToken);
-                _remaining--;
+                _remaining=Math.Max(0,(int)Math.Ceiling((_joinEndsAt-DateTimeOffset.UtcNow).TotalSeconds));
                 if(_config.SendCountdownMessages && (_remaining is 30 or 10 or 5 or 3 or 2 or 1) && announced.Add(_remaining))
                     await SendAsync($"Heist startet in {_remaining} Sekunden – Beitritt mit {_config.JoinCommand}.",cancellationToken);
-                _ = PublishStatusAsync(cancellationToken);
+                await PublishStatusAsync(cancellationToken);
             }
             await ResolveAsync(cancellationToken);
         }
@@ -220,11 +226,11 @@ public sealed class HeistService : IAsyncDisposable
                 var cancelledJackpot=await _points.GetJackpotAsync(_minigame.JackpotStartValue,cancellationToken);
                 await SendAsync(Format(_config.NotEnoughParticipantsMessage,"",participants.Length,cancelledJackpot,CalculateShare(cancelledJackpot,participants.Length)),cancellationToken);
                 Console.WriteLine("Heist automatisch abgebrochen: zu wenige Teilnehmer.");
-                StatusChanged?.Invoke(CurrentStatus(cancelledJackpot)); CleanupSession(); return;
+                Publish(cancelledJackpot); CleanupSession(); return;
             }
             State=HeistState.Evaluating;
             var jackpot=await _points.GetJackpotAsync(_minigame.JackpotStartValue,cancellationToken);
-            StatusChanged?.Invoke(CurrentStatus(jackpot));
+            Publish(jackpot);
             if(_config.SendResultMessages)await SendAsync(Format(_config.EvaluationMessage,"",participants.Length,jackpot,jackpot/participants.Length),cancellationToken);
             var roll=_random.NextInclusive(1,100);
             var success=HeistRules.IsSuccess(_config.SuccessChancePercent,roll);
@@ -235,7 +241,7 @@ public sealed class HeistService : IAsyncDisposable
                 State=HeistState.Failed;
                 if(_config.SendResultMessages)await SendAsync(Format(_config.FailureMessage,"",participants.Length,jackpot,0),cancellationToken);
                 Console.WriteLine($"Heist fehlgeschlagen. Jackpot unverändert: {jackpot}.");
-                StatusChanged?.Invoke(CurrentStatus(jackpot)); CleanupSession(); return;
+                Publish(jackpot); CleanupSession(); return;
             }
             var remainder=jackpot%participants.Length;
             var candidates=Enumerable.Range(0,participants.Length).ToList();
@@ -248,7 +254,7 @@ public sealed class HeistService : IAsyncDisposable
             Console.WriteLine($"Heist-Jackpot nach Reset: {payout.JackpotAfter}.");
             State=HeistState.Successful;
             if(_config.SendResultMessages)await SendAsync(Format(_config.SuccessMessage,"",participants.Length,payout.JackpotBefore,payout.JackpotBefore/participants.Length),cancellationToken);
-            StatusChanged?.Invoke(CurrentStatus(payout.JackpotAfter)); CleanupSession();
+            Publish(payout.JackpotBefore,payout.Payouts.Select(p=>new HeistPlayerResult(p.UserId,p.DisplayName,p.Payout)).ToArray()); CleanupSession();
         }
         finally { _gate.Release(); }
     }
@@ -263,7 +269,7 @@ public sealed class HeistService : IAsyncDisposable
             Console.WriteLine("Heist manuell abgebrochen; keine Auszahlung und kein Jackpot-Reset.");
             if(announce)await SendAsync("Der laufende Heist wurde abgebrochen.",cancellationToken);
             var jackpot=await _points.GetJackpotAsync(_minigame.JackpotStartValue,cancellationToken);
-            StatusChanged?.Invoke(CurrentStatus(jackpot)); CleanupSession();
+            Publish(jackpot); CleanupSession();
         }
         finally { _gate.Release(); }
     }
@@ -308,8 +314,32 @@ public sealed class HeistService : IAsyncDisposable
     { try{await _twitch.SendChatMessageAsync(_broadcasterId,_chatUserId,message,token);}catch(OperationCanceledException)when(token.IsCancellationRequested){}catch(Exception ex){Console.WriteLine("Heist-Chatantwort fehlgeschlagen: "+ex.Message);} }
     private HeistStatus CurrentStatus(long jackpot)=>new(State,_creator,_participants?.Count??0,_remaining,jackpot,
         _config.SuccessChancePercent,_participants?.Values.Select(x=>x.DisplayName).ToArray()??Array.Empty<string>());
-    private async Task PublishStatusAsync(CancellationToken token)=>StatusChanged?.Invoke(CurrentStatus(await _points.GetJackpotAsync(_minigame.JackpotStartValue,token)));
-    private void CleanupSession(){_participants=null;_creator="";_remaining=0;_sessionCts?.Dispose();_sessionCts=null;}
+    private void Publish(long jackpot,IReadOnlyList<HeistPlayerResult>? results=null)
+    {
+        var terminal=State is HeistState.Successful or HeistState.Failed or HeistState.Cancelled;
+        var players=results??_participants?.Values.Select(p=>new HeistPlayerResult(p.UserId,p.DisplayName,0)).ToArray()??Array.Empty<HeistPlayerResult>();
+        var snapshot=new HeistEventSnapshot(_eventId,_config.Overlay.Title,State,_startedAt,_joinEndsAt,terminal?DateTimeOffset.UtcNow:null,
+            _config.MinimumParticipants,_config.MaximumParticipants,_config.JoinCommand,_minigame.CurrencyPlural,jackpot,0,Array.AsReadOnly(players.ToArray()),players.Sum(p=>p.Payout),0);
+        Volatile.Write(ref _snapshot,snapshot);
+        // A broken display subscriber must never cancel or repeat a committed payout.
+        if(EventChanged is not null)foreach(Action<HeistEventSnapshot> handler in EventChanged.GetInvocationList())
+            try{handler(snapshot);}catch(Exception ex){Console.WriteLine("Heist-Anzeige: "+ex.Message);}
+        if(StatusChanged is not null)foreach(Action<HeistStatus> handler in StatusChanged.GetInvocationList())
+            try{handler(CurrentStatus(jackpot));}catch(Exception ex){Console.WriteLine("Heist-Statusanzeige: "+ex.Message);}
+    }
+    private async Task PublishStatusAsync(CancellationToken token)
+    {
+        await _gate.WaitAsync(token);
+        try{if(State==HeistState.Joining)Publish(await _points.GetJackpotAsync(_minigame.JackpotStartValue,token));}
+        finally{_gate.Release();}
+    }
+    // Debug only: the caller must own an isolated service/store, never a live frontend.
+    internal async Task FinishJoiningForTestAsync(CancellationToken token=default)
+    {
+        await _gate.WaitAsync(token);try{_remaining=0;_joinEndsAt=DateTimeOffset.UtcNow;}finally{_gate.Release();}
+        await ResolveAsync(token);
+    }
+    private void CleanupSession(){_participants=null;_creator="";_remaining=0;_sessionCts?.Cancel();_sessionCts?.Dispose();_sessionCts=null;}
     public async ValueTask DisposeAsync(){if(_disposed)return;_disposed=true;await CancelAsync(false);if(_sessionTask is not null)try{await _sessionTask;}catch(OperationCanceledException){} _gate.Dispose();}
 }
 

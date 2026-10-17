@@ -45,15 +45,9 @@ public sealed class CommandRegistry
         }
 
         var m = config.Minigame;
-        foreach (var (command, aliases, usage) in new[] {
-            ("!inventory", new[] { "!inventar" }, "[Seite]"),
-            ("!equipment", new[] { "!ausrüstung" }, ""),
-            ("!equip", Array.Empty<string>(), "<Item-ID> <Slot>"),
-            ("!perks", Array.Empty<string>(), ""), ("!perk", Array.Empty<string>(), "<ID>"),
-            ("!sushi", Array.Empty<string>(), "[Rezept]"), ("!craft", Array.Empty<string>(), "<Rezept>"),
-            ("!stats", Array.Empty<string>(), "") })
-            Add("rpg." + command[1..], command, aliases, "points", "RPG", command[1..],
-                "RPG-Inventar, Charakter und permanente Entwicklung.", (command + " " + usage).Trim(), command,
+        foreach (var definition in RpgCommandCatalog.Definitions)
+            Add("rpg." + definition.Command[1..], definition.Command, definition.Aliases, "points", "RPG", definition.Command[1..],
+                "RPG-Inventar, Charakter und permanente Entwicklung.", (definition.Command + " " + definition.Usage).Trim(), definition.Command,
                 m.Enabled && m.PointsEnabled && m.Adventures.Rpg.Enabled, userCooldown:2, order:54);
         Add("adventure.collection", "!sammlung", null, "fishing", "Fischen", "Fischsammlung",
             "Zeigt deine gesammelten Fische und den größten Fang.", "!sammlung", "!sammlung", m.Enabled && m.PointsEnabled, order:53);
@@ -63,11 +57,14 @@ public sealed class CommandRegistry
         Add("adventure.race", "!start race", null, "race", "Rennen", "Rennen starten",
             "Startet ein gemeinsames Rennen.", "!start race <Betrag|all>", "!start race 100",
             m.Enabled && m.PointsEnabled && m.Adventures.Race.Enabled, order:50);
+        // The configurable primary command may already be this shortcut.
+        // Keep one authoritative entry, not two owners for the same action.
+        if (Normalize(config.Heist.StartCommand) != "!start heist")
         Add("event.start.heist", "!start heist", null, "heist", "Heist", "Heist-Event starten",
             "Startet einen Heist (Mods/Broadcaster).", "!start heist", "!start heist",
             config.Heist.Enabled, CommandRole.Moderator, order:62);
         foreach (var game in new[] {
-            ("fishing", "!fish", "Fischen", m.Adventures.Fishing.Enabled, "<Betrag|all>", "Wirft die Angel aus und gewinnt mit etwas Glück Punkte."),
+            ("fishing", "!fish", "Fischen", m.Adventures.Fishing.Enabled, "[Betrag|all]", "Kostenloser Fangversuch oder Angeln mit Einsatz; Zutatenvorrat: !fishbag."),
             ("treasure", "!dive", "Schatzsuche", m.Adventures.Treasure.Enabled, "<Betrag|all>", "Erkundet eine Höhle auf der Suche nach Beute."),
             ("boss", "!boss", "Bosskampf", m.Adventures.Boss.Enabled, "", "Startet einen Bosskampf oder zeigt den aktiven Boss an.") })
             Add("adventure." + game.Item1, game.Item2, null, game.Item1, game.Item3, game.Item3,
@@ -136,7 +133,8 @@ public sealed class CommandRegistry
 
         Add("heist.start", config.Heist.StartCommand, null, "heist", "Heist", "Heist starten",
             "Startet einen gemeinsamen Raubzug um den Jackpot.", config.Heist.StartCommand,
-            config.Heist.StartCommand, config.Heist.Enabled, CommandRole.Moderator, userCooldown:config.Heist.UserCooldownMinutes*60,
+            config.Heist.StartCommand, config.Heist.Enabled && (Normalize(config.Heist.StartCommand) != "!start heist" ||
+                config.Commands.IsCommandEnabled("event.start.heist")), CommandRole.Moderator, userCooldown:config.Heist.UserCooldownMinutes*60,
             globalCooldown:config.Heist.GlobalCooldownMinutes*60, order:60);
         Add("heist.join", config.Heist.JoinCommand, null, "heist", "Heist", "Heist beitreten",
             "Tritt der laufenden Beitrittsphase bei.", config.Heist.JoinCommand,

@@ -1,3 +1,91 @@
+## 2.1.22 – Heist-OBS-Overlay und Gegner-Einstellungen
+
+- Gemeinsame Event-Browserquelle um animierte Unterwasser-Heists mit eigenen SVG-Otter-Piraten, Countdown, Crew, Schatzkammer und tatsächlichen Jackpot-Auszahlungen erweitert. Keine neue Heist-Ökonomie; echte Punkteverteilung bleibt im vorhandenen Service.
+- Zentraler Präsentationsmanager priorisiert Boss, Rennen, Heist und Ergebnisse, mit begrenzter Warteschlange, Verfallszeit, Wiederholungsschutz und gemeinsamem Zeitstempel bei Reload. Hot-Time-Banner verwendet bestehende Boni und Endzeiten, ohne Bossanzeigen zu überdecken.
+- Neuer Heist-Reiter „OBS-Overlay“ mit Formularfeldern, auswählbarer OBS-Szene/Browserquelle und sicherer lokaler Mockvorschau; zusätzlicher Einstieg im RPG Debug Center. Read-only Loopback-Daten und interne Event-Snapshots für spätere Extension-Adapter; keine öffentliche API.
+- Startdiagnose: Der letzte Fehler am 17.10.2026 um 17:10:40 betraf ungültige Unterwassergegner-Einstellungen; nach dem App-Neustart waren die gespeicherten Werte wieder gültig. Der genaue damalige Wert ist im alten Protokoll nicht enthalten. Neuer Tabelleneditor ersetzt den fehleranfälligen generischen Collection-Editor, begrenzt Chance/Runden und erzeugt eindeutige neue Einsatzstufen. Präzise Validierungsfehler und Wiederherstellung des zuletzt geladenen Gegnerstands ohne App-Neustart; keine stillen Balanceänderungen oder Kontenänderungen.
+- 646 Tests bestanden; Einrichtung, Funktionen und bekannte Grenzen: `docs/HEIST-OBS-OVERLAY.md`.
+
+## 2.1.21 – Loot Expansion 3.0
+
+- 52 zusätzliche Definitionen: 34 Ausrüstungsteile, acht Teile für zwei neue Sets und zehn passive Sammlerschätze. Alte Instanzen und die vorhandene Krone des Abgrunds bleiben erhalten.
+- Große Bosskämpfe: zentrale Verteidigungsrechnung mit Ausweichen und einmaliger Schadensreduktion, kritische Heilung aus tatsächlichem Schaden ohne festes Heilungscap. Set-HP werden ohne Gratisheilung berücksichtigt.
+- Separate, duplikatsichere Sammlerboni für passende positive Belohnungsquellen. Keine Kampfboni durch Besitz. Konfigurierbare Sammlercaps und gewichtete Pools nach dem unveränderten Seltenheitswurf.
+- `!treasures`, erweiterte Item-/Werteansichten, fokussierter Loot-/Set-Konfigurationsreiter und ergänzte isolierte Debugaktionen. Details und vollständiger Katalog: `docs/RPG-LOOT-EXPANSION-3.md`.
+
+## 2.1.20 – Vampir-Maki ohne Lifeleech-Cap
+
+- Fangbarer Vampirtintenfisch (`vampire_squid`, Rare, Tiefsee, Standard 300 Perlen) und zuvor fehlender Thunfisch (`tuna`, Uncommon, Standard 150 Perlen). Gewichte 8/25 und Belohnungen sind im vorhandenen Fangpool-Editor einstellbar. Keine zusätzliche Einsatzpflicht.
+- `!cook vampir` / `!eat vampir`: 2 Vampirtintenfische +1 Thunfisch +750 Perlen. Defensiver Sushi-Slot, 5 % Lifeleech, drei Bosskampfteilnahmen. Vorhandene Bestände und Rezepte bleiben erhalten.
+- Heilung `floor(min(Angriffsschaden, verbleibende Boss-HP) × 0,05)`, unmittelbar vor dem großen Boss-Gegenangriff. Kein festes HP-Heilungscap; nur MaxHP begrenzen. Kritische Treffer und Zusatztreffer zählen über ihren tatsächlichen Schaden, Overkill nicht. Keine Wiederbelebung, kein Umgehen von Todessperren und kein Lifeleech gegen kleine Gegner.
+- Konfigurierbarer Lifeleech-Prozentwert im Rezepteditor, persistenter Effektsnapshot, Anzeige im Sushi-Status und Kampftext sowie isolierte Debugaktion „Boss-Lifeleech“. 610 Tests bestanden; Details: `docs/RPG-VAMPIR-MAKI.md`.
+
+## 2.1.19 – Sushi 2.1 und neue Meeresbewohner
+
+- Tatsächlich fangbar: Seegurke, Garnele, Riesengarnele, Kugelfisch und Goldener Kugelfisch, mit relativen Gewichten 50/25/12/10/3 und eigenen Fangbelohnungen 40/100/250/350/800 Perlen. Bestehende Arten bleiben erhalten; bezahlte bisherige Fänge behalten ihre Auszahlung. `!fish` erlaubt jetzt auch kostenlose Versuche; `!fishbag` zeigt Zutatenbestände.
+- Defensive Rezepte: Kappa-Maki (2 Seegurken +300 Perlen, +3 passive HP/Minute), Tempura-Rolle (2 Garnelen +1 Riesengarnele +450 Perlen, +5 Chat-HP), Kugelfisch-Sashimi (2 Kugelfische +700 Perlen, 15 % weniger großer Boss-Gegenschaden). Multi-Zutaten-Crafting und eigene Perlenbelohnungen werden in vorhandenen Transaktionen atomar gespeichert.
+- Ein offensiver und ein defensiver Slot, ohne Überschreiben. Aufladungen zählen je Boss-ID statt je Angriff; der dritte Boss erhält den vollen Bonus bis zum Ende. Alte Buffs und Bestände werden ohne Rücksetzen übernommen; vorhandene Mehrfach-Offensivbuffs bleiben bis zum Verbrauch erhalten. Regeneration rechnet vergangene Intervalle mit den damals gültigen Buffzeiten ab.
+- `!cook`/`!eat` als Aliase, Rezeptübersicht mit `!sushi`, Statusseiten und Fischvorrat. Tabelleneditor unter RPG → Fischfang & Sushi, ergänzte lokale Debugaktionen und zusätzliche Spielstandsicherung `.pre-sushi-2.bak`. Details: `docs/RPG-SUSHI-2.md`.
+
+## 2.1.18 – Kraft, Ausdauer und HP-Ausrüstung
+
+- Garantierte Hauptwerte auf jedem Ausrüstungsteil: Kraft/Ausdauer nach Seltenheit Common 1/1, Uncommon 2/2, Rare 3/4, Epic 5/7, Legendary 8/10. Beide kommen zusätzlich zur bisherigen Anzahl zufälliger Attribute und Spezialeffekte. Standardumrechnung: 1 Kraft = +1 % Schaden innerhalb des bestehenden Schadenscaps; 1 Ausdauer = +5 MaxHP innerhalb des Ausrüstungs-HP-Caps.
+- Alte Ausrüstungsinstanzen werden deterministisch und versioniert ergänzt, ohne IDs, Sekundärwerte, Effekte oder Slots zu verändern. Positive eigene Kraft-/Ausdauerwerte bleiben erhalten. Lesende Inventarabfragen zeigen die ergänzten Werte auf einer Kopie; RPG-Transaktionen speichern sie atomar. Zusätzliche `.pre-core-stats.bak`-Sicherung vor dem ersten Schreibvorgang. Schätze und Verbrauchsgegenstände erhalten keine Kampfwerte.
+- Ausrüstung kann maximale Lebenspunkte erhöhen: Seetangstiefel (Common, +5), Korallenhelm (Uncommon, +10), Muschelpanzer (Rare, +20), Abgrundrüstung (Epic, +35), Leviathans Herz (Legendary, +50). Neue Definitionen ergänzen den bestehenden Loot-Pool beim Laden; vorhandene Definitionen und gespeicherte Items werden nicht verändert.
+- Nur angelegte, eindeutige Instanzen zählen. Ausrüstungsbonus standardmäßig insgesamt auf 1.000 HP begrenzt, unter HP & Überleben einstellbar. Bonusanzeige in Itemdetails, Ausrüstungsantworten und Charakterwerten; normale Seltenheits-/Einsatzgrenzen gelten weiter.
+- Kein Heilen durch An-/Ablegen, kein Wiederbeleben oder Entfernen einer Todessperre. Ablegen begrenzt aktuelle HP auf die neue Obergrenze. Levelaufstiege heilen weiterhin ausschließlich den hinzugewonnenen Level-HP-Betrag. Basis-HP-Items bleiben beim Aktivieren dynamischer Drops unverändert feste Items.
+
+## 2.1.17 – Heist-Startkollision
+
+- Ein gespeicherter Heist-Startbefehl `!start heist` wird nicht mehr zusätzlich als eigener Event-Shortcut registriert. Beseitigt die falsche Heist-gegen-Heist-Kollision beim Modulstart; echte Konflikte und Deaktivierungsschalter bleiben erhalten.
+
+## 2.1.16 – Modulstart trotz fehlender Tip-Anbieter
+
+- Fehlende Tip-Anbieter oder Zugangsdaten pausieren nur den betroffenen Tip-Empfang und verhindern weder Modulstart noch Speichern. Warnhinweise erscheinen im Tip-Status und Botlog. Andere gültige Anbieter bleiben aktiv; gespeicherte Anbieter-Einstellungen werden nicht automatisch überschrieben.
+- Eigener Speichern-Knopf unter Timer → Event-Trigger → Tip-Anbieter.
+
+## 2.1.15 – RPG-Überleben, Unterwassergegner und Hot Time
+
+- Kleine Unterwassergegner bei `!dive`: standardmäßig 15 % Begegnungschance (10–20 % einstellbar), fünf einsatzabhängige Gegnerstufen, automatische HP-Kämpfe und EXP bei Sieg. Gegnerbonusbeute verwendet den besseren von zwei normalen Lootwürfen mit unveränderten Legendary-Grenzen. Kampf, HP, EXP und Beute werden mit dem Tauchgang atomar gespeichert; keine zusätzlichen Perlenverluste. Einstellungen im RPG-Bereich unter „Unterwassergegner“. Details: `docs/RPG-UNDERWATER-ENEMIES.md`.
+- RPG-HP und Überleben: 100 Basis-HP, +2 MaxHP pro Level; Boss-Gegenangriffe, persistente Todessperre und atomare Belohnungen nur für Überlebende. `!hp`, erweiterte `!stats`, persönliche Chat-Heilung (10 HP/30 s), zeitbasierte Regeneration (2 HP/Minute), konfigurierbare HP-/EXP-Regeln und isolierte Debugaktionen. Laufende HP-Bosse werden nach Neustart aus Metadaten und gespeicherten Angriffen rekonstruiert. Details: `docs/RPG-HEALTH-AND-SURVIVAL.md`.
+- Neustartfeste fünfminütige Hot Time nach echten Community-Boss-Siegen, ohne Stapeln oder Auslösen durch administrative Tests. Relativer Basis-Dropbonus und klassifizierte Perlenbelohnungen mit unveränderten Legendary-/Einsatzgrenzen und Caps; keine Boni auf Einsatzrückzahlungen, Admin-/Transfer- oder Salvage-Beträge.
+- Grafischer Hot-Time-Bereich mit Haken/Zahlenfeldern, Nachrichten, Restlaufzeit und Beenden. Standardwerte: +50 % relative Basis-Dropchance und +100 % geeignete Perlenbelohnung.
+- Isoliertes, standardmäßig deaktiviertes RPG Debug Center für lokale Administratoren: Drop-Editor, Item-Generator, Kampftests, Fortschritt, Sets, Test-Hot-Time und seedbasierte Simulationen. Eigener Testdatenspeicher und Testkonfiguration, keine produktiven Zuschaueränderungen.
+- Validierte atomare Konfigurationsspeicherung, Backups und grafische Wiederherstellung. Details und Einschränkungen: docs/RPG-HOT-TIME-AND-DEBUG.md.
+
+## 2.1.14 – Items sicher gegen Perlen zerlegen
+
+- !salvage <Nummer>, !salvage duplicates und !salvage all common zeigen genaue Vorschau und Perlenbetrag; identischer Befehl mit confirm bestätigt binnen 60 Sekunden. Sammelbefehle überspringen Sets, Legendarys, angelegte und geschützte Items; unterschiedliche Rolls sind keine Duplikate.
+- Konfigurierbare, deterministische Zerlegewerte nach Seltenheit; Itemdetails zeigen Preis und Warnhinweise. !itemlock <Nummer> [on|off] und !favorite <Nummer> [on|off] schützen Items dauerhaft.
+- Entfernung und volle Perlengutschrift erfolgen atomar mit Kontolimitprüfung, Backup und Wiederholungsschutz. Veränderte Inventare/Items/Werte verwerfen die Vorschau; fehlgeschlagene Speicherung erhält Items und Perlen. Wiederverwendbarer lokaler Service für die spätere Extension, keine öffentliche API.
+
+## 2.1.13 – Item-System 2.0, Sets und verständlicher RPG-Chat
+
+- RPG-Chat übersichtlicher: !inv und !gear zeigen kurze nummerierte Einträge mit Slot-Symbol und Ausrüstungsmarkierung. !item <Nummer> [Seite] bündelt alle Werte, deutschen Slot/Typ, Spezialeffekte, Setboni und Status ohne interne IDs.
+- Deutsche Attributnamen für Glück, Krit, Mehrfachangriffe und Abenteuerboni. Ausrüstungsbestätigungen enthalten echte Spezialeffekte samt Chance/Stärke und gegebenenfalls den Setnamen aus dem erfolgreichen Transaktionsergebnis. Vollständige Details bleiben auf gezielt abrufbaren Folgeseiten erhalten, keine automatische Nachrichtenserie.
+
+- Zwei vierteilige epische Sets „Wächter der Tiefsee“ und „Schatzjäger des Ozeans“ mit gewürfelten Attributen und kumulativen 2-/3-/4-Teile-Boni. Nur tatsächlich angelegte unterschiedliche Definitionen zählen; alle Boni unterliegen bestehenden Caps.
+- Fünf eigenständige Legendarys mit festen Werten und Spezialeffekten, einschließlich Crit-gebundenem Siegel und Dreifachangriff zu je 35 % Zusatzschaden. Neue !sets-Übersicht und !unequip <Slot>; Setfortschritt in Itemdetails und Ausrüstung.
+- Quellenbezogener Loot: hochwertige Dives, 2 % Bossloot je Teilnehmer (Legendarys nur mit expliziter Freigabe und Mindest-LP/-Teilnehmerzahl), 0,5 % Ausrüstungsfund bei erfolgreichen Angelaktionen. Keine Änderung der Fisch-/Perlen-Basisauszahlungen. Button „Sets & Legenden vorbereiten“ ergänzt bestehende Konfigurationen. Dokumentation: docs/RPG-SETS-AND-LEGENDARIES.md.
+
+- Item-System 2.0: optionale zufällige Instanzattribute und persistente passive Effekte, zentrale Effektdefinitionen und slotbezogene Vorlagen. Bestehende Items bleiben unverändert; Button „Dynamische Items vorbereiten“ für künftige Funde. Details: docs/RPG-ITEM-SYSTEM-2.md.
+- Doppel-/Dreifachangriffe mit klarer Priorität ohne zusätzliche Aktionen, Extra-Itemwurf mit identischem Legendary-Gating und finite Sushi-Erhaltung. Gemeinsame Effektcaps; Perlenbonus maximal 15 % ausschließlich auf Nettogewinne, nicht auf Einsatzrückzahlungen. Automatische datenbasierte Effektbeschreibungen und zusätzliche Sicherung vor erster RPG-Schreiboperation.
+
+- Nummeriertes Inventar: !inv, !item <Nummer>, !equip <Nummer> [Slot] und !gear. Automatische Slotwahl, freie Ringplätze und explizites Ersetzen per ring1/ring2. Veraltete Inventarnummern werden sicher abgelehnt; vollständige IDs und API bleiben erhalten. Details: docs/RPG-NUMBERED-INVENTORY.md.
+
+- !perk <ID> bleibt der Kaufbefehl; !buyperk <ID> ist jetzt ein gleichwertiger Alias mit identischen Rechten/Deaktivierung. Registrierung, Alias-Erkennung und Syntax stammen aus einem gemeinsamen RPG-Befehlskatalog.
+- Perk-Erfolg zeigt tatsächlichen Kontostand und nächste Upgrade-Kosten beziehungsweise Maximallevel. Falsche Syntax, unbekannte Perk-IDs und der RPG-Cooldown erhalten konkrete Hinweise. Neue !rpg-Hilfe für RPG-Aufrufe; andere unbekannte Bot-/Custom-Befehle werden nicht abgefangen. Keine Änderung an Preisen oder Balance.
+
+- Inventar zeigt Attribute, kurze Inventarnummer und Ausrüstungsstatus; !item <Nummer|ID> [Seite] ergänzt vollständige Details. Profilabruf nutzt den tatsächlichen Twitch-ID-Kontoschlüssel, damit ein fehlendes redundantes UserId-Feld vorhandene Items nicht versteckt.
+- Zentrale vollständige Seitenausgabe statt Kürzen langer Inhalte. !rpgtext [Seite] liest längere gespeicherte Antworten ohne erneute Aktion (15 Minuten, pro Konto). Getrennte Meldungen für Leerstand, Lade-, Daten- und Darstellungsfehler; keine automatischen Reparaturen oder Ersatz-IDs für defekte Items.
+- Einheitliche RPG-Emojis, vollständige Zahlenpräzision und erweiterte Status-/Itemtests. Ursachen und Testumfang: docs/RPG-CHAT-DISPLAY.md.
+
+- Konkrete Erfolgstexte für Sushi-Herstellung, Sushi-Aktivierung, Perk-Käufe und Ausrüsten statt „erledigt“. Zutaten, Kosten, erhaltene Menge, Level, Boni, Aktivität und Aufladungen stammen aus dem erfolgreichen Transaktionsergebnis.
+- Optionale DisplayName-Felder für eigene Rezept-/Perknamen im RPG-Editor; bestehende Konfigurationen verwenden lesbare Standardnamen beziehungsweise ihre eigene ID als Rückfall.
+- Verständliche Leerzustände, Fischvorräte mit Namen statt nur IDs und kompakte Seiten für Inventar, Equipment, Perks und Sushi-Status. Weitere Sushi-Seiten mit !sushi status <Seite>; keine automatische Nachrichtenserie.
+- RPG-Angelergebnisse nennen den tatsächlich ausgewählten Fisch und dessen Seltenheit, statt die monetäre Auszahlungsstufe irreführend als legendären Fang zu bezeichnen. Boss-Crits sind im bestehenden Angriffstext erkennbar; optionaler Platzhalter {critical}, leere Meldungen bleiben stumm.
+- Keine Balanceänderungen, zusätzlichen Abbuchungen oder Belohnungen. Bestehende Daten, Idempotenz und Cooldowns bleiben erhalten. Keine automatische Veröffentlichung.
+
 ## 2.1.12 – Economy 1.2, RPG-Verwaltung und Glücksrad
 
 - Oberflächentests mit gemeinsamen WinForms-/Prozesszuständen isoliert, um konkurrierende Fensterinitialisierungen im Build zu vermeiden. Version 2.1.11 wurde wegen fehlgeschlagener CI-Tests nicht als Download veröffentlicht.

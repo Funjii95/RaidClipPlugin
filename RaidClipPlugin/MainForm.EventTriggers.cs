@@ -124,6 +124,11 @@ public sealed partial class MainForm
                    "Prüftoken als Header X-RaidClip-Token weiterreichen."
         });
         providerFlow.Controls.Add(_tipProviderStatus);
+        var saveProviders=NewHeistActionButton("Tip-Anbieter speichern",210);
+        saveProviders.Click+=(_,_)=>SaveSettingsFromControls();
+        providerFlow.Controls.Add(saveProviders);
+        providerFlow.Controls.Add(new Label {AutoSize=true,MaximumSize=new Size(930,0),ForeColor=MutedTextColor,
+            Text="Fehlende Anbieter oder Zugangsdaten pausieren nur Tips. Andere Module bleiben startbar. Nach dem Speichern Module neu starten, um geänderte Anbieter zu verbinden."});
         providers.Controls.Add(providerFlow);
         tabs.TabPages.Add(alerts);
         tabs.TabPages.Add(providers);
@@ -278,6 +283,7 @@ public sealed partial class MainForm
             return;
         }
         _tipProviderStatus.Text = status;
+        AppendLog("Tip-Anbieter: " + status);
     }
 
     private async Task HandleChatAlertAsync(ChatAlertEvent alert, AppConfig config,

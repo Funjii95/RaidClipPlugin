@@ -1,12 +1,40 @@
 using RaidClipPlugin.Models;
+using RaidClipPlugin.Services;
 
 namespace RaidClipPlugin.Config;
 
 public sealed class RpgConfig
 {
+    public RpgConfig() => RpgSushiService.AddMissing(this);
+    public long FreeFishingReward { get; set; } = 40;
+    public decimal PowerDamagePerPoint { get; set; } = 1;
+    private RpgHealthConfig _health = new();
+    public RpgHealthConfig Health { get { _health.EquipmentSets = Sets; return _health; } set => _health=value; }
+    public RpgEnemyConfig Enemies { get; set; } = new();
+    public RpgHotTimeConfig HotTime { get; set; } = new();
+    public RpgSalvageConfig Salvage { get; set; } = new();
+    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).ToList();
+    public decimal BossLootChance { get; set; } = 2;
+    public bool BossLegendaryEnabled { get; set; }
+    public int BossLegendaryMinimumHp { get; set; } = 1000;
+    public int BossLegendaryMinimumPlayers { get; set; } = 3;
+    public decimal FishingEquipmentChance { get; set; } = 0.5m;
     public void Validate()
     {
+        if(PowerDamagePerPoint is <0 or >10)throw new InvalidOperationException("Kraft-Schadensbonus muss zwischen 0 und 10 Prozent je Punkt liegen.");
+        Health.Validate();
+        Enemies.Validate();
+        RpgSushiService.Validate(this);
         DiveLoot.Validate();
+        Salvage.Validate();
+        HotTime.Validate();
+        if (BossLootChance is < 0 or > 100 || FishingEquipmentChance is < 0 or > 100 || BossLegendaryMinimumHp < 1 || BossLegendaryMinimumPlayers < 1 ||
+            Sets.Select(s => s.Id).Distinct().Count() != Sets.Count || Sets.Any(s => string.IsNullOrWhiteSpace(s.Id) || s.ItemIds.Count == 0 ||
+                s.ItemIds.Distinct().Count() != s.ItemIds.Count || s.Bonuses.Any(b => b.RequiredPieces < 1 || b.RequiredPieces > s.ItemIds.Count)))
+            throw new InvalidOperationException("Ungültige Sets oder Belohnungs-Lootregeln.");
+        if (DoubleAttackChanceCap is < 0 or > 20 || TripleAttackChanceCap is < 0 or > 5 || ExtraLootChanceCap is < 0 or > 10 ||
+            SushiPreservationChanceCap is < 0 or > 20 || PearlBonusCap is < 0 or > 15)
+            throw new InvalidOperationException("Ungültige RPG-Effektcaps.");
         if (BaseCritMultiplier is < 1 or > 10 || CritChanceCap is < 0 or > 100 || CritDamageCap is < 0 or > 1000 || LuckCap is < 0 or > 1000 ||
             DamageBonusCap is < 0 or > 1000 || BuffUses is < 1 or > 100 || MaximumDifferentBuffs is < 1 or > 10 ||
             Perks.Select(p => p.Id).Distinct().Count() != Perks.Count ||
@@ -26,6 +54,11 @@ public sealed class RpgConfig
     }
     // Opt-in until all gameplay adapters and administrative controls are integrated.
     public bool Enabled { get; set; }
+    public decimal DoubleAttackChanceCap { get; set; } = 20;
+    public decimal TripleAttackChanceCap { get; set; } = 5;
+    public decimal ExtraLootChanceCap { get; set; } = 10;
+    public decimal SushiPreservationChanceCap { get; set; } = 20;
+    public decimal PearlBonusCap { get; set; } = 15;
     public RpgLootConfig DiveLoot { get; set; } = new();
     public string LegendaryMessage { get; set; } = "🦦💎 LEGENDÄR! @{user} hat {item} gefunden!";
     public List<RpgFishDefinition> FishSpecies { get; set; } = new()
@@ -64,6 +97,9 @@ public sealed class RpgConfig
 
 public sealed class RpgFishDefinition
 {
+    public long? PearlReward { get; set; }
+    public long MinimumStake { get; set; }
+    public string Zone { get; set; } = "";
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
@@ -76,6 +112,7 @@ public sealed class RpgFishDefinition
 public sealed class RpgPerkDefinition
 {
     public string Id { get; set; } = "";
+    public string DisplayName { get; set; } = "";
     public int MaximumLevel { get; set; } = 5;
     public long BaseCost { get; set; } = 500;
     public decimal CostGrowth { get; set; } = 2;
@@ -92,7 +129,15 @@ public sealed class RpgPerkDefinition
 
 public sealed class RpgRecipe
 {
+    public SushiCategory Category { get; set; }
+    public Dictionary<string,int> Ingredients { get; set; } = new();
+    public int BossUses { get; set; }
+    public decimal PassiveHealing { get; set; }
+    public int ChatHealing { get; set; }
+    public decimal BossDamageReduction { get; set; }
+    public decimal BossLifeleech { get; set; }
     public string Id { get; set; } = "";
+    public string DisplayName { get; set; } = "";
     public string FishId { get; set; } = "";
     public int FishQuantity { get; set; } = 1;
     public long PearlCost { get; set; } = 100;

@@ -20,18 +20,35 @@ public sealed class TipEventService : IDisposable
 
     public TipEventService(TipProviderConfig config) => _config = config;
 
+    internal static TipProviderConfig ReadyProviders(TipProviderConfig config,out string[] warnings)
+    {
+        var ready=JsonSerializer.Deserialize<TipProviderConfig>(JsonSerializer.Serialize(config))!;
+        var messages=new List<string>();
+        if(ready.StreamElements.Enabled && (string.IsNullOrWhiteSpace(ready.StreamElements.ChannelId) || string.IsNullOrWhiteSpace(ready.StreamElements.Token)))
+        {ready.StreamElements.Enabled=false;messages.Add("StreamElements-Tips pausiert: Channel-ID oder Token fehlt.");}
+        if(ready.Streamlabs.Enabled && string.IsNullOrWhiteSpace(ready.Streamlabs.AccessToken))
+        {ready.Streamlabs.Enabled=false;messages.Add("Streamlabs-Tips pausiert: Access Token fehlt.");}
+        foreach(var pair in new[]{("Ko-fi",ready.KoFi),("TipeeeStream",ready.TipeeeStream)})
+            if(pair.Item2.Enabled && string.IsNullOrWhiteSpace(pair.Item2.VerificationToken))
+            {pair.Item2.Enabled=false;messages.Add(pair.Item1+"-Tips pausiert: Relay-Prüftoken fehlt.");}
+        if(!(ready.StreamElements.Enabled || ready.Streamlabs.Enabled || ready.KoFi.Enabled || ready.TipeeeStream.Enabled))
+            messages.Add("Tips pausiert: kein vollständig eingerichteter Anbieter. Andere Module können weiter starten.");
+        warnings=messages.ToArray();return ready;
+    }
+
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         var tasks = new List<Task>();
-        if (_config.StreamElements.Enabled)
+        var ready=ReadyProviders(_config,out var warnings);
+        foreach(var warning in warnings) StatusChanged?.Invoke(warning);
+        if (ready.StreamElements.Enabled)
             tasks.Add(RunStreamElementsAsync(cancellationToken));
-        if (_config.Streamlabs.Enabled)
+        if (ready.Streamlabs.Enabled)
             tasks.Add(RunStreamlabsAsync(cancellationToken));
-        if (_config.KoFi.Enabled || _config.TipeeeStream.Enabled)
-            tasks.Add(RunWebhookListenerAsync(cancellationToken));
+        if (ready.KoFi.Enabled || ready.TipeeeStream.Enabled)
+            tasks.Add(RunWebhookListenerAsync(ready,cancellationToken));
         if (tasks.Count == 0)
         {
-            StatusChanged?.Invoke("Kein Tip-Anbieter aktiviert");
             return;
         }
         await Task.WhenAll(tasks);
@@ -148,7 +165,7 @@ public sealed class TipEventService : IDisposable
         }
     }
 
-    private async Task RunWebhookListenerAsync(CancellationToken cancellationToken)
+    private async Task RunWebhookListenerAsync(TipProviderConfig ready,CancellationToken cancellationToken)
     {
         _listener = new HttpListener();
         _listener.Prefixes.Add("http://127.0.0.1:17892/");
@@ -160,21 +177,22 @@ public sealed class TipEventService : IDisposable
             HttpListenerContext context;
             try { context = await _listener.GetContextAsync(); }
             catch (Exception) when (cancellationToken.IsCancellationRequested) { break; }
-            _ = HandleWebhookAsync(context, cancellationToken);
+            _ = HandleWebhookAsync(context, ready, cancellationToken);
         }
     }
 
     private async Task HandleWebhookAsync(
         HttpListenerContext context,
+        TipProviderConfig ready,
         CancellationToken cancellationToken)
     {
         try
         {
             var path = context.Request.Url?.AbsolutePath.Trim('/') ?? "";
-            var provider = path.Equals(_config.KoFi.Path, StringComparison.OrdinalIgnoreCase)
-                ? (Name: "Ko-fi", Settings: _config.KoFi)
-                : path.Equals(_config.TipeeeStream.Path, StringComparison.OrdinalIgnoreCase)
-                    ? (Name: "TipeeeStream", Settings: _config.TipeeeStream)
+            var provider = path.Equals(ready.KoFi.Path, StringComparison.OrdinalIgnoreCase)
+                ? (Name: "Ko-fi", Settings: ready.KoFi)
+                : path.Equals(ready.TipeeeStream.Path, StringComparison.OrdinalIgnoreCase)
+                    ? (Name: "TipeeeStream", Settings: ready.TipeeeStream)
                     : default;
             if (provider.Settings is null || !provider.Settings.Enabled)
             {

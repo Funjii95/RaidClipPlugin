@@ -3,15 +3,60 @@ using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
-public sealed record RpgMutation(bool Success, string Error = "");
-public sealed record RpgTransactionResult(bool Success, string Error, long Balance, bool Duplicate = false);
+public sealed record RpgMutation(bool Success, string Error = "", RpgActionDetails? Details = null);
+public sealed record RpgTransactionResult(bool Success, string Error, long Balance, bool Duplicate = false,
+    RpgActionDetails? Details = null);
 
 public sealed partial class ViewerPointStore
 {
+    internal string BossRoundPath => Path.Combine(Path.GetDirectoryName(_filePath)!,"rpg-boss-round.json");
+    internal async Task<IReadOnlyList<(string Id,string Name,int BossHp)>> BossParticipantsAsync(string bossId,CancellationToken token)
+    {
+        await _lock.WaitAsync(token);
+        try
+        {
+            await EnsureLoadedAsync(token);
+            return _entries!.Values.Where(a=>a.Rpg?.Health?.BossId==bossId)
+                .Select(a=>(a.UserId,a.DisplayName,a.Rpg.Health.BossRemainingHp)).ToArray();
+        }
+        finally {_lock.Release();}
+    }
+    private void EnsureItemSystemBackup()
+    {
+        if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-sushi-2.bak"))
+            File.Copy(_filePath,_filePath+".pre-sushi-2.bak",overwrite:false);
+        if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-core-stats.bak"))
+            File.Copy(_filePath,_filePath+".pre-core-stats.bak",overwrite:false);
+        if (File.Exists(_filePath) && !File.Exists(_filePath + ".pre-items-v2.bak"))
+            File.Copy(_filePath, _filePath + ".pre-items-v2.bak", overwrite: false);
+    }
+    private static void ValidatePersistedInventories(JsonElement root)
+    {
+        static bool Property(JsonElement element, string name, out JsonElement value)
+        {
+            if (element.ValueKind == JsonValueKind.Object)
+                foreach (var property in element.EnumerateObject())
+                    if (property.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) { value = property.Value; return true; }
+            value = default; return false;
+        }
+        if (root.ValueKind != JsonValueKind.Object) throw new InvalidDataException("Kontodatei ist kein Objekt.");
+        foreach (var account in root.EnumerateObject())
+        {
+            // Accounts predating RPG may legitimately have no RPG property.
+            if (!Property(account.Value, "Rpg", out var rpg)) continue;
+            if (!Property(rpg, "Inventory", out var inventory) || inventory.ValueKind != JsonValueKind.Array)
+                throw new InvalidDataException("Gespeichertes RPG-Inventar fehlt oder ist keine Liste.");
+            foreach (var item in inventory.EnumerateArray())
+                if (!Property(item, "InstanceId", out var id) || id.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(id.GetString()))
+                    throw new InvalidDataException("Gespeichertes Item ohne gültige InstanceId; automatische ID-Erzeugung beim Laden wird verhindert.");
+        }
+    }
     private static void PrepareRpg(ViewerPointEntry account)
     {
         account.Rpg ??= new();
         if (account.Rpg.SchemaVersion != 1) throw new InvalidOperationException("Unbekannte RPG-Datenversion.");
+        RpgCoreStatService.Upgrade(account.Rpg);
+        RpgSushiService.Upgrade(account.Rpg);
         if (account.Rpg.LegacyFishImported) return;
         foreach (var (oldName, id) in new[] { ("Rotfeder", "sardine"), ("Hecht", "perch"), ("Goldener Koi", "crystal-carp"), ("Mondaal", "eel"), ("Kraken", "leviathan") })
         {
@@ -47,6 +92,7 @@ public sealed partial class ViewerPointStore
             draft.UpdatedAt = DateTimeOffset.UtcNow;
             draft.Rpg.CompletedActions.Add(actionId);
             // Capture an immutable pre-migration backup before the first RPG write.
+            EnsureItemSystemBackup();
             if (File.Exists(_filePath) && !File.Exists(_filePath + ".pre-rpg.bak"))
                 File.Copy(_filePath, _filePath + ".pre-rpg.bak", overwrite: false);
             if (backupBeforeCommit && File.Exists(_filePath))
@@ -59,7 +105,7 @@ public sealed partial class ViewerPointStore
                 else _entries.Remove(userId);
                 throw;
             }
-            return new(true, "", draft.Points);
+            return new(true, "", draft.Points, Details: result.Details);
         }
         finally { _lock.Release(); }
     }

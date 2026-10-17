@@ -106,6 +106,7 @@ public sealed partial class MainForm
         AddMinigameTab(tabs, "Berechtigungen & Jackpot", permissions);
         AddMinigameTab(tabs, "Chatnachrichten", messages);
         AddMinigameTab(tabs, "Live-Status", live);
+        AddMinigameTab(tabs, "OBS-Overlay", BuildHeistOverlayPanel());
         return tabs;
     }
 
@@ -252,6 +253,7 @@ private Control BuildCommandsOverviewLayout(Control filters)
 
     private void LoadHeistSettings(HeistConfig h)
     {
+        LoadHeistOverlaySettings(h);
         var commandDefaults = new HeistConfig();
         _heistEnabledCheck.Checked = h.Enabled; _heistStartCommandBox.Text = HeistTextOrDefault(h.StartCommand, commandDefaults.StartCommand); _heistJoinCommandBox.Text = HeistTextOrDefault(h.JoinCommand, commandDefaults.JoinCommand);
         SetNumericValue(_heistMinimumControl, h.MinimumParticipants); SetNumericValue(_heistMaximumControl, h.MaximumParticipants);
@@ -280,6 +282,7 @@ private Control BuildCommandsOverviewLayout(Control filters)
     {
         var defaults = new HeistConfig();
         var h=config.Heist; h.Enabled=_heistEnabledCheck.Checked; h.StartCommand=ReadHeistCommand(_heistStartCommandBox, defaults.StartCommand);
+        ReadHeistOverlaySettings(h);
         h.JoinCommand=ReadHeistCommand(_heistJoinCommandBox, defaults.JoinCommand); h.MinimumParticipants=(int)_heistMinimumControl.Value;
         h.MaximumParticipants=(int)_heistMaximumControl.Value; h.JoinDurationSeconds=(int)_heistDurationControl.Value;
         h.SuccessChancePercent=(int)_heistChanceControl.Value; h.GlobalCooldownMinutes=(int)_heistGlobalCooldownControl.Value;

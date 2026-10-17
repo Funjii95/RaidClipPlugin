@@ -81,6 +81,8 @@ public sealed class ConfigurationService
         Normalize(config, synchronizeCommandOverrides: true);
         config.Minigame.Adventures.Fishing.Validate("Fischen (!fish)");
         config.Minigame.Adventures.Treasure.Validate("Schatzsuche (!dive)");
+        ValidateGuiSettings(config);
+        config.Minigame.Adventures.Rpg.Validate();
 
 
         var settings = new GuiSettings
@@ -390,6 +392,7 @@ public sealed class ConfigurationService
             MergeMissingSettings(settings, path);
             EnsureRequiredSettingsSections(settings);
             var json = JsonSerializer.Serialize(settings, JsonOptions);
+            ValidateSettingsSnapshot(JsonSerializer.Deserialize<GuiSettings>(json,JsonOptions) ?? throw new InvalidDataException("Leere Einstellungen."));
             var tempPath = Path.Combine(
                 directory,
                 "settings." + Guid.NewGuid().ToString("N") + ".tmp");
@@ -413,10 +416,13 @@ public sealed class ConfigurationService
                     stream.Flush(true);
       }
 
+                ValidateSettingsSnapshot(JsonSerializer.Deserialize<GuiSettings>(File.ReadAllText(tempPath),JsonOptions) ?? throw new InvalidDataException("Leere temporäre Einstellungen."));
                 if (File.Exists(path))
-                    File.Copy(path, backupPath, true);
-
-                File.Copy(tempPath, path, true);
+                {
+                    ValidateSettingsSnapshot(JsonSerializer.Deserialize<GuiSettings>(File.ReadAllText(path),JsonOptions) ?? throw new InvalidDataException("Vorhandene Einstellungen sind beschädigt. Bitte Sicherung wiederherstellen."));
+                    File.Replace(tempPath,path,backupPath);
+                }
+                else File.Move(tempPath,path);
 
                 var verified = JsonSerializer.Deserialize<GuiSettings>(
                     File.ReadAllText(path, System.Text.Encoding.UTF8),
@@ -460,6 +466,19 @@ public sealed class ConfigurationService
 }
 
 
+    private static void ValidateSettingsSnapshot(GuiSettings settings)
+    {
+        if(settings.Minigame is null||settings.Heist is null||settings.Duel is null||settings.Commands is null||settings.MusicRequests is null||settings.Moderation is null)
+            throw new InvalidDataException("Wichtige Einstellungsbereiche fehlen.");
+        ValidateMinigameSettings(settings.Minigame);settings.Minigame.Adventures.Rpg.Validate();
+        ValidateMusicRequestSettings(settings.MusicRequests);ValidateDuelSettings(settings.Duel);
+    }
+    public void RestoreLastValidSettings()
+    {
+        SettingsLock.Wait();
+        try { RpgAtomicFile.Restore<GuiSettings>(UserSettingsPath,ValidateSettingsSnapshot); }
+        finally { SettingsLock.Release(); }
+    }
     private static void ApplySavedGuiSettings(AppConfig config)
     {
         if (!File.Exists(UserSettingsPath))
@@ -849,6 +868,7 @@ public sealed class ConfigurationService
             config.ModuleHealth.RestartWindowMinutes, 1, 60);
         config.LiveChat = LiveChatService.NormalizeConfig(config.LiveChat);
         config.Heist ??= new HeistConfig();
+        config.Heist.Overlay ??= new HeistOverlayConfig();
         config.Duel ??= new DuelConfig();
         FillEmptyStringPropertiesFromDefaults(config.Heist);
         FillEmptyStringPropertiesFromDefaults(config.Duel);
@@ -930,6 +950,11 @@ public sealed class ConfigurationService
         if (config.Duel.LoserTimeoutReason.Length > 500)
             config.Duel.LoserTimeoutReason = config.Duel.LoserTimeoutReason[..500];
         config.Commands.Command = NormalizeCommand(config.Commands.Command);
+        RpgHealthEquipmentCatalog.AddMissing(config.Minigame.Adventures.Rpg.DiveLoot);
+        RpgLootExpansionCatalog.AddMissing(config.Minigame.Adventures.Rpg.DiveLoot);
+        foreach(var set in RpgLootExpansionCatalog.Sets())
+            if(!config.Minigame.Adventures.Rpg.Sets.Any(s=>s.Id==set.Id))config.Minigame.Adventures.Rpg.Sets.Add(set);
+        RpgSushiService.AddMissing(config.Minigame.Adventures.Rpg);
         config.Commands.ExportDirectory = (config.Commands.ExportDirectory ?? "exports").Trim();
         config.Commands.CommandRoleOverrides = (config.Commands.CommandRoleOverrides ??
             new Dictionary<string, string>())
@@ -1184,6 +1209,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException("Der Heist benötigt mindestens 3 Teilnehmer.");
         if (heist.MaximumParticipants < heist.MinimumParticipants || heist.MaximumParticipants > 500)
             throw new InvalidOperationException("Die maximale Heist-Teilnehmerzahl muss zwischen Mindestteilnehmern und 500 liegen.");
+        heist.Overlay.Validate();
         if (heist.JoinDurationSeconds is < 10 or > 300)
             throw new InvalidOperationException("Die Heist-Beitrittszeit muss zwischen 10 und 300 Sekunden liegen.");
         if (heist.SuccessChancePercent is < 0 or > 100)
@@ -1302,9 +1328,7 @@ public sealed class ConfigurationService
             config.Follow, config.Tip, config.Subscription,
             config.Cheer, config.AdBreak
         }.Where(rule => rule.Enabled).ToArray();
-        if (enabledRules.Length == 0)
-            throw new InvalidOperationException(
-                "Für Event-Trigger muss mindestens eine Antwort aktiviert sein.");
+        // No selected responses is a valid inactive state, not a global startup error.
         if (enabledRules.Any(rule => string.IsNullOrWhiteSpace(rule.Message) ||
                                      rule.Message.Length > 500))
             throw new InvalidOperationException(
@@ -1320,23 +1344,8 @@ public sealed class ConfigurationService
             !IsValidCustomEventSound(rule.Sound)))
             throw new InvalidOperationException(
                 "Eigene Event-Sounds müssen vorhandene WAV-Dateien sein.");
-        if (config.Tip.Enabled)
-        {
-            var providers = config.TipProviders;
-            if (!(providers.StreamElements.Enabled || providers.Streamlabs.Enabled ||
-                  providers.KoFi.Enabled || providers.TipeeeStream.Enabled))
-                throw new InvalidOperationException(
-                    "Für aktivierte Tips muss mindestens ein Tip-Anbieter aktiviert sein.");
-            if (providers.StreamElements.Enabled &&
-                (string.IsNullOrWhiteSpace(providers.StreamElements.ChannelId) ||
-                 string.IsNullOrWhiteSpace(providers.StreamElements.Token)))
-                throw new InvalidOperationException(
-                    "StreamElements benötigt Channel-ID und Token.");
-            if (providers.Streamlabs.Enabled &&
-                string.IsNullOrWhiteSpace(providers.Streamlabs.AccessToken))
-                throw new InvalidOperationException(
-                    "Streamlabs benötigt einen OAuth Access Token.");
-        }
+        // Optional provider readiness is checked by TipEventService. Missing credentials
+        // must not prevent saving corrections or starting unrelated modules.
     }
 
     private static bool IsValidCustomEventSound(string? sound)

@@ -118,6 +118,27 @@ public sealed class ObsService : IDisposable
             input.InputName.Equals(inputName, StringComparison.OrdinalIgnoreCase));
     }
 
+    public string[] GetBrowserSourceNames()
+    {EnsureConnected();return _obs.GetInputList("browser_source").Select(i=>i.InputName).ToArray();}
+    public string[] GetSceneNames()
+    {EnsureConnected();return _obs.GetSceneList().Scenes.Select(s=>s.Name).ToArray();}
+    public void EnsureCommunityOverlay(HeistOverlayConfig config)
+    {
+        EnsureConnected();config.Validate();
+        if(string.IsNullOrWhiteSpace(config.BrowserSource))throw new InvalidOperationException("Bitte eine eigene Browserquelle auswählen oder benennen.");
+        if(config.BrowserSource.Equals(_config.Player.BrowserSource,StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Die Clip-Player-Quelle darf nicht als Community-Overlay überschrieben werden.");
+        var scene=string.IsNullOrWhiteSpace(config.Scene)?_obs.GetCurrentProgramScene():config.Scene;
+        var settings=new JObject{["url"]=AdventureOverlayServer.Url,["width"]=900,["height"]=600,["fps"]=30,["shutdown"]=false,["restart_when_active"]=false};
+        if(InputExists(config.BrowserSource))
+        {
+            if(!GetBrowserSourceNames().Contains(config.BrowserSource,StringComparer.Ordinal))throw new InvalidOperationException("Die ausgewählte Quelle ist keine Browserquelle.");
+            _obs.SetInputSettings(config.BrowserSource,settings,true);
+            if(!SourceExistsInScene(scene,config.BrowserSource))_obs.CreateSceneItem(scene,config.BrowserSource,true);
+        }
+        else _obs.CreateInput(scene,config.BrowserSource,"browser_source",settings,true);
+        _obs.SetSceneItemEnabled(scene,_obs.GetSceneItemId(scene,config.BrowserSource,0),true);
+    }
     public bool SourceExistsInScene(string sceneName, string sourceName)
     {
         EnsureConnected();

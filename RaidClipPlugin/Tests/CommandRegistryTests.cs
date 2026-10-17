@@ -7,6 +7,29 @@ namespace RaidClipPlugin.Tests;
 
 public sealed class CommandRegistryTests
 {
+    [Theory]
+    [InlineData("!start heist")]
+    [InlineData(" !START   HEIST ")]
+    public void HeistPrimaryShortcutIsRegisteredOnceWithoutCollision(string command)
+    {
+        var config=new AppConfig();config.Heist.Enabled=true;config.Heist.StartCommand=command;
+        var registry=new CommandRegistry();registry.Update(config);
+        var entry=Assert.Single(registry.Commands,c=>c.CommandText=="!start heist");
+        Assert.Equal("heist.start",entry.CommandId);Assert.True(entry.Enabled);
+        Assert.Equal(CommandRole.Moderator,entry.RequiredRole);
+        Assert.DoesNotContain(registry.FindCollisions(false),c=>c.Command=="!start heist");
+    }
+
+    [Fact]
+    public void SharedHeistShortcutKeepsDisableOverrideAndRealCollisions()
+    {
+        var config=new AppConfig();config.Heist.Enabled=true;config.Heist.StartCommand="!start heist";
+        config.Commands.CommandEnabledOverrides["event.start.heist"]=false;
+        var registry=new CommandRegistry();registry.Update(config);
+        Assert.False(Assert.Single(registry.Commands,c=>c.CommandText=="!start heist").Enabled);
+        config.Commands.CommandEnabledOverrides.Clear();config.Heist.JoinCommand="!start heist";
+        registry.Update(config);Assert.Contains(registry.FindCollisions(false),c=>c.Command=="!start heist");
+    }
     [Fact]
     public void AllNewCommandsAreRegisteredWithoutJoinCollisionAndCorrectRoles()
     {

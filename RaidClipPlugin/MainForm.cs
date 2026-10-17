@@ -4876,6 +4876,69 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.22 – Heist-OBS-Overlay und Gegner-Einstellungen
+
+- Heist mit Otter-Piraten, Countdown und Schatzkammer in der gemeinsamen Browserquelle. Echte Jackpot-Punkte werden weiterhin vom vorhandenen Heist-Service verteilt.
+- Priorisierte Anzeige für Boss, Rennen und Heist, begrenzte Warteschlange sowie Hot-Time-Banner mit echten Restzeiten.
+- Neuer Heist-Reiter OBS-Overlay mit auswählbaren Quellen, Animationseinstellungen und sicherer Mockvorschau ohne echte Konten.
+- Unterwassergegner mit sicherem Tabelleneditor, genauen Fehlermeldungen und Wiederherstellung ohne App-Neustart. Ungültige Gegnerwerte werden nicht still zurückgesetzt.
+
+2.1.21 – Loot Expansion 3.0
+
+- 52 neue Definitionen: Ausrüstung, zwei zusätzliche Sets und zehn passive Sammlerschätze ohne Kampfboni durch Besitz.
+- Boss-Ausweichen, zentrale Schadensreduktion und kritische Heilung. Set-HP ohne Gratisheilung; keine zusätzlichen Gegenangriffe durch Procs.
+- !treasures, erweiterte Werte-/Itemansichten, gewichtete Lootpools und eigener Definitionseditor unter RPG → Loot & Sammlerschätze.
+
+2.1.20 – Vampir-Maki ohne Lifeleech-Cap
+
+- Vampirtintenfisch und Thunfisch sind fangbare Zutaten. Vampir-Maki: 2 Vampirtintenfische +1 Thunfisch +750 Perlen, defensiver Slot, drei Bosskampfteilnahmen.
+- 5 % Lifeleech aus tatsächlichem großen Boss-Schaden: vor dem Gegenangriff heilen, kein Overkill und kein festes Heilungscap. MaxHP und Todessperren gelten weiterhin. Einstellungsfeld, Buffanzeige und isolierter Debugtest ergänzt.
+
+2.1.19 – Sushi 2.1 und neue Meeresbewohner
+
+- Fünf neue Fangarten mit eigenen Perlenbelohnungen. !fish ohne Einsatz, !fishbag, !cook und !eat. Kappa-Maki, Tempura-Rolle und Kugelfisch-Sashimi für passive Heilung, Chat-Heilung und Boss-Schadensreduktion.
+- Ein offensiver und ein defensiver Sushi-Slot; Verbrauch je Boss-ID, voller Bonus bis zum Ende der dritten Teilnahme. Neue Fisch-/Rezepttabellen, Debugtests und sichere Ergänzung bestehender Bestände.
+
+2.1.18 – Kraft, Ausdauer und HP-Ausrüstung
+
+- Alle Ausrüstungsteile erhalten garantiert Kraft und Ausdauer zusätzlich zu bisherigen Rolls und Effekten. 1 Kraft gibt standardmäßig +1 % Schaden, 1 Ausdauer +5 MaxHP. Bestehende Items werden einmalig ohne Neuwürfeln ergänzt; Ausrüstungswechsel heilt nicht.
+- Neues Ausrüstungsattribut maximale Lebenspunkte und fünf Basis-Items von +5 bis +50 MaxHP. Bonus gilt nur angelegt. Anlegen heilt nicht; Ablegen begrenzt HP auf das neue Maximum. Bestehende Items und Todessperren bleiben erhalten.
+
+2.1.17 – Heist-Startkollision
+
+- Behebt den Modulstart mit gespeichertem !start heist: Der Heist-Start wird nicht mehr doppelt registriert und fälschlich als Command-Kollision gemeldet.
+
+2.1.16 – Modulstart trotz fehlender Tip-Anbieter
+
+- Fehlende oder unvollständige Tip-Anbieter pausieren nur Tips statt alle Module. Status und Botlog zeigen Hinweise. Eigener Speichern-Knopf bei den Tip-Anbietern.
+
+2.1.15 – RPG-Überleben, Unterwassergegner und Hot Time
+
+- Unterwassergegner bei !dive: 15 % Begegnungschance (10–20 % einstellbar), stärkere Gegner und mehr EXP je Einsatzstufe. Sieg gewährt Bonusbeute aus dem besseren von zwei Lootwürfen. HP-Kampf ohne zusätzliche Perlenverluste; atomare Speicherung und eigene RPG-Einstellungen.
+- Persistente RPG-Lebenspunkte, Boss-Gegenangriffe und Todessperre je Boss. Nur Überlebende erhalten Perlen, Beute und EXP. !hp und erweiterte !stats; Chat-Heilung, passive Regeneration sowie HP-Einstellungen und isolierte Debugtests.
+- Fünf Minuten Hot Time nach echten Boss-Siegen: standardmäßig +50 % relative Basis-Dropchance und doppelte geeignete Perlenbelohnungen, ohne Bonus auf Einsätze, Rückzahlungen oder Zerlegen. Persistenter Ablauf ohne Stapeln.
+- Grafische Hot-Time-Einstellungen und isoliertes RPG Debug Center für lokale Administratoren: Loot, Items, Kämpfe, Sets, Fortschritt und Simulationen. Produktive Spielstände bleiben unberührt; sichere Konfigurationsbackups und Wiederherstellung.
+
+2.1.14 – Items sicher gegen Perlen zerlegen
+
+- !salvage <Nummer>, duplicates oder all common: Vorschau und Perlenbetrag, danach mit confirm bestätigen. Schutz für angelegte, gesperrte und favorisierte Items; Sammelzerlegen überspringt Sets und Legendarys. Nur identische Rolls gelten als Duplikate.
+- !itemlock und !favorite schützen Gegenstände. Konfigurierbare Zerlegewerte in Itemdetails; atomare Gutschrift mit Backup, Kontolimitprüfung und Wiederholungsschutz.
+
+2.1.13 – Item-System 2.0, Sets und verständlicher RPG-Chat
+
+- Kompaktes !inv mit Slot-Symbolen; vollständige deutsche Itemdetails über !item <Nummer> [Seite]. Spezialeffekte mit echten Chancen und Stärken jetzt auch beim Ausrüsten. Keine internen Instanz-IDs im regulären Chat; Setstatus und alle Werte bleiben strukturiert verfügbar.
+
+- Neue Sets „Wächter der Tiefsee“ und „Schatzjäger des Ozeans“, fünf besondere Legendarys, kumulative Setboni, !sets und !unequip <Slot>. Neue Dropquellen mit eigenen Boss-Legendary-Sicherungen. Bestehende Spielstände bleiben erhalten; Katalog in RPG-Einstellungen vorbereiten und speichern.
+
+- RPG Item-System 2.0: zufällige Werte nur für neue dynamische Ausrüstung, passive Doppel-/Dreifachangriffe, Extra-Loot und Sushi-Erhaltung. Gemeinsame Caps, Perlenbonus nur auf Gewinne. Bestehende Items bleiben erhalten; Vorlage unter RPG-Einstellungen vorbereiten und speichern.
+
+- Kurzes Inventar: !inv, !item <Nummer>, !equip <Nummer> [ring1|ring2], !gear. Automatische Slotwahl, sichere Nummernprüfung bei Inventaränderungen; interne IDs bleiben erhalten.
+- !buyperk als Alias für !perk, gemeinsame Registrierung und klare Syntax-/Cooldownhinweise. Käufe zeigen Restperlen und nächste Upgrade-Kosten.
+- Inventar mit Werten/Status und vollständigen Itemdetails über !item; Seiten statt stiller Kürzung, lange Aktionsantworten über !rpgtext ohne erneute Aktion.
+- Konkrete Texte für Crafting, Sushi-Aktivierung, Perkkäufe und Equipment mit tatsächlichen Kosten, Boni und Aufladungen.
+- Verständliche Status-/Übersichtsseiten, echte Fischfunde und sichtbare Boss-Crits; keine Änderungen an der Spielbalance.
+""",
+                """
 Version 2.1.12 – Economy 1.2 und Glücksrad
 - Glücksrad: keine Giveaway-Steuerung mehr im Rad-Reiter, eigene Vorschau und direkt erreichbare Bildauswahl.
 - Neue Balancing-Standardwerte, bewusste Preset-Übernahme und RPG-Spielerverwaltung für Fische/Equipment mit Sicherung vor dem Löschen.

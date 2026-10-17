@@ -50,13 +50,19 @@ public sealed record ViewerProfileResult(
 public sealed record DailyClaimResult(
     bool Success,
     long Balance,
-    TimeSpan Remaining);
+    TimeSpan Remaining)
+{
+    public long? ActualAward { get; init; }
+}
 
 public sealed record CasinoApplyResult(
     bool Success,
     string Error,
     long Balance,
-    long JackpotWon);
+    long JackpotWon)
+{
+    public long? ActualPayout { get; init; }
+}
 public sealed record HeistParticipantPayout(
     string UserId,
     string DisplayName,

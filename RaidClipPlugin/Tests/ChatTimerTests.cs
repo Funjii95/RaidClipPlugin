@@ -91,13 +91,37 @@ public sealed class ChatTimerTests
     }
 
     [Fact]
-    public void EnabledTipTriggerRequiresProvider()
+    public void EnabledTipTriggerWithoutProviderDoesNotBlockStartupOrSaving()
     {
         var config = new EventTriggerConfig { Enabled = true };
         config.Tip.Enabled = true;
 
-        Assert.Throws<InvalidOperationException>(() =>
-            ConfigurationService.ValidateEventTriggerSettings(config));
+        ConfigurationService.ValidateEventTriggerSettings(config);
+        var ready=TipEventService.ReadyProviders(config.TipProviders,out var warnings);
+        Assert.False(ready.StreamElements.Enabled);
+        Assert.Contains(warnings,w=>w.Contains("Andere Module"));
+    }
+
+    [Fact]
+    public void TurningOffLastEventResponseDoesNotBlockSaving()
+    {
+        ConfigurationService.ValidateEventTriggerSettings(new EventTriggerConfig{Enabled=true});
+    }
+
+    [Fact]
+    public async Task MissingTipCredentialsSkipOnlyInvalidProvidersWithoutChangingSavedConfig()
+    {
+        var config=new EventTriggerConfig{Enabled=true};config.Tip.Enabled=true;
+        config.TipProviders.StreamElements.Enabled=true;config.TipProviders.Streamlabs.Enabled=true;
+        ConfigurationService.ValidateEventTriggerSettings(config);
+        var ready=TipEventService.ReadyProviders(config.TipProviders,out var warnings);
+        Assert.False(ready.StreamElements.Enabled);Assert.False(ready.Streamlabs.Enabled);
+        Assert.True(config.TipProviders.StreamElements.Enabled);Assert.Equal(3,warnings.Length);
+        var service=new TipEventService(config.TipProviders);var statuses=new List<string>();service.StatusChanged+=statuses.Add;
+        await service.RunAsync(default);Assert.NotEmpty(statuses);
+        config.TipProviders.Streamlabs.AccessToken="test-only";
+        ready=TipEventService.ReadyProviders(config.TipProviders,out _);
+        Assert.True(ready.Streamlabs.Enabled);Assert.False(ready.StreamElements.Enabled);
     }
 
     [Theory]

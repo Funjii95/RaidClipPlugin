@@ -3,6 +3,8 @@ namespace RaidClipPlugin.Config;
 
 public sealed class HeistConfig
 {
+    public HeistOverlayConfig Overlay { get; set; } = new();
+    public bool SendStartMessages { get; set; } = true;
     public bool Enabled { get; set; }
     public string StartCommand { get; set; } = "!heist";
     public string JoinCommand { get; set; } = "!joinheist";

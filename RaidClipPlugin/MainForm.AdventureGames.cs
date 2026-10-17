@@ -20,9 +20,9 @@ public sealed partial class MainForm
         panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
         panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 65));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
         panel.Controls.Add(_rpgEnabled, 0, 0);
-        panel.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "RPG-Balancing (JSON): Loot, Einsatzstufen, Items, Perks, Fischarten, Rezepte und Caps.\nAktivieren erfolgt ausschließlich über den Haken oben. Bestehende Konten bleiben erhalten.\nChat: !inventory, !equipment, !equip, !perks, !perk, !craft, !sushi, !stats." }, 0, 1);
+        panel.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "RPG-Balancing (JSON): Loot, dynamische Itemregeln, Effekte, Perks, Rezepte und Caps.\nDynamische Items: Vorlage unten übernehmen, dann speichern. Vorhandene Items behalten ihre Werte.\nChat: !inv, !item <Nummer>, !equip <Nummer>, !gear, !perks, !perk, !craft, !sushi, !stats." }, 0, 1);
         panel.Controls.Add(_rpgConfigJson, 0, 2);
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true };
         var preset = NewActionButton("Balancing 1.2 übernehmen");
@@ -40,11 +40,39 @@ public sealed partial class MainForm
         };
         var save = NewActionButton("RPG-Einstellungen speichern");
         save.Click += (_, _) => SaveMinigameSettingsFromControls();
-        actions.Controls.AddRange(new Control[] { save, preset });
+        var dynamicItems = NewActionButton("Dynamische Items vorbereiten");
+        dynamicItems.Click += (_, _) =>
+        {
+            if (MessageBox.Show(this, "Zufällige Attribute und Spezialeffekte für künftige Ausrüstungsfunde im Editor ergänzen? Vorhandene Items und eigene dynamische Regeln bleiben unverändert. Erst Speichern aktiviert die Vorlage.",
+                "Item-System 2.0", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            try
+            {
+                var current = JsonSerializer.Deserialize<RpgConfig>(_rpgConfigJson.Text) ?? throw new InvalidOperationException("RPG-Einstellungen fehlen.");
+                _rpgConfigJson.Text = JsonSerializer.Serialize(RpgItemGenerationService.EnableForFutureDrops(current), new JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Item-System 2.0"); }
+        };
+        var sets = NewActionButton("Sets & Legenden vorbereiten");
+        sets.Click += (_, _) =>
+        {
+            try
+            {
+                var current = JsonSerializer.Deserialize<RpgConfig>(_rpgConfigJson.Text) ?? throw new InvalidOperationException("RPG-Einstellungen fehlen.");
+                _rpgConfigJson.Text = JsonSerializer.Serialize(RpgEquipmentCatalog.Prepare(current), new JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "Sets & Legenden"); }
+        };
+        actions.Controls.AddRange(new Control[] { save, preset, dynamicItems, sets });
         panel.Controls.Add(actions, 0, 3);
         var tabs = new TabControl { Dock = DockStyle.Fill };
         AddMinigameTab(tabs, "Einstellungen", panel);
+        AddMinigameTab(tabs, "Loot & Sammlerschätze", BuildRpgLootExpansionPanel());
         AddMinigameTab(tabs, "Spielerverwaltung", BuildRpgAdministrationPanel());
+        AddMinigameTab(tabs, "Hot Time", BuildHotTimePanel());
+        AddMinigameTab(tabs, "HP & Überleben", BuildRpgHealthPanel());
+        AddMinigameTab(tabs, "Unterwassergegner", BuildRpgEnemyPanel());
+        AddMinigameTab(tabs, "Fischfang & Sushi", BuildRpgSushiPanel());
+        AddMinigameTab(tabs, "RPG Debug Center", BuildRpgDebugPanel());
         return tabs;
     }
     private static PropertyGrid NewAdventureGrid() => new()
@@ -181,6 +209,10 @@ public sealed partial class MainForm
     {
         var copy = JsonSerializer.Deserialize<AdventureGamesConfig>(JsonSerializer.Serialize(config.Adventures))!;
         _rpgEnabled.Checked = copy.Rpg.Enabled;
+        _hotTimeSettings.SelectedObject = copy.Rpg.HotTime;
+        _healthSettings.SelectedObject = copy.Rpg.Health;
+        _enemySettings.SelectedObject = copy.Rpg.Enemies;
+        LoadRpgSushi(copy.Rpg);
         _rpgConfigJson.Text = JsonSerializer.Serialize(copy.Rpg, new JsonSerializerOptions { WriteIndented = true });
         _fishingSettings.SelectedObject = copy.Fishing;
         _treasureSettings.SelectedObject = copy.Treasure;
@@ -192,6 +224,10 @@ public sealed partial class MainForm
         if (_fishingSettings.SelectedObject is not StakeAdventureConfig fishing) return;
         var rpg = JsonSerializer.Deserialize<RpgConfig>(_rpgConfigJson.Text) ?? throw new InvalidOperationException("RPG-Einstellungen fehlen.");
         rpg.Enabled = _rpgEnabled.Checked;
+        if(_hotTimeSettings.SelectedObject is RpgHotTimeConfig hotTime)rpg.HotTime=JsonSerializer.Deserialize<RpgHotTimeConfig>(JsonSerializer.Serialize(hotTime))!;
+        if(_healthSettings.SelectedObject is RpgHealthConfig health)rpg.Health=JsonSerializer.Deserialize<RpgHealthConfig>(JsonSerializer.Serialize(health))!;
+        if(_enemySettings.SelectedObject is RpgEnemyConfig)rpg.Enemies=ReadEnemyEditor();
+        ReadRpgSushi(rpg);
         rpg.Validate();
         config.Adventures = JsonSerializer.Deserialize<AdventureGamesConfig>(JsonSerializer.Serialize(new AdventureGamesConfig {
             Rpg = rpg,

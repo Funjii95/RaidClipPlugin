@@ -6,17 +6,20 @@ namespace RaidClipPlugin.Services;
 
 public sealed record AdventureStatus(bool BossActive = false, int BossHp = 0, int BossMaxHp = 0,
     int BossPlayers = 0, DateTimeOffset? BossEndsAt = null, bool RaceActive = false,
-    int RacePlayers = 0, long RaceStake = 0, DateTimeOffset? RaceEndsAt = null);
+    int RacePlayers = 0, long RaceStake = 0, DateTimeOffset? RaceEndsAt = null,
+    string BossEventId="",DateTimeOffset? BossStartedAt=null,string RaceEventId="",DateTimeOffset? RaceStartedAt=null);
 
 public sealed class AdventureOverlayServer
 {
     public const string Url = "http://127.0.0.1:18769/";
     private readonly Func<AdventureStatus> _status;
     private readonly string _url;
-    public AdventureOverlayServer(Func<AdventureStatus> status, int port = 18769)
+    private readonly Func<CommunityOverlayState>? _community;
+    public AdventureOverlayServer(Func<AdventureStatus> status, int port = 18769,Func<CommunityOverlayState>? community=null)
     {
         if (port is < 1 or > 65535) throw new ArgumentOutOfRangeException(nameof(port));
         _status = status;
+        _community=community;
         _url = $"http://127.0.0.1:{port}/";
     }
     public async Task RunAsync(CancellationToken token)
@@ -34,11 +37,11 @@ public sealed class AdventureOverlayServer
                 try
                 {
                     var path = context.Request.Url?.AbsolutePath;
-                    if (context.Request.HttpMethod != "GET" || path is not ("/" or "/state"))
+                    if (context.Request.HttpMethod != "GET" || path is not ("/" or "/state" or "/community" or "/preview"))
                     { context.Response.StatusCode = 404; continue; }
-                    context.Response.ContentType = path == "/state" ? "application/json; charset=utf-8" : "text/html; charset=utf-8";
+                    context.Response.ContentType = path is "/state" or "/community" ? "application/json; charset=utf-8" : "text/html; charset=utf-8";
                     context.Response.Headers["Cache-Control"] = "no-store";
-                    var bytes = Encoding.UTF8.GetBytes(path == "/state" ? JsonSerializer.Serialize(_status()) : Html);
+                    var bytes = Encoding.UTF8.GetBytes(path switch {"/state"=>JsonSerializer.Serialize(_status()),"/community"=>JsonSerializer.Serialize(_community?.Invoke()),"/" when _community is null=>LegacyHtml,_=>Html});
                     context.Response.ContentLength64 = bytes.Length;
                     await context.Response.OutputStream.WriteAsync(bytes, token);
                 }
@@ -49,7 +52,8 @@ public sealed class AdventureOverlayServer
         catch (Exception ex) when (token.IsCancellationRequested && ex is HttpListenerException or ObjectDisposedException) { }
         catch (HttpListenerException ex) { Console.WriteLine("Event-Overlay nicht verfügbar (Port 18769): " + ex.Message); }
     }
-    internal const string Html = """
+    internal const string Html = HeistOverlayPage.Html;
+    private const string LegacyHtml = """
         <!doctype html><html lang="de"><meta charset="utf-8"><title>RaidClip Events</title>
         <style>html,body{margin:0;background:transparent;color:#fff;font:24px 'Segoe UI',sans-serif}main{width:560px;padding:20px;box-sizing:border-box}.card{background:linear-gradient(130deg,#151321ed,#25203ded);border:1px solid #8575da;border-radius:20px;padding:24px;margin-bottom:16px;box-shadow:0 10px 30px #0006}h2{margin:0 0 15px;font-size:30px}progress{width:100%;height:24px;accent-color:#ae78ff}.meta{display:flex;justify-content:space-between;margin-top:12px;color:#ddd5f4}.hidden{display:none}</style>
         <main><section id="boss" class="card hidden"><h2>⚔ Bosskampf</h2><progress id="health"></progress><div class="meta"><span id="hp"></span><span id="bossTime"></span></div><p id="fighters"></p><small>Angreifen: !attack</small></section><section id="race" class="card hidden"><h2>🏁 Rennen</h2><div class="meta"><span id="racers"></span><span id="raceTime"></span></div><p id="stake"></p><small>Mitmachen: !joinrace</small></section></main>
