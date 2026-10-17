@@ -1,4 +1,4 @@
-import { catalog, initialState, sets } from "./data";
+import { catalog, initialState, sets, recipes } from "./data";
 import type {
   Action,
   CharacterStats,
@@ -38,6 +38,24 @@ export function characterStats(s: DemoState) {
   );
   return stats;
 }
+export function activityStats(
+  s: DemoState,
+  activity: "Boss" | "Dive" | "Fishing",
+) {
+  const stats = characterStats(s);
+  for (const buff of s.player.buffs.filter(
+    (b) => b.activity === activity && b.remainingUses > 0,
+  )) {
+    for (const key of Object.keys(buff.attributes) as (keyof CharacterStats)[])
+      stats[key] += buff.attributes[key] ?? 0;
+  }
+  return stats;
+}
+function consumeBuffs(s: DemoState, activity: "Boss" | "Dive" | "Fishing") {
+  for (const buff of s.player.buffs)
+    if (buff.activity === activity && buff.remainingUses > 0)
+      buff.remainingUses--;
+}
 export function diveInfo(s: DemoState, stake: number, now: number) {
   const tier =
     stake >= 10000
@@ -51,7 +69,13 @@ export function diveInfo(s: DemoState, stake: number, now: number) {
             : 0;
   const chance = Math.min(
     60,
-    25 + [0, 4, 8, 12, 15][tier] + Math.min(10, characterStats(s).luck * 0.1),
+    25 +
+      [0, 4, 8, 12, 15][tier] +
+      Math.min(
+        10,
+        (activityStats(s, "Dive").luck + activityStats(s, "Dive").diveLuck) *
+          0.1,
+      ),
   );
   return {
     chance: Math.min(100, chance * (hotActive(s, now) ? 1.5 : 1)),
@@ -149,6 +173,41 @@ export class MockRpgDataSource implements RpgDataSource {
           endsAt: now + action.duration,
         };
         break;
+      case "cook": {
+        const recipe = recipes.find((r) => r.id === action.recipeId);
+        if (!recipe) throw Error("Unbekanntes Sushi-Rezept.");
+        if (
+          (s.fish[recipe.fishId] ?? 0) < recipe.fishQuantity ||
+          s.player.pearls < recipe.pearlCost
+        )
+          throw Error("Nicht genügend Fische oder Demo-Perlen.");
+        s.fish[recipe.fishId] -= recipe.fishQuantity;
+        s.player.pearls -= recipe.pearlCost;
+        s.sushi[recipe.id] = (s.sushi[recipe.id] ?? 0) + 1;
+        break;
+      }
+      case "activateSushi": {
+        const recipe = recipes.find((r) => r.id === action.recipeId);
+        if (!recipe || (s.sushi[recipe.id] ?? 0) < 1)
+          throw Error("Kein passendes Sushi vorhanden.");
+        const active = s.player.buffs.filter((b) => b.remainingUses > 0);
+        if (active.some((b) => b.recipeId === recipe.id))
+          throw Error("Dieser Sushi-Buff ist bereits aktiv.");
+        if (active.length >= 3)
+          throw Error("Maximal drei verschiedene Sushi-Buffs sind erlaubt.");
+        s.sushi[recipe.id]--;
+        s.player.buffs = [
+          ...active,
+          {
+            recipeId: recipe.id,
+            name: recipe.name,
+            activity: recipe.activity,
+            remainingUses: 3,
+            attributes: structuredClone(recipe.attributes),
+          },
+        ];
+        break;
+      }
       case "restartFight": {
         if (s.player.hp > 0)
           throw Error("Neustart ist erst nach einer Niederlage möglich.");
@@ -164,13 +223,12 @@ export class MockRpgDataSource implements RpgDataSource {
           if (now < s.boss.nextAt) throw Error("Der nächste Boss kommt bald.");
           s.boss = { ...initialState(now).boss };
         }
-        const stats = characterStats(s);
-        const buff = s.player.buffs.find(
-          (b) => b.activity === "Boss" && b.remainingUses > 0,
-        );
+        const stats = activityStats(s, "Boss");
+        const critical = this.random() * 100 < Math.min(50, stats.critChance);
         const damage = Math.round(
-          (stats.damage + (buff?.attributes.damage ?? 0)) *
-            (1 + stats.bossDamage / 100),
+          stats.damage *
+            (1 + stats.bossDamage / 100) *
+            (critical ? 1.5 + Math.min(300, stats.critDamage) / 100 : 1),
         );
         const damageDealt = Math.min(s.boss.hp, damage);
         s.boss.hp -= damageDealt;
@@ -186,7 +244,7 @@ export class MockRpgDataSource implements RpgDataSource {
           outcome:
             s.boss.hp === 0 ? "victory" : s.player.hp === 0 ? "defeat" : "hit",
         };
-        if (buff) buff.remainingUses--;
+        consumeBuffs(s, "Boss");
         if (!s.boss.hp) {
           s.boss.status = "waiting";
           s.boss.nextAt = now + 60000;
@@ -205,7 +263,11 @@ export class MockRpgDataSource implements RpgDataSource {
         )
           throw Error("Ungültiger Einsatz oder zu wenige Demo-Perlen.");
         const pearls =
-          (kind === "dive" ? 150 : 80) * (hotActive(s, now) ? 2 : 1);
+          (kind === "dive"
+            ? 150
+            : Math.round(
+                80 * (1 + activityStats(s, "Fishing").fishingLuck / 100),
+              )) * (hotActive(s, now) ? 2 : 1);
         s.player.pearls += pearls - (kind === "dive" ? action.stake : 0);
         s.cooldowns[kind] = now + 5000;
         if (kind === "dive") {
@@ -255,13 +317,20 @@ export class MockRpgDataSource implements RpgDataSource {
               : "Nur Perlen gefunden – der Ozean birgt weitere Geheimnisse.",
           };
         } else {
+          s.fish["crystal-carp"] = (s.fish["crystal-carp"] ?? 0) + 1;
           s.result = {
             kind: "fishing",
             pearls,
-            fish: { name: "Kristallkarpfen", rarity: "Rare", icon: "🐟" },
+            fish: {
+              id: "crystal-carp",
+              name: "Kristallkarpfen",
+              rarity: "Rare",
+              icon: "🐟",
+            },
             message: "Ein schimmernder Fang!",
           };
         }
+        consumeBuffs(s, kind === "dive" ? "Dive" : "Fishing");
         break;
       }
     }

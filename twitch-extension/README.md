@@ -6,6 +6,13 @@ Designvariante 3 ist umgesetzt: Nachtblau, Cyan und Violett, Otter-Magier, leuch
 
 Neu: Eine Otter-HP-Leiste wird über der Navigation auf allen Spielansichten angezeigt. Demoregeln: 1.000 Start-HP, pro eigenem Bossangriff ein Gegentreffer von maximal 35 HP, sofern der Boss überlebt. Ein tödlicher eigener Treffer verhindert die Gegenattacke. Bei 0 HP sind Bossangriffe gesperrt. „Demokampf neu starten“ heilt den Otter und setzt den Boss auf volle HP sowie den persönlichen Boss-Schaden zurück; Inventar, Perlen, Perks, Ausrüstung und bereits verbrauchte Sushi-Anwendungen bleiben erhalten. Kein Gegnerschaden beim Angeln/Tauchen und kein Schaden im Hintergrund. Die HP-Werte sind neue Demoannahmen, keine Übernahme oder Änderung des produktiven C#-Kampfsystems.
 
+Neu: „Kochen“ ersetzt den Hot-Time-Reiter. Vier Rezepte übernehmen die Zutaten, Perlenkosten und Attribute aus RpgConfig.cs. Herstellen verbraucht pro Sushi einen passenden Fisch und 250/500/1.000/1.500 Demo-Perlen; Essen aktiviert den Buff für drei passende Aktionen. Maximal drei verschiedene Buffs, kein Doppelaktivieren. Die Demo startet mit drei Fischen je Rezept; Angeln legt Kristallkarpfen im Fischvorrat ab. Fehlende Zutaten, zu wenig Perlen und leere Vorräte sperren die passende Aktion. Die anfangs aktive Kämpfer-Portion ist weiterhin ein Mock-Startbuff; sie kann nach Verbrauch durch selbst gekochtes Sushi ersetzt werden.
+
+Hot Time erscheint unabhängig vom ausgewählten Reiter als fest angehefteter, schmaler Restzeitbalken direkt am oberen Rand des Extension-iframes. Er läuft über fünf Minuten ab, zeigt die Restzeit und Boni, hebt die letzten 30 Sekunden hervor und besitzt einen dezenten Flammensaum. Animationen aus / prefers-reduced-motion deaktivieren auch diesen Effekt. Die Demo-Zeitregler stehen nur noch auf config.html.
+
+Die Sushi-Buffs wirken ausschließlich auf ihre zugeordnete Aktion: Kämpfer-Schaden und Präzisions-Kritchance im Bosskampf, Dive Luck auf die Tauchchance, Fishing Luck auf die Demo-Angelbelohnung. Damit Präzisions-Sushi wirksam ist, nutzt der Mockboss jetzt auch den Kritchance-/Kritschadenwert. Die Mock-Angelbelohnung ist nun 80 × (1 + Fishing Luck / 100), auf ganze Perlen gerundet und anschließend mit Hot Time multipliziert. Das sind UI-Demoregeln, keine vollständige Nachbildung des C#-Kampfsystems.
+
+
 Nach ausdrücklicher Freigabe des Nutzers wurde ein geschlossenes Twitch-Hosted-Test-Paket vorbereitet; die Vorgabe gegen Veröffentlichung bleibt bestehen. Der Nutzer hat die vorherige Demo bereits erfolgreich im echten Twitch-Panel im Hosted Test geöffnet. Die neue Gestaltung wurde hier automatisiert mit nachgebildetem Twitch-Versionspfad geprüft; der echte Hosted-Test-Upload dieser Gestaltung steht noch aus.
 
 Für das Update der bereits installierten Testversion: Developer Console → Version 0.0.1 → Status → Zum lokalen Test verschieben → Dateien → neues ZIP hochladen → zurück zum gehosteten Test. Panelpfad panel.html, Mobilpfad mobile.html und Konfigurationspfad config.html beibehalten. Nicht zur Prüfung einreichen oder freigeben. Danach Kanalseite neu laden. Im Hosted Test wird kein localhost-Server benötigt.
@@ -64,7 +71,7 @@ Die folgenden Schritte sind manuell; dieser Auftrag verändert keine Developer-C
 4. Keine Secrets in Dateien eintragen. Die Demo benötigt weder Identitätsfreigabe noch Bits, Chat-Schreibrechte, externe APIs oder den Twitch Configuration Service. Keine erforderliche Konfiguration festlegen; config.html enthält nur sitzungslokale Demoregler.
 5. Das eigene Twitch-Konto in den Test-Accounts zulassen, falls die Console dies verlangt. „View on Twitch and Install“ verwenden. Im Creator Dashboard unter Extensions → My Extensions das Panel installieren/aktivieren und einem Panelplatz zuweisen. Die Bezeichnungen können je nach Console-Version abweichen.
 6. Lokalen Server laufen lassen und die Kanalseite auf **demselben Windows-PC** öffnen. Ggf. Browsercache neu laden. Das sichtbare DEMO-Schild muss erscheinen. Unter dem Stream zum Panel scrollen.
-7. Alle acht Bereiche durchklicken. Tauchen und Angeln starten, fünf Sekunden Cooldown abwarten. Favorit schützen, Ausrüstung ablegen, Item zerlegen, Perk kaufen, Boss angreifen. Unter Hot Time die letzten 30 Sekunden ausprobieren. Neuladen muss alles zurücksetzen.
+7. Alle acht Bereiche durchklicken. Tauchen und Angeln starten, fünf Sekunden Cooldown abwarten. Favorit schützen, Ausrüstung ablegen, Item zerlegen, Perk kaufen, Boss angreifen. Unter Kochen Sushi herstellen und essen; die letzten 30 Sekunden von Hot Time auf config.html starten. Neuladen muss alles zurücksetzen.
 8. Nicht auf Hosted Test, Submit for Review oder Release wechseln. Keine Assets hochladen. Ein ZIP/Deployment ist hier nicht vorgesehen.
 
 **Mobil:** `mobile.html` auf dem PC in der Geräteansicht des Browsers testen. Auf einem echten Telefon bedeutet `localhost` das Telefon, nicht diesen PC. Mit der ausdrücklich lokalen Adresse und dem nur lokal gebundenen Server ist daher kein echter Twitch-App-Test auf einem separaten Telefon möglich. Dafür wäre später ein separat autorisierter, erreichbar gehosteter HTTPS-Test mit passendem vertrauenswürdigem Zertifikat nötig. Die echten Twitch-Apps auf iOS/Android und das echte Twitch-iframe wurden hier nicht getestet.
@@ -87,7 +94,7 @@ twitch-extension/
   pnpm-lock.yaml                          reproduzierbare Abhängigkeiten
 ```
 
-Charakterwerte, acht Slots, Inventarkarten mit Attributen und Effekten, Favorisieren, Aus-/Ablegen einschließlich Ring2, geschütztes Zerlegen, zwei Setkonzepte mit 2/3/4-Teile-Fortschritt, sieben Perks mit Kosten und Maximallevel, Tauch-Einsatzstufen, Beute-Enthüllung, Fanganimation, Boss-HP/Schaden/Respawn und Hot Time. Graue/grüne/blaue/lila/goldene Raritäten; Legendary mit zusätzlichem Goldschein. Animationen per Checkbox und Betriebssystemeinstellung abschaltbar. Die Navigation bleibt beim Scrollen erreichbar; Inhalt scrollt innerhalb des 500-Pixel-iframes.
+Charakterwerte, acht Slots, Inventarkarten mit Attributen und Effekten, Favorisieren, Aus-/Ablegen einschließlich Ring2, geschütztes Zerlegen, zwei Setkonzepte mit 2/3/4-Teile-Fortschritt, sieben Perks mit Kosten und Maximallevel, Tauch-Einsatzstufen, Beute-Enthüllung, Fanganimation, Boss-HP/Schaden/Respawn, Kochrezepte mit Vorräten sowie der angeheftete Hot-Time-Balken. Graue/grüne/blaue/lila/goldene Raritäten; Legendary mit zusätzlichem Goldschein. Animationen per Checkbox und Betriebssystemeinstellung abschaltbar. Die Navigation bleibt beim Scrollen erreichbar; Inhalt scrollt innerhalb des 500-Pixel-iframes.
 
 ## Quellenabgleich und bewusste Mockannahmen
 
@@ -97,7 +104,7 @@ Referenz: `main` bei `5f8a92305dc8c48b3849bb97b58c9bc0bcaf12d6`.
 - `RaidClipPlugin/Models/RpgProfile.cs`: acht Slots und Attributnamen als Grundlage.
 - `RaidClipPlugin/Config/RpgConfig.cs`: sieben Perk-IDs mit denselben Boni, fünf Leveln, Kosten 500 × 2^Level. Deutsche Anzeigenamen sind UI-Texte.
 - **Wächter der Tiefsee und Schatzjäger des Ozeans existieren in diesem Stand nicht als C#-Setdefinitionen.** Zuordnung und 2/3/4-Boni sind gekennzeichnete Demokonzepte. Keine Rückschreibung ins Plugin.
-- Fischfang ist bewusst ein fester Kristallkarpfen. Anfangsprofil, Avatar, Boss, Fünfsekunden-Cooldowns, 25-Perlen-Zerlegewert und Belohnungen (150 Tauchen / 80 Angeln vor Hot Time) sind UI-Mockwerte, keine neue persistente Perlenökonomie.
+- Fischfang ist bewusst ein fester Kristallkarpfen. Anfangsprofil, Avatar, Boss, Fünfsekunden-Cooldowns, 25-Perlen-Zerlegewert und Belohnungen (150 Tauchen / Basis 80 Angeln vor Fishing Luck und Hot Time) sind UI-Mockwerte, keine neue persistente Perlenökonomie.
 - Tauchen nutzt Einsatzschwellen und Seltenheitsgewichte aus den Defaults. Demo-Lootchance berücksichtigt Basis 25 %, Einsatzbonus und Luck (gedeckelt); Hot Time multipliziert relativ mit 1,5. Das ist keine vollständige Nachbildung aller produktiven Dienste/Regeln. Hot Time verdoppelt nur Tauch-/Angelbelohnungen, keine Einsätze/Zerlegewerte. Der Boss vergibt in der Demo keine Perlen.
 
 ## Sicherheitsgrenze für Phase 2

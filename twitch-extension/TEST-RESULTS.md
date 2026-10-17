@@ -50,3 +50,13 @@ Fehlerbehebung: Beim Zerlegen eines Fundstücks wird dieselbe Iteminstanz auch a
 - 9/9 Chromium-Browserprüfungen bestanden, 11,1 Sekunden. Die zwei neuen HP-Abläufe testen je 29 Runden bis zur Niederlage, Angriffsperre, Anzeige auf anderen Tabs, Neustart mit 1.000 HP und erneutem Gegentreffer bei 320 und 390 Pixel Breite. Reduzierte Bewegung deaktiviert den Trefferimpuls.
 - Screenshots des Kampfes und der Niederlage visuell kontrolliert.
 - Das ZIP kombiniert Designvariante 3, den Lootfenster-Fix und HP/Gegnerschaden. Noch kein Upload dieses Updates auf Twitch und kein Merge. Tatsächlicher Twitch-Kanaltest dieser neuen Fassung steht aus.
+
+
+## Nachprüfung: Kochen und angehefteter Hot-Time-Balken (17.10.2026)
+
+- Vier Sushi-Rezepte aus RpgConfig.cs mit Zutaten, Preisen, Wirkungen, jeweils drei Anwendungen und maximal drei gleichzeitigen Buffs. Vorräte flüchtig; Starterfische sind Demoannahmen. Angeln füllt Kristallkarpfen nach.
+- Hot-Time-Navigation durch Kochen ersetzt. Restzeitbalken bleibt am oberen iframe-Rand beim Scrollen sichtbar; native Progress-Anzeige statt CSP-inkompatibler Inline-Breiten. Flammensaum ist bei reduzierter Bewegung aus.
+- Strikter TypeScript-/Vite-Build erfolgreich.
+- 18/18 Logiktests bestanden, einschließlich aller vier Herstellkosten, Zutatenmangel, zu wenig Perlen, ungültiger Rezepte, atomarer Fehler, Doppelaktivierungs-/Bufflimit, Fish-Rewards, aktivitätsspezifischer Wirkung und Verbrauch nach drei Aktionen.
+- 11/11 Chromium-Browsertests bestanden (10,5 Sekunden): bisherige Navigation/HP/Loot/Assets plus Kochen/Essen, Vorratsverbrauch, passende Buff-Nutzung, Bufflimit und fest angehefteter Balken auf Panel und Mobil. Hot Time mit kontrollierter Uhr 30→29→0 geprüft, Ende ohne Flammeneffekt. Screenshots visuell geprüft.
+- Vorhandene HP-/Lootfenster-Korrektur und Demo-Isolation bleiben erhalten. Die neue ZIP enthält alle bisherigen Änderungen. Kein automatischer Upload auf Twitch; echter Hosted-Test-Kanalcheck dieser Fassung steht aus.

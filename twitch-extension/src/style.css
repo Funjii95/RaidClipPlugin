@@ -160,22 +160,6 @@ h1 span {
   height: 23px;
   flex-shrink: 0;
 }
-.hot-strip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  color: #f7d4a4;
-  font-size: 9px;
-  padding: 6px;
-  background: linear-gradient(90deg, #171b35, #2d203c, #171b35);
-  border-bottom: 1px solid #6d4a66;
-}
-.hot-strip .ui-icon {
-  width: 14px;
-  height: 14px;
-  color: #ffcf84;
-}
 .burning {
   border: 1px solid #b98059;
   animation: flame 2.5s ease-in-out infinite alternate;
@@ -551,8 +535,7 @@ select {
   text-align: left;
   margin-top: 10px;
 }
-.boss,
-.event {
+.boss {
   text-align: center;
   background: radial-gradient(ellipse at top, #24275999, #081229 75%);
 }
@@ -560,12 +543,6 @@ select {
   font-size: 80px;
   padding: 18px;
   text-shadow: 0 0 40px #ab69ff77;
-}
-.countdown {
-  font:
-    48px Georgia,
-    serif;
-  color: #ffdbad;
 }
 .urgent {
   color: #ffb2c3;
@@ -808,5 +785,198 @@ footer label {
   }
   to {
     box-shadow: inset 0 0 0 transparent;
+  }
+}
+/* Hot Time is a fixed edge timer, independent of the selected navigation tab. */
+.app {
+  padding-top: 28px;
+}
+nav {
+  top: 28px;
+}
+.hot-hud {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 28px;
+  overflow: hidden;
+  background: #140d23;
+  border: 0;
+  border-bottom: 1px solid #6e443d;
+}
+.hot-hud progress {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  background: #140d23;
+}
+.hot-hud progress::-webkit-progress-bar {
+  background: #140d23;
+}
+.hot-hud progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #622043, #a33a32, #d56c25);
+}
+.hot-hud progress::-moz-progress-bar {
+  background: linear-gradient(90deg, #622043, #a33a32, #d56c25);
+}
+.hot-hud-label {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 100%;
+  padding: 0 8px;
+  text-shadow: 0 1px 4px #000;
+  color: #fff0da;
+}
+.hot-hud-label > span {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+.hot-timer {
+  font:
+    650 12px "Segoe UI",
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.hot-hud-label small {
+  font-size: 8px;
+  color: #fff1dc;
+}
+.hot-hud.burning {
+  animation: ember-glow 1.8s ease-in-out infinite alternate;
+}
+.hot-hud.burning::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: radial-gradient(
+      ellipse at 25% 100%,
+      #ffe49cbb,
+      #ff7b2666 35%,
+      transparent 70%
+    )
+    0 0 / 33px 10px repeat-x;
+  animation: ember-flicker 1.2s ease-in-out infinite alternate;
+}
+.hot-hud.urgent {
+  border-bottom: 2px solid #ffe0a3;
+}
+.hot-hud.urgent .hot-timer {
+  color: #fff4a7;
+}
+@keyframes ember-glow {
+  to {
+    box-shadow:
+      0 2px 12px #ff713877,
+      inset 0 -2px 5px #ffcc8a77;
+  }
+}
+@keyframes ember-flicker {
+  to {
+    transform: translateX(8px) scaleY(0.55);
+    opacity: 0.65;
+  }
+}
+.kitchen-intro {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: radial-gradient(ellipse at top left, #3e285b, #0a1730 85%);
+}
+.kitchen-icon {
+  font-size: 36px;
+}
+.kitchen-intro > div {
+  flex: 1;
+  min-width: 150px;
+}
+.kitchen-intro p {
+  font-size: 11px;
+  color: #d6caeb;
+  margin-bottom: 0;
+}
+.kitchen-intro > small {
+  width: 100%;
+}
+.recipe-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.recipe-title > span {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  background: #322149;
+  border: 1px solid #9b71c9;
+  border-radius: 10px;
+  font-size: 25px;
+}
+.recipe-title small {
+  font-size: 8px;
+  letter-spacing: 1.6px;
+  color: #b4ccff;
+}
+.recipe-effect {
+  font-size: 11px;
+  color: #9cddd6;
+}
+.recipe-ingredients {
+  padding: 6px 9px;
+  background: #061125;
+  border: 1px solid #314d77;
+  border-radius: 8px;
+}
+.recipe-ingredients p {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  font-size: 10px;
+}
+.recipe-ingredients strong {
+  text-align: right;
+}
+.recipe > p:not(.recipe-effect) {
+  font-size: 11px;
+}
+.recipe-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.recipe-actions button {
+  font-size: 10px;
+  padding: 7px 4px;
+}
+@media (min-width: 650px) {
+  .recipe-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+@media (max-width: 300px) {
+  .hot-hud-label small {
+    font-size: 7px;
+  }
+  .hot-hud-label {
+    gap: 5px;
   }
 }

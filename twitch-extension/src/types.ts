@@ -50,6 +50,7 @@ export interface ItemSet {
   }[];
 }
 export interface ActiveBuff {
+  recipeId: string;
   name: string;
   remainingUses: number;
   activity: "Boss" | "Dive" | "Fishing";
@@ -74,7 +75,7 @@ export interface DiveResult {
 export interface FishingResult {
   kind: "fishing";
   pearls: number;
-  fish: { name: string; rarity: Rarity; icon: string };
+  fish: { id: string; name: string; rarity: Rarity; icon: string };
   message: string;
 }
 export interface CombatExchange {
@@ -103,8 +104,20 @@ export interface Perk {
   maxLevel: number;
   bonus: Partial<CharacterStats>;
 }
+export interface SushiRecipe {
+  id: string;
+  name: string;
+  fishId: string;
+  fishName: string;
+  fishQuantity: number;
+  pearlCost: number;
+  activity: ActiveBuff["activity"];
+  attributes: Partial<CharacterStats>;
+}
 export interface DemoState {
   player: PlayerProfile;
+  fish: Record<string, number>;
+  sushi: Record<string, number>;
   inventory: InventoryItem[];
   equipment: Equipment;
   perks: Perk[];
@@ -120,6 +133,7 @@ export type Action =
   | { type: "unequip"; slot: Slot }
   | { type: "favorite" | "dismantle"; id: string }
   | { type: "perk"; id: string }
+  | { type: "cook" | "activateSushi"; recipeId: string }
   | { type: "boss" }
   | { type: "restartFight" }
   | { type: "hot"; duration: number }

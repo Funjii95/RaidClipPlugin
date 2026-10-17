@@ -5,20 +5,34 @@ import {
   hotActive,
   diveInfo,
   characterStats,
+  activityStats,
 } from "../src/mock";
-import { catalog } from "../src/data";
+import { catalog, recipes } from "../src/data";
 describe("isolierte Mockaktionen", () => {
   it("snapshots cannot mutate state; no persistence between instances", async () => {
-    const a = new MockRpgDataSource();
+    const a = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
     const s = a.getSnapshot();
     s.player.pearls = 0;
     expect(a.getSnapshot().player.pearls).toBe(25000);
     await a.dispatch({ type: "perk", id: "damage" });
-    expect(new MockRpgDataSource().getSnapshot().perks[0].level).toBe(0);
+    expect(
+      new MockRpgDataSource(
+        () => 1000,
+        () => 0.99,
+      ).getSnapshot().perks[0].level,
+    ).toBe(0);
   });
   it("uses 13 source items, seven perks and no invented special effects", () => {
     expect(catalog).toHaveLength(13);
-    expect(new MockRpgDataSource().getSnapshot().perks).toHaveLength(7);
+    expect(
+      new MockRpgDataSource(
+        () => 1000,
+        () => 0.99,
+      ).getSnapshot().perks,
+    ).toHaveLength(7);
     expect(catalog.every((i) => !i.effects.length)).toBe(true);
   });
   it("dive deducts stake, grants loot, enforces cooldown and available rarities", async () => {
@@ -42,15 +56,21 @@ describe("isolierte Mockaktionen", () => {
   });
   it("fishing reward doubles only while hot; expired countdown clamps to zero", async () => {
     let now = 0;
-    const a = new MockRpgDataSource(() => now);
-    expect((await a.dispatch({ type: "fishing" })).result?.pearls).toBe(160);
+    const a = new MockRpgDataSource(
+      () => now,
+      () => 0.99,
+    );
+    expect((await a.dispatch({ type: "fishing" })).result?.pearls).toBe(164);
     now = 300001;
     expect(hotActive(a.getSnapshot(), now)).toBe(false);
     expect(remaining(300000, now)).toBe(0);
-    expect((await a.dispatch({ type: "fishing" })).result?.pearls).toBe(80);
+    expect((await a.dispatch({ type: "fishing" })).result?.pearls).toBe(82);
   });
   it("set bonuses follow equipped items and both rings support either ring slot", async () => {
-    const a = new MockRpgDataSource();
+    const a = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
     const original = characterStats(a.getSnapshot());
     let s = await a.dispatch({ type: "unequip", slot: "Helmet" });
     expect(characterStats(s).damage).toBe(original.damage - 6);
@@ -65,7 +85,10 @@ describe("isolierte Mockaktionen", () => {
     ).rejects.toThrow();
   });
   it("protects favorites and equipment from dismantling", async () => {
-    const a = new MockRpgDataSource();
+    const a = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
     await expect(
       a.dispatch({ type: "dismantle", id: "demo-trident" }),
     ).rejects.toThrow();
@@ -79,7 +102,10 @@ describe("isolierte Mockaktionen", () => {
     expect(s.player.pearls).toBe(25025);
   });
   it("perk cost grows and max level is enforced", async () => {
-    const a = new MockRpgDataSource();
+    const a = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
     let s = a.getSnapshot();
     for (let i = 0; i < 5; i++)
       s = await a.dispatch({ type: "perk", id: "damage" });
@@ -91,7 +117,10 @@ describe("isolierte Mockaktionen", () => {
   });
   it("boss consumes buffs, reaches waiting state and restarts after countdown", async () => {
     let now = 0;
-    const a = new MockRpgDataSource(() => now);
+    const a = new MockRpgDataSource(
+      () => now,
+      () => 0.99,
+    );
     for (let i = 0; i < 5; i++)
       await a.dispatch({ type: "perk", id: "damage" });
     for (let i = 0; i < 4; i++) await a.dispatch({ type: "perk", id: "boss" });
@@ -132,7 +161,10 @@ it("dismantling dive loot dismisses its reveal and cannot reward twice", async (
 
 describe("Otter HP and enemy counterattacks", () => {
   it("surviving bosses counter once per turn and unrelated actions cannot hurt or heal", async () => {
-    const a = new MockRpgDataSource();
+    const a = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
     const s = await a.dispatch({ type: "boss" });
     expect(s.player.hp).toBe(965);
     expect(s.boss.lastExchange?.damageTaken).toBe(35);
@@ -144,7 +176,10 @@ describe("Otter HP and enemy counterattacks", () => {
     await expect(a.dispatch({ type: "restartFight" })).rejects.toThrow();
   });
   it("defeat clamps HP to zero, blocks more attacks and restarts only the encounter", async () => {
-    const a = new MockRpgDataSource();
+    const a = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
     await a.dispatch({ type: "favorite", id: "demo-shell" });
     let s = a.getSnapshot();
     for (let i = 0; i < 29; i++) s = await a.dispatch({ type: "boss" });
@@ -168,7 +203,10 @@ describe("Otter HP and enemy counterattacks", () => {
     expect((await a.dispatch({ type: "boss" })).player.hp).toBe(965);
   });
   it("a finishing blow wins without a counterattack and full demo reset restores HP", async () => {
-    const a = new MockRpgDataSource();
+    const a = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
     for (let i = 0; i < 5; i++)
       await a.dispatch({ type: "perk", id: "damage" });
     for (let i = 0; i < 4; i++) await a.dispatch({ type: "perk", id: "boss" });
@@ -187,5 +225,145 @@ describe("Otter HP and enemy counterattacks", () => {
     const reset = await a.dispatch({ type: "reset" });
     expect(reset.player.hp).toBe(1000);
     expect(reset.boss.lastExchange).toBeUndefined();
+  });
+});
+
+describe("Sushi crafting from existing C# recipe defaults", () => {
+  it("all four recipes consume exactly their ingredient and pearl cost", async () => {
+    for (const recipe of recipes) {
+      const a = new MockRpgDataSource(
+        () => 1000,
+        () => 0.99,
+      );
+      const before = a.getSnapshot();
+      const after = await a.dispatch({ type: "cook", recipeId: recipe.id });
+      expect(after.fish[recipe.fishId]).toBe(before.fish[recipe.fishId] - 1);
+      expect(after.player.pearls).toBe(before.player.pearls - recipe.pearlCost);
+      expect(after.sushi[recipe.id]).toBe(1);
+      expect(after.player.buffs).toEqual(before.player.buffs);
+    }
+  });
+  it("rejects missing fish, unknown recipes and insufficient pearls atomically", async () => {
+    const a = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
+    for (let i = 0; i < 3; i++)
+      await a.dispatch({ type: "cook", recipeId: "fishing" });
+    const empty = a.getSnapshot();
+    await expect(
+      a.dispatch({ type: "cook", recipeId: "fishing" }),
+    ).rejects.toThrow();
+    await expect(
+      a.dispatch({ type: "cook", recipeId: "bad" }),
+    ).rejects.toThrow();
+    await expect(
+      a.dispatch({ type: "activateSushi", recipeId: "bad" }),
+    ).rejects.toThrow();
+    expect(a.getSnapshot()).toEqual(empty);
+    const poor = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
+    for (let i = 0; i < 5; i++)
+      await poor.dispatch({ type: "perk", id: "damage" });
+    for (let i = 0; i < 4; i++)
+      await poor.dispatch({ type: "perk", id: "crit" });
+    await poor.dispatch({ type: "cook", recipeId: "critical" });
+    const before = poor.getSnapshot();
+    expect(before.player.pearls).toBeLessThan(1500);
+    await expect(
+      poor.dispatch({ type: "cook", recipeId: "dive" }),
+    ).rejects.toThrow();
+    expect(poor.getSnapshot()).toEqual(before);
+  });
+  it("activation uses one dish, prevents duplicates and caps active buffs at three", async () => {
+    const a = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
+    await expect(
+      a.dispatch({ type: "activateSushi", recipeId: "fishing" }),
+    ).rejects.toThrow();
+    for (const id of ["fishing", "critical", "dive", "fighter"])
+      await a.dispatch({ type: "cook", recipeId: id });
+    await a.dispatch({ type: "activateSushi", recipeId: "fishing" });
+    await a.dispatch({ type: "activateSushi", recipeId: "critical" });
+    const full = a.getSnapshot();
+    await expect(
+      a.dispatch({ type: "activateSushi", recipeId: "fighter" }),
+    ).rejects.toThrow("bereits aktiv");
+    await expect(
+      a.dispatch({ type: "activateSushi", recipeId: "dive" }),
+    ).rejects.toThrow("Maximal drei");
+    expect(a.getSnapshot()).toEqual(full);
+    expect(full.sushi.fishing).toBe(0);
+    expect(full.player.buffs.filter((b) => b.remainingUses > 0)).toHaveLength(
+      3,
+    );
+  });
+  it("fishing collects recipe fish and consumes only matching buffs", async () => {
+    const a = new MockRpgDataSource(
+      () => 1000,
+      () => 0.99,
+    );
+    await a.dispatch({ type: "cook", recipeId: "fishing" });
+    await a.dispatch({ type: "activateSushi", recipeId: "fishing" });
+    const before = a.getSnapshot();
+    const after = await a.dispatch({ type: "fishing" });
+    expect(after.fish["crystal-carp"]).toBe(before.fish["crystal-carp"] + 1);
+    expect(after.result?.pearls).toBe(172);
+    expect(
+      after.player.buffs.find((b) => b.recipeId === "fishing")?.remainingUses,
+    ).toBe(2);
+    expect(
+      after.player.buffs.find((b) => b.recipeId === "fighter")?.remainingUses,
+    ).toBe(3);
+    await expect(a.dispatch({ type: "fishing" })).rejects.toThrow("Cooldown");
+    expect(a.getSnapshot()).toEqual(after);
+  });
+  it("dive buff raises chance and expires after exactly three successful dives", async () => {
+    let now = 1000;
+    const a = new MockRpgDataSource(
+      () => now,
+      () => 0.99,
+    );
+    const base = diveInfo(a.getSnapshot(), 250, now).chance;
+    await a.dispatch({ type: "cook", recipeId: "dive" });
+    await a.dispatch({ type: "activateSushi", recipeId: "dive" });
+    expect(diveInfo(a.getSnapshot(), 250, now).chance).toBeGreaterThan(base);
+    for (let i = 0; i < 3; i++) {
+      await a.dispatch({ type: "dive", stake: 0 });
+      now += 5000;
+    }
+    expect(
+      a.getSnapshot().player.buffs.find((b) => b.recipeId === "dive")
+        ?.remainingUses,
+    ).toBe(0);
+    expect(diveInfo(a.getSnapshot(), 250, now).chance).toBe(base);
+  });
+  it("critical sushi affects only boss stats and produces a critical hit in its extra chance range", async () => {
+    const plain = new MockRpgDataSource(
+      () => 1000,
+      () => 0.075,
+    );
+    const buffed = new MockRpgDataSource(
+      () => 1000,
+      () => 0.075,
+    );
+    await buffed.dispatch({ type: "cook", recipeId: "critical" });
+    await buffed.dispatch({ type: "activateSushi", recipeId: "critical" });
+    const s = buffed.getSnapshot();
+    expect(activityStats(s, "Boss").critChance).toBe(
+      characterStats(s).critChance + 5,
+    );
+    expect(activityStats(s, "Fishing").critChance).toBe(
+      characterStats(s).critChance,
+    );
+    const normal = await plain.dispatch({ type: "boss" });
+    const critical = await buffed.dispatch({ type: "boss" });
+    expect(critical.boss.lastExchange!.damageDealt).toBeGreaterThan(
+      normal.boss.lastExchange!.damageDealt,
+    );
   });
 });

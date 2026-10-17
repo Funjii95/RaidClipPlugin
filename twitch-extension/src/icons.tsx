@@ -8,11 +8,17 @@ type IconName =
   | "sets"
   | "perk"
   | "boss"
+  | "cook"
   | "time"
   | "dive"
   | "fish"
   | "pearl";
 const paths: Record<IconName, ReactNode> = {
+  cook: (
+    <>
+      <path d="M4 11h16v4a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6ZM1 12h3m16 0h3M8 8C4 5 10 5 7 2m6 6c-4-3 2-3-1-6m6 6c-4-3 2-3-1-6" />
+    </>
+  ),
   otter: (
     <>
       <path d="M6 8 4 5Q2 6 4 10M18 8l2-3q2 1 0 5M5 10q7-8 14 0v5q-7 8-14 0Z" />

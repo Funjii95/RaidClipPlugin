@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { labels, sets, statsText } from "./data";
+import { labels, sets, statsText, recipes } from "./data";
 import {
   MockRpgDataSource,
   characterStats,
@@ -23,7 +23,7 @@ const tabs = [
   "Itemsets",
   "Perks",
   "Boss",
-  "Hot Time",
+  "Kochen",
 ];
 const symbols = [
   "otter",
@@ -33,7 +33,7 @@ const symbols = [
   "sets",
   "perk",
   "boss",
-  "time",
+  "cook",
 ] as const;
 const time = (n: number) =>
   `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
@@ -184,6 +184,24 @@ function App() {
   );
   return (
     <div className={motion ? "app" : "app no-motion"}>
+      <div
+        className={`hot-hud ${hot ? "burning" : ""} ${hot && seconds <= 30 ? "urgent" : ""}`}
+        title="Hot Time: +50 % relative Itemchance, +100 % zulässige Perlenbelohnungen"
+      >
+        <progress
+          aria-label="Hot-Time-Restzeit"
+          max={300}
+          value={hot ? Math.min(300, seconds) : 0}
+          aria-valuetext={
+            hot ? `${time(seconds)} verbleibend` : "Hot Time inaktiv"
+          }
+        />
+        <div className="hot-hud-label">
+          <span>🔥 {hot ? "HOT TIME" : "Hot Time inaktiv"}</span>
+          <strong className="hot-timer">{hot ? time(seconds) : "0:00"}</strong>
+          {hot && <small>+50 % Drops · +100 % Perlen</small>}
+        </div>
+      </div>
       <header>
         <img
           src="./otter-mage.png"
@@ -238,14 +256,6 @@ function App() {
           ) : null}
         </section>
       )}
-      <div
-        className={`hot-strip ${hot ? "burning" : ""} ${hot && seconds <= 30 ? "urgent" : ""}`}
-      >
-        <Icon name="time" />{" "}
-        {hot
-          ? `Hot Time · ${time(seconds)} · +50 % Itemchance`
-          : "Die Tiefsee ruht · Hot Time inaktiv"}
-      </div>
       {!config && (
         <nav aria-label="Hauptnavigation">
           {tabs.map((name, n) => (
@@ -603,25 +613,130 @@ function App() {
                 </small>
               </article>
             )}
-            {tab === "Hot Time" && (
-              <article className={hot ? "event burning" : "event"}>
-                <div className="boss-art" aria-hidden="true">
-                  🔥
+            {tab === "Kochen" && (
+              <>
+                <article className="kitchen-intro">
+                  <span className="kitchen-icon" aria-hidden="true">
+                    🍣
+                  </span>
+                  <div>
+                    <h3>Die Otter-Küche</h3>
+                    <p>Aus deinem Fang wird Sushi mit magischen Kräften.</p>
+                  </div>
+                  <small>
+                    Jedes Rezept verbraucht einen Fisch und Demo-Perlen. Ein
+                    Buff wirkt für drei passende Aktionen; maximal drei
+                    verschiedene Buffs gleichzeitig.
+                  </small>
+                </article>
+                <div className="recipe-list">
+                  {recipes.map((recipe) => {
+                    const activeBuff = state.player.buffs.find(
+                      (b) => b.recipeId === recipe.id && b.remainingUses > 0,
+                    );
+                    const canCook =
+                      (state.fish[recipe.fishId] ?? 0) >= recipe.fishQuantity &&
+                      state.player.pearls >= recipe.pearlCost;
+                    const atBuffLimit =
+                      state.player.buffs.filter((b) => b.remainingUses > 0)
+                        .length >= 3;
+                    return (
+                      <article
+                        className="recipe"
+                        data-recipe-id={recipe.id}
+                        key={recipe.id}
+                      >
+                        <div className="recipe-title">
+                          <span aria-hidden="true">🍣</span>
+                          <div>
+                            <small>
+                              {recipe.activity === "Boss"
+                                ? "BOSSKAMPF"
+                                : recipe.activity === "Dive"
+                                  ? "TAUCHEN"
+                                  : "ANGELN"}
+                            </small>
+                            <h3>{recipe.name}</h3>
+                          </div>
+                        </div>
+                        <p className="recipe-effect">
+                          {statsText(recipe.attributes).join(", ")} · 3
+                          Anwendungen
+                        </p>
+                        <div className="recipe-ingredients">
+                          <p>
+                            🐟 {recipe.fishName}{" "}
+                            <strong>
+                              {state.fish[recipe.fishId] ?? 0} /{" "}
+                              {recipe.fishQuantity}
+                            </strong>
+                          </p>
+                          <p>
+                            ◉ Kosten{" "}
+                            <strong>
+                              {recipe.pearlCost.toLocaleString("de-DE")}{" "}
+                              Demo-Perlen
+                            </strong>
+                          </p>
+                        </div>
+                        <p>
+                          Vorrat:{" "}
+                          <strong>{state.sushi[recipe.id] ?? 0} Sushi</strong>
+                        </p>
+                        {activeBuff && (
+                          <p className="active-bonus">
+                            ✓ Aktiv · {activeBuff.remainingUses} Anwendungen
+                            übrig
+                          </p>
+                        )}
+                        <div className="recipe-actions">
+                          <button
+                            className="primary"
+                            disabled={busy || !canCook}
+                            onClick={() =>
+                              void run({ type: "cook", recipeId: recipe.id })
+                            }
+                          >
+                            Sushi herstellen
+                          </button>
+                          <button
+                            className="primary secondary"
+                            disabled={
+                              busy ||
+                              (state.sushi[recipe.id] ?? 0) < 1 ||
+                              !!activeBuff ||
+                              atBuffLimit
+                            }
+                            onClick={() =>
+                              void run({
+                                type: "activateSushi",
+                                recipeId: recipe.id,
+                              })
+                            }
+                          >
+                            {activeBuff ? "Buff aktiv" : "Sushi essen"}
+                          </button>
+                        </div>
+                        {!canCook && (
+                          <small>
+                            Zum Kochen fehlen Fische oder Demo-Perlen.
+                          </small>
+                        )}
+                        {!activeBuff && atBuffLimit && (
+                          <small>
+                            Bereits drei Buffs aktiv. Verbrauche zuerst einen
+                            aktiven Buff.
+                          </small>
+                        )}
+                      </article>
+                    );
+                  })}
                 </div>
-                <h3>{hot ? "Die Tiefe glüht!" : "Die Glut ist erloschen"}</h3>
-                <strong
-                  className={seconds <= 30 ? "urgent countdown" : "countdown"}
-                >
-                  {hot ? time(seconds) : "0:00"}
-                </strong>
-                <p>+50 % relative Item-Dropchance</p>
-                <p>+100 % zulässige Perlenbelohnungen</p>
                 <p className="muted">
-                  Demo: 30 % werden zu 45 %. Keine Verdopplung von Einsätzen
-                  oder Zerlegewerten.
+                  Demo-Startervorrat: je drei Rezeptfische. Angeln füllt aktuell
+                  Kristallkarpfen nach. Neuladen setzt die gesamte Demo zurück.
                 </p>
-                {hotControls}
-              </article>
+              </>
             )}
           </>
         )}

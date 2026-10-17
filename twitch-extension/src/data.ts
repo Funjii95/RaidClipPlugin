@@ -1,3 +1,4 @@
+import type { SushiRecipe } from "./types";
 import type {
   CharacterStats,
   InventoryItem,
@@ -205,6 +206,8 @@ export const sets: ItemSet[] = [
 ];
 export function initialState(now = Date.now()): DemoState {
   return {
+    fish: { sardine: 3, perch: 3, "crystal-carp": 3, eel: 3 },
+    sushi: { fishing: 0, fighter: 0, critical: 0, dive: 0 },
     player: {
       id: "demo-only",
       username: "Funjii · Demo-Otter",
@@ -224,6 +227,7 @@ export function initialState(now = Date.now()): DemoState {
       },
       buffs: [
         {
+          recipeId: "fighter",
           name: "Sushi des Kämpfers",
           activity: "Boss",
           remainingUses: 3,
@@ -265,3 +269,47 @@ export function initialState(now = Date.now()): DemoState {
     cooldowns: { dive: 0, fishing: 0 },
   };
 }
+
+// RpgConfig.cs Recipes: one fish per dish, BuffUses = 3, max three different buffs.
+export const recipes: SushiRecipe[] = [
+  {
+    id: "fishing",
+    name: "Sushi des Anglers",
+    fishId: "sardine",
+    fishName: "Kleine Sardine",
+    fishQuantity: 1,
+    pearlCost: 250,
+    activity: "Fishing",
+    attributes: { fishingLuck: 5 },
+  },
+  {
+    id: "fighter",
+    name: "Sushi des Kämpfers",
+    fishId: "perch",
+    fishName: "Silberbarsch",
+    fishQuantity: 1,
+    pearlCost: 500,
+    activity: "Boss",
+    attributes: { damage: 10 },
+  },
+  {
+    id: "critical",
+    name: "Sushi der Präzision",
+    fishId: "crystal-carp",
+    fishName: "Kristallkarpfen",
+    fishQuantity: 1,
+    pearlCost: 1000,
+    activity: "Boss",
+    attributes: { critChance: 5 },
+  },
+  {
+    id: "dive",
+    name: "Sushi der Tiefe",
+    fishId: "eel",
+    fishName: "Tiefsee-Aal",
+    fishQuantity: 1,
+    pearlCost: 1500,
+    activity: "Dive",
+    attributes: { diveLuck: 5 },
+  },
+];

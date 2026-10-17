@@ -29,7 +29,7 @@ for (const [view, width, height] of [
       "Itemsets",
       "Perks",
       "Boss",
-      "Hot Time",
+      "Kochen",
       "Charakter",
     ]) {
       await page.getByRole("button", { name, exact: true }).click();
@@ -87,14 +87,12 @@ for (const [view, width, height] of [
     await expect(
       page.getByText("Dein Schaden: 0", { exact: true }),
     ).toHaveCount(0);
-    await page.getByRole("button", { name: "Hot Time", exact: true }).click();
-    await page.getByRole("button", { name: "Letzte 30 Sekunden" }).click();
-    await expect(page.locator(".countdown")).toHaveText("0:30");
-    await expect(page.locator(".countdown")).toHaveText("0:29", {
-      timeout: 3000,
-    });
-    await page.getByRole("button", { name: "Beenden", exact: true }).click();
-    await expect(page.locator(".countdown")).toHaveText("0:00");
+    await expect(
+      page.getByRole("button", { name: "Hot Time", exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "Kochen", exact: true }).click();
+    await expect(page.locator(".recipe")).toHaveCount(4);
+    await expect(page.locator(".hot-timer")).toHaveText(/^[0-9]:[0-9]{2}$/);
     await page.evaluate(() => scrollTo(0, 0));
     await page.screenshot({ path: `test-results/${view}.png`, fullPage: true });
     await page.reload();
@@ -119,6 +117,7 @@ test("configuration and helper as first script, reduced motion", async ({
     r.fulfill({ contentType: "text/javascript", body: "" }),
   );
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.clock.install({ time: new Date("2026-10-17T12:00:00Z") });
   await page.goto("/config.html");
   await expect(
     page.getByRole("heading", { name: "Demo-Konfiguration" }),
@@ -129,6 +128,18 @@ test("configuration and helper as first script, reduced motion", async ({
       .locator(".burning")
       .evaluate((e) => getComputedStyle(e).animationName),
   ).toBe("none");
+  await page.getByRole("button", { name: "Letzte 30 Sekunden" }).click();
+  await expect(page.locator(".hot-timer")).toHaveText("0:30");
+  await expect(
+    page.getByRole("progressbar", { name: "Hot-Time-Restzeit" }),
+  ).toHaveJSProperty("value", 30);
+  await page.clock.runFor(1000);
+  await expect(page.locator(".hot-timer")).toHaveText("0:29");
+  await page.clock.runFor(29000);
+  await expect(
+    page.getByRole("progressbar", { name: "Hot-Time-Restzeit" }),
+  ).toHaveJSProperty("value", 0);
+  await expect(page.locator(".hot-hud")).not.toHaveClass(/burning/);
   for (const view of ["panel", "mobile", "config"]) {
     const response = await request.get(`/${view}.html`);
     expect(response.status()).toBe(200);
@@ -258,6 +269,9 @@ for (const view of ["panel", "mobile"]) {
     await page.route("https://extension-files.twitch.tv/**", (route) =>
       route.fulfill({ contentType: "text/javascript", body: "" }),
     );
+    await page.addInitScript(() => {
+      Math.random = () => 0.99;
+    });
     await page.goto(`/${view}.html`);
     const health = page.getByRole("progressbar", {
       name: "Otter HP",
@@ -321,5 +335,94 @@ for (const view of ["panel", "mobile"]) {
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+  });
+}
+
+for (const view of ["panel", "mobile"]) {
+  test(`${view}: cook sushi, eat it and consume activity buffs with pinned hot time`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({
+      width: view === "panel" ? 320 : 390,
+      height: 500,
+    });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.addInitScript(() => {
+      Math.random = () => 0.99;
+    });
+    await page.route("https://extension-files.twitch.tv/**", (route) =>
+      route.fulfill({ contentType: "text/javascript", body: "" }),
+    );
+    await page.goto(`/${view}.html`);
+    await expect(
+      page.getByRole("button", { name: "Hot Time", exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "Kochen", exact: true }).click();
+    const angler = page.locator('[data-recipe-id="fishing"]');
+    for (let i = 0; i < 3; i++)
+      await angler
+        .getByRole("button", { name: "Sushi herstellen", exact: true })
+        .click();
+    await expect(angler.getByText("3 Sushi", { exact: true })).toBeVisible();
+    await expect(
+      angler.getByRole("button", { name: "Sushi herstellen", exact: true }),
+    ).toBeDisabled();
+    await angler
+      .getByRole("button", { name: "Sushi essen", exact: true })
+      .click();
+    await expect(
+      angler.getByText("✓ Aktiv · 3 Anwendungen übrig", { exact: true }),
+    ).toBeVisible();
+    await expect(angler.getByText("2 Sushi", { exact: true })).toBeVisible();
+    await expect(
+      angler.getByRole("button", { name: "Buff aktiv", exact: true }),
+    ).toBeDisabled();
+    await page.getByRole("button", { name: "Abenteuer", exact: true }).click();
+    await page.getByLabel("Animationen aus").check();
+    await page
+      .getByRole("button", { name: "Angel auswerfen", exact: true })
+      .click();
+    await expect(
+      page.getByText("+172 Demo-Perlen", { exact: false }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Kochen", exact: true }).click();
+    await expect(
+      angler.getByText("✓ Aktiv · 2 Anwendungen übrig", { exact: true }),
+    ).toBeVisible();
+    const critical = page.locator('[data-recipe-id="critical"]');
+    await critical
+      .getByRole("button", { name: "Sushi herstellen", exact: true })
+      .click();
+    await critical
+      .getByRole("button", { name: "Sushi essen", exact: true })
+      .click();
+    const dive = page.locator('[data-recipe-id="dive"]');
+    await dive
+      .getByRole("button", { name: "Sushi herstellen", exact: true })
+      .click();
+    await expect(
+      dive.getByRole("button", { name: "Sushi essen", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      dive.getByText(
+        "Bereits drei Buffs aktiv. Verbrauche zuerst einen aktiven Buff.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    const banner = page.locator(".hot-hud");
+    expect(Math.round((await banner.boundingBox())!.y)).toBe(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({
+      path: `test-results/cooking-${view}.png`,
+      fullPage: true,
+    });
+    await page.reload();
+    await page.getByRole("button", { name: "Kochen", exact: true }).click();
+    await expect(angler.getByText("0 Sushi", { exact: true })).toBeVisible();
   });
 }
