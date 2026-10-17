@@ -11,7 +11,10 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
         points.ApplyRpgAsync(userId, name, requestId, account =>
         {
             if (!config.Enabled) return new(false, "RPG ist deaktiviert.");
-            if (!Enum.IsDefined(slot) || !account.Rpg.Equipment.Remove(slot)) return new(false, "Dieser Ausrüstungsplatz ist leer oder ungültig.");
+            if (!Enum.IsDefined(slot) || !account.Rpg.Equipment.ContainsKey(slot)) return new(false, "Dieser Ausrüstungsplatz ist leer oder ungültig.");
+            if(config.Health.Enabled) RpgHealthService.Refresh(account.Rpg,config.Health,DateTimeOffset.UtcNow);
+            account.Rpg.Equipment.Remove(slot);
+            if(config.Health.Enabled) RpgHealthService.Refresh(account.Rpg,config.Health,DateTimeOffset.UtcNow);
             return new(true);
         }, token);
     public Task<RpgTransactionResult> BuyPerkAsync(string userId, string name, string requestId, string perkId, CancellationToken token) =>
@@ -63,8 +66,10 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             }
             if (!Enum.IsDefined(slot)) return new(false, "Ungültiger Ausrüstungsplatz.");
             if (item.Slot != slot && !(ring && slot is EquipmentSlot.Ring1 or EquipmentSlot.Ring2)) return new(false, "Unpassender Ausrüstungsplatz.");
+            if(config.Health.Enabled) RpgHealthService.Refresh(account.Rpg,config.Health,DateTimeOffset.UtcNow);
             foreach (var old in account.Rpg.Equipment.Where(p => p.Value == instanceId).Select(p => p.Key).ToArray()) account.Rpg.Equipment.Remove(old);
             account.Rpg.Equipment[slot] = instanceId;
+            if(config.Health.Enabled) RpgHealthService.Refresh(account.Rpg,config.Health,DateTimeOffset.UtcNow);
             return new(true, Details: new(RpgActionKind.Equip, RpgChatPresentation.ItemName(item),
                 Bonuses: RpgChatPresentation.Snapshot(item.Attributes), Slot: slot,
                 Effects: JsonSerializer.Deserialize<List<RpgItemEffect>>(JsonSerializer.Serialize(item.Effects)),

@@ -12,7 +12,7 @@ public static class RpgItemGenerationService
         var copy = JsonSerializer.Deserialize<RpgConfig>(JsonSerializer.Serialize(current))!;
         foreach (var effect in new RpgLootConfig().Effects)
             if (!copy.DiveLoot.Effects.Any(e => e.Id == effect.Id)) copy.DiveLoot.Effects.Add(effect);
-        foreach (var item in copy.DiveLoot.Items.Where(i => i.Slot.HasValue && i.Kind != RpgItemKind.Consumable && i.Generation is null && i.Effects.Count == 0))
+        foreach (var item in copy.DiveLoot.Items.Where(i => i.Slot.HasValue && i.Kind != RpgItemKind.Consumable && i.Generation is null && i.Effects.Count == 0 && i.Attributes.MaximumHp == 0))
             item.Generation = DefaultRules(item.Slot!.Value, item.Rarity);
         copy.Validate(); return copy;
     }
@@ -68,11 +68,12 @@ public static class RpgItemGenerationService
         if (item.Generation is not { } rules)
         {
             if(requiredEffectId is not null&&!item.Effects.Any(e=>e.Id==requiredEffectId))throw new InvalidOperationException("Der gewählte Effekt gehört nicht zu diesem festen Item.");
+            RpgCoreStatService.Apply(item);
             return;
         }
         var count = Counts(item.Rarity);
         if(requiredEffectId is not null&&(!rules.GenerateEffect||count.EffectsMax==0||!rules.EffectIds.Contains(requiredEffectId)))throw new InvalidOperationException("Der gewählte Effekt ist für diese Itemdefinition/Seltenheit nicht erlaubt.");
-        var candidates = rules.Attributes.ToList(); item.Attributes = new();
+        var candidates = rules.Attributes.ToList(); item.Attributes = new(); item.CoreStatsVersion=0;
         var selected = rules.AttributeCount ?? random.NextInclusive(count.Min, count.Max);
         for (var i = 0; i < selected; i++)
         {
@@ -91,5 +92,6 @@ public static class RpgItemGenerationService
             item.Effects.Add(effect);
         }
         item.Generation = null;
+        RpgCoreStatService.Apply(item);
     }
 }

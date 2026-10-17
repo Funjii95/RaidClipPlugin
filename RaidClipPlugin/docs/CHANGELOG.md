@@ -1,3 +1,11 @@
+## 2.1.18 – Kraft, Ausdauer und HP-Ausrüstung
+
+- Garantierte Hauptwerte auf jedem Ausrüstungsteil: Kraft/Ausdauer nach Seltenheit Common 1/1, Uncommon 2/2, Rare 3/4, Epic 5/7, Legendary 8/10. Beide kommen zusätzlich zur bisherigen Anzahl zufälliger Attribute und Spezialeffekte. Standardumrechnung: 1 Kraft = +1 % Schaden innerhalb des bestehenden Schadenscaps; 1 Ausdauer = +5 MaxHP innerhalb des Ausrüstungs-HP-Caps.
+- Alte Ausrüstungsinstanzen werden deterministisch und versioniert ergänzt, ohne IDs, Sekundärwerte, Effekte oder Slots zu verändern. Positive eigene Kraft-/Ausdauerwerte bleiben erhalten. Lesende Inventarabfragen zeigen die ergänzten Werte auf einer Kopie; RPG-Transaktionen speichern sie atomar. Zusätzliche `.pre-core-stats.bak`-Sicherung vor dem ersten Schreibvorgang. Schätze und Verbrauchsgegenstände erhalten keine Kampfwerte.
+- Ausrüstung kann maximale Lebenspunkte erhöhen: Seetangstiefel (Common, +5), Korallenhelm (Uncommon, +10), Muschelpanzer (Rare, +20), Abgrundrüstung (Epic, +35), Leviathans Herz (Legendary, +50). Neue Definitionen ergänzen den bestehenden Loot-Pool beim Laden; vorhandene Definitionen und gespeicherte Items werden nicht verändert.
+- Nur angelegte, eindeutige Instanzen zählen. Ausrüstungsbonus standardmäßig insgesamt auf 1.000 HP begrenzt, unter HP & Überleben einstellbar. Bonusanzeige in Itemdetails, Ausrüstungsantworten und Charakterwerten; normale Seltenheits-/Einsatzgrenzen gelten weiter.
+- Kein Heilen durch An-/Ablegen, kein Wiederbeleben oder Entfernen einer Todessperre. Ablegen begrenzt aktuelle HP auf die neue Obergrenze. Levelaufstiege heilen weiterhin ausschließlich den hinzugewonnenen Level-HP-Betrag. Basis-HP-Items bleiben beim Aktivieren dynamischer Drops unverändert feste Items.
+
 ## 2.1.17 – Heist-Startkollision
 
 - Ein gespeicherter Heist-Startbefehl `!start heist` wird nicht mehr zusätzlich als eigener Event-Shortcut registriert. Beseitigt die falsche Heist-gegen-Heist-Kollision beim Modulstart; echte Konflikte und Deaktivierungsschalter bleiben erhalten.

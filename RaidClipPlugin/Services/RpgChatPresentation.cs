@@ -30,7 +30,7 @@ public static class RpgChatPresentation
     public static string KindName(RpgItem item) => item.Slot.HasValue ? "Ausrüstung" :
         item.Kind == RpgItemKind.Consumable ? "Verbrauchsgegenstand" : "Schatz";
     public static RpgAttributes Snapshot(RpgAttributes a, int levels = 1) => new()
-    { Damage = a.Damage * levels, CritChance = a.CritChance * levels, CritDamage = a.CritDamage * levels, Luck = a.Luck * levels,
+    { Power=a.Power*levels,Stamina=a.Stamina*levels,MaximumHp=a.MaximumHp*levels, Damage = a.Damage * levels, CritChance = a.CritChance * levels, CritDamage = a.CritDamage * levels, Luck = a.Luck * levels,
         BossDamage = a.BossDamage * levels, PearlBonus = a.PearlBonus * levels, FishingLuck = a.FishingLuck * levels, DiveLuck = a.DiveLuck * levels,
         DoubleAttackChance = a.DoubleAttackChance * levels, TripleAttackChance = a.TripleAttackChance * levels,
         ExtraLootChance = a.ExtraLootChance * levels, SushiPreservationChance = a.SushiPreservationChance * levels };
@@ -42,6 +42,8 @@ public static class RpgChatPresentation
         { if (value != 0) values.Add((value > 0 ? "+" : "") + Number(value) + (percent ? " % " : " ") + label); }
         Add(a.Damage, "Schaden", true); Add(a.CritChance, "Kritische Trefferchance", true); Add(a.CritDamage, "Kritischer Schaden", true);
         Add(a.Luck, "Glück"); Add(a.BossDamage, "Boss-Schaden", true); Add(a.PearlBonus, "Perlenbonus", true);
+        Add(a.MaximumHp,"maximale Lebenspunkte");
+        Add(a.Power,"Kraft");Add(a.Stamina,"Ausdauer");
         Add(a.FishingLuck, "Angelglück"); Add(a.DiveLuck, "Tauchglück");
         Add(a.DoubleAttackChance, "Doppelangriffschance", true); Add(a.TripleAttackChance, "Dreifachangriffschance", true);
         Add(a.ExtraLootChance, "Zusätzlicher Lootwurf", true); Add(a.SushiPreservationChance, "Sushi-Erhaltung", true);

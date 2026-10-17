@@ -6,6 +6,8 @@ public sealed class RpgHealthConfig
 {
     [Category("Lebenspunkte"), DisplayName("HP-System aktiv")] public bool Enabled { get; set; } = true;
     [Category("Lebenspunkte"), DisplayName("Basis-MaxHP")] public int BaseHp { get; set; } = 100;
+    [Category("Lebenspunkte"), DisplayName("Maximaler Ausrüstungs-HP-Bonus")] public int EquipmentHpCap { get; set; } = 1000;
+    [Category("Lebenspunkte"), DisplayName("HP pro Ausdauerpunkt")] public int HpPerStamina { get; set; } = 5;
     [Category("Lebenspunkte"), DisplayName("MaxHP pro Level")] public int HpPerLevel { get; set; } = 2;
     [Category("Lebenspunkte"), DisplayName("Neue MaxHP beim Levelaufstieg heilen")] public bool HealLevelGain { get; set; } = true;
     [Category("Level / EXP"), DisplayName("Maximallevel")] public int MaximumLevel { get; set; } = 100;
@@ -34,7 +36,7 @@ public sealed class RpgHealthConfig
     [Category("Boss-Gegenangriff"), DisplayName("Legendär – Maximum")] public int LegendaryMaximum { get; set; } = 55;
     public void Validate()
     {
-        if (BaseHp is < 1 or > 1000000 || HpPerLevel is < 0 or > 10000 || MaximumLevel is < 1 or > 100 ||
+        if (BaseHp is < 1 or > 1000000 || HpPerStamina is <1 or >1000 || EquipmentHpCap is <0 or >1000000 || HpPerLevel is < 0 or > 10000 || MaximumLevel is < 1 or > 100 ||
             ExperiencePerLevel is < 1 or > 100000000 || VictoryExperience is < 0 or > 1000000000 || EscapeExperience is < 0 or > 1000000000 || TopExperience is < 0 or > 1000000000 ||
             ChatHp is < 0 or > 1000000 || ChatCooldownSeconds is < 1 or > 86400 || PassiveHp is < 0 or > 1000000 || PassiveSeconds is < 1 or > 86400 || CatchUpMinutes is < 0 or > 525600 ||
             StrongThreshold < 1 || EliteThreshold <= StrongThreshold || LegendaryThreshold <= EliteThreshold ||

@@ -36,7 +36,9 @@ public sealed class RpgItemSystemTests : IDisposable
                 Generation = RpgItemGenerationService.DefaultRules(EquipmentSlot.Ring1, rarity) };
             var ranges = item.Generation.Attributes.ToDictionary(a => a.Attribute);
             RpgItemGenerationService.Generate(item, config, rng);
-            var values = typeof(RpgAttributes).GetProperties().Select(p => (p.Name, Value: (decimal)p.GetValue(item.Attributes)!)).Where(p => p.Value != 0).ToArray();
+            Assert.True(item.Attributes.Power>0);Assert.True(item.Attributes.Stamina>0);
+            var values = typeof(RpgAttributes).GetProperties().Where(p=>p.Name is not (nameof(RpgAttributes.Power) or nameof(RpgAttributes.Stamina)))
+                .Select(p => (p.Name, Value: (decimal)p.GetValue(item.Attributes)!)).Where(p => p.Value != 0).ToArray();
             var counts = RpgItemGenerationService.Counts(rarity);
             Assert.InRange(values.Length, counts.Min, counts.Max);
             foreach (var value in values) Assert.InRange(value.Value, ranges[value.Name].Minimum, ranges[value.Name].Maximum);

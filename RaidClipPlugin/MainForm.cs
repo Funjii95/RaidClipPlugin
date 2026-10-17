@@ -4876,6 +4876,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.18 – Kraft, Ausdauer und HP-Ausrüstung
+
+- Alle Ausrüstungsteile erhalten garantiert Kraft und Ausdauer zusätzlich zu bisherigen Rolls und Effekten. 1 Kraft gibt standardmäßig +1 % Schaden, 1 Ausdauer +5 MaxHP. Bestehende Items werden einmalig ohne Neuwürfeln ergänzt; Ausrüstungswechsel heilt nicht.
+- Neues Ausrüstungsattribut maximale Lebenspunkte und fünf Basis-Items von +5 bis +50 MaxHP. Bonus gilt nur angelegt. Anlegen heilt nicht; Ablegen begrenzt HP auf das neue Maximum. Bestehende Items und Todessperren bleiben erhalten.
+
 2.1.17 – Heist-Startkollision
 
 - Behebt den Modulstart mit gespeichertem !start heist: Der Heist-Start wird nicht mehr doppelt registriert und fälschlich als Command-Kollision gemeldet.

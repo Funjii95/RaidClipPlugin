@@ -5,6 +5,9 @@ namespace RaidClipPlugin.Services;
 
 public static class CharacterStatService
 {
+    public static decimal EquipmentMaximumHp(RpgProfile profile,int hpPerStamina=5) => profile.Equipment.Values.Distinct()
+        .Select(id=>profile.Inventory.SingleOrDefault(i=>i.InstanceId==id))
+        .Where(i=>i?.Slot is not null).Sum(i=>Math.Clamp(i!.Attributes.MaximumHp,0,1000000)+Math.Clamp(i.Attributes.Stamina,0,1000000)*hpPerStamina);
     public static (decimal Perks, decimal Equipment, decimal Sushi) DiveLuckSources(RpgProfile profile, RpgConfig config)
     {
         static decimal Luck(RpgAttributes stats) => stats.Luck + stats.DiveLuck;
@@ -53,18 +56,20 @@ public static class CharacterStatService
         result.Luck = Math.Clamp(result.Luck, 0, Math.Clamp(config.LuckCap, 0, 1000));
         result.DiveLuck = Math.Clamp(result.DiveLuck, 0, Math.Clamp(config.LuckCap, 0, 1000));
         result.FishingLuck = Math.Clamp(result.FishingLuck, 0, Math.Clamp(config.LuckCap, 0, 1000));
-        result.Damage = Math.Clamp(result.Damage, 0, Math.Clamp(config.DamageBonusCap, 0, 1000));
+        result.Damage = Math.Clamp(result.Damage + result.Power*config.PowerDamagePerPoint, 0, Math.Clamp(config.DamageBonusCap, 0, 1000));
         result.BossDamage = Math.Clamp(result.BossDamage, 0, Math.Clamp(config.DamageBonusCap, 0, 1000));
         result.PearlBonus = Math.Clamp(result.PearlBonus, 0, Math.Clamp(config.PearlBonusCap, 0, 15));
         result.DoubleAttackChance = Math.Clamp(result.DoubleAttackChance, 0, Math.Clamp(config.DoubleAttackChanceCap, 0, 20));
         result.TripleAttackChance = Math.Clamp(result.TripleAttackChance, 0, Math.Clamp(config.TripleAttackChanceCap, 0, 5));
         result.ExtraLootChance = Math.Clamp(result.ExtraLootChance, 0, Math.Clamp(config.ExtraLootChanceCap, 0, 10));
         result.SushiPreservationChance = Math.Clamp(result.SushiPreservationChance, 0, Math.Clamp(config.SushiPreservationChanceCap, 0, 20));
+        result.MaximumHp = Math.Clamp(EquipmentMaximumHp(profile,config.Health.HpPerStamina),0,config.Health.EquipmentHpCap);
         return result;
     }
 
     private static void Add(RpgAttributes a, RpgAttributes b, int count = 1)
     {
+        a.Power+=b.Power*count;a.Stamina+=b.Stamina*count;
         a.Damage += b.Damage * count; a.CritChance += b.CritChance * count;
         a.CritDamage += b.CritDamage * count; a.Luck += b.Luck * count;
         a.BossDamage += b.BossDamage * count; a.PearlBonus += b.PearlBonus * count;

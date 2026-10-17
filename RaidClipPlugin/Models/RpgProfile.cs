@@ -14,6 +14,9 @@ public static class RarityPresentation
 
 public sealed class RpgAttributes
 {
+    public decimal Power { get; set; }
+    public decimal Stamina { get; set; }
+    public decimal MaximumHp { get; set; }
     public decimal DoubleAttackChance { get; set; }
     public decimal TripleAttackChance { get; set; }
     public decimal ExtraLootChance { get; set; }
@@ -30,6 +33,7 @@ public sealed class RpgAttributes
 
 public sealed class RpgItem
 {
+    public int CoreStatsVersion { get; set; }
     public long? SalvageValue { get; set; }
     public bool IsLocked { get; set; }
     public bool IsFavorite { get; set; }
@@ -90,6 +94,7 @@ public sealed class RpgHealthState
     // Nullable distinguishes legacy profiles from an injured player at zero HP.
     public int? CurrentHp { get; set; }
     public int AppliedMaximumHp { get; set; }
+    public int? AppliedBaseMaximumHp { get; set; }
     public DateTimeOffset? LastPassiveRegen { get; set; }
     public DateTimeOffset? LastChatHeal { get; set; }
     public string BossId { get; set; } = "";

@@ -6,14 +6,18 @@ namespace RaidClipPlugin.Services;
 /// <summary>Shared HP rules. Mutating helpers must run on the store's detached transaction draft.</summary>
 public static class RpgHealthService
 {
-    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked(c.BaseHp + (Math.Clamp(p.PlayerLevel,1,c.MaximumLevel)-1)*c.HpPerLevel);
+    private static int BaseMaximum(RpgProfile p,RpgHealthConfig c) => checked(c.BaseHp + (Math.Clamp(p.PlayerLevel,1,c.MaximumLevel)-1)*c.HpPerLevel);
+    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked(BaseMaximum(p,c)+(int)decimal.Floor(Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina),0,c.EquipmentHpCap)));
     public static void Refresh(RpgProfile p, RpgHealthConfig c, DateTimeOffset now)
     {
         c.Validate(); p.Health ??= new();
         var h=p.Health; var max=Maximum(p,c);
         if(h.CurrentHp is null) { h.CurrentHp=max; h.AppliedMaximumHp=max; h.LastPassiveRegen=now; }
-        if(c.HealLevelGain && h.AppliedMaximumHp>0 && max>h.AppliedMaximumHp)
-            h.CurrentHp=(int)Math.Min(max,(long)h.CurrentHp.Value+max-h.AppliedMaximumHp);
+        var baseMax=BaseMaximum(p,c);
+        var previousBase=h.AppliedBaseMaximumHp??(h.AppliedMaximumHp>0?h.AppliedMaximumHp:baseMax);
+        if(c.HealLevelGain && baseMax>previousBase)
+            h.CurrentHp=(int)Math.Min(max,(long)h.CurrentHp.Value+baseMax-previousBase);
+        h.AppliedBaseMaximumHp=baseMax;
         h.AppliedMaximumHp=max;
         h.CurrentHp=Math.Clamp(h.CurrentHp.Value,0,max);
         h.LastPassiveRegen ??= now;

@@ -10,6 +10,7 @@ public sealed class RpgLootConfig
         foreach (var item in Items.Where(i => i.Slot.HasValue))
             item.Generation = RpgItemGenerationService.DefaultRules(item.Slot!.Value, item.Rarity);
         Items.AddRange(RpgEquipmentCatalog.Items());
+        RpgHealthEquipmentCatalog.AddMissing(this);
     }
     public List<RpgItemEffect> Effects { get; set; } = new()
     {

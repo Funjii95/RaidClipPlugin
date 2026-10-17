@@ -4,6 +4,7 @@ namespace RaidClipPlugin.Config;
 
 public sealed class RpgConfig
 {
+    public decimal PowerDamagePerPoint { get; set; } = 1;
     public RpgHealthConfig Health { get; set; } = new();
     public RpgEnemyConfig Enemies { get; set; } = new();
     public RpgHotTimeConfig HotTime { get; set; } = new();
@@ -16,6 +17,7 @@ public sealed class RpgConfig
     public decimal FishingEquipmentChance { get; set; } = 0.5m;
     public void Validate()
     {
+        if(PowerDamagePerPoint is <0 or >10)throw new InvalidOperationException("Kraft-Schadensbonus muss zwischen 0 und 10 Prozent je Punkt liegen.");
         Health.Validate();
         Enemies.Validate();
         DiveLoot.Validate();
