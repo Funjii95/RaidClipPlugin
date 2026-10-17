@@ -234,6 +234,7 @@ public sealed class RpgDebugSession
             {
                 case "HP setzen": h.CurrentHp=Math.Clamp(value,0,RpgHealthService.Maximum(a.Rpg,cfg));break;
                 case "Gegenangriff": h.CurrentHp=Math.Max(0,h.CurrentHp!.Value-RpgSushiService.BossDamage(RpgHealthService.CounterDamage(Math.Max(10,value),cfg,new DebugRandom(Options.Seed)),a.Rpg,clock));break;
+                case "Boss-Lifeleech": RpgSushiService.HealFromBossAttack(Math.Max(0,value),Math.Max(0,value),a.Rpg,cfg,h.BossId,clock);break;
                 case "Boss-Teilnahme": RpgSushiService.Participate(a.Rpg,"debug-sushi-"+value,clock.AddMinutes(2),clock);RpgSushiService.Close(a.Rpg,"debug-sushi-"+value,clock,clock,cfg);break;
                 case "Besiegt markieren": h.BossId="debug-boss";h.Defeated=true;h.CurrentHp=0;break;
                 case "Regeneration":

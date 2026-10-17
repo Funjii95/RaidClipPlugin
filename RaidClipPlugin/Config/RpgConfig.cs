@@ -134,6 +134,7 @@ public sealed class RpgRecipe
     public decimal PassiveHealing { get; set; }
     public int ChatHealing { get; set; }
     public decimal BossDamageReduction { get; set; }
+    public decimal BossLifeleech { get; set; }
     public string Id { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public string FishId { get; set; } = "";

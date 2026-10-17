@@ -105,9 +105,9 @@ public sealed partial class MainForm
         execute.Click+=async(_,_)=>{var name=(string)action.SelectedItem!;var selected=(selection.SelectedItem as RpgChoice)?.Id??"";var value=(long)amount.Value;await Run(async()=>await session.ProgressAsync(name,selected,value,cancel.Token));};
         var sim=Page("Simulation");var runs=new ComboBox{Width=130,DropDownStyle=ComboBoxStyle.DropDownList};foreach(var n in new[]{100,1000,10000,100000})runs.Items.Add(n);runs.SelectedIndex=0;var simulate=NewActionButton("Loot & Kampf simulieren");sim.Controls.Add(Row(runs,simulate,new Label{Text="Reproduzierbarer Seed aus Drop-Editor. Kein Schreiben von Spielerständen durch Simulationen.",AutoSize=true}));
         var health=Page("HP & Überleben");var hpAction=new ComboBox {Width=220,DropDownStyle=ComboBoxStyle.DropDownList};
-        hpAction.Items.AddRange(new object[]{"Status","HP setzen","Gegenangriff","Besiegt markieren","Regeneration","Chat-Heilung","Boss-Teilnahme"});hpAction.SelectedIndex=0;
+        hpAction.Items.AddRange(new object[]{"Status","HP setzen","Gegenangriff","Besiegt markieren","Regeneration","Chat-Heilung","Boss-Teilnahme","Boss-Lifeleech"});hpAction.SelectedIndex=0;
         var hpValue=new NumericUpDown {Minimum=0,Maximum=1000000,Value=50,Width=130};var hpRun=NewActionButton("HP-Test ausführen");
-        health.Controls.Add(Row(hpAction,hpValue,hpRun,new Label {AutoSize=true,Text="Wert: HP / Boss-Ausgangs-HP / vergangene Minuten. Nur isoliertes Testkonto."}));
+        health.Controls.Add(Row(hpAction,hpValue,hpRun,new Label {AutoSize=true,Text="Wert: HP / Boss-Ausgangs-HP / Minuten / Schaden bei Boss-Lifeleech. Nur isoliertes Testkonto."}));
         hpRun.Click+=async(_,_)=>{var a=(string)hpAction.SelectedItem!;var v=(int)hpValue.Value;await Run(async()=>await session.HealthAsync(a,v,cancel.Token));};
         simulate.Click+=async(_,_)=>{var count=(int)runs.SelectedItem!;await Run(async()=>await session.SimulateAsync(count,cancel.Token));};
         void Bind()

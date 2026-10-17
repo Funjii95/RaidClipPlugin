@@ -74,6 +74,7 @@ public sealed class RpgBuff
     public decimal PassiveHealing { get; set; }
     public int ChatHealing { get; set; }
     public decimal BossDamageReduction { get; set; }
+    public decimal BossLifeleech { get; set; }
     public string RecipeId { get; set; } = "";
     public RpgActivity Activity { get; set; }
     public int RemainingUses { get; set; } = 3;

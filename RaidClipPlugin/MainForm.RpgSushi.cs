@@ -14,7 +14,7 @@ public sealed partial class MainForm
         void Columns(DataGridView grid,params string[] names)
         {foreach(var name in names)grid.Columns.Add(new DataGridViewTextBoxColumn{HeaderText=name,Width=130,SortMode=DataGridViewColumnSortMode.NotSortable});}
         Columns(_rpgFishEditor,"ID","Name","Seltenheit","Gewicht","Perlen (leer = bisherige Auszahlung)","Mindesteinsatz","Fanggebiet");
-        Columns(_rpgRecipeEditor,"ID","Name","Kategorie","Haupt-Fisch-ID","Menge","Zutaten (ID:Menge;ID:Menge)","Perlenkosten","HP/Minute zusätzlich","Chat-HP zusätzlich","Boss-Reduktion %","Boss-Teilnahmen");
+        Columns(_rpgRecipeEditor,"ID","Name","Kategorie","Haupt-Fisch-ID","Menge","Zutaten (ID:Menge;ID:Menge)","Perlenkosten","HP/Minute zusätzlich","Chat-HP zusätzlich","Boss-Reduktion %","Boss-Lifeleech %","Boss-Teilnahmen");
         var tabs=new TabControl{Dock=DockStyle.Fill};AddMinigameTab(tabs,"Fangpool",_rpgFishEditor);AddMinigameTab(tabs,"Rezepte & Buffs",_rpgRecipeEditor);
         var root=new TableLayoutPanel{Dock=DockStyle.Fill,RowCount=3,ColumnCount=1,Padding=new(10)};
         root.RowStyles.Add(new(SizeType.Absolute,70));root.RowStyles.Add(new(SizeType.Percent,100));root.RowStyles.Add(new(SizeType.Absolute,55));
@@ -28,7 +28,7 @@ public sealed partial class MainForm
         foreach(var f in c.FishSpecies)
         {var row=_rpgFishEditor.Rows[_rpgFishEditor.Rows.Add(f.Id,f.Name,f.Rarity.ToString(),f.Weight,f.PearlReward?.ToString()??"",f.MinimumStake,f.Zone)];row.Cells[0].ReadOnly=true;}
         foreach(var r in c.Recipes)
-        {var row=_rpgRecipeEditor.Rows[_rpgRecipeEditor.Rows.Add(r.Id,r.DisplayName,r.Category.ToString(),r.FishId,r.FishQuantity,string.Join(";",r.Ingredients.Select(i=>$"{i.Key}:{i.Value}")),r.PearlCost,r.PassiveHealing,r.ChatHealing,r.BossDamageReduction,RpgSushiService.Uses(r,c))];row.Cells[0].ReadOnly=true;}
+        {var row=_rpgRecipeEditor.Rows[_rpgRecipeEditor.Rows.Add(r.Id,r.DisplayName,r.Category.ToString(),r.FishId,r.FishQuantity,string.Join(";",r.Ingredients.Select(i=>$"{i.Key}:{i.Value}")),r.PearlCost,r.PassiveHealing,r.ChatHealing,r.BossDamageReduction,r.BossLifeleech,RpgSushiService.Uses(r,c))];row.Cells[0].ReadOnly=true;}
     }
     private void ReadRpgSushi(RpgConfig c)
     {
@@ -49,7 +49,7 @@ public sealed partial class MainForm
             var r=c.Recipes.FirstOrDefault(r=>r.Id==id);if(r is null){r=new(){Id=id};c.Recipes.Add(r);}
             r.DisplayName=Text(row,1);r.Category=Enum.Parse<SushiCategory>(Text(row,2),true);r.FishId=Text(row,3);r.FishQuantity=int.Parse(Text(row,4));
             r.Ingredients=Text(row,5).Split(';',StringSplitOptions.RemoveEmptyEntries).Select(s=>s.Split(':')).ToDictionary(p=>p[0].Trim(),p=>int.Parse(p[1]));
-            r.PearlCost=long.Parse(Text(row,6));r.PassiveHealing=decimal.Parse(Text(row,7));r.ChatHealing=int.Parse(Text(row,8));r.BossDamageReduction=decimal.Parse(Text(row,9));r.BossUses=int.Parse(Text(row,10));
+            r.PearlCost=long.Parse(Text(row,6));r.PassiveHealing=decimal.Parse(Text(row,7));r.ChatHealing=int.Parse(Text(row,8));r.BossDamageReduction=decimal.Parse(Text(row,9));r.BossLifeleech=decimal.Parse(Text(row,10));r.BossUses=int.Parse(Text(row,11));
         }
     }
 }

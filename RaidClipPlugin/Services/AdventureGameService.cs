@@ -342,6 +342,7 @@ public sealed class AdventureGameService
         var extraHits = 0;
         var hpEnabled = _config.Adventures.Rpg.Enabled && _config.Adventures.Rpg.Health.Enabled;
         var receivedDamage = 0;
+        var lifeleechHealing = 0;
         var healthText = "";
         var playerDied = false;
         if (_config.Adventures.Rpg.Enabled)
@@ -367,11 +368,13 @@ public sealed class AdventureGameService
                         if(health.BossId!=_boss.Id) {health.BossId=_boss.Id;health.Defeated=false;health.BossDamage=0;}
                         health.BossDamage=checked(health.BossDamage+Math.Min(damage,_boss.Hp));
                         health.BossRemainingHp=Math.Max(0,_boss.Hp-damage);
+                        lifeleechHealing=RpgSushiService.HealFromBossAttack(damage,_boss.Hp,account.Rpg,_config.Adventures.Rpg.Health,_boss.Id,clock);
                         if(damage<_boss.Hp)
                             receivedDamage=RpgSushiService.BossDamage(RpgHealthService.CounterDamage(_boss.Config.HitPoints,_config.Adventures.Rpg.Health,_random),account.Rpg,clock);
                         health.CurrentHp=Math.Max(0,health.CurrentHp!.Value-receivedDamage);
                         playerDied=health.Defeated=health.CurrentHp==0;
                         healthText=$" Gegenangriff: -{receivedDamage} HP. ❤️ {health.CurrentHp}/{RpgHealthService.Maximum(account.Rpg,_config.Adventures.Rpg.Health)} HP.";
+                        if(lifeleechHealing>0)healthText=$" Lifeleech: +{lifeleechHealing} HP."+healthText;
                         if(playerDied) healthText+=" 💀 Besiegt: keine Belohnungen für diesen Boss!";
                     }
                     RpgPassiveService.ConsumeBuffs(account.Rpg, RpgActivity.Boss, _config.Adventures.Rpg, _random, clock);
@@ -401,7 +404,8 @@ public sealed class AdventureGameService
             SaveHealthBoss(null);
             _boss=null;
             _nextBoss=_now().AddSeconds(Math.Clamp(finished.Config.RoundCooldownSeconds,1,86400));
-            await Say("🏆 Boss besiegt! Überlebende Teilnehmer erhalten Perlen und " + _config.Adventures.Rpg.Health.VictoryExperience + " EXP; besiegte Teilnehmer erhalten nichts.",token);
+            await Say("🏆 Boss besiegt! Überlebende Teilnehmer erhalten Perlen und " + _config.Adventures.Rpg.Health.VictoryExperience + " EXP; besiegte Teilnehmer erhalten nichts."+
+                (lifeleechHealing>0?$" @{user.UserName}: Lifeleech +{lifeleechHealing} HP.":""),token);
             if(communityVictory) _points.HotTime.StartAfterBoss(finished.Id,_config.Adventures.Rpg.HotTime,true);
             foreach(var text in _points.HotTime.PollMessages(_config.Adventures.Rpg.HotTime)) await Say(text,token);
             DataChanged?.Invoke();

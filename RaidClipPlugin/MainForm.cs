@@ -4876,6 +4876,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.20 – Vampir-Maki ohne Lifeleech-Cap
+
+- Vampirtintenfisch und Thunfisch sind fangbare Zutaten. Vampir-Maki: 2 Vampirtintenfische +1 Thunfisch +750 Perlen, defensiver Slot, drei Bosskampfteilnahmen.
+- 5 % Lifeleech aus tatsächlichem großen Boss-Schaden: vor dem Gegenangriff heilen, kein Overkill und kein festes Heilungscap. MaxHP und Todessperren gelten weiterhin. Einstellungsfeld, Buffanzeige und isolierter Debugtest ergänzt.
+
 2.1.19 – Sushi 2.1 und neue Meeresbewohner
 
 - Fünf neue Fangarten mit eigenen Perlenbelohnungen. !fish ohne Einsatz, !fishbag, !cook und !eat. Kappa-Maki, Tempura-Rolle und Kugelfisch-Sashimi für passive Heilung, Chat-Heilung und Boss-Schadensreduktion.

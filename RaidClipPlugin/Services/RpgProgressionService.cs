@@ -109,7 +109,7 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             account.Rpg.Sushi[recipeId]--;
             account.Rpg.Buffs.Add(new() { RecipeId = recipeId, Activity = recipe.Activity,
                 RemainingUses = RpgSushiService.Uses(recipe,config), Attributes = JsonSerializer.Deserialize<RpgAttributes>(JsonSerializer.Serialize(recipe.Attributes))!,
-                Category=recipe.Category,EncounterBased=true,ActivatedAt=now,PassiveHealing=recipe.PassiveHealing,ChatHealing=recipe.ChatHealing,BossDamageReduction=recipe.BossDamageReduction });
+                Category=recipe.Category,EncounterBased=true,ActivatedAt=now,PassiveHealing=recipe.PassiveHealing,ChatHealing=recipe.ChatHealing,BossDamageReduction=recipe.BossDamageReduction,BossLifeleech=recipe.BossLifeleech });
             var buff = account.Rpg.Buffs[^1];
             return new(true, Details: new(RpgActionKind.ActivateSushi, RpgChatPresentation.RecipeName(recipe),
                 Bonuses: RpgChatPresentation.Snapshot(buff.Attributes), Activity: buff.Activity, RemainingUses: buff.RemainingUses,EffectDescription:RpgSushiService.Effects(recipe),EncounterBased:true));

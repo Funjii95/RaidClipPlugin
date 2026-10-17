@@ -29,7 +29,7 @@ public sealed class RpgSushiTwoTests : IDisposable
     [Fact]
     public void WeightsAreRelativeRarePerkAppliesAndOldSpeciesRemain()
     {
-        var c=Config();c.Validate();Assert.Equal(10100,RpgFishingService.Weights(c,new(),0).Sum(p=>p.Weight));
+        var c=Config();c.Validate();Assert.Equal(10133,RpgFishingService.Weights(c,new(),0).Sum(p=>p.Weight));
         Assert.Equal(5,c.FishSpecies.Count(f=>new[]{"sardine","perch","crystal-carp","eel","leviathan"}.Contains(f.Id)));
         var weights=RpgFishingService.Weights(c,new(){FishingLuck=100},0);
         Assert.Equal(24,weights.Single(p=>p.Fish.Id=="giant_shrimp").Weight);Assert.Equal(50,weights.Single(p=>p.Fish.Id=="sea_cucumber").Weight);

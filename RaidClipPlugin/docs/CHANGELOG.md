@@ -1,3 +1,10 @@
+## 2.1.20 – Vampir-Maki ohne Lifeleech-Cap
+
+- Fangbarer Vampirtintenfisch (`vampire_squid`, Rare, Tiefsee, Standard 300 Perlen) und zuvor fehlender Thunfisch (`tuna`, Uncommon, Standard 150 Perlen). Gewichte 8/25 und Belohnungen sind im vorhandenen Fangpool-Editor einstellbar. Keine zusätzliche Einsatzpflicht.
+- `!cook vampir` / `!eat vampir`: 2 Vampirtintenfische +1 Thunfisch +750 Perlen. Defensiver Sushi-Slot, 5 % Lifeleech, drei Bosskampfteilnahmen. Vorhandene Bestände und Rezepte bleiben erhalten.
+- Heilung `floor(min(Angriffsschaden, verbleibende Boss-HP) × 0,05)`, unmittelbar vor dem großen Boss-Gegenangriff. Kein festes HP-Heilungscap; nur MaxHP begrenzen. Kritische Treffer und Zusatztreffer zählen über ihren tatsächlichen Schaden, Overkill nicht. Keine Wiederbelebung, kein Umgehen von Todessperren und kein Lifeleech gegen kleine Gegner.
+- Konfigurierbarer Lifeleech-Prozentwert im Rezepteditor, persistenter Effektsnapshot, Anzeige im Sushi-Status und Kampftext sowie isolierte Debugaktion „Boss-Lifeleech“. 610 Tests bestanden; Details: `docs/RPG-VAMPIR-MAKI.md`.
+
 ## 2.1.19 – Sushi 2.1 und neue Meeresbewohner
 
 - Tatsächlich fangbar: Seegurke, Garnele, Riesengarnele, Kugelfisch und Goldener Kugelfisch, mit relativen Gewichten 50/25/12/10/3 und eigenen Fangbelohnungen 40/100/250/350/800 Perlen. Bestehende Arten bleiben erhalten; bezahlte bisherige Fänge behalten ihre Auszahlung. `!fish` erlaubt jetzt auch kostenlose Versuche; `!fishbag` zeigt Zutatenbestände.
