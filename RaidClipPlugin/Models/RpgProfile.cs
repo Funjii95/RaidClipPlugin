@@ -15,6 +15,10 @@ public static class RarityPresentation
 
 public sealed class RpgAttributes
 {
+    public decimal BossDamageReduction { get; set; }
+    public decimal BossDodgeChance { get; set; }
+    public decimal CriticalHealing { get; set; }
+    public decimal RareEquipmentLuck { get; set; }
     public decimal Power { get; set; }
     public decimal Stamina { get; set; }
     public decimal MaximumHp { get; set; }
@@ -34,6 +38,8 @@ public sealed class RpgAttributes
 
 public sealed class RpgItem
 {
+    public int DropWeight { get; set; } = 1;
+    public RpgCollectorBonuses? Collector { get; set; }
     public int CoreStatsVersion { get; set; }
     public long? SalvageValue { get; set; }
     public bool IsLocked { get; set; }
@@ -54,6 +60,17 @@ public sealed class RpgItem
     public EquipmentSlot? Slot { get; set; }
     public RpgAttributes Attributes { get; set; } = new();
     public DateTimeOffset FoundAt { get; set; }
+}
+
+// Deliberately separate from combat attributes: inventory possession cannot grant combat stats.
+public sealed class RpgCollectorBonuses
+{
+    public decimal FishingPearls { get; set; }
+    public decimal DivePearls { get; set; }
+    public decimal BossPearls { get; set; }
+    public decimal BossExperience { get; set; }
+    public decimal TreasureChance { get; set; }
+    public decimal RareTreasureChance { get; set; }
 }
 
 public sealed class RpgFishStack

@@ -36,7 +36,7 @@ public sealed class RpgSalvageService(ViewerPointStore points, RpgConfig config,
     public static string RollSignature(RpgItem item) => JsonSerializer.Serialize(new
     {
         item.ItemId, item.DisplayName, item.Description, item.IconId, item.Rarity, item.Kind, item.Slot, item.SetId,
-        item.ConsumableRecipeId, item.Attributes,
+        item.ConsumableRecipeId, item.Attributes, item.Collector,
         Effects = item.Effects.Select(e => JsonSerializer.Serialize(e)).OrderBy(e => e, StringComparer.Ordinal).ToArray()
     });
     private static string? Blocked(RpgItem item, RpgProfile profile) =>

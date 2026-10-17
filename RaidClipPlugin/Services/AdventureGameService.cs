@@ -368,15 +368,17 @@ public sealed class AdventureGameService
                         if(health.BossId!=_boss.Id) {health.BossId=_boss.Id;health.Defeated=false;health.BossDamage=0;}
                         health.BossDamage=checked(health.BossDamage+Math.Min(damage,_boss.Hp));
                         health.BossRemainingHp=Math.Max(0,_boss.Hp-damage);
-                        lifeleechHealing=RpgSushiService.HealFromBossAttack(damage,_boss.Hp,account.Rpg,_config.Adventures.Rpg.Health,_boss.Id,clock);
+                        var combatStats=CharacterStatService.Calculate(account.Rpg,_config.Adventures.Rpg,RpgActivity.Boss,now:clock);
+                        lifeleechHealing=RpgSushiService.HealFromBossAttack(damage,_boss.Hp,account.Rpg,_config.Adventures.Rpg.Health,_boss.Id,clock,critical?combatStats.CriticalHealing:0);
                         if(damage<_boss.Hp)
-                            receivedDamage=RpgSushiService.BossDamage(RpgHealthService.CounterDamage(_boss.Config.HitPoints,_config.Adventures.Rpg.Health,_random),account.Rpg,clock);
+                            receivedDamage=RpgBossDefenseService.Counter(RpgHealthService.CounterDamage(_boss.Config.HitPoints,_config.Adventures.Rpg.Health,_random),account.Rpg,_config.Adventures.Rpg,_random,clock);
                         health.CurrentHp=Math.Max(0,health.CurrentHp!.Value-receivedDamage);
                         playerDied=health.Defeated=health.CurrentHp==0;
                         healthText=$" Gegenangriff: -{receivedDamage} HP. ❤️ {health.CurrentHp}/{RpgHealthService.Maximum(account.Rpg,_config.Adventures.Rpg.Health)} HP.";
                         if(lifeleechHealing>0)healthText=$" Lifeleech: +{lifeleechHealing} HP."+healthText;
                         if(playerDied) healthText+=" 💀 Besiegt: keine Belohnungen für diesen Boss!";
                     }
+                    damage=Math.Min(damage,_boss.Hp);
                     RpgPassiveService.ConsumeBuffs(account.Rpg, RpgActivity.Boss, _config.Adventures.Rpg, _random, clock);
                     RpgSushiService.Participate(account.Rpg,_boss.Id,_boss.End,clock);
                     account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(Math.Clamp(_boss.Config.AttackCooldownSeconds, 1, 86400));
@@ -416,7 +418,20 @@ public sealed class AdventureGameService
         await CloseBossSushiAsync(finished,token);
         var reward = Math.Clamp(finished.Config.RewardPool, 0, 1000000000) / finished.Players.Count;
         reward=_points.RewardAmount(reward,RpgRewardSource.Boss);
-        await _points.AddPointsToUsersAsync(finished.Players.Select(p => (p.Key, p.Value)), reward,
+        if(_config.Adventures.Rpg.Enabled)
+        {
+            foreach(var player in finished.Players)
+            {
+                var paid=await _points.ApplyRpgAsync(player.Key,player.Value,"bosscollect:"+finished.Id,a=>
+                {
+                    var bonus=RpgCollectorService.Calculate(a.Rpg,_config.Adventures.Rpg.DiveLoot).BossPearls;
+                    a.Points=Math.Max(a.Points,(long)Math.Min((decimal)Maximum,(decimal)a.Points+RpgCollectorService.Reward(reward,bonus)));
+                    return new(true);
+                },token);
+                if(!paid.Success)throw new InvalidOperationException(paid.Error);
+            }
+        }
+        else await _points.AddPointsToUsersAsync(finished.Players.Select(p => (p.Key, p.Value)), reward,
             _config.MinimumPoints, Maximum, token, "Bosskampf", _config.HistoryLimit,RpgRewardSource.AlreadyBoosted);
         if (_config.Adventures.Rpg.Enabled)
         {
@@ -465,8 +480,11 @@ public sealed class AdventureGameService
             var result=await _points.ApplyRpgAsync(player.Id,player.Name,"bosssurvival:"+boss.Id,a=>
             {
                 if(!RpgHealthService.Eligible(a.Rpg,boss.Id)) return new(false,"Kein Belohnungsanspruch.");
-                a.Points=Math.Max(a.Points,(long)Math.Min((decimal)Maximum,(decimal)a.Points+reward));
-                RpgHealthService.Experience(a.Rpg,rpg.Health,victory ? checked(rpg.Health.VictoryExperience+(player.Id==top?rpg.Health.TopExperience:0)) : rpg.Health.EscapeExperience,_now());
+                var collectors=RpgCollectorService.Calculate(a.Rpg,rpg.DiveLoot);
+                var personalReward=RpgCollectorService.Reward(reward,collectors.BossPearls);
+                a.Points=Math.Max(a.Points,(long)Math.Min((decimal)Maximum,(decimal)a.Points+personalReward));
+                var experience=victory ? checked(rpg.Health.VictoryExperience+(player.Id==top?rpg.Health.TopExperience:0)) : rpg.Health.EscapeExperience;
+                RpgHealthService.Experience(a.Rpg,rpg.Health,checked((int)RpgCollectorService.Reward(experience,collectors.BossExperience)),_now());
                 if(victory && rpg.BossLootChance>0)
                 {
                     found=new RpgLootService(_random).RollReward(rpg.DiveLoot,_now(),RpgActivity.Boss,rpg.BossLootChance,

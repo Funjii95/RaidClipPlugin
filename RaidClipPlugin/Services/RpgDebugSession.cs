@@ -132,7 +132,7 @@ public sealed class RpgDebugSession
             for(var i=0;i<=Options.ExtraRolls;i++)
             {
                 var sources=CharacterStatService.DiveLuckSources(a.Rpg,Config.Adventures.Rpg);
-                var result=new RpgLootService(rng).Roll(Options.Stake,Options.Luck+sources.Perks,loot,DateTimeOffset.UtcNow,sources.Sushi,sources.Equipment,_points.HotTime.DropBonus(Config.Adventures.Rpg.HotTime));results.Add(result);
+                var result=new RpgLootService(rng).Roll(Options.Stake,Options.Luck+sources.Perks,loot,DateTimeOffset.UtcNow,sources.Sushi,sources.Equipment,_points.HotTime.DropBonus(Config.Adventures.Rpg.HotTime),RpgCollectorService.Calculate(a.Rpg,loot),CharacterStatService.Calculate(a.Rpg,Config.Adventures.Rpg,RpgActivity.Dive).RareEquipmentLuck);results.Add(result);
                 if(result.Item is {} item) { if(item.Kind==RpgItemKind.Consumable)a.Rpg.Sushi[item.ConsumableRecipeId]=a.Rpg.Sushi.GetValueOrDefault(item.ConsumableRecipeId)+1;else a.Rpg.Inventory.Add(item); }
             }
             return new(true);
@@ -207,6 +207,12 @@ public sealed class RpgDebugSession
                     if(value<1||value>1000000||!Config.Adventures.Rpg.FishSpecies.Any(f=>f.Id==selection))throw new InvalidOperationException("Ungültiger Testfisch/-bestand.");
                     if(!a.Rpg.Fish.TryGetValue(selection,out var fish))a.Rpg.Fish[selection]=fish=new(){FishId=selection};fish.Quantity=checked(fish.Quantity+(int)value);break;
                 case "Inventar zurücksetzen":a.Rpg.Inventory.Clear();a.Rpg.Equipment.Clear();break;
+                case "Item entfernen":
+                    if(value<1 || value>a.Rpg.Inventory.Count)throw new InvalidOperationException("Wert muss eine gültige Inventarnummer sein.");
+                    var remove=a.Rpg.Inventory[(int)value-1];a.Rpg.Inventory.Remove(remove);
+                    foreach(var slot in a.Rpg.Equipment.Where(p=>p.Value==remove.InstanceId).Select(p=>p.Key).ToArray())a.Rpg.Equipment.Remove(slot);
+                    RpgHealthService.Refresh(a.Rpg,Config.Adventures.Rpg.Health,DateTimeOffset.UtcNow);break;
+                case "Alles ablegen":a.Rpg.Equipment.Clear();RpgHealthService.Refresh(a.Rpg,Config.Adventures.Rpg.Health,DateTimeOffset.UtcNow);break;
                 case "Cooldowns zurücksetzen":a.Rpg.Cooldowns.Clear();break;
                 case "Sushi-Verbrauch testen":
                     if(!Enum.TryParse<RpgActivity>(selection,out var activity)||!Enum.IsDefined(activity))throw new InvalidOperationException("Ungültige Testaktivität.");
@@ -233,7 +239,9 @@ public sealed class RpgDebugSession
             switch(action)
             {
                 case "HP setzen": h.CurrentHp=Math.Clamp(value,0,RpgHealthService.Maximum(a.Rpg,cfg));break;
-                case "Gegenangriff": h.CurrentHp=Math.Max(0,h.CurrentHp!.Value-RpgSushiService.BossDamage(RpgHealthService.CounterDamage(Math.Max(10,value),cfg,new DebugRandom(Options.Seed)),a.Rpg,clock));break;
+                case "Gegenangriff":
+                    var rng=new DebugRandom(Options.Seed);
+                    h.CurrentHp=Math.Max(0,h.CurrentHp!.Value-RpgBossDefenseService.Counter(RpgHealthService.CounterDamage(Math.Max(10,value),cfg,rng),a.Rpg,Config.Adventures.Rpg,rng,clock));break;
                 case "Boss-Lifeleech": RpgSushiService.HealFromBossAttack(Math.Max(0,value),Math.Max(0,value),a.Rpg,cfg,h.BossId,clock);break;
                 case "Boss-Teilnahme": RpgSushiService.Participate(a.Rpg,"debug-sushi-"+value,clock.AddMinutes(2),clock);RpgSushiService.Close(a.Rpg,"debug-sushi-"+value,clock,clock,cfg);break;
                 case "Besiegt markieren": h.BossId="debug-boss";h.Defeated=true;h.CurrentHp=0;break;
@@ -262,7 +270,7 @@ public sealed class RpgDebugSession
             token.ThrowIfCancellationRequested();if(!Active)throw new OperationCanceledException("Testmodus beendet.");var clock=start.AddSeconds(i*30L);
             var extra=RpgPassiveService.TryProc(profile,rpg,RpgActivity.Dive,RpgEffectTrigger.ExtraLoot,rng,clock,Options.Stake)>0?1:0;extraProcs+=extra;
             var sources=CharacterStatService.DiveLuckSources(profile,rpg);
-            for(var j=0;j<=Options.ExtraRolls+extra;j++){rolls++;var result=new RpgLootService(rng).Roll(Options.Stake,Options.Luck+sources.Perks,loot,clock,sources.Sushi,sources.Equipment,hotPercent);if(result.Item is {} item){counts[item.Rarity]++;drops++;}}
+            for(var j=0;j<=Options.ExtraRolls+extra;j++){rolls++;var result=new RpgLootService(rng).Roll(Options.Stake,Options.Luck+sources.Perks,loot,clock,sources.Sushi,sources.Equipment,hotPercent,RpgCollectorService.Calculate(profile,loot),CharacterStatService.Calculate(profile,rpg,RpgActivity.Dive).RareEquipmentLuck);if(result.Item is {} item){counts[item.Rarity]++;drops++;}}
             var hit=RpgPassiveService.BossAttack(20,profile,rpg,rng,clock);damage+=hit.Damage;if(hit.Critical)crits++;if(hit.ExtraHits==1)doubles++;if(hit.ExtraHits==2)triples++;
             var outcome=AdventureGameService.SoloOutcome("!dive",rng.NextInclusive(1,100),Config.Adventures.Treasure);
             var payout=RpgPassiveService.RewardPayout((long)decimal.Floor(Options.Stake*outcome.Item1),Options.Stake,CharacterStatService.Calculate(profile,rpg,RpgActivity.Dive).PearlBonus);

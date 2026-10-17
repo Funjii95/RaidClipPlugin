@@ -1,3 +1,10 @@
+## 2.1.21 – Loot Expansion 3.0
+
+- 52 zusätzliche Definitionen: 34 Ausrüstungsteile, acht Teile für zwei neue Sets und zehn passive Sammlerschätze. Alte Instanzen und die vorhandene Krone des Abgrunds bleiben erhalten.
+- Große Bosskämpfe: zentrale Verteidigungsrechnung mit Ausweichen und einmaliger Schadensreduktion, kritische Heilung aus tatsächlichem Schaden ohne festes Heilungscap. Set-HP werden ohne Gratisheilung berücksichtigt.
+- Separate, duplikatsichere Sammlerboni für passende positive Belohnungsquellen. Keine Kampfboni durch Besitz. Konfigurierbare Sammlercaps und gewichtete Pools nach dem unveränderten Seltenheitswurf.
+- `!treasures`, erweiterte Item-/Werteansichten, fokussierter Loot-/Set-Konfigurationsreiter und ergänzte isolierte Debugaktionen. Details und vollständiger Katalog: `docs/RPG-LOOT-EXPANSION-3.md`.
+
 ## 2.1.20 – Vampir-Maki ohne Lifeleech-Cap
 
 - Fangbarer Vampirtintenfisch (`vampire_squid`, Rare, Tiefsee, Standard 300 Perlen) und zuvor fehlender Thunfisch (`tuna`, Uncommon, Standard 150 Perlen). Gewichte 8/25 und Belohnungen sind im vorhandenen Fangpool-Editor einstellbar. Keine zusätzliche Einsatzpflicht.

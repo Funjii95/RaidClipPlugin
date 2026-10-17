@@ -66,6 +66,7 @@ public sealed partial class MainForm
         panel.Controls.Add(actions, 0, 3);
         var tabs = new TabControl { Dock = DockStyle.Fill };
         AddMinigameTab(tabs, "Einstellungen", panel);
+        AddMinigameTab(tabs, "Loot & Sammlerschätze", BuildRpgLootExpansionPanel());
         AddMinigameTab(tabs, "Spielerverwaltung", BuildRpgAdministrationPanel());
         AddMinigameTab(tabs, "Hot Time", BuildHotTimePanel());
         AddMinigameTab(tabs, "HP & Überleben", BuildRpgHealthPanel());

@@ -8,11 +8,12 @@ public sealed class RpgConfig
     public RpgConfig() => RpgSushiService.AddMissing(this);
     public long FreeFishingReward { get; set; } = 40;
     public decimal PowerDamagePerPoint { get; set; } = 1;
-    public RpgHealthConfig Health { get; set; } = new();
+    private RpgHealthConfig _health = new();
+    public RpgHealthConfig Health { get { _health.EquipmentSets = Sets; return _health; } set => _health=value; }
     public RpgEnemyConfig Enemies { get; set; } = new();
     public RpgHotTimeConfig HotTime { get; set; } = new();
     public RpgSalvageConfig Salvage { get; set; } = new();
-    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets();
+    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).ToList();
     public decimal BossLootChance { get; set; } = 2;
     public bool BossLegendaryEnabled { get; set; }
     public int BossLegendaryMinimumHp { get; set; } = 1000;

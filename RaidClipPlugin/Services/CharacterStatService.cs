@@ -5,9 +5,11 @@ namespace RaidClipPlugin.Services;
 
 public static class CharacterStatService
 {
-    public static decimal EquipmentMaximumHp(RpgProfile profile,int hpPerStamina=5) => profile.Equipment.Values.Distinct()
+    public static decimal EquipmentMaximumHp(RpgProfile profile,int hpPerStamina=5, IReadOnlyList<RpgItemSet>? sets=null) => profile.Equipment.Values.Distinct()
         .Select(id=>profile.Inventory.SingleOrDefault(i=>i.InstanceId==id))
-        .Where(i=>i?.Slot is not null).Sum(i=>Math.Clamp(i!.Attributes.MaximumHp,0,1000000)+Math.Clamp(i.Attributes.Stamina,0,1000000)*hpPerStamina);
+        .Where(i=>i?.Slot is not null).Sum(i=>Math.Clamp(i!.Attributes.MaximumHp,0,1000000)+Math.Clamp(i.Attributes.Stamina,0,1000000)*hpPerStamina)
+        + (sets??Array.Empty<RpgItemSet>()).Sum(s=>s.Bonuses.Where(b=>profile.Inventory.Where(i=>i.SetId==s.Id && s.ItemIds.Contains(i.ItemId) && profile.Equipment.Values.Contains(i.InstanceId)).Select(i=>i.ItemId).Distinct().Count()>=b.RequiredPieces)
+            .Sum(b=>Math.Max(0,b.Attributes.MaximumHp)+Math.Max(0,b.Attributes.Stamina)*hpPerStamina));
     public static (decimal Perks, decimal Equipment, decimal Sushi) DiveLuckSources(RpgProfile profile, RpgConfig config)
     {
         static decimal Luck(RpgAttributes stats) => stats.Luck + stats.DiveLuck;
@@ -63,12 +65,20 @@ public static class CharacterStatService
         result.TripleAttackChance = Math.Clamp(result.TripleAttackChance, 0, Math.Clamp(config.TripleAttackChanceCap, 0, 5));
         result.ExtraLootChance = Math.Clamp(result.ExtraLootChance, 0, Math.Clamp(config.ExtraLootChanceCap, 0, 10));
         result.SushiPreservationChance = Math.Clamp(result.SushiPreservationChance, 0, Math.Clamp(config.SushiPreservationChanceCap, 0, 20));
-        result.MaximumHp = Math.Clamp(EquipmentMaximumHp(profile,config.Health.HpPerStamina),0,config.Health.EquipmentHpCap);
+        if(activity==RpgActivity.Boss)
+            result.BossDamageReduction+=RpgSushiService.Defensive(profile,now??DateTimeOffset.UtcNow).Select(b=>b.BossDamageReduction).DefaultIfEmpty().Max();
+        result.BossDamageReduction=Math.Clamp(result.BossDamageReduction,0,80);
+        result.BossDodgeChance=Math.Clamp(result.BossDodgeChance,0,100);
+        result.CriticalHealing=Math.Clamp(result.CriticalHealing,0,100);
+        result.RareEquipmentLuck=Math.Clamp(result.RareEquipmentLuck,0,100);
+        result.MaximumHp = Math.Clamp(EquipmentMaximumHp(profile,config.Health.HpPerStamina,config.Sets),0,config.Health.EquipmentHpCap);
         return result;
     }
 
     private static void Add(RpgAttributes a, RpgAttributes b, int count = 1)
     {
+        a.BossDamageReduction+=b.BossDamageReduction*count; a.BossDodgeChance+=b.BossDodgeChance*count;
+        a.CriticalHealing+=b.CriticalHealing*count; a.RareEquipmentLuck+=b.RareEquipmentLuck*count;
         a.Power+=b.Power*count;a.Stamina+=b.Stamina*count;
         a.Damage += b.Damage * count; a.CritChance += b.CritChance * count;
         a.CritDamage += b.CritDamage * count; a.Luck += b.Luck * count;

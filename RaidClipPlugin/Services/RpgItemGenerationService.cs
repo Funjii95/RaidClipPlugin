@@ -12,7 +12,8 @@ public static class RpgItemGenerationService
         var copy = JsonSerializer.Deserialize<RpgConfig>(JsonSerializer.Serialize(current))!;
         foreach (var effect in new RpgLootConfig().Effects)
             if (!copy.DiveLoot.Effects.Any(e => e.Id == effect.Id)) copy.DiveLoot.Effects.Add(effect);
-        foreach (var item in copy.DiveLoot.Items.Where(i => i.Slot.HasValue && i.Kind != RpgItemKind.Consumable && i.Generation is null && i.Effects.Count == 0 && i.Attributes.MaximumHp == 0))
+        var fixedExpansion=RpgLootExpansionCatalog.Items().Select(i=>i.ItemId).ToHashSet();
+        foreach (var item in copy.DiveLoot.Items.Where(i => !fixedExpansion.Contains(i.ItemId) && i.Slot.HasValue && i.Kind != RpgItemKind.Consumable && i.Generation is null && i.Effects.Count == 0 && i.Attributes.MaximumHp == 0))
             item.Generation = DefaultRules(item.Slot!.Value, item.Rarity);
         copy.Validate(); return copy;
     }

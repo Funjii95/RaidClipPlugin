@@ -94,7 +94,7 @@ public sealed partial class MainForm
         hit.Click+=async(_,_)=>await Run(async()=>await session.CombatAsync(false,cancel.Token));win.Click+=async(_,_)=>await Run(async()=>await session.CombatAsync(true,cancel.Token));resetBoss.Click+=(_,_)=>{try{session.ResetBoss();Show(new {session.RemainingBossHp});}catch(Exception ex){output.Text=ex.Message;}};
         actions.Controls.Add(Row(hit,win,resetBoss));actions.Controls.Add(new Label {AutoSize=true,Text="Erzwungene Krit-/Double-/Triple-Ergebnisse: Haken im Drop-Editor. Ausschließlich Testkonto."});
         var selection=new ComboBox {Width=350,DropDownStyle=ComboBoxStyle.DropDownList};var amount=new NumericUpDown {Minimum=-1000000000,Maximum=1000000000,Value=1000,Width=150};
-        var action=new ComboBox {Width=230,DropDownStyle=ComboBoxStyle.DropDownList};foreach(var a in new[]{"Perlen ändern","Aktivitätsbelohnung","Perk setzen","Fische erzeugen","Sushi herstellen","Sushi aktivieren","Sushi-Verbrauch testen","Inventar zurücksetzen","Cooldowns zurücksetzen","Ausrüstung anlegen","Set testen","Hot Time testen","Hot Time beenden"})action.Items.Add(a);action.SelectedIndex=0;
+        var action=new ComboBox {Width=230,DropDownStyle=ComboBoxStyle.DropDownList};foreach(var a in new[]{"Perlen ändern","Aktivitätsbelohnung","Perk setzen","Fische erzeugen","Sushi herstellen","Sushi aktivieren","Sushi-Verbrauch testen","Inventar zurücksetzen","Item entfernen","Alles ablegen","Cooldowns zurücksetzen","Ausrüstung anlegen","Set testen","Hot Time testen","Hot Time beenden"})action.Items.Add(a);action.SelectedIndex=0;
         void UpdateSelection()
         {
             selection.Items.Clear();if(!session.Active)return;var rpg=session.Config.Adventures.Rpg;
@@ -123,7 +123,7 @@ public sealed partial class MainForm
         };
         save.Click+=(_,_)=>{try{session.SaveSettings();Show("Testkonfiguration gespeichert.");}catch(Exception ex){output.Text=ex.Message;}};
         restore.Click+=(_,_)=>{try{session.RestoreSettings();if(session.Active)Bind();Show("Testkonfiguration wiederhergestellt.");}catch(Exception ex){output.Text=ex.Message;}};
-        refresh.Click+=async(_,_)=>await Run(async()=>{var profile=await session.ProfileAsync(cancel.Token);return new {profile.Points,profile.Rpg,Stats=CharacterStatService.Calculate(profile.Rpg,session.Config.Adventures.Rpg,RpgActivity.Boss)};});
+        refresh.Click+=async(_,_)=>await Run(async()=>{var profile=await session.ProfileAsync(cancel.Token);return new {profile.Points,profile.Rpg,Stats=CharacterStatService.Calculate(profile.Rpg,session.Config.Adventures.Rpg,RpgActivity.Boss),Sammlerboni=RpgCollectorService.Calculate(profile.Rpg,session.Config.Adventures.Rpg.DiveLoot),Sets=RpgSetService.Progress(profile.Rpg,session.Config.Adventures.Rpg)};});
         root.Disposed+=(_,_)=>{cancel.Cancel();session.Deactivate();};return root;
     }
 }

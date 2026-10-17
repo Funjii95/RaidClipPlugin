@@ -16,11 +16,11 @@ public static class RpgSushiService
         return (int)decimal.Ceiling(raw*(1-reduction/100));
     }
     /// <summary>Authoritative boss attack only: no per-hit healing cap, just actual damage and missing HP.</summary>
-    public static int HealFromBossAttack(int damage,int remainingBossHp,RpgProfile profile,RpgHealthConfig health,string bossId,DateTimeOffset now)
+    public static int HealFromBossAttack(int damage,int remainingBossHp,RpgProfile profile,RpgHealthConfig health,string bossId,DateTimeOffset now,decimal criticalHealing=0)
     {
         var h=profile.Health;
         if(damage<=0 || remainingBossHp<=0 || h.CurrentHp is null or <=0 || h.Defeated && h.BossId==bossId)return 0;
-        var percent=Math.Clamp(Defensive(profile,now).Select(b=>b.BossLifeleech).DefaultIfEmpty().Max(),0,100);
+        var percent=Math.Clamp(Defensive(profile,now).Select(b=>b.BossLifeleech).DefaultIfEmpty().Max(),0,100)+Math.Clamp(criticalHealing,0,100);
         var actualDamage=Math.Min(damage,remainingBossHp);
         var healing=decimal.Floor(actualDamage*percent/100);
         var granted=(int)Math.Min(Math.Max(0,RpgHealthService.Maximum(profile,health)-h.CurrentHp.Value),healing);

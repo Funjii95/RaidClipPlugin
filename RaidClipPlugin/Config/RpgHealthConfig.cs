@@ -4,6 +4,8 @@ namespace RaidClipPlugin.Config;
 
 public sealed class RpgHealthConfig
 {
+    [System.Text.Json.Serialization.JsonIgnore, Browsable(false)]
+    public IReadOnlyList<RaidClipPlugin.Models.RpgItemSet> EquipmentSets { get; set; } = Array.Empty<RaidClipPlugin.Models.RpgItemSet>();
     [Category("Lebenspunkte"), DisplayName("HP-System aktiv")] public bool Enabled { get; set; } = true;
     [Category("Lebenspunkte"), DisplayName("Basis-MaxHP")] public int BaseHp { get; set; } = 100;
     [Category("Lebenspunkte"), DisplayName("Maximaler Ausrüstungs-HP-Bonus")] public int EquipmentHpCap { get; set; } = 1000;

@@ -13,6 +13,7 @@ public static class RpgCommandCatalog
         new("!equip", Array.Empty<string>(), "<Nummer|Item-ID> [Slot]"),
         new("!unequip", Array.Empty<string>(), "<Slot>"),
         new("!sets", Array.Empty<string>(), "[Seite]"),
+        new("!treasures", Array.Empty<string>(), "[Seite]"),
         new("!salvage", Array.Empty<string>(), "<Nummer|duplicates|all common> [confirm]"),
         new("!itemlock", Array.Empty<string>(), "<Nummer> [on|off]"),
         new("!favorite", Array.Empty<string>(), "<Nummer> [on|off]"),

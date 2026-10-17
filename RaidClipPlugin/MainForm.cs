@@ -4876,6 +4876,12 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.21 – Loot Expansion 3.0
+
+- 52 neue Definitionen: Ausrüstung, zwei zusätzliche Sets und zehn passive Sammlerschätze ohne Kampfboni durch Besitz.
+- Boss-Ausweichen, zentrale Schadensreduktion und kritische Heilung. Set-HP ohne Gratisheilung; keine zusätzlichen Gegenangriffe durch Procs.
+- !treasures, erweiterte Werte-/Itemansichten, gewichtete Lootpools und eigener Definitionseditor unter RPG → Loot & Sammlerschätze.
+
 2.1.20 – Vampir-Maki ohne Lifeleech-Cap
 
 - Vampirtintenfisch und Thunfisch sind fangbare Zutaten. Vampir-Maki: 2 Vampirtintenfische +1 Thunfisch +750 Perlen, defensiver Slot, drei Bosskampfteilnahmen.

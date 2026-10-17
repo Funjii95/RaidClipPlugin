@@ -950,6 +950,9 @@ public sealed class ConfigurationService
             config.Duel.LoserTimeoutReason = config.Duel.LoserTimeoutReason[..500];
         config.Commands.Command = NormalizeCommand(config.Commands.Command);
         RpgHealthEquipmentCatalog.AddMissing(config.Minigame.Adventures.Rpg.DiveLoot);
+        RpgLootExpansionCatalog.AddMissing(config.Minigame.Adventures.Rpg.DiveLoot);
+        foreach(var set in RpgLootExpansionCatalog.Sets())
+            if(!config.Minigame.Adventures.Rpg.Sets.Any(s=>s.Id==set.Id))config.Minigame.Adventures.Rpg.Sets.Add(set);
         RpgSushiService.AddMissing(config.Minigame.Adventures.Rpg);
         config.Commands.ExportDirectory = (config.Commands.ExportDirectory ?? "exports").Trim();
         config.Commands.CommandRoleOverrides = (config.Commands.CommandRoleOverrides ??

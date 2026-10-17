@@ -95,6 +95,11 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         var profile = account.Rpg;
         ValidateView(profile);
         var page = parts.Length == 2 && int.TryParse(parts[1], out var requested) ? Math.Max(1, requested) : 1;
+        if(command=="!treasures") return ListPage(user.UserName,"🦦 Sammlerschätze",
+            profile.Inventory.Where(i=>i.Kind==RpgItemKind.Treasure && i.Collector is not null).GroupBy(i=>i.ItemId).Select(g=>
+                $"{RpgChatPresentation.ItemName(g.First())} [{g.First().Rarity}] {g.Count()}× (wirkt einmal): "+string.Join(", ",RpgCollectorService.Describe(g.First().Collector!)))
+                .Concat(profile.Inventory.Any(i=>i.Collector is not null)?new[]{"Aktive Summen (nur Sammlung/Wirtschaft): "+string.Join(", ",RpgCollectorService.Describe(RpgCollectorService.Calculate(profile,config.DiveLoot)))}:Array.Empty<string>()),
+            page,"Noch keine Sammlerschätze gefunden.","!treasures");
         if(command=="!fishbag") return ListPage(user.UserName,"🎣 Fischvorrat",profile.Fish.Where(f=>f.Value.Quantity>0).Select(f=>
             $"{config.FishSpecies.FirstOrDefault(s=>s.Id==f.Key)?.Name??f.Key} [{f.Key}]: {f.Value.Quantity}×"),page,"Noch keine Zutaten. Fang: !fish oder !fish <Einsatz>.","!fishbag");
         if (command is "!inventory" or "!inventar")
@@ -123,7 +128,8 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
                 $"Zerlegewert: {RpgChatPresentation.Number(RpgSalvageService.Value(item,config.Salvage))} Perlen." +
                     (item.IsLocked || item.IsFavorite ? " Gesperrt/favorisiert: nicht zerlegbar." : "") +
                     (item.Rarity==ItemRarity.Legendary || !string.IsNullOrEmpty(item.SetId) ? " ⚠ Legendary/Setteil: ausdrückliche Bestätigung erforderlich; Sammelzerlegen ausgeschlossen." : "")
-            }.Concat(item.Effects.Select(e => "Spezialeffekt – " + RpgPassiveService.Describe(e)))
+            }.Concat(item.Collector is null ? Array.Empty<string>() : RpgCollectorService.Describe(item.Collector).Select(s=>"Passiver Sammlereffekt (einmal je Schatz): "+s))
+                .Concat(item.Effects.Select(e => "Spezialeffekt – " + RpgPassiveService.Describe(e)))
                 .Concat(RpgSetService.Progress(profile, config).Where(p => p.Set.Id == item.SetId).SelectMany(RpgSetService.Describe))
                 .Concat(new[] { "Beschreibung: " + (string.IsNullOrWhiteSpace(item.Description) ? "Keine Beschreibung hinterlegt." : item.Description),
                     item.Slot.HasValue ? $"Ausrüsten: !equip {parts[1]}" : "Dieser Gegenstand hat keinen Ausrüstungsplatz." }),
@@ -163,7 +169,9 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
                 $"Krit-Multiplikator: {RpgChatPresentation.Number(config.BaseCritMultiplier + stats.CritDamage / 100)}× nur bei kritischem Treffer. " +
                 "Dive-/Angelwerte mit passenden Buffs: " +
                 $"Tauchglück {RpgChatPresentation.Number(CharacterStatService.Calculate(profile, config, RpgActivity.Dive).DiveLuck)}, " +
-                $"Angelglück {RpgChatPresentation.Number(CharacterStatService.Calculate(profile, config, RpgActivity.Fishing).FishingLuck)}.";
+                $"Angelglück {RpgChatPresentation.Number(CharacterStatService.Calculate(profile, config, RpgActivity.Fishing).FishingLuck)}. " +
+                "Boss-Lifeleech (Sushi): " + RpgChatPresentation.Number(RpgSushiService.Defensive(profile,DateTimeOffset.UtcNow).Select(b=>b.BossLifeleech).DefaultIfEmpty().Max()) + " %. " +
+                "Aktive Sets: " + string.Join(", ",RpgSetService.Progress(profile,config).Where(p=>p.Set.Bonuses.Any(b=>p.Equipped>=b.RequiredPieces)).Select(p=>$"{p.Set.Name} ({p.Equipped})"));
         }
         return "🦦 Nutzung: !perk <ID> | !equip <Item-ID> <Slot> | !craft <Rezept> | !sushi <Rezept>. Rezepte: " +
             string.Join(" | ", config.Recipes.Select(r => $"{RpgChatPresentation.RecipeName(r)} [{r.Id}]: {r.FishQuantity}× {config.FishSpecies.SingleOrDefault(f => f.Id == r.FishId)?.Name ?? r.FishId} + {RpgChatPresentation.Number(r.PearlCost)} Perlen"));
@@ -175,7 +183,7 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         {
             "!perk" or "!craft" => parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[1]),
             "!equip" => parts.Length == 2 || parts.Length == 3 && Enum.TryParse<EquipmentSlot>(parts[2], true, out var slot) && Enum.IsDefined(slot),
-            "!inventory" or "!equipment" or "!perks" or "!rpgtext" or "!sets" or "!fishbag" => parts.Length == 1 || parts.Length == 2 && Page(parts[1]),
+            "!inventory" or "!equipment" or "!perks" or "!rpgtext" or "!sets" or "!treasures" or "!fishbag" => parts.Length == 1 || parts.Length == 2 && Page(parts[1]),
             "!unequip" => parts.Length == 2 && Enum.TryParse<EquipmentSlot>(parts[1], true, out var unequipSlot) && Enum.IsDefined(unequipSlot),
             "!salvage" => parts.Length>=2 && parts.Length<=4,
             "!itemlock" or "!favorite" => parts.Length is 2 or 3 && Page(parts[1]) && (parts.Length==2 || parts[2].Equals("on",StringComparison.OrdinalIgnoreCase) || parts[2].Equals("off",StringComparison.OrdinalIgnoreCase)),

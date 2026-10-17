@@ -34,7 +34,7 @@ public sealed class RpgEnemyService(IDuelRandom random)
         if(victory)
         {
             var sources=CharacterStatService.DiveLuckSources(profile,config);
-            loot=new RpgLootService(random).RollEnemy(paidStake,sources.Perks,config.DiveLoot,now,sources.Sushi,sources.Equipment,hotTimePercent).Item;
+            loot=new RpgLootService(random).RollEnemy(paidStake,sources.Perks,config.DiveLoot,now,sources.Sushi,sources.Equipment,hotTimePercent,RpgCollectorService.Calculate(profile,config.DiveLoot),stats.RareEquipmentLuck).Item;
         }
         return new(enemy.Name,victory,rounds,taken,profile.Health.CurrentHp!.Value,RpgHealthService.Maximum(profile,config.Health),victory?enemy.Experience:0,loot);
     }

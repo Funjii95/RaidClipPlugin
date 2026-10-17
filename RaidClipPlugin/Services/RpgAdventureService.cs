@@ -67,7 +67,8 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                 if (!fishing)
                 {
                     var sources = CharacterStatService.DiveLuckSources(account.Rpg, rpg);
-                    loot = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime)).Item;
+                    var collectors=RpgCollectorService.Calculate(account.Rpg,rpg.DiveLoot);
+                    loot = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime),collectors,stats.RareEquipmentLuck).Item;
                     void StoreLoot(RpgItem found)
                     {
                         if (found.Kind == RpgItemKind.Consumable)
@@ -80,7 +81,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                     if (loot is not null) StoreLoot(loot);
                     if (RpgPassiveService.TryProc(account.Rpg, rpg, activity, RpgEffectTrigger.ExtraLoot, _random, clock, stake) > 0)
                     {
-                        var extra = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime)).Item;
+                        var extra = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime),collectors,stats.RareEquipmentLuck).Item;
                         if (extra is not null) { StoreLoot(extra); additional.Add(extra); }
                     }
                     enemy=new RpgEnemyService(_random).Encounter(account.Rpg,rpg,stake,clock,points.HotTime.DropBonus(rpg.HotTime));
@@ -112,6 +113,10 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                 }
                 payout = RpgPassiveService.RewardPayout(basePayout, stake, stats.PearlBonus);
                 var net=Math.Max(0,payout-stake);
+                var collectors=RpgCollectorService.Calculate(account.Rpg,rpg.DiveLoot);
+                var collectorPercent=fishing && fishName is not null ? collectors.FishingPearls : !fishing?collectors.DivePearls:0;
+                payout=checked(payout-net+RpgCollectorService.Reward(net,collectorPercent));
+                net=Math.Max(0,payout-stake);
                 payout=checked(payout-net+points.RewardAmount(net,fishing?RpgRewardSource.Fishing:RpgRewardSource.DiveNetWin));
                 return payout;
             },RpgRewardSource.AlreadyBoosted,rpgFishName:()=>caughtFish?.PearlReward.HasValue==true?caughtFish.Name:fishName);
