@@ -142,22 +142,184 @@ test("configuration and helper as first script, reduced motion", async ({
 });
 
 for (const view of ["panel", "mobile"]) {
-  test(`${view}: dismantled dive loot closes the reveal`, async ({page}) => {
-    await page.setViewportSize({width: view === "panel" ? 320 : 390, height: 500});
-    await page.addInitScript(() => { Math.random = () => 0; });
-    await page.route("https://extension-files.twitch.tv/**", route => route.fulfill({contentType:"text/javascript",body:""}));
+  test(`${view}: dismantled dive loot closes the reveal`, async ({ page }) => {
+    await page.setViewportSize({
+      width: view === "panel" ? 320 : 390,
+      height: 500,
+    });
+    await page.addInitScript(() => {
+      Math.random = () => 0;
+    });
+    await page.route("https://extension-files.twitch.tv/**", (route) =>
+      route.fulfill({ contentType: "text/javascript", body: "" }),
+    );
     await page.goto(`/${view}.html`);
     await page.getByLabel("Animationen aus").check();
-    await page.getByRole("button", {name:"Abenteuer",exact:true}).click();
-    await page.getByRole("button", {name:"Tauchgang starten"}).click();
+    await page.getByRole("button", { name: "Abenteuer", exact: true }).click();
+    await page.getByRole("button", { name: "Tauchgang starten" }).click();
     const reveal = page.locator(".reveal");
-    await expect(reveal.getByRole("heading",{name:"Alte Muschel"})).toBeVisible();
-    await reveal.getByRole("button",{name:/Zerlegen/}).click();
+    await expect(
+      reveal.getByRole("heading", { name: "Alte Muschel" }),
+    ).toBeVisible();
+    await reveal.getByRole("button", { name: /Zerlegen/ }).click();
     await expect(reveal).toHaveCount(0);
-    await page.getByRole("button",{name:"Inventar",exact:true}).click();
+    await page.getByRole("button", { name: "Inventar", exact: true }).click();
     await expect(page.locator('[data-instance-id="loot-1"]')).toHaveCount(0);
-    await expect(page.locator('[data-instance-id="demo-shell"]')).toHaveCount(1);
-    await page.getByRole("button",{name:"Abenteuer",exact:true}).click();
+    await expect(page.locator('[data-instance-id="demo-shell"]')).toHaveCount(
+      1,
+    );
+    await page.getByRole("button", { name: "Abenteuer", exact: true }).click();
     await expect(reveal).toHaveCount(0);
+  });
+}
+
+// Twitch serves each version under a nested CDN path, never just /panel.html.
+// This test catches relative CSS/image URLs that work on localhost but fail there.
+for (const [view, width, height] of [
+  ["panel", 320, 500],
+  ["mobile", 390, 844],
+] as const) {
+  test(`${view}: luminous design assets work under a hosted version path`, async ({
+    page,
+    request,
+  }) => {
+    const prefix = "/extension/0.0.1/build/";
+    const failures: string[] = [];
+    page.on("requestfailed", (req) => failures.push(req.url()));
+    page.on("response", (res) => {
+      if (res.status() >= 400) failures.push(res.url());
+    });
+    await page.route("https://extension-files.twitch.tv/**", (route) =>
+      route.fulfill({
+        contentType: "text/javascript",
+        body: "window.Twitch={ext:{onAuthorized:cb=>cb()}}",
+      }),
+    );
+    await page.route("https://demo.ext-twitch.tv/**", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (!path.startsWith(prefix)) {
+        await route.fulfill({ status: 404, body: "Bad asset prefix" });
+        return;
+      }
+      await route.fulfill({
+        response: await request.get(
+          "https://localhost:8080/" + path.slice(prefix.length),
+        ),
+      });
+    });
+    await page.setViewportSize({ width, height });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(`https://demo.ext-twitch.tv${prefix}${view}.html`);
+    await page.getByRole("button", { name: "Abenteuer", exact: true }).click();
+    await expect(page.locator(".sea-art img")).toBeVisible();
+    expect(
+      await page
+        .locator(".sea-art img")
+        .evaluate(
+          (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+        ),
+    ).toBe(true);
+    expect(
+      await page
+        .locator("header img")
+        .evaluate(
+          (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+        ),
+    ).toBe(true);
+    const background = await page
+      .locator("body")
+      .evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(background).toContain(prefix + "luminous-depths.png");
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({
+      path: `test-results/luminous-${view}.png`,
+      fullPage: true,
+    });
+    for (const testWidth of [280, 320, 390, 760]) {
+      await page.setViewportSize({ width: testWidth, height });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    expect(failures).toEqual([]);
+  });
+}
+for (const view of ["panel", "mobile"]) {
+  test(`${view}: otter HP, counterattack, defeat and encounter restart`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({
+      width: view === "panel" ? 320 : 390,
+      height: 500,
+    });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.route("https://extension-files.twitch.tv/**", (route) =>
+      route.fulfill({ contentType: "text/javascript", body: "" }),
+    );
+    await page.goto(`/${view}.html`);
+    const health = page.getByRole("progressbar", {
+      name: "Otter HP",
+      exact: true,
+    });
+    await expect(health).toHaveJSProperty("value", 1000);
+    await page.getByRole("button", { name: "Boss", exact: true }).click();
+    const attack = page.getByRole("button", { name: /Teilnehmen/ });
+    for (let turn = 1; turn <= 29; turn++) {
+      await attack.click();
+      await expect(health).toHaveJSProperty(
+        "value",
+        Math.max(0, 1000 - turn * 35),
+      );
+    }
+    await expect(attack).toBeDisabled();
+    await expect(
+      page.getByText("Dein Otter ist besiegt.", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Gegentreffer: −20 HP", { exact: true }),
+    ).toBeVisible();
+    expect(
+      await page
+        .locator(".health-hit")
+        .evaluate((el) => getComputedStyle(el).animationName),
+    ).toBe("none");
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({
+      path: `test-results/hp-defeat-${view}.png`,
+      fullPage: true,
+    });
+    await page.getByRole("button", { name: "Charakter", exact: true }).click();
+    await expect(health).toHaveJSProperty("value", 0);
+    await page
+      .getByRole("button", { name: "Demokampf neu starten", exact: true })
+      .click();
+    await expect(health).toHaveJSProperty("value", 1000);
+    await expect(
+      page.getByText("25.000 Demo-Perlen", { exact: false }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Boss", exact: true }).click();
+    await expect(
+      page.getByRole("progressbar", { name: "Boss HP", exact: true }),
+    ).toHaveJSProperty("value", 4000);
+    await expect(
+      page.getByText("Dein Schaden: 0", { exact: true }),
+    ).toBeVisible();
+    await attack.click();
+    await expect(health).toHaveJSProperty("value", 965);
+    await expect(
+      page.getByText("Gegentreffer: −35 HP", { exact: true }),
+    ).toBeVisible();
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({
+      path: `test-results/hp-combat-${view}.png`,
+      fullPage: true,
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
   });
 }

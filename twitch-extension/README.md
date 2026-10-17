@@ -1,5 +1,18 @@
 # Funjii Otter RPG · Phase 1 (0.0.1)
 
+## Aktueller Stand: Leuchtende Tiefe (17.10.2026)
+
+Designvariante 3 ist umgesetzt: Nachtblau, Cyan und Violett, Otter-Magier, leuchtende Unterwasserruinen, lokale Illustrationen und einheitliche SVG-Navigationsicons. Spielaktionen bleiben reine Mockaktionen. Der Lootfenster-Fix ist enthalten.
+
+Neu: Eine Otter-HP-Leiste wird über der Navigation auf allen Spielansichten angezeigt. Demoregeln: 1.000 Start-HP, pro eigenem Bossangriff ein Gegentreffer von maximal 35 HP, sofern der Boss überlebt. Ein tödlicher eigener Treffer verhindert die Gegenattacke. Bei 0 HP sind Bossangriffe gesperrt. „Demokampf neu starten“ heilt den Otter und setzt den Boss auf volle HP sowie den persönlichen Boss-Schaden zurück; Inventar, Perlen, Perks, Ausrüstung und bereits verbrauchte Sushi-Anwendungen bleiben erhalten. Kein Gegnerschaden beim Angeln/Tauchen und kein Schaden im Hintergrund. Die HP-Werte sind neue Demoannahmen, keine Übernahme oder Änderung des produktiven C#-Kampfsystems.
+
+Nach ausdrücklicher Freigabe des Nutzers wurde ein geschlossenes Twitch-Hosted-Test-Paket vorbereitet; die Vorgabe gegen Veröffentlichung bleibt bestehen. Der Nutzer hat die vorherige Demo bereits erfolgreich im echten Twitch-Panel im Hosted Test geöffnet. Die neue Gestaltung wurde hier automatisiert mit nachgebildetem Twitch-Versionspfad geprüft; der echte Hosted-Test-Upload dieser Gestaltung steht noch aus.
+
+Für das Update der bereits installierten Testversion: Developer Console → Version 0.0.1 → Status → Zum lokalen Test verschieben → Dateien → neues ZIP hochladen → zurück zum gehosteten Test. Panelpfad panel.html, Mobilpfad mobile.html und Konfigurationspfad config.html beibehalten. Nicht zur Prüfung einreichen oder freigeben. Danach Kanalseite neu laden. Im Hosted Test wird kein localhost-Server benötigt.
+
+Der lokale Test scheiterte beim Nutzer in aktuellen Browsern an der lokalen Netzwerkfreigabe im Twitch-iframe. Änderungen an einzelnen Website-Freigaben reichten im beobachteten Fall nicht. Nicht pauschal Browserschutz abschalten; der geschlossene Hosted Test umgeht die localhost-Verbindung.
+
+
 Eigenständiges React/TypeScript-Frontend für das **C#/.NET-Projekt RaidClipPlugin**. Kein Streamer.bot-Modul. Nur eine flüchtige Demo, kein Backend, keine Verbindung zu Spielständen. Ein Neuladen setzt den jeweiligen Tab zurück. Panel, Mobil und Konfiguration haben getrennte Demo-Sitzungen.
 
 ## Voraussetzungen unter Windows
@@ -66,7 +79,9 @@ twitch-extension/
   src/mock.ts                             In-Memory-Zustand, Aktionen und Berechnungen
   src/main.tsx                            React-Ansichten und Benutzerinteraktion
   src/style.css                           Fantasy-Meer, Seltenheiten, reduzierte Bewegung
-  public/otter.svg                         lokaler Demo-Avatar, keine externe Bildabfrage
+  public/luminous-depths.png                lokale Fantasy-Illustration
+  public/otter-mage.png                     lokales Otter-Magier-Porträt
+  src/icons.tsx                            skalierbare SVG-Navigationsicons
   scripts/serve.mjs                        statischer HTTPS-Server, kein Spiel-API
   tests/                                  Logik- und Browserprüfungen
   pnpm-lock.yaml                          reproduzierbare Abhängigkeiten
@@ -106,4 +121,4 @@ pnpm.cmd exec playwright install chromium
 pnpm.cmd test:e2e
 ```
 
-Vor Browserprüfungen einen manuell gestarteten Server mit Strg+C stoppen: Die Suite startet ihren eigenen Server auf 8080. Sie ignoriert das lokale Zertifikat ausschließlich in ihrem Testbrowser und ersetzt den Helper durch einen Stub. Kein Twitch-Konto wird kontaktiert. Screenshots landen in `test-results/` (nicht eingecheckt). Ergebnisse und Grenzen siehe [TEST-RESULTS.md](TEST-RESULTS.md).
+Vor Browserprüfungen einen manuell gestarteten Server mit Strg+C stoppen: Die Suite startet ihren eigenen Server auf 8080. Sie ignoriert das lokale Zertifikat ausschließlich in ihrem Testbrowser und ersetzt den Helper durch einen Stub. Kein Twitch-Konto wird kontaktiert. Screenshots inklusive der neuen Gestaltung landen in `test-results/` (nicht eingecheckt). Ergebnisse und Grenzen siehe [TEST-RESULTS.md](TEST-RESULTS.md).

@@ -31,3 +31,22 @@ Fehlerbehebung: Beim Zerlegen eines Fundstücks wird dieselbe Iteminstanz auch a
 - Chromium-Browsertests: 5/5 bestanden, 7,8 Sekunden; neuer Ablauf auf Panel und Mobil geprüft, einschließlich Wechsel ins Inventar und zurück.
 - Neue Tests verwenden garantierte Mockbeute; kein produktives Backend kontaktiert.
 - Aktualisiertes ZIP für manuellen Hosted-Test-Upload vorbereitet, nicht automatisch hochgeladen.
+
+
+## Nachprüfung: Designvariante 3 „Leuchtende Tiefe“ (17.10.2026)
+
+- Strikter TypeScript-/Vite-Build erfolgreich: drei Einstiegspunkte; JS 241,08 kB / 76,36 kB gzip, CSS 9,81 kB / 3,28 kB gzip. Die beiden lokalen PNG-Illustrationen sind zusätzliche Assets (nicht Teil dieser JS-Größen).
+- 9/9 Logiktests bestanden.
+- 7/7 Chromium-Browserprüfungen bestanden. Zusätzlich zu den bestehenden fünf Abläufen prüfen zwei neue Fälle die Bild-/CSS-Pfade unter einem verschachtelten simulierten Twitch-CDN-Versionspfad, die geladenen Illustrationen, fehlgeschlagene Assetanfragen und Überlauf bei 280, 320, 390 und 760 Pixel Breite.
+- Visuelle Kontrolle der erzeugten Screenshots: Charakter-Panel (320×500) und Abenteuer in Panel/Mobil (vollständige Scrollansicht).
+- Gameplay, Demo-Isolation, reduzierte Bewegung und Lootfenster-Korrektur bleiben geprüft. Keine neue Backend-Verbindung.
+- Dies ist kein Test auf dem echten Twitch-CDN: Die neue Version ist als ZIP vorbereitet und muss vom Nutzer in den geschlossenen Hosted Test hochgeladen werden. Keine Veröffentlichung, kein Merge.
+
+
+## Nachprüfung: Otter-HP und Gegnerschaden (17.10.2026)
+
+- TypeScript-/Vite-Build erfolgreich. Gebautes JS 243,24 kB / 77,00 kB gzip, CSS 11,20 kB / 3,64 kB gzip; lokale Illustrationen zusätzlich.
+- 12/12 Logiktests bestanden: je Runde genau ein Gegentreffer; keine HP-Änderung durch andere Aktionen; kein Heilen durch vorzeitigen Neustart; HP-Untergrenze 0; Niederlage blockiert Angriffe ohne Zustandsänderung; Kampfneustart erhält Perlen/Items/Perks/Ausrüstung und verbrauchte Buffs; Boss-Todesstoß ohne Gegenangriff; vollständiger Demo-Reset.
+- 9/9 Chromium-Browserprüfungen bestanden, 11,1 Sekunden. Die zwei neuen HP-Abläufe testen je 29 Runden bis zur Niederlage, Angriffsperre, Anzeige auf anderen Tabs, Neustart mit 1.000 HP und erneutem Gegentreffer bei 320 und 390 Pixel Breite. Reduzierte Bewegung deaktiviert den Trefferimpuls.
+- Screenshots des Kampfes und der Niederlage visuell kontrolliert.
+- Das ZIP kombiniert Designvariante 3, den Lootfenster-Fix und HP/Gegnerschaden. Noch kein Upload dieses Updates auf Twitch und kein Merge. Tatsächlicher Twitch-Kanaltest dieser neuen Fassung steht aus.

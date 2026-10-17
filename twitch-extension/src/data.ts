@@ -208,8 +208,10 @@ export function initialState(now = Date.now()): DemoState {
     player: {
       id: "demo-only",
       username: "Funjii · Demo-Otter",
-      avatarUrl: "./otter.svg",
+      avatarUrl: "./otter-mage.png",
       pearls: 25000,
+      hp: 1000,
+      maxHp: 1000,
       baseStats: {
         damage: 100,
         critChance: 5,

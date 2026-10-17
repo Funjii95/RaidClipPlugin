@@ -63,6 +63,7 @@ https
             ".js": "text/javascript",
             ".css": "text/css",
             ".svg": "image/svg+xml",
+            ".png": "image/png",
           }[extname(file)] ?? "application/octet-stream",
         );
         res.setHeader(

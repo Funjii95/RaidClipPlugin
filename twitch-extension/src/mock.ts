@@ -119,9 +119,13 @@ export class MockRpgDataSource implements RpgDataSource {
         s.inventory = s.inventory.filter((x) => x !== i);
         // A removed inventory instance must also disappear from the loot reveal.
         if (s.result?.kind === "dive") {
-          const wasLoot = s.result.items.some(item => item.instanceId === i.instanceId);
+          const wasLoot = s.result.items.some(
+            (item) => item.instanceId === i.instanceId,
+          );
           if (wasLoot) {
-            s.result.items = s.result.items.filter(item => item.instanceId !== i.instanceId);
+            s.result.items = s.result.items.filter(
+              (item) => item.instanceId !== i.instanceId,
+            );
             if (s.result.items.length === 0) s.result = undefined;
           }
         }
@@ -145,10 +149,20 @@ export class MockRpgDataSource implements RpgDataSource {
           endsAt: now + action.duration,
         };
         break;
+      case "restartFight": {
+        if (s.player.hp > 0)
+          throw Error("Neustart ist erst nach einer Niederlage möglich.");
+        // Restart only this demo encounter; inventory, perks and pearls are retained.
+        s.player.hp = s.player.maxHp;
+        s.boss = { ...initialState(now).boss };
+        break;
+      }
       case "boss": {
+        if (s.player.hp <= 0)
+          throw Error("Dein Otter ist besiegt. Starte den Demokampf neu.");
         if (s.boss.status === "waiting") {
           if (now < s.boss.nextAt) throw Error("Der nächste Boss kommt bald.");
-          s.boss = { ...s.boss, hp: 4000, status: "active", damage: 0 };
+          s.boss = { ...initialState(now).boss };
         }
         const stats = characterStats(s);
         const buff = s.player.buffs.find(
@@ -158,8 +172,20 @@ export class MockRpgDataSource implements RpgDataSource {
           (stats.damage + (buff?.attributes.damage ?? 0)) *
             (1 + stats.bossDamage / 100),
         );
-        s.boss.hp = Math.max(0, s.boss.hp - damage);
-        s.boss.damage += damage;
+        const damageDealt = Math.min(s.boss.hp, damage);
+        s.boss.hp -= damageDealt;
+        s.boss.damage += damageDealt;
+        // Explicit demo turn rules: surviving bosses counter once for 35 HP.
+        // A killing blow wins immediately, so a defeated boss never retaliates.
+        const damageTaken = s.boss.hp > 0 ? Math.min(35, s.player.hp) : 0;
+        s.player.hp -= damageTaken;
+        s.boss.lastExchange = {
+          turn: (s.boss.lastExchange?.turn ?? 0) + 1,
+          damageDealt,
+          damageTaken,
+          outcome:
+            s.boss.hp === 0 ? "victory" : s.player.hp === 0 ? "defeat" : "hit",
+        };
         if (buff) buff.remainingUses--;
         if (!s.boss.hp) {
           s.boss.status = "waiting";

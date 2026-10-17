@@ -60,6 +60,8 @@ export interface PlayerProfile {
   username: string;
   avatarUrl: string;
   pearls: number;
+  hp: number;
+  maxHp: number;
   baseStats: CharacterStats;
   buffs: ActiveBuff[];
 }
@@ -75,6 +77,12 @@ export interface FishingResult {
   fish: { name: string; rarity: Rarity; icon: string };
   message: string;
 }
+export interface CombatExchange {
+  turn: number;
+  damageDealt: number;
+  damageTaken: number;
+  outcome: "hit" | "victory" | "defeat";
+}
 export interface BossState {
   name: string;
   hp: number;
@@ -82,6 +90,7 @@ export interface BossState {
   status: "active" | "waiting";
   damage: number;
   nextAt: number;
+  lastExchange?: CombatExchange;
 }
 export interface HotTimeState {
   endsAt: number;
@@ -112,6 +121,7 @@ export type Action =
   | { type: "favorite" | "dismantle"; id: string }
   | { type: "perk"; id: string }
   | { type: "boss" }
+  | { type: "restartFight" }
   | { type: "hot"; duration: number }
   | { type: "reset" };
 // A future server adapter must validate JWT, channel, role, expiry and every command.

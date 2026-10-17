@@ -13,6 +13,7 @@ import {
 import { slots } from "./types";
 import type { Action, InventoryItem, RpgDataSource } from "./types";
 import "./style.css";
+import { Icon } from "./icons";
 const source: RpgDataSource = new MockRpgDataSource();
 const tabs = [
   "Charakter",
@@ -24,7 +25,16 @@ const tabs = [
   "Boss",
   "Hot Time",
 ];
-const symbols = ["🦦", "🧭", "🎒", "⚔", "🪸", "✧", "🐙", "🔥"];
+const symbols = [
+  "otter",
+  "compass",
+  "bag",
+  "swords",
+  "sets",
+  "perk",
+  "boss",
+  "time",
+] as const;
 const time = (n: number) =>
   `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 function App() {
@@ -176,25 +186,62 @@ function App() {
     <div className={motion ? "app" : "app no-motion"}>
       <header>
         <img
-          src="./otter.svg"
+          src="./otter-mage.png"
           alt="Demo-Avatar anstelle des späteren Twitch-Avatars"
         />
         <div>
-          <small>FUNJII’S UNTERWASSERWELT</small>
+          <small>FUNJII · LEUCHTENDE TIEFE</small>
           <h1>
             Otter RPG <span>DEMO</span>
           </h1>
-          <p>Eine kleine Pfote. Ein großes Abenteuer.</p>
+          <p>Dein Abenteuer unter den Wellen.</p>
         </div>
       </header>
       <div className="statusbar">
-        <span>◉ {state.player.pearls.toLocaleString("de-DE")} Demo-Perlen</span>
+        <span>
+          <Icon name="pearl" /> {state.player.pearls.toLocaleString("de-DE")}{" "}
+          Demo-Perlen
+        </span>
         <small>{helper}</small>
       </div>
+      {!config && (
+        <section
+          className={`otter-health ${state.player.hp <= state.player.maxHp * 0.25 ? "health-low" : ""} ${state.boss.lastExchange?.damageTaken ? "health-hit" : ""}`}
+          key={`health-${state.boss.lastExchange?.turn ?? 0}-${state.player.hp}`}
+          aria-label="Lebenspunkte deines Otters"
+        >
+          <div className="health-label">
+            <span>♥ Otter-HP</span>
+            <strong>
+              {state.player.hp} / {state.player.maxHp} HP
+            </strong>
+          </div>
+          <progress
+            aria-label="Otter HP"
+            value={state.player.hp}
+            max={state.player.maxHp}
+          />
+          {state.player.hp === 0 ? (
+            <div className="defeat-notice">
+              <p role="status">Dein Otter ist besiegt.</p>
+              <button onClick={() => void run({ type: "restartFight" })}>
+                Demokampf neu starten
+              </button>
+              <small>
+                Volle HP, Boss zurückgesetzt. Items und Perlen bleiben erhalten.
+              </small>
+            </div>
+          ) : state.player.hp <= state.player.maxHp * 0.25 ? (
+            <small>
+              Wenig Lebenspunkte – der nächste Gegentreffer kann dich besiegen.
+            </small>
+          ) : null}
+        </section>
+      )}
       <div
         className={`hot-strip ${hot ? "burning" : ""} ${hot && seconds <= 30 ? "urgent" : ""}`}
       >
-        🔥{" "}
+        <Icon name="time" />{" "}
         {hot
           ? `Hot Time · ${time(seconds)} · +50 % Itemchance`
           : "Die Tiefsee ruht · Hot Time inaktiv"}
@@ -210,7 +257,7 @@ function App() {
                 setMessage("");
               }}
             >
-              <span aria-hidden="true">{symbols[n]}</span>
+              <Icon name={symbols[n]} />
               {name}
             </button>
           ))}
@@ -303,64 +350,86 @@ function App() {
             {tab === "Abenteuer" && (
               <>
                 <article className="adventure">
-                  <div className="sea-art" aria-hidden="true">
-                    🦦<span>🐚</span>🫧
+                  <div className="sea-art">
+                    <img
+                      src="./luminous-depths.png"
+                      alt="Otter-Magier zwischen leuchtenden Quallen und einem Perlenschatz in versunkenen Ruinen"
+                      width="1536"
+                      height="1024"
+                    />
+                    <div className="sea-caption">
+                      <span>LEUCHTENDE TIEFE</span>
+                      <h3>Ein Meer voller Geheimnisse.</h3>
+                    </div>
                   </div>
-                  <h3>Was verbirgt sich unter den Wellen?</h3>
-                  <label>
-                    Einsatz in Demo-Perlen
-                    <select
-                      value={stake}
-                      onChange={(e) => setStake(Number(e.target.value))}
-                    >
-                      {[0, 250, 1000, 5000, 10000].map((n) => (
-                        <option key={n} value={n}>
-                          {n.toLocaleString("de-DE")}
-                        </option>
+                  <div className="adventure-controls">
+                    <label>
+                      Einsatz in Demo-Perlen
+                      <select
+                        value={stake}
+                        onChange={(e) => setStake(Number(e.target.value))}
+                      >
+                        {[0, 250, 1000, 5000, 10000].map((n) => (
+                          <option key={n} value={n}>
+                            {n.toLocaleString("de-DE")}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="loot-chance">
+                      <span>Lootchance</span>
+                      <strong>{info.chance.toFixed(1)} %</strong>
+                      <small>
+                        {hot ? "Hot Time eingerechnet" : "Aktuelle Itemchance"}
+                      </small>
+                    </div>
+                    <div className="adventure-buttons">
+                      <button
+                        className="primary"
+                        disabled={
+                          busy ||
+                          revealing ||
+                          remaining(state.cooldowns.dive, now) > 0 ||
+                          state.player.pearls < stake
+                        }
+                        onClick={() => void run({ type: "dive", stake })}
+                      >
+                        <Icon name="dive" />
+                        <span>
+                          {remaining(state.cooldowns.dive, now) > 0
+                            ? `Tauchen · ${time(remaining(state.cooldowns.dive, now))}`
+                            : "Tauchgang starten"}
+                        </span>
+                      </button>
+                      <button
+                        className="primary secondary"
+                        disabled={
+                          busy ||
+                          revealing ||
+                          remaining(state.cooldowns.fishing, now) > 0
+                        }
+                        onClick={() => void run({ type: "fishing" })}
+                      >
+                        <Icon name="fish" />
+                        <span>
+                          {remaining(state.cooldowns.fishing, now) > 0
+                            ? `Angeln · ${time(remaining(state.cooldowns.fishing, now))}`
+                            : "Angel auswerfen"}
+                        </span>
+                      </button>
+                    </div>
+                    <p className="loot-label">Mögliche Seltenheiten</p>
+                    <p className="rarities">
+                      {info.rarities.map((r) => (
+                        <span className={r} key={r}>
+                          {r}{" "}
+                        </span>
                       ))}
-                    </select>
-                  </label>
-                  <p>
-                    Itemchance: {info.chance.toFixed(1)} %
-                    {hot ? " · Hot Time eingerechnet" : ""}
-                  </p>
-                  <p className="rarities">
-                    {info.rarities.map((r) => (
-                      <span className={r} key={r}>
-                        {r}{" "}
-                      </span>
-                    ))}
-                  </p>
-                  <button
-                    className="primary"
-                    disabled={
-                      busy ||
-                      revealing ||
-                      remaining(state.cooldowns.dive, now) > 0 ||
-                      state.player.pearls < stake
-                    }
-                    onClick={() => void run({ type: "dive", stake })}
-                  >
-                    🤿{" "}
-                    {remaining(state.cooldowns.dive, now) > 0
-                      ? `Tauchen · ${time(remaining(state.cooldowns.dive, now))}`
-                      : "Tauchgang starten"}
-                  </button>
-                  <button
-                    className="primary secondary"
-                    disabled={
-                      busy ||
-                      revealing ||
-                      remaining(state.cooldowns.fishing, now) > 0
-                    }
-                    onClick={() => void run({ type: "fishing" })}
-                  >
-                    🎣{" "}
-                    {remaining(state.cooldowns.fishing, now) > 0
-                      ? `Angeln · ${time(remaining(state.cooldowns.fishing, now))}`
-                      : "Angel auswerfen"}
-                  </button>
-                  <small>Simulierte Belohnungen · je 5 Sekunden Cooldown</small>
+                    </p>
+                    <small>
+                      Simulierte Belohnungen · je 5 Sekunden Cooldown
+                    </small>
+                  </div>
                 </article>
                 {state.result && (
                   <article
@@ -500,6 +569,7 @@ function App() {
                   className="primary"
                   disabled={
                     busy ||
+                    state.player.hp === 0 ||
                     (state.boss.status === "waiting" && now < state.boss.nextAt)
                   }
                   onClick={() => void run({ type: "boss" })}
@@ -507,6 +577,30 @@ function App() {
                   ⚔ Teilnehmen · Demo-Angriff
                 </button>
                 <p>Dein Schaden: {state.boss.damage}</p>
+                {state.boss.lastExchange && (
+                  <div className="combat-exchange" role="status">
+                    <p>
+                      Dein Treffer: {state.boss.lastExchange.damageDealt}{" "}
+                      Schaden
+                    </p>
+                    <p className="damage-taken">
+                      Gegentreffer: −{state.boss.lastExchange.damageTaken} HP
+                    </p>
+                    {state.boss.lastExchange.outcome === "victory" && (
+                      <strong>Boss besiegt! Kein Gegentreffer.</strong>
+                    )}
+                    {state.boss.lastExchange.outcome === "defeat" && (
+                      <strong>
+                        Niederlage · Dein Otter braucht einen Neustart.
+                      </strong>
+                    )}
+                  </div>
+                )}
+                <small>
+                  Demo-Rundenkampf: Jeder Klick ist ein Angriff. Überlebt der
+                  Boss, schlägt er mit 35 Schaden zurück. Kein Schaden außerhalb
+                  dieses Kampfes.
+                </small>
               </article>
             )}
             {tab === "Hot Time" && (

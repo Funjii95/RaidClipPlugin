@@ -92,6 +92,9 @@ describe("isolierte Mockaktionen", () => {
   it("boss consumes buffs, reaches waiting state and restarts after countdown", async () => {
     let now = 0;
     const a = new MockRpgDataSource(() => now);
+    for (let i = 0; i < 5; i++)
+      await a.dispatch({ type: "perk", id: "damage" });
+    for (let i = 0; i < 4; i++) await a.dispatch({ type: "perk", id: "boss" });
     let s = a.getSnapshot();
     for (let i = 0; i < 50 && s.boss.status === "active"; i++)
       s = await a.dispatch({ type: "boss" });
@@ -106,17 +109,83 @@ describe("isolierte Mockaktionen", () => {
 });
 
 it("dismantling dive loot dismisses its reveal and cannot reward twice", async () => {
-  const source = new MockRpgDataSource(() => 1000, () => 0);
-  const dive = await source.dispatch({type: "dive", stake: 250});
+  const source = new MockRpgDataSource(
+    () => 1000,
+    () => 0,
+  );
+  const dive = await source.dispatch({ type: "dive", stake: 250 });
   if (dive.result?.kind !== "dive") throw Error("Expected dive");
   const id = dive.result.items[0].instanceId;
   // Dismantling another item must not dismiss the current loot.
-  const unrelated = await source.dispatch({type: "dismantle", id: "demo-shell"});
+  const unrelated = await source.dispatch({
+    type: "dismantle",
+    id: "demo-shell",
+  });
   expect(unrelated.result).toBeDefined();
-  const after = await source.dispatch({type: "dismantle", id});
+  const after = await source.dispatch({ type: "dismantle", id });
   expect(after.result).toBeUndefined();
-  expect(after.inventory.some(item => item.instanceId === id)).toBe(false);
+  expect(after.inventory.some((item) => item.instanceId === id)).toBe(false);
   expect(after.player.pearls).toBe(unrelated.player.pearls + 25);
-  await expect(source.dispatch({type: "dismantle", id})).rejects.toThrow();
+  await expect(source.dispatch({ type: "dismantle", id })).rejects.toThrow();
   expect(source.getSnapshot().player.pearls).toBe(after.player.pearls);
+});
+
+describe("Otter HP and enemy counterattacks", () => {
+  it("surviving bosses counter once per turn and unrelated actions cannot hurt or heal", async () => {
+    const a = new MockRpgDataSource();
+    const s = await a.dispatch({ type: "boss" });
+    expect(s.player.hp).toBe(965);
+    expect(s.boss.lastExchange?.damageTaken).toBe(35);
+    expect(s.boss.lastExchange?.damageDealt).toBeGreaterThan(0);
+    expect(s.boss.hp).toBe(s.boss.maxHp - s.boss.lastExchange!.damageDealt);
+    await a.dispatch({ type: "fishing" });
+    await a.dispatch({ type: "favorite", id: "demo-shell" });
+    expect(a.getSnapshot().player.hp).toBe(965);
+    await expect(a.dispatch({ type: "restartFight" })).rejects.toThrow();
+  });
+  it("defeat clamps HP to zero, blocks more attacks and restarts only the encounter", async () => {
+    const a = new MockRpgDataSource();
+    await a.dispatch({ type: "favorite", id: "demo-shell" });
+    let s = a.getSnapshot();
+    for (let i = 0; i < 29; i++) s = await a.dispatch({ type: "boss" });
+    expect(s.player.hp).toBe(0);
+    expect(s.boss.hp).toBeGreaterThan(0);
+    expect(s.boss.lastExchange?.outcome).toBe("defeat");
+    expect(s.boss.lastExchange?.damageTaken).toBe(20);
+    const before = a.getSnapshot();
+    await expect(a.dispatch({ type: "boss" })).rejects.toThrow("besiegt");
+    expect(a.getSnapshot()).toEqual(before);
+    const reset = await a.dispatch({ type: "restartFight" });
+    expect(reset.player.hp).toBe(reset.player.maxHp);
+    expect(reset.boss.hp).toBe(reset.boss.maxHp);
+    expect(reset.boss.lastExchange).toBeUndefined();
+    expect(reset.boss.damage).toBe(0);
+    expect(reset.player.pearls).toBe(before.player.pearls);
+    expect(reset.inventory).toEqual(before.inventory);
+    expect(reset.perks).toEqual(before.perks);
+    expect(reset.player.buffs).toEqual(before.player.buffs);
+    expect(reset.equipment).toEqual(before.equipment);
+    expect((await a.dispatch({ type: "boss" })).player.hp).toBe(965);
+  });
+  it("a finishing blow wins without a counterattack and full demo reset restores HP", async () => {
+    const a = new MockRpgDataSource();
+    for (let i = 0; i < 5; i++)
+      await a.dispatch({ type: "perk", id: "damage" });
+    for (let i = 0; i < 4; i++) await a.dispatch({ type: "perk", id: "boss" });
+    let previous = a.getSnapshot();
+    while (previous.boss.hp > 0) {
+      const next = await a.dispatch({ type: "boss" });
+      if (next.boss.hp === 0) {
+        expect(next.player.hp).toBe(previous.player.hp);
+        expect(next.boss.lastExchange?.damageTaken).toBe(0);
+        expect(next.boss.lastExchange?.outcome).toBe("victory");
+        expect(next.boss.damage).toBe(next.boss.maxHp);
+        break;
+      }
+      previous = next;
+    }
+    const reset = await a.dispatch({ type: "reset" });
+    expect(reset.player.hp).toBe(1000);
+    expect(reset.boss.lastExchange).toBeUndefined();
+  });
 });
