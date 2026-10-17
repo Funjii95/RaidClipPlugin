@@ -4876,6 +4876,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.19 – Sushi 2.1 und neue Meeresbewohner
+
+- Fünf neue Fangarten mit eigenen Perlenbelohnungen. !fish ohne Einsatz, !fishbag, !cook und !eat. Kappa-Maki, Tempura-Rolle und Kugelfisch-Sashimi für passive Heilung, Chat-Heilung und Boss-Schadensreduktion.
+- Ein offensiver und ein defensiver Sushi-Slot; Verbrauch je Boss-ID, voller Bonus bis zum Ende der dritten Teilnahme. Neue Fisch-/Rezepttabellen, Debugtests und sichere Ergänzung bestehender Bestände.
+
 2.1.18 – Kraft, Ausdauer und HP-Ausrüstung
 
 - Alle Ausrüstungsteile erhalten garantiert Kraft und Ausdauer zusätzlich zu bisherigen Rolls und Effekten. 1 Kraft gibt standardmäßig +1 % Schaden, 1 Ausdauer +5 MaxHP. Bestehende Items werden einmalig ohne Neuwürfeln ergänzt; Ausrüstungswechsel heilt nicht.

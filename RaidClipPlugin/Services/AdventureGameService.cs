@@ -107,6 +107,7 @@ public sealed class AdventureGameService
                 }
                 if (action == "cancelboss" && _boss is not null)
                 {
+                    await CloseBossSushiAsync(_boss,token);
                     var template = _boss.Config.CancelMessage;
                     _nextBoss = _now().AddSeconds(Math.Clamp(_boss.Config.RoundCooldownSeconds, 1, 86400));
                     SaveHealthBoss(null);
@@ -172,7 +173,7 @@ public sealed class AdventureGameService
                 var gameConfig = command == "!fish" ? settings.Fishing : settings.Treasure;
                 long rpgStake = 0;
                 var availablePoints = Math.Max(0, await _points.GetPointsAsync(message.UserId, token) - Math.Max(0, _config.MinimumPoints));
-                var validStake = parts.Length == 1 && command == "!dive" || parts.Length == 2 &&
+                var validStake = parts.Length == 1 || parts.Length == 2 &&
                     (parts[1].Equals("all", StringComparison.OrdinalIgnoreCase) ?
                         (rpgStake = Math.Min(availablePoints, gameConfig.MaximumBet)) > 0 :
                         long.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out rpgStake));
@@ -367,13 +368,14 @@ public sealed class AdventureGameService
                         health.BossDamage=checked(health.BossDamage+Math.Min(damage,_boss.Hp));
                         health.BossRemainingHp=Math.Max(0,_boss.Hp-damage);
                         if(damage<_boss.Hp)
-                            receivedDamage=RpgHealthService.CounterDamage(_boss.Config.HitPoints,_config.Adventures.Rpg.Health,_random);
+                            receivedDamage=RpgSushiService.BossDamage(RpgHealthService.CounterDamage(_boss.Config.HitPoints,_config.Adventures.Rpg.Health,_random),account.Rpg,clock);
                         health.CurrentHp=Math.Max(0,health.CurrentHp!.Value-receivedDamage);
                         playerDied=health.Defeated=health.CurrentHp==0;
                         healthText=$" Gegenangriff: -{receivedDamage} HP. ❤️ {health.CurrentHp}/{RpgHealthService.Maximum(account.Rpg,_config.Adventures.Rpg.Health)} HP.";
                         if(playerDied) healthText+=" 💀 Besiegt: keine Belohnungen für diesen Boss!";
                     }
                     RpgPassiveService.ConsumeBuffs(account.Rpg, RpgActivity.Boss, _config.Adventures.Rpg, _random, clock);
+                    RpgSushiService.Participate(account.Rpg,_boss.Id,_boss.End,clock);
                     account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(Math.Clamp(_boss.Config.AttackCooldownSeconds, 1, 86400));
                     return new(true);
                 }, token);
@@ -407,6 +409,7 @@ public sealed class AdventureGameService
         }
         _boss = null;
         _nextBoss = _now().AddSeconds(Math.Clamp(finished.Config.RoundCooldownSeconds, 1, 86400));
+        await CloseBossSushiAsync(finished,token);
         var reward = Math.Clamp(finished.Config.RewardPool, 0, 1000000000) / finished.Players.Count;
         reward=_points.RewardAmount(reward,RpgRewardSource.Boss);
         await _points.AddPointsToUsersAsync(finished.Players.Select(p => (p.Key, p.Value)), reward,
@@ -431,8 +434,17 @@ public sealed class AdventureGameService
         }
         return new(true, user.UserId, damage, critical, 0, true, 0, "");
     }
+    private async Task CloseBossSushiAsync(BossRound boss,CancellationToken token)
+    {
+        if(!_config.Adventures.Rpg.Enabled)return;
+        var participants=boss.Players.Select(p=>(Id:p.Key,Name:p.Value)).Concat((await _points.BossParticipantsAsync(boss.Id,token)).Select(p=>(p.Id,p.Name))).DistinctBy(p=>p.Id);
+        foreach(var p in participants)
+            await _points.ApplyRpgAsync(p.Id,p.Name,"sushiclose:"+boss.Id,a=>
+            {RpgSushiService.Close(a.Rpg,boss.Id,_now()<boss.End?_now():boss.End,_now(),_config.Adventures.Rpg.Health);return new(true);},token);
+    }
     private async Task RewardSurvivorsAsync(BossRound boss,bool victory,CancellationToken token)
     {
+        await CloseBossSushiAsync(boss,token);
         var rpg=_config.Adventures.Rpg;
         var survivors=new List<(string Id,string Name,long Damage)>();
         foreach(var player in boss.Players)
@@ -484,13 +496,14 @@ public sealed class AdventureGameService
         }
         foreach(var text in _points.HotTime.PollMessages(_config.Adventures.Rpg.HotTime)) await Say(text,token);
         if (!_config.Enabled || !_config.PointsEnabled)
-        { SaveHealthBoss(null); _race = null; _boss = null; return; }
+        { if(_boss is not null)await CloseBossSushiAsync(_boss,token); SaveHealthBoss(null); _race = null; _boss = null; return; }
         if (!_config.Adventures.Race.Enabled) _race = null;
-        if (!_config.Adventures.Boss.Enabled) {SaveHealthBoss(null);_boss = null;}
+        if (!_config.Adventures.Boss.Enabled) {if(_boss is not null)await CloseBossSushiAsync(_boss,token);SaveHealthBoss(null);_boss = null;}
         if (_boss is not null && _now() >= _boss.End)
         {
             if(_config.Adventures.Rpg.Enabled && _config.Adventures.Rpg.Health.Enabled)
                 await RewardSurvivorsAsync(_boss,false,token);
+            else await CloseBossSushiAsync(_boss,token);
             SaveHealthBoss(null);
             _nextBoss = _now().AddSeconds(Math.Clamp(_boss.Config.RoundCooldownSeconds, 1, 86400));
             var template = _boss.Config.TimeoutMessage;

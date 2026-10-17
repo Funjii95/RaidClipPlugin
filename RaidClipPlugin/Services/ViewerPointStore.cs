@@ -616,6 +616,7 @@ public sealed partial class ViewerPointStore
             var entry = index >= 0 ? CloneEntry(ordered[index].Value) : new ViewerPointEntry
             { UserId = userId, Points = 0 };
             RpgCoreStatService.Upgrade(entry.Rpg);
+            RpgSushiService.Upgrade(entry.Rpg);
             return new ViewerProfileResult(entry, index >= 0 ? index + 1 : 0);
         }
         finally { _lock.Release(); }
@@ -627,7 +628,7 @@ public sealed partial class ViewerPointStore
         bool jackpotHit, long jackpotStart, int historyLimit,
         CancellationToken cancellationToken, string? fishName = null, int fishGrams = 0,
         Func<ViewerPointEntry, RpgMutation>? rpgMutation = null,
-        Func<ViewerPointEntry, long, long>? rpgPayout = null, RpgRewardSource rewardSource = RpgRewardSource.MinigameNetWin)
+        Func<ViewerPointEntry, long, long>? rpgPayout = null, RpgRewardSource rewardSource = RpgRewardSource.MinigameNetWin,Func<string?>? rpgFishName=null)
     {
         await _lock.WaitAsync(cancellationToken);
         ViewerPointEntry? previousEntry = null;
@@ -723,6 +724,7 @@ public sealed partial class ViewerPointStore
             entry.BiggestWin = Math.Max(entry.BiggestWin, safePayout);
             entry.DisplayName = name;
             entry.UpdatedAt = DateTimeOffset.Now;
+            fishName=rpgFishName?.Invoke()??fishName;
             if (!string.IsNullOrWhiteSpace(fishName) && fishGrams > 0)
             {
                 entry.FishCollection ??= new();

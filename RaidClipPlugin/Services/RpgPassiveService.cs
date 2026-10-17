@@ -14,7 +14,7 @@ public static class RpgPassiveService
     {
         if ((trigger is RpgEffectTrigger.DoubleAttack or RpgEffectTrigger.TripleAttack) && activity != RpgActivity.Boss ||
             trigger == RpgEffectTrigger.ExtraLoot && activity != RpgActivity.Dive) return 0;
-        var stats = CharacterStatService.Calculate(profile, config, activity, includeEffects: false);
+        var stats = CharacterStatService.Calculate(profile, config, activity, includeEffects: false,now:now);
         var (chance, cap) = trigger switch
         {
             RpgEffectTrigger.DoubleAttack => (stats.DoubleAttackChance, Math.Clamp(config.DoubleAttackChanceCap, 0, 20)),
@@ -45,7 +45,7 @@ public static class RpgPassiveService
 
     public static RpgBossHit BossAttack(int baseDamage, RpgProfile profile, RpgConfig config, IDuelRandom random, DateTimeOffset now)
     {
-        var stats = CharacterStatService.Calculate(profile, config, RpgActivity.Boss);
+        var stats = CharacterStatService.Calculate(profile, config, RpgActivity.Boss,now:now);
         var regular = CharacterStatService.BossDamage(baseDamage, stats, random.NextInclusive(0, 9999) / 100m, out var critical, config.BaseCritMultiplier);
         var strength = TryProc(profile, config, RpgActivity.Boss, RpgEffectTrigger.TripleAttack, random, now, critical: critical);
         var hits = strength > 0 ? 2 : 0;
@@ -61,7 +61,7 @@ public static class RpgPassiveService
 
     public static void ConsumeBuffs(RpgProfile profile, RpgActivity activity, RpgConfig config, IDuelRandom random, DateTimeOffset now, long stake = 0)
     {
-        foreach (var buff in profile.Buffs.Where(b => b.Activity == activity && b.RemainingUses > 0).ToArray())
+        foreach (var buff in profile.Buffs.Where(b => !b.EncounterBased && b.Activity == activity && b.RemainingUses > 0).ToArray())
         {
             // At most one consecutive save per buff: finite life even with adversarial RNG.
             var key = "sushi-save:" + buff.RecipeId;
@@ -70,7 +70,7 @@ public static class RpgPassiveService
                 profile.Cooldowns[key] = now;
             else { buff.RemainingUses--; profile.Cooldowns.Remove(key); }
         }
-        profile.Buffs.RemoveAll(b => b.RemainingUses <= 0);
+        profile.Buffs.RemoveAll(b => !b.EncounterBased && b.RemainingUses <= 0);
     }
 
     public static string Describe(RpgItemEffect effect) =>

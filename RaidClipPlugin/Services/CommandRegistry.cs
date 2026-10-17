@@ -64,7 +64,7 @@ public sealed class CommandRegistry
             "Startet einen Heist (Mods/Broadcaster).", "!start heist", "!start heist",
             config.Heist.Enabled, CommandRole.Moderator, order:62);
         foreach (var game in new[] {
-            ("fishing", "!fish", "Fischen", m.Adventures.Fishing.Enabled, "<Betrag|all>", "Wirft die Angel aus und gewinnt mit etwas Glück Punkte."),
+            ("fishing", "!fish", "Fischen", m.Adventures.Fishing.Enabled, "[Betrag|all]", "Kostenloser Fangversuch oder Angeln mit Einsatz; Zutatenvorrat: !fishbag."),
             ("treasure", "!dive", "Schatzsuche", m.Adventures.Treasure.Enabled, "<Betrag|all>", "Erkundet eine Höhle auf der Suche nach Beute."),
             ("boss", "!boss", "Bosskampf", m.Adventures.Boss.Enabled, "", "Startet einen Bosskampf oder zeigt den aktiven Boss an.") })
             Add("adventure." + game.Item1, game.Item2, null, game.Item1, game.Item3, game.Item3,

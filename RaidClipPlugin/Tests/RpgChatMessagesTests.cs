@@ -52,7 +52,7 @@ public sealed class RpgChatMessagesTests : IDisposable
         var response = await Chat("!sushi " + id);
         Assert.Contains("aktiviert", response);
         Assert.Contains("+9 Angelglück", response); Assert.Contains("+2 % Kritische Trefferchance", response);
-        Assert.Contains("7 gültigen " + activity, response);
+        Assert.Contains("7 Bosskampfteilnahmen", response);
         var account = (await _points.GetProfileAsync("42", Token)).Entry;
         Assert.Equal(999, account.Points); Assert.Equal(7, Assert.Single(account.Rpg.Buffs).RemainingUses);
         var second = await Chat("!sushi " + id);

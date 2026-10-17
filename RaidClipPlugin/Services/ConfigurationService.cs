@@ -950,6 +950,7 @@ public sealed class ConfigurationService
             config.Duel.LoserTimeoutReason = config.Duel.LoserTimeoutReason[..500];
         config.Commands.Command = NormalizeCommand(config.Commands.Command);
         RpgHealthEquipmentCatalog.AddMissing(config.Minigame.Adventures.Rpg.DiveLoot);
+        RpgSushiService.AddMissing(config.Minigame.Adventures.Rpg);
         config.Commands.ExportDirectory = (config.Commands.ExportDirectory ?? "exports").Trim();
         config.Commands.CommandRoleOverrides = (config.Commands.CommandRoleOverrides ??
             new Dictionary<string, string>())

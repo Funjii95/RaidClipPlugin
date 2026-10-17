@@ -34,8 +34,8 @@ public sealed class RpgEconomyAndAdministrationTests : IDisposable
             Assert.Equal(new long[] { 500, 1000, 2000, 4000, 8000 }, Enumerable.Range(0, 5).Select(perk.Cost));
             Assert.Equal(15500, Enumerable.Range(0, 5).Sum(perk.Cost));
         }
-        Assert.Equal(new long[] { 250, 500, 1000, 1500 }, rpg.Recipes.Select(r => r.PearlCost));
-        Assert.Equal(new[] { 6500, 2500, 800, 190, 10 }, rpg.FishSpecies.Select(f => f.Weight));
+        Assert.Equal(new long[] { 250, 500, 1000, 1500 }, rpg.Recipes.Take(4).Select(r => r.PearlCost));
+        Assert.Equal(new[] { 6500, 2500, 800, 190, 10 }, rpg.FishSpecies.Take(5).Select(f => f.Weight));
     }
 
     [Fact]

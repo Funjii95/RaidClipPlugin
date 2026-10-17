@@ -5,7 +5,7 @@ using RaidClipPlugin.Models;
 namespace RaidClipPlugin.Services;
 
 // Local authoritative operations; adapters supply the verified Twitch user ID, never a target username.
-public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig config)
+public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig config,Func<DateTimeOffset>? clock=null)
 {
     public Task<RpgTransactionResult> UnequipAsync(string userId, string name, string requestId, EquipmentSlot slot, CancellationToken token) =>
         points.ApplyRpgAsync(userId, name, requestId, account =>
@@ -84,15 +84,16 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             var recipe = config.Recipes.SingleOrDefault(r => r.Id == recipeId);
             if (recipe is null) return new(false, "Unbekanntes Rezept.");
             if (recipe.PearlCost < 0 || recipe.FishQuantity < 1) throw new InvalidOperationException("Ungültiges Rezept.");
-            if (!account.Rpg.Fish.TryGetValue(recipe.FishId, out var fish) || fish.Quantity < recipe.FishQuantity || account.Points < recipe.PearlCost)
+            var ingredients=RpgSushiService.Ingredients(recipe);
+            if (ingredients.Any(i=>i.Value<1 || account.Rpg.Fish.GetValueOrDefault(i.Key)?.Quantity<i.Value || !account.Rpg.Fish.ContainsKey(i.Key)) || account.Points < recipe.PearlCost)
                 return new(false, "Nicht genügend Fische oder Perlen.");
             account.Points -= recipe.PearlCost;
-            fish.Quantity -= recipe.FishQuantity;
+            foreach(var ingredient in ingredients)account.Rpg.Fish[ingredient.Key].Quantity-=ingredient.Value;
             account.Rpg.Sushi[recipeId] = checked(account.Rpg.Sushi.GetValueOrDefault(recipeId) + 1);
             return new(true, Details: new(RpgActionKind.Craft, RpgChatPresentation.RecipeName(recipe), Cost: recipe.PearlCost,
                 FishName: config.FishSpecies.SingleOrDefault(f => f.Id == recipe.FishId)?.Name is { Length: > 0 } fishName && !string.IsNullOrWhiteSpace(fishName) ? fishName : recipe.FishId,
                 FishQuantity: recipe.FishQuantity, Quantity: 1, Bonuses: RpgChatPresentation.Snapshot(recipe.Attributes),
-                Activity: recipe.Activity, RemainingUses: Math.Clamp(config.BuffUses, 1, 100)));
+                Activity: recipe.Activity, RemainingUses: RpgSushiService.Uses(recipe,config),IngredientsDescription:RpgSushiService.IngredientsText(recipe,config),EffectDescription:RpgSushiService.Effects(recipe),EncounterBased:true));
         }, token);
 
     public Task<RpgTransactionResult> ActivateSushiAsync(string userId, string name, string requestId, string recipeId, CancellationToken token) =>
@@ -101,15 +102,17 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             if (!config.Enabled) return new(false, "RPG ist deaktiviert.");
             var recipe = config.Recipes.SingleOrDefault(r => r.Id == recipeId);
             if (recipe is null || account.Rpg.Sushi.GetValueOrDefault(recipeId) < 1) return new(false, "Kein passendes Sushi vorhanden.");
-            if (account.Rpg.Buffs.Any(b => b.RecipeId == recipeId && b.RemainingUses > 0)) return new(false, "Dieser Buff ist bereits aktiv.");
-            account.Rpg.Buffs.RemoveAll(b => b.RemainingUses <= 0);
-            if (account.Rpg.Buffs.Count >= Math.Clamp(config.MaximumDifferentBuffs, 1, 10)) return new(false, "Zu viele aktive Buffs.");
+            var now=clock?.Invoke()??DateTimeOffset.UtcNow;
+            RpgHealthService.Refresh(account.Rpg,config.Health,now);
+            if (account.Rpg.Buffs.Any(b => b.Category==recipe.Category && RpgSushiService.Active(b,now))) return new(false, "Dieser Sushi-Slot ist bereits aktiv/belegt. Erst den laufenden Buff beenden lassen.");
+            account.Rpg.Buffs.RemoveAll(b => !RpgSushiService.Active(b,now));
             account.Rpg.Sushi[recipeId]--;
             account.Rpg.Buffs.Add(new() { RecipeId = recipeId, Activity = recipe.Activity,
-                RemainingUses = Math.Clamp(config.BuffUses, 1, 100), Attributes = recipe.Attributes });
+                RemainingUses = RpgSushiService.Uses(recipe,config), Attributes = JsonSerializer.Deserialize<RpgAttributes>(JsonSerializer.Serialize(recipe.Attributes))!,
+                Category=recipe.Category,EncounterBased=true,ActivatedAt=now,PassiveHealing=recipe.PassiveHealing,ChatHealing=recipe.ChatHealing,BossDamageReduction=recipe.BossDamageReduction });
             var buff = account.Rpg.Buffs[^1];
             return new(true, Details: new(RpgActionKind.ActivateSushi, RpgChatPresentation.RecipeName(recipe),
-                Bonuses: RpgChatPresentation.Snapshot(buff.Attributes), Activity: buff.Activity, RemainingUses: buff.RemainingUses));
+                Bonuses: RpgChatPresentation.Snapshot(buff.Attributes), Activity: buff.Activity, RemainingUses: buff.RemainingUses,EffectDescription:RpgSushiService.Effects(recipe),EncounterBased:true));
         }, token);
 
     internal static void ConsumeBuffs(RpgProfile profile, RpgActivity activity)

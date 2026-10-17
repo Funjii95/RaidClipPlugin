@@ -23,6 +23,8 @@ public sealed partial class ViewerPointStore
     }
     private void EnsureItemSystemBackup()
     {
+        if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-sushi-2.bak"))
+            File.Copy(_filePath,_filePath+".pre-sushi-2.bak",overwrite:false);
         if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-core-stats.bak"))
             File.Copy(_filePath,_filePath+".pre-core-stats.bak",overwrite:false);
         if (File.Exists(_filePath) && !File.Exists(_filePath + ".pre-items-v2.bak"))
@@ -54,6 +56,7 @@ public sealed partial class ViewerPointStore
         account.Rpg ??= new();
         if (account.Rpg.SchemaVersion != 1) throw new InvalidOperationException("Unbekannte RPG-Datenversion.");
         RpgCoreStatService.Upgrade(account.Rpg);
+        RpgSushiService.Upgrade(account.Rpg);
         if (account.Rpg.LegacyFishImported) return;
         foreach (var (oldName, id) in new[] { ("Rotfeder", "sardine"), ("Hecht", "perch"), ("Goldener Koi", "crystal-carp"), ("Mondaal", "eel"), ("Kraken", "leviathan") })
         {

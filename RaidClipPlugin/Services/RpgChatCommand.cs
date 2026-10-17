@@ -78,7 +78,7 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         RpgTransactionResult? action = null;
         if (command == "!perk" && parts.Length == 2) action = await progression.BuyPerkAsync(user.UserId, user.UserName, id, parts[1], token);
         if (command == "!craft" && parts.Length == 2) action = await progression.CraftAsync(user.UserId, user.UserName, id, parts[1], token);
-        if (command == "!sushi" && parts.Length == 2) action = await progression.ActivateSushiAsync(user.UserId, user.UserName, id, parts[1], token);
+        if (command == "!sushi" && parts.Length == 2 && parts[1] is not ("status" or "recipes")) action = await progression.ActivateSushiAsync(user.UserId, user.UserName, id, parts[1], token);
         if (command == "!equip")
             action = await progression.EquipSelectionAsync(user.UserId, user.UserName, id, parts[1],
                 parts.Length == 3 ? Enum.Parse<EquipmentSlot>(parts[2], true) : null, token);
@@ -95,6 +95,8 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         var profile = account.Rpg;
         ValidateView(profile);
         var page = parts.Length == 2 && int.TryParse(parts[1], out var requested) ? Math.Max(1, requested) : 1;
+        if(command=="!fishbag") return ListPage(user.UserName,"🎣 Fischvorrat",profile.Fish.Where(f=>f.Value.Quantity>0).Select(f=>
+            $"{config.FishSpecies.FirstOrDefault(s=>s.Id==f.Key)?.Name??f.Key} [{f.Key}]: {f.Value.Quantity}×"),page,"Noch keine Zutaten. Fang: !fish oder !fish <Einsatz>.","!fishbag");
         if (command is "!inventory" or "!inventar")
         {
             RpgInventoryNumbers.For(points).Remember(user.UserId, profile);
@@ -145,16 +147,19 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         {
             string Name(string recipeId) => config.Recipes.SingleOrDefault(r => r.Id == recipeId) is { } recipe ? RpgChatPresentation.RecipeName(recipe) : recipeId;
             var stock = profile.Sushi.Where(p => p.Value > 0).Select(p => $"Vorrat: {Name(p.Key)} [{p.Key}] {p.Value}×");
-            var buffs = profile.Buffs.Where(b => b.RemainingUses > 0).Select(b => $"Aktiv: {Name(b.RecipeId)}, {RpgChatPresentation.Bonuses(b.Attributes)}, noch {b.RemainingUses} gültige {RpgChatPresentation.Activity(b.Activity)}");
-            var statusPage = parts.Length == 3 && parts[1] == "status" && int.TryParse(parts[2], out var selectedPage) ? Math.Max(1, selectedPage) : 1;
-            return ListPage(user.UserName, "🍣 Sushi-Status", buffs.Concat(stock), statusPage,
-                "Kein Sushi im Vorrat und keine aktiven Buffs. Herstellung: !craft <Rezept>.", "!sushi status");
+            var buffs = profile.Buffs.Where(b => RpgSushiService.Active(b,DateTimeOffset.UtcNow)).Select(b => $"{b.Category}: {Name(b.RecipeId)}, {RpgChatPresentation.Bonuses(b.Attributes)}, noch {b.RemainingUses} " +
+                (b.EncounterBased?"Bosskampfteilnahmen":"gültige "+RpgChatPresentation.Activity(b.Activity)) + (b.RemainingUses==0?" – letzter Boss läuft":"")+
+                (b.PassiveHealing>0?$", +{b.PassiveHealing} HP/Minute":"")+(b.ChatHealing>0?$", +{b.ChatHealing} Chat-HP":"")+(b.BossDamageReduction>0?$", -{b.BossDamageReduction} % Boss-Gegenschaden":"")).DefaultIfEmpty("keine aktiven Buffs");
+            var recipes=config.Recipes.Select(r=>$"{RpgChatPresentation.RecipeName(r)} [{r.Id}, {r.Category}]: {RpgSushiService.IngredientsText(r,config)} + {r.PearlCost} Perlen; {RpgSushiService.Effects(r)} {RpgSushiService.Uses(r,config)} Boss-Teilnahmen. !cook {r.Id} / !eat {r.Id}");
+            var statusPage = parts.Length == 3 && parts[1] is "status" or "recipes" && int.TryParse(parts[2], out var selectedPage) ? Math.Max(1, selectedPage) : 1;
+            return ListPage(user.UserName, "🍣 Sushi-Status", buffs.Concat(stock).Concat(parts.Length==1||parts[1]=="recipes"?recipes:Array.Empty<string>()), statusPage,
+                "Kein Sushi im Vorrat und keine aktiven Buffs. Herstellung: !craft <Rezept>.", parts.Length==1||parts[1]=="recipes"?"!sushi recipes":"!sushi status");
         }
         if (command == "!stats")
         {
             if(config.Health.Enabled) profile = await RpgHealthService.ReadAsync(points,user.UserId,user.UserName,config.Health,DateTimeOffset.UtcNow,token);
             var stats = CharacterStatService.Calculate(profile, config, RpgActivity.Boss);
-            return (config.Health.Enabled ? RpgHealthService.Status(profile,config.Health)+" " : "") + $"🦦 @{user.UserName}, effektive Boss-Werte (mit Caps): {RpgChatPresentation.Bonuses(stats)}. " +
+            return (config.Health.Enabled ? RpgHealthService.Status(profile,config.Health)+" " : "") + "Sushi: " + RpgSushiService.Status(profile,DateTimeOffset.UtcNow) + " | " + $"🦦 @{user.UserName}, effektive Boss-Werte (mit Caps): {RpgChatPresentation.Bonuses(stats)}. " +
                 $"Krit-Multiplikator: {RpgChatPresentation.Number(config.BaseCritMultiplier + stats.CritDamage / 100)}× nur bei kritischem Treffer. " +
                 "Dive-/Angelwerte mit passenden Buffs: " +
                 $"Tauchglück {RpgChatPresentation.Number(CharacterStatService.Calculate(profile, config, RpgActivity.Dive).DiveLuck)}, " +
@@ -170,13 +175,13 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         {
             "!perk" or "!craft" => parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[1]),
             "!equip" => parts.Length == 2 || parts.Length == 3 && Enum.TryParse<EquipmentSlot>(parts[2], true, out var slot) && Enum.IsDefined(slot),
-            "!inventory" or "!equipment" or "!perks" or "!rpgtext" or "!sets" => parts.Length == 1 || parts.Length == 2 && Page(parts[1]),
+            "!inventory" or "!equipment" or "!perks" or "!rpgtext" or "!sets" or "!fishbag" => parts.Length == 1 || parts.Length == 2 && Page(parts[1]),
             "!unequip" => parts.Length == 2 && Enum.TryParse<EquipmentSlot>(parts[1], true, out var unequipSlot) && Enum.IsDefined(unequipSlot),
             "!salvage" => parts.Length>=2 && parts.Length<=4,
             "!itemlock" or "!favorite" => parts.Length is 2 or 3 && Page(parts[1]) && (parts.Length==2 || parts[2].Equals("on",StringComparison.OrdinalIgnoreCase) || parts[2].Equals("off",StringComparison.OrdinalIgnoreCase)),
             "!item" => parts.Length == 2 || parts.Length == 3 && Page(parts[2]),
             "!stats" or "!hp" => parts.Length == 1,
-            "!sushi" => parts.Length is 1 or 2 || parts.Length == 3 && parts[1] == "status" && Page(parts[2]),
+            "!sushi" => parts.Length is 1 or 2 || parts.Length == 3 && parts[1] is "status" or "recipes" && Page(parts[2]),
             "!rpg" => true,
             _ => false
         };

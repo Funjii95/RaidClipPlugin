@@ -28,7 +28,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
         rpg.Validate();
         var fishing = activity == RpgActivity.Fishing;
         SoloAdventureConfig game = fishing ? config.Adventures.Fishing : config.Adventures.Treasure;
-        if (!game.Enabled || stake < 0 || stake > Math.Min(game.MaximumBet, long.MaxValue / 500) || (stake > 0 && stake < game.MinimumBet) || (fishing && stake == 0))
+        if (!game.Enabled || stake < 0 || stake > Math.Min(game.MaximumBet, long.MaxValue / 500) || (stake > 0 && stake < game.MinimumBet))
             return new(false, userId, stake, 0, 0, "Ungültiger Einsatz.", "", null, 0, Array.Empty<string>());
         var command = fishing ? "!fish" : "!dive";
         var (multiplier, outcome, tier) = AdventureGameService.SoloOutcome(command, _random.NextInclusive(1, 100), game);
@@ -39,6 +39,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
         var grams = fishName is null ? 0 : _random.NextInclusive(tier == 3 ? 5000 : 100, tier == 3 ? 20000 : 4000);
         RpgItem? loot = null;
         RpgEnemyResult? enemy = null;
+        RpgFishDefinition? caughtFish=null;
         var additional = new List<RpgItem>();
         var remaining = 0;
         var applied = Array.Empty<string>();
@@ -87,17 +88,11 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                 }
                 else if (fishName is not null)
                 {
-                    var species = rpg.FishSpecies.Where(f => f.Weight > 0 && f.Weight <= 1000000).ToArray();
-                    if (species.Length == 0) throw new InvalidOperationException("Keine gültigen Fischarten konfiguriert.");
-                    var weights = species.Select(f => checked((int)Math.Min(1000000, f.Weight *
-                        (f.Rarity >= ItemRarity.Rare ? 1 + Math.Min(100, stats.Luck + stats.FishingLuck) / 100 : 1)))).ToArray();
-                    var fishRoll = _random.NextInclusive(1, weights.Sum());
-                    var index = 0;
-                    while (index < species.Length - 1 && (fishRoll -= weights[index]) > 0) index++;
-                    var id = species[index].Id;
+                    var species=caughtFish??throw new InvalidOperationException("Fangdaten fehlen.");
+                    var id = species.Id;
                     if (!account.Rpg.Fish.TryGetValue(id, out var fish)) account.Rpg.Fish[id] = fish = new() { FishId = id, FirstCaughtAt = clock };
                     fish.Quantity = checked(fish.Quantity + 1); fish.LastCaughtAt = clock;
-                    loot = new() { ItemId = id, DisplayName = species[index].Name, Rarity = species[index].Rarity, IconId = species[index].IconId, FoundAt = clock };
+                    loot = new() { ItemId = id, DisplayName = species.Name, Rarity = species.Rarity, IconId = species.IconId, FoundAt = clock };
                     var equipment = new RpgLootService(_random).RollReward(rpg.DiveLoot, clock, RpgActivity.Fishing, rpg.FishingEquipmentChance, ItemRarity.Epic,points.HotTime.DropBonus(rpg.HotTime)).Item;
                     if (equipment is not null) { account.Rpg.Inventory.Add(equipment); additional.Add(equipment); }
                 }
@@ -109,11 +104,17 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
             }, (account, basePayout) =>
             {
                 var stats = CharacterStatService.Calculate(account.Rpg, rpg, activity);
+                if(fishing && fishName is not null)
+                {
+                    caughtFish=RpgFishingService.Select(rpg,stats,stake,_random);
+                    if(caughtFish.PearlReward is {} reward)basePayout=checked(stake+reward);
+                    else if(stake==0)basePayout=rpg.FreeFishingReward;
+                }
                 payout = RpgPassiveService.RewardPayout(basePayout, stake, stats.PearlBonus);
                 var net=Math.Max(0,payout-stake);
                 payout=checked(payout-net+points.RewardAmount(net,fishing?RpgRewardSource.Fishing:RpgRewardSource.DiveNetWin));
                 return payout;
-            },RpgRewardSource.AlreadyBoosted);
+            },RpgRewardSource.AlreadyBoosted,rpgFishName:()=>caughtFish?.PearlReward.HasValue==true?caughtFish.Name:fishName);
         return new(result.Success, userId, stake, payout, result.Balance, result.Error, outcome,
             result.Success ? loot : null, remaining, result.Success ? applied : Array.Empty<string>())
             { AdditionalItems = result.Success ? additional : Array.Empty<RpgItem>(),Enemy=result.Success?enemy:null };

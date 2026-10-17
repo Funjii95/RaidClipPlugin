@@ -4,6 +4,7 @@ public enum ItemRarity { Common, Uncommon, Rare, Epic, Legendary }
 public enum EquipmentSlot { Weapon, Helmet, Chest, Gloves, Boots, Ring1, Ring2, Amulet }
 public enum RpgActivity { Dive, Fishing, Boss }
 public enum RpgItemKind { Treasure, Equipment, Consumable }
+public enum SushiCategory { Offensive, Defensive }
 
 public static class RarityPresentation
 {
@@ -65,6 +66,14 @@ public sealed class RpgFishStack
 
 public sealed class RpgBuff
 {
+    public SushiCategory Category { get; set; }
+    public bool EncounterBased { get; set; }
+    public DateTimeOffset ActivatedAt { get; set; }
+    public string LastBossId { get; set; } = "";
+    public DateTimeOffset? ExpiresAt { get; set; }
+    public decimal PassiveHealing { get; set; }
+    public int ChatHealing { get; set; }
+    public decimal BossDamageReduction { get; set; }
     public string RecipeId { get; set; } = "";
     public RpgActivity Activity { get; set; }
     public int RemainingUses { get; set; } = 3;
@@ -73,6 +82,7 @@ public sealed class RpgBuff
 
 public sealed class RpgProfile
 {
+    public int SushiVersion { get; set; }
     public int PlayerLevel { get; set; } = 1;
     public long Experience { get; set; }
     public RpgHealthState Health { get; set; } = new();
@@ -96,6 +106,7 @@ public sealed class RpgHealthState
     public int AppliedMaximumHp { get; set; }
     public int? AppliedBaseMaximumHp { get; set; }
     public DateTimeOffset? LastPassiveRegen { get; set; }
+    public decimal SushiRegenRemainder { get; set; }
     public DateTimeOffset? LastChatHeal { get; set; }
     public string BossId { get; set; } = "";
     public bool Defeated { get; set; }

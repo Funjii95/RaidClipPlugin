@@ -48,7 +48,7 @@ public static class CharacterStatService
                 }
             }
         }
-        foreach (var buff in profile.Buffs.Where(b => b.Activity == activity && b.RemainingUses > 0)) Add(result, buff.Attributes);
+        foreach (var buff in profile.Buffs.Where(b => b.Activity == activity && RpgSushiService.Active(b,now??DateTimeOffset.UtcNow))) Add(result, buff.Attributes);
         foreach (var progress in RpgSetService.Progress(profile, config))
         foreach (var bonus in progress.Set.Bonuses.Where(b => progress.Equipped >= b.RequiredPieces)) Add(result, bonus.Attributes);
         result.CritChance = Math.Clamp(result.CritChance, 0, Math.Clamp(config.CritChanceCap, 0, 100));

@@ -26,7 +26,21 @@ public static class RpgHealthService
         if(intervals>0)
         {
             var credited=c.CatchUpMinutes==0 ? intervals : Math.Min(intervals,(long)c.CatchUpMinutes*60/c.PassiveSeconds);
-            if(c.PassiveHealing) h.CurrentHp=(int)Math.Min(max,h.CurrentHp.Value+Math.Min(credited,max)*c.PassiveHp);
+            var intervalEnd=h.LastPassiveRegen.Value.AddSeconds(intervals*c.PassiveSeconds);
+            var creditedStart=intervalEnd.AddSeconds(-Math.Min(credited,max)*c.PassiveSeconds);
+            var extra=p.Buffs.Where(b=>b.Category==SushiCategory.Defensive && b.PassiveHealing>0).Sum(b=>
+            {
+                var start=b.ActivatedAt>creditedStart?b.ActivatedAt:creditedStart;
+                var end=b.ExpiresAt is {} expires && expires<intervalEnd?expires:intervalEnd;
+                if(b.ExpiresAt is null && b.RemainingUses<=0)return 0m;
+                return Math.Max(0,(decimal)(end-start).TotalSeconds)*Math.Clamp(b.PassiveHealing,0,1000)/60;
+            });
+            if(c.PassiveHealing)
+            {
+                var accrued=extra+Math.Clamp(h.SushiRegenRemainder,0,0.9999999999999999999999999999m);
+                h.CurrentHp=(int)Math.Min(max,h.CurrentHp.Value+Math.Min(credited,max)*c.PassiveHp+decimal.Floor(accrued));
+                h.SushiRegenRemainder=h.CurrentHp>=max?0:accrued-decimal.Floor(accrued);
+            }
             h.LastPassiveRegen=h.LastPassiveRegen.Value.AddSeconds(intervals*c.PassiveSeconds);
         }
     }
@@ -58,7 +72,7 @@ public static class RpgHealthService
     }
     public static string Status(RpgProfile p,RpgHealthConfig c) =>
         $"❤️ HP: {p.Health.CurrentHp}/{Maximum(p,c)} | Level {p.PlayerLevel} ({p.Experience} EXP) | " +
-        $"Passiv: +{(c.PassiveHealing?c.PassiveHp:0)} HP/{c.PassiveSeconds}s | Chat: +{(c.ChatHealing?c.ChatHp:0)} HP/{c.ChatCooldownSeconds}s." +
+        $"Passiv: +{(c.PassiveHealing?c.PassiveHp+RpgSushiService.PassiveBonus(p,DateTimeOffset.UtcNow)*c.PassiveSeconds/60:0)} HP/{c.PassiveSeconds}s | Chat: +{(c.ChatHealing?c.ChatHp+RpgSushiService.ChatBonus(p,DateTimeOffset.UtcNow):0)} HP/{c.ChatCooldownSeconds}s." +
         (p.Health.Defeated ? " Für den zuletzt angegriffenen Boss besiegt; Heilung hebt diese Sperre nicht auf." : "");
     public static async Task HealChatAsync(ViewerPointStore points,RpgConfig config,ChatMessage message,DateTimeOffset now,CancellationToken token)
     {
@@ -70,7 +84,7 @@ public static class RpgHealthService
             var h=a.Rpg.Health;
             if(config.Health.ChatHealing && (h.LastChatHeal is null || (now-h.LastChatHeal.Value).TotalSeconds>=config.Health.ChatCooldownSeconds))
             {
-                h.CurrentHp=(int)Math.Min(Maximum(a.Rpg,config.Health),(long)h.CurrentHp!.Value+config.Health.ChatHp);
+                h.CurrentHp=(int)Math.Min(Maximum(a.Rpg,config.Health),(long)h.CurrentHp!.Value+config.Health.ChatHp+RpgSushiService.ChatBonus(a.Rpg,now));
                 h.LastChatHeal=now;
             }
             return new(true);

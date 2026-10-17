@@ -1,9 +1,12 @@
 using RaidClipPlugin.Models;
+using RaidClipPlugin.Services;
 
 namespace RaidClipPlugin.Config;
 
 public sealed class RpgConfig
 {
+    public RpgConfig() => RpgSushiService.AddMissing(this);
+    public long FreeFishingReward { get; set; } = 40;
     public decimal PowerDamagePerPoint { get; set; } = 1;
     public RpgHealthConfig Health { get; set; } = new();
     public RpgEnemyConfig Enemies { get; set; } = new();
@@ -20,6 +23,7 @@ public sealed class RpgConfig
         if(PowerDamagePerPoint is <0 or >10)throw new InvalidOperationException("Kraft-Schadensbonus muss zwischen 0 und 10 Prozent je Punkt liegen.");
         Health.Validate();
         Enemies.Validate();
+        RpgSushiService.Validate(this);
         DiveLoot.Validate();
         Salvage.Validate();
         HotTime.Validate();
@@ -92,6 +96,9 @@ public sealed class RpgConfig
 
 public sealed class RpgFishDefinition
 {
+    public long? PearlReward { get; set; }
+    public long MinimumStake { get; set; }
+    public string Zone { get; set; } = "";
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
@@ -121,6 +128,12 @@ public sealed class RpgPerkDefinition
 
 public sealed class RpgRecipe
 {
+    public SushiCategory Category { get; set; }
+    public Dictionary<string,int> Ingredients { get; set; } = new();
+    public int BossUses { get; set; }
+    public decimal PassiveHealing { get; set; }
+    public int ChatHealing { get; set; }
+    public decimal BossDamageReduction { get; set; }
     public string Id { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public string FishId { get; set; } = "";

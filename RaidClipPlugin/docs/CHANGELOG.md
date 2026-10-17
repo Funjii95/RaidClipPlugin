@@ -1,3 +1,10 @@
+## 2.1.19 – Sushi 2.1 und neue Meeresbewohner
+
+- Tatsächlich fangbar: Seegurke, Garnele, Riesengarnele, Kugelfisch und Goldener Kugelfisch, mit relativen Gewichten 50/25/12/10/3 und eigenen Fangbelohnungen 40/100/250/350/800 Perlen. Bestehende Arten bleiben erhalten; bezahlte bisherige Fänge behalten ihre Auszahlung. `!fish` erlaubt jetzt auch kostenlose Versuche; `!fishbag` zeigt Zutatenbestände.
+- Defensive Rezepte: Kappa-Maki (2 Seegurken +300 Perlen, +3 passive HP/Minute), Tempura-Rolle (2 Garnelen +1 Riesengarnele +450 Perlen, +5 Chat-HP), Kugelfisch-Sashimi (2 Kugelfische +700 Perlen, 15 % weniger großer Boss-Gegenschaden). Multi-Zutaten-Crafting und eigene Perlenbelohnungen werden in vorhandenen Transaktionen atomar gespeichert.
+- Ein offensiver und ein defensiver Slot, ohne Überschreiben. Aufladungen zählen je Boss-ID statt je Angriff; der dritte Boss erhält den vollen Bonus bis zum Ende. Alte Buffs und Bestände werden ohne Rücksetzen übernommen; vorhandene Mehrfach-Offensivbuffs bleiben bis zum Verbrauch erhalten. Regeneration rechnet vergangene Intervalle mit den damals gültigen Buffzeiten ab.
+- `!cook`/`!eat` als Aliase, Rezeptübersicht mit `!sushi`, Statusseiten und Fischvorrat. Tabelleneditor unter RPG → Fischfang & Sushi, ergänzte lokale Debugaktionen und zusätzliche Spielstandsicherung `.pre-sushi-2.bak`. Details: `docs/RPG-SUSHI-2.md`.
+
 ## 2.1.18 – Kraft, Ausdauer und HP-Ausrüstung
 
 - Garantierte Hauptwerte auf jedem Ausrüstungsteil: Kraft/Ausdauer nach Seltenheit Common 1/1, Uncommon 2/2, Rare 3/4, Epic 5/7, Legendary 8/10. Beide kommen zusätzlich zur bisherigen Anzahl zufälliger Attribute und Spezialeffekte. Standardumrechnung: 1 Kraft = +1 % Schaden innerhalb des bestehenden Schadenscaps; 1 Ausdauer = +5 MaxHP innerhalb des Ausrüstungs-HP-Caps.

@@ -54,9 +54,9 @@ public static class RpgChatPresentation
         var user = "@" + Clean(userName); var name = Label(details.Name);
         return details.Kind switch
         {
-            RpgActionKind.Craft => $"🍣 {user} hat {name} hergestellt! Verbraucht: {Number(details.FishQuantity)}× {Label(details.FishName)} + {Number(details.Cost)} Perlen. Erhalten: {Number(details.Quantity)}× {name}. " +
-                $"Buff nach Aktivierung: {Bonuses(details.Bonuses)}, {Number(details.RemainingUses)} gültige {Activity(details.Activity ?? RpgActivity.Dive)} (noch nicht aktiviert).",
-            RpgActionKind.ActivateSushi => $"🍣✨ {user} aktiviert {name}! {Bonuses(details.Bonuses)} für die nächsten {Number(details.RemainingUses)} gültigen {Activity(details.Activity ?? RpgActivity.Dive)}.",
+            RpgActionKind.Craft => $"🍣 {user} hat {name} hergestellt! Verbraucht: {(details.IngredientsDescription.Length>0?details.IngredientsDescription:$"{Number(details.FishQuantity)}× {Label(details.FishName)}")} + {Number(details.Cost)} Perlen. Erhalten: {Number(details.Quantity)}× {name}. " +
+                $"Buff nach Aktivierung: {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))}, {Number(details.RemainingUses)} {(details.EncounterBased?"Bosskampfteilnahmen":"gültige "+Activity(details.Activity??RpgActivity.Dive))} (noch nicht aktiviert).",
+            RpgActionKind.ActivateSushi => $"🍣✨ {user} aktiviert {name}! {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))} für die nächsten {Number(details.RemainingUses)} {(details.EncounterBased?"Bosskampfteilnahmen":"gültigen "+Activity(details.Activity??RpgActivity.Dive))}.",
             RpgActionKind.BuyPerk => $"⭐ {user} verbessert {name} auf Level {Number(details.Level)}! {Bonuses(details.Bonuses)} insgesamt aus diesem Perk. Kosten: {Number(details.Cost)} Perlen." +
                 (balance.HasValue ? $" Stand: {Number(balance.Value)} Perlen." : "") +
                 (details.NextCost.HasValue ? $" Nächstes Upgrade: {Number(details.NextCost.Value)} Perlen." : details.MaximumLevel > 0 && details.Level >= details.MaximumLevel ? " Maximallevel erreicht." : ""),
