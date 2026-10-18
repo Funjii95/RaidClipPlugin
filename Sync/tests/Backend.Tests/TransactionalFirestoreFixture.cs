@@ -17,7 +17,7 @@ using SnapshotFirestore;
 namespace Backend.Tests;
 
 // A small optimistic transaction transport double, NOT a complete Firestore emulator or IAM test.
-internal sealed class TransactionalFirestoreFixture(WebApplication app, GrpcChannel transport,
+public sealed class TransactionalFirestoreFixture(WebApplication app, GrpcChannel transport,
     TransactionalFirestoreFixture.Service service, FirestoreDb database) : IAsyncDisposable
 {
     public Service Server => service;

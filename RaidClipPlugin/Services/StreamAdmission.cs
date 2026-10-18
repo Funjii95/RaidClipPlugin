@@ -11,6 +11,9 @@ public sealed class StreamAdmission
     private readonly object gate = new();
     private readonly TimeProvider clock;
     private readonly AsyncLocal<Guid?> ambient = new();
+    private readonly AsyncLocal<(long Start,TimeSpan Window)?> executionWindow=new();
+    private readonly AsyncLocal<DateTimeOffset?> executionDeadline=new();
+    private readonly AsyncLocal<string?> executionStream=new();
     private readonly AsyncLocal<bool> rollback = new();
     private Guid epoch;
     private long sequence, applied, confirmed;
@@ -53,12 +56,22 @@ public sealed class StreamAdmission
             receivedAt >= started && receivedAt <= clock.GetUtcNow().AddSeconds(5) &&
             clock.GetUtcNow()-receivedAt <= MaximumAge);
     }
+    internal bool MatchesStream(Guid expected,string stream){lock(gate)return Allowed(expected) && streamId==stream;}
     private bool Allowed(Guid expected) => expected != Guid.Empty && expected==epoch && live &&
-        clock.GetElapsedTime(confirmed) <= MaximumAge && ready();
+        clock.GetElapsedTime(confirmed) <= MaximumAge && ready() &&
+        (executionDeadline.Value is not {} deadline || clock.GetUtcNow()<deadline) &&
+        (executionStream.Value is null || executionStream.Value==streamId) &&
+        (executionWindow.Value is not {} limit || clock.GetElapsedTime(limit.Start)<limit.Window);
     public IDisposable Enter(Guid expected)
     {
         var previous=ambient.Value; ambient.Value=expected;
         return new Scope(()=>ambient.Value=previous);
+    }
+    internal IDisposable EnterRemote(Guid expected,DateTimeOffset deadline,string stream,TimeSpan window)
+    {
+        var previousDeadline=executionDeadline.Value;var previousStream=executionStream.Value;var previousWindow=executionWindow.Value;
+        var scope=Enter(expected);executionDeadline.Value=deadline;executionStream.Value=stream;executionWindow.Value=(clock.GetTimestamp(),window);
+        return new Scope(()=>{executionDeadline.Value=previousDeadline;executionStream.Value=previousStream;executionWindow.Value=previousWindow;scope.Dispose();});
     }
     internal IDisposable EnterOperation()
     {

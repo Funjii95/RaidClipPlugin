@@ -13,10 +13,12 @@ public partial class MainForm
     private Guid _streamEpoch;
     private Task? _streamMonitorTask;
     private Task? _cloudSyncTask;
+    private Task? _actionChannelTask;
+    private volatile bool _cloudSyncReady;
     private readonly CancellationTokenSource _cloudStop=new();
     private void InitializeCloudIntegration()
     {
-        Text += " – Cloud Integration Test 2.1.22";
+        Text += " – Action Channel Test 2.1.22";
         _viewerPoints.Admission=_streamAdmission;
         Shown+=(_,_)=>{_cloudSyncTask=Task.Run(()=>RunCloudSyncAsync(_cloudStop.Token));};
         FormClosed+=async(_,_)=>
@@ -53,11 +55,34 @@ public partial class MainForm
                 var worker=new IntegratedSnapshotWorker(_viewerPoints,outbox,options.ChannelId,options.AllowedUserIds,
                     token=>reader.RequireFullProjectionAsync(options.AllowedUserIds,token),reader.ReadAsync,sender.SendAsync);
                 worker.StatusChanged+=CloudLog;
+                worker.AvailabilityChanged+=ready=>_cloudSyncReady=ready;
                 await worker.RunAsync(ct);
             }
         }
         catch(OperationCanceledException)when(ct.IsCancellationRequested){}
         catch{CloudLog("Cloud-Sync nicht gestartet: Konfiguration oder DPAPI-Zugang prüfen. Plugin bleibt nutzbar.");}
+    }
+    private void StartActionChannel(CancellationToken ct)
+    {
+        var epoch=_streamEpoch;var minigame=_minigame!;
+        _actionChannelTask=Task.Run(async()=>{
+            try {
+                var file=Path.Combine(TestDataPaths.Root,"action-channel.json");
+                if(!File.Exists(file))return;
+                var options=JsonSerializer.Deserialize<ActionChannelOptions>(await File.ReadAllTextAsync(file,ct),new JsonSerializerOptions{PropertyNameCaseInsensitive=true})!;
+                if(!options.Enabled)return;options.Validate();
+                var sync=JsonSerializer.Deserialize<CloudSyncOptions>(await File.ReadAllTextAsync(Path.Combine(TestDataPaths.Root,"cloud-sync.json"),ct),new JsonSerializerOptions{PropertyNameCaseInsensitive=true})!;
+                sync.Validate();
+                if(!sync.Enabled || sync.ChannelId!=options.ChannelId || options.AllowedUserIds.Any(id=>!sync.AllowedUserIds.Contains(id)))throw new InvalidDataException("Action users require the enabled snapshot pipeline.");
+                var secret=ProtectedData.Unprotect(await File.ReadAllBytesAsync(options.ProtectedKeyFile,ct),null,DataProtectionScope.CurrentUser);
+                string key;try{if(secret.Length is <32 or >64)throw new InvalidDataException();key=Convert.ToBase64String(secret);}finally{CryptographicOperations.ZeroMemory(secret);}
+                var executor=new RemoteRpgExecutor(_viewerPoints,()=>minigame.RemoteConfiguration,_streamAdmission,epoch,options.ChannelId,
+                    options.AllowedUserIds.ToHashSet(StringComparer.Ordinal),Path.Combine(TestDataPaths.Root,"action-receipts"),
+                    (command,name)=>_commandRegistry.Commands.Any(c=>c.CommandText==command && c.Enabled && c.RequiredRole==RaidClipPlugin.Models.CommandRole.Viewer));
+                using var client=new CloudActionClient(new Uri(options.BackendUrl),key,executor,()=>_streamAdmission.CanPlay(epoch)&&_cloudSyncReady,CloudLog);
+                await client.RunAsync(ct);
+            }catch(OperationCanceledException)when(ct.IsCancellationRequested){}catch{CloudLog("Aktionskanal nicht gestartet: getrennte Konfiguration/Zugang prüfen.");}
+        },ct);
     }
     private void BeginStreamSession()
     {

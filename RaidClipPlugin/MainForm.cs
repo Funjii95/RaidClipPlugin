@@ -2881,6 +2881,7 @@ private enum CloseChoice
                         _commandRegistry);
                     _minigame.BindStreamSession(_streamAdmission, _streamEpoch);
                     StartLiveConfirmation(twitch, _broadcaster.Id, cancellationToken);
+                    StartActionChannel(cancellationToken);
                     _chatModeration.Activated += () =>
                         SetMinigameStatus(
                             config.Minigame.Enabled && config.Minigame.PointsEnabled
@@ -4621,7 +4622,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
         var tasks = new[]
         {
-            _streamMonitorTask,
+            _streamMonitorTask, _actionChannelTask,
             _playerTask,
             _eventSubTask,
             _chatModerationTask,

@@ -1,0 +1,7 @@
+{
+  "Enabled": false,
+  "BackendUrl": "https://funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app",
+  "ChannelId": "42812664",
+  "AllowedUserIds": ["1001"],
+  "ProtectedKeyFile": "C:\\ABSOLUTER-PFAD\\action-test-key.dpapi"
+}

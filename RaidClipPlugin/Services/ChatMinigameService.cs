@@ -11,6 +11,7 @@ public sealed class ChatMinigameService : IDisposable
     private Guid _streamEpoch;
     public void BindStreamSession(StreamAdmission admission, Guid epoch)
     { _streamAdmission=admission; _streamEpoch=epoch; _adventures.GameplayAllowed=()=>admission.CanPlay(epoch); }
+    internal MinigameConfig RemoteConfiguration=>_config;
     private bool GameplayAllowed => _streamAdmission?.CanPlay(_streamEpoch) ?? true;
     private readonly string _broadcasterId;
     private readonly string _chatUserId;

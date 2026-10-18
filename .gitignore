@@ -5,3 +5,11 @@ artifacts/
 cloud-sync.json
 viewer-points.json*
 cloud-sync-outbox/
+
+action-channel.json
+action-receipts/
+twitch-extension/node_modules/
+twitch-extension/dist/
+twitch-extension/.certs/
+twitch-extension/test-results/
+twitch-extension/playwright-report/

@@ -1,0 +1,204 @@
+# Geänderte Dateien – Aktionskanal
+
+Basis: Cloud-Integration b17a04d, weiterhin RaidClipPlugin 2.1.22. Neue getrennte Arbeitskopie auf codex/rpg-action-channel; kein Push oder Deployment.
+
+## Bestehende Dateien
+
+- `.gitignore`
+- `RaidClipPlugin/MainForm.CloudIntegration.cs`
+- `RaidClipPlugin/MainForm.cs`
+- `RaidClipPlugin/RaidClipPlugin.csproj`
+- `RaidClipPlugin/Services/ChatMinigameService.cs`
+- `RaidClipPlugin/Services/IntegratedSnapshotWorker.cs`
+- `RaidClipPlugin/Services/StreamAdmission.cs`
+- `RaidClipPlugin/Tests/RaidClipPlugin.Tests.csproj`
+- `Sync/src/Backend/Backend.csproj`
+- `Sync/src/Backend/BackendSettings.cs`
+- `Sync/src/Backend/Program.cs`
+- `Sync/src/Backend/packages.lock.json`
+- `Sync/src/SnapshotDelivery/SnapshotDelivery.csproj`
+- `Sync/tests/Backend.Tests/TransactionalFirestoreFixture.cs`
+- `Sync/tests/Backend.Tests/packages.lock.json`
+
+MainForm bindet den ausgehenden Client an die aktuelle Sitzung und die verfügbare Snapshot-Synchronisierung. ChatMinigameService stellt seine vorhandene aktuelle Konfiguration für den Adapter bereit. StreamAdmission ergänzt Stream-ID-/Zeitfenster-/monotone Commit-Prüfungen. IntegratedSnapshotWorker meldet seine Verfügbarkeit. Die eigentlichen AdventureGameService-, RpgAdventureService-, RpgProgressionService- und ViewerPointStore-Spielregeln wurden gegenüber dem Cloud-Paket nicht verändert.
+
+Backend ergänzt ausschließlich Authentifizierung, echte Twitch-Live-Prüfung, HTTP-Vertrag und transaktionale Queue. SnapshotDelivery bekommt nur einen zusätzlichen internen Test-Assembly-Zugriff. Firestore-Testfixture ist für den durchgängigen Plugin-Test zugänglich; keine produktive Emulator-Konfiguration.
+
+## Neue Dateien
+
+- `ACTION_CHANNEL.md`
+- `Build-ActionChannelTest.ps1`
+- `E2E_NACHWEIS.txt`
+- `RaidClipPlugin/Services/CloudActionClient.cs`
+- `RaidClipPlugin/Services/RemoteRpgExecutor.cs`
+- `RaidClipPlugin/Tests/RemoteActionTests.cs`
+- `Sync/.dockerignore`
+- `Sync/Dockerfile.backend`
+- `Sync/src/Backend/ActionEndpoints.cs`
+- `Sync/src/Backend/ActionPluginAuthentication.cs`
+- `Sync/src/Backend/ActionRelay.cs`
+- `Sync/src/Backend/FirestoreRelayStore.cs`
+- `Sync/src/Backend/HelixLiveProbe.cs`
+- `Sync/src/SnapshotProtocol/ActionContracts.cs`
+- `Sync/tests/Backend.Tests/ActionRelayTests.cs`
+- `TESTERGEBNISSE_ACTIONS.md`
+- `action-channel.example.json`
+- `GEAENDERTE_DATEIEN_ACTIONS.md` (diese Liste)
+
+## Übernommene Extension
+
+Die komplette neueste lokale Quelle bf1119f einschließlich aller 102 Itembilder wurde aus der bestehenden Arbeitskopie übernommen, ohne sie zu verändern. Im neuen Repo ist sie erstmals unter twitch-extension enthalten. Gegenüber dieser Quelle gezielt angepasst: src/main.tsx (echte Ansicht + getrennte Demo), scripts/serve.mjs (genau erlaubter Backend-Zugriff), bestehende Browser-Demotests (ausdrücklicher Demo-Pfad). Neu: src/live/client.ts, src/live/LivePanel.tsx, src/live/live.css, tests/live.test.ts und tests/live.spec.ts. Alle übrigen Dateien sind unveränderte Wiederverwendung.
+
+Vollständige Liste der übernommenen Extension-Dateien:
+
+- `twitch-extension/.gitignore`
+- `twitch-extension/ART-SOURCES.md`
+- `twitch-extension/MINIGAMES-INTEGRATION.md`
+- `twitch-extension/README.md`
+- `twitch-extension/TEST-RESULTS.md`
+- `twitch-extension/config.html`
+- `twitch-extension/mobile.html`
+- `twitch-extension/package.json`
+- `twitch-extension/panel.html`
+- `twitch-extension/playwright.config.ts`
+- `twitch-extension/pnpm-lock.yaml`
+- `twitch-extension/public/items/abyss-armour.webp`
+- `twitch-extension/public/items/algae-armour.webp`
+- `twitch-extension/public/items/amulet.webp`
+- `twitch-extension/public/items/boots.webp`
+- `twitch-extension/public/items/captain-map.webp`
+- `twitch-extension/public/items/chest.webp`
+- `twitch-extension/public/items/collector-crown.webp`
+- `twitch-extension/public/items/coral-boots.webp`
+- `twitch-extension/public/items/coral-crown.webp`
+- `twitch-extension/public/items/coral-cuirass.webp`
+- `twitch-extension/public/items/coral-dagger.webp`
+- `twitch-extension/public/items/coral-grip.webp`
+- `twitch-extension/public/items/current-amulet.webp`
+- `twitch-extension/public/items/current-ring.webp`
+- `twitch-extension/public/items/current-shoes.webp`
+- `twitch-extension/public/items/deep-ring.webp`
+- `twitch-extension/public/items/deepsea-boots.webp`
+- `twitch-extension/public/items/deepsea-chest.webp`
+- `twitch-extension/public/items/deepsea-crown.webp`
+- `twitch-extension/public/items/deepsea-grip.webp`
+- `twitch-extension/public/items/deepsea-heart.webp`
+- `twitch-extension/public/items/depth-blade.webp`
+- `twitch-extension/public/items/depth-gloves.webp`
+- `twitch-extension/public/items/depth-helm.webp`
+- `twitch-extension/public/items/depth-map.webp`
+- `twitch-extension/public/items/depth-ruby.webp`
+- `twitch-extension/public/items/depth-steps.webp`
+- `twitch-extension/public/items/depth-talisman.webp`
+- `twitch-extension/public/items/diver-gloves.webp`
+- `twitch-extension/public/items/fish-crystal-carp.webp`
+- `twitch-extension/public/items/fish-eel.webp`
+- `twitch-extension/public/items/fish-giant_shrimp.webp`
+- `twitch-extension/public/items/fish-golden_pufferfish.webp`
+- `twitch-extension/public/items/fish-leviathan.webp`
+- `twitch-extension/public/items/fish-perch.webp`
+- `twitch-extension/public/items/fish-pufferfish.webp`
+- `twitch-extension/public/items/fish-sardine.webp`
+- `twitch-extension/public/items/fish-sea_cucumber.webp`
+- `twitch-extension/public/items/fish-shrimp.webp`
+- `twitch-extension/public/items/fish-tuna.webp`
+- `twitch-extension/public/items/fish-vampire_squid.webp`
+- `twitch-extension/public/items/gloves.webp`
+- `twitch-extension/public/items/golden-shell.webp`
+- `twitch-extension/public/items/helmet.webp`
+- `twitch-extension/public/items/hp-abyss-chest.webp`
+- `twitch-extension/public/items/hp-coral-helmet.webp`
+- `twitch-extension/public/items/hp-kelp-boots.webp`
+- `twitch-extension/public/items/hp-leviathan-amulet.webp`
+- `twitch-extension/public/items/hp-shell-chest.webp`
+- `twitch-extension/public/items/hunter-ring.webp`
+- `twitch-extension/public/items/leviathan-claws.webp`
+- `twitch-extension/public/items/leviathan-gaze.webp`
+- `twitch-extension/public/items/leviathan-grip.webp`
+- `twitch-extension/public/items/leviathan-oath.webp`
+- `twitch-extension/public/items/leviathan-seal.webp`
+- `twitch-extension/public/items/leviathan-trident.webp`
+- `twitch-extension/public/items/leviathan-wrath.webp`
+- `twitch-extension/public/items/lucky-compass.webp`
+- `twitch-extension/public/items/lucky-pearl.webp`
+- `twitch-extension/public/items/lucky-shell.webp`
+- `twitch-extension/public/items/neptune-heart.webp`
+- `twitch-extension/public/items/ocean-fingers.webp`
+- `twitch-extension/public/items/ocean-flippers.webp`
+- `twitch-extension/public/items/ocean-garment.webp`
+- `twitch-extension/public/items/ocean-mask.webp`
+- `twitch-extension/public/items/ocean-ring.webp`
+- `twitch-extension/public/items/pearl-compass.webp`
+- `twitch-extension/public/items/pearl-sabre.webp`
+- `twitch-extension/public/items/royal-treasure.webp`
+- `twitch-extension/public/items/sand-runner.webp`
+- `twitch-extension/public/items/scale-armour.webp`
+- `twitch-extension/public/items/shell-helm.webp`
+- `twitch-extension/public/items/shell-pendant.webp`
+- `twitch-extension/public/items/shell-ring.webp`
+- `twitch-extension/public/items/shell-seal.webp`
+- `twitch-extension/public/items/shell.webp`
+- `twitch-extension/public/items/storm-grip.webp`
+- `twitch-extension/public/items/storm-harpoon.webp`
+- `twitch-extension/public/items/sunken-king-crown.webp`
+- `twitch-extension/public/items/sushi-critical.webp`
+- `twitch-extension/public/items/sushi-dive.webp`
+- `twitch-extension/public/items/sushi-fighter.webp`
+- `twitch-extension/public/items/sushi-fishing.webp`
+- `twitch-extension/public/items/sushi-kappa.webp`
+- `twitch-extension/public/items/sushi-kugelfisch.webp`
+- `twitch-extension/public/items/sushi-tempura.webp`
+- `twitch-extension/public/items/sushi-vampir.webp`
+- `twitch-extension/public/items/tidal-armour.webp`
+- `twitch-extension/public/items/tidal-hourglass.webp`
+- `twitch-extension/public/items/tidal-ring.webp`
+- `twitch-extension/public/items/tidal-runner.webp`
+- `twitch-extension/public/items/tidal-seal.webp`
+- `twitch-extension/public/items/trident.webp`
+- `twitch-extension/public/items/warden-boots.webp`
+- `twitch-extension/public/items/warden-chest.webp`
+- `twitch-extension/public/items/warden-gloves.webp`
+- `twitch-extension/public/items/warden-helm.webp`
+- `twitch-extension/public/items/wealth-pearl.webp`
+- `twitch-extension/public/items/wrath-boots.webp`
+- `twitch-extension/public/items/wrath-chest.webp`
+- `twitch-extension/public/items/wrath-gloves.webp`
+- `twitch-extension/public/items/wrath-helm.webp`
+- `twitch-extension/public/luminous-depths.png`
+- `twitch-extension/public/otter-mage.png`
+- `twitch-extension/public/otter.svg`
+- `twitch-extension/scripts/export-minigame-defaults.py`
+- `twitch-extension/scripts/export-reference.py`
+- `twitch-extension/scripts/import-item-art.py`
+- `twitch-extension/scripts/serve.mjs`
+- `twitch-extension/src/data.ts`
+- `twitch-extension/src/icons.tsx`
+- `twitch-extension/src/item-art.json`
+- `twitch-extension/src/item-art.tsx`
+- `twitch-extension/src/live/LivePanel.tsx`
+- `twitch-extension/src/live/client.ts`
+- `twitch-extension/src/live/live.css`
+- `twitch-extension/src/main.tsx`
+- `twitch-extension/src/minigames/PerlMinigames.tsx`
+- `twitch-extension/src/minigames/backend-client.ts`
+- `twitch-extension/src/minigames/contracts.ts`
+- `twitch-extension/src/minigames/controller.ts`
+- `twitch-extension/src/minigames/defaults.json`
+- `twitch-extension/src/minigames/mock-client.ts`
+- `twitch-extension/src/minigames/payout-fixtures.ts`
+- `twitch-extension/src/minigames/rules.ts`
+- `twitch-extension/src/mock.ts`
+- `twitch-extension/src/reference/v2.1.21.json`
+- `twitch-extension/src/style.css`
+- `twitch-extension/src/types.ts`
+- `twitch-extension/tests/item-art.spec.ts`
+- `twitch-extension/tests/item-art.test.ts`
+- `twitch-extension/tests/live.spec.ts`
+- `twitch-extension/tests/live.test.ts`
+- `twitch-extension/tests/minigames.spec.ts`
+- `twitch-extension/tests/minigames.test.ts`
+- `twitch-extension/tests/mock.test.ts`
+- `twitch-extension/tests/ui.spec.ts`
+- `twitch-extension/tsconfig.json`
+- `twitch-extension/vite.config.ts`
+- `twitch-extension/vitest.config.ts`

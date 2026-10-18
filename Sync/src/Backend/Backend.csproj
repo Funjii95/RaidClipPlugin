@@ -11,4 +11,5 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
   </ItemGroup>
 
+  <ItemGroup><ProjectReference Include="../SnapshotProtocol/SnapshotProtocol.csproj" /></ItemGroup>
 </Project>

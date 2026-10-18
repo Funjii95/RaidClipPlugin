@@ -1,0 +1,6 @@
+**/bin
+**/obj
+**/*.dpapi
+**/cloud-sync.json
+**/action-channel.json
+**/viewer-points.json*

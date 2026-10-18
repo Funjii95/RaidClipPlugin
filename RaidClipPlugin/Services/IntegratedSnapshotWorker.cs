@@ -33,6 +33,8 @@ internal sealed class IntegratedSnapshotWorker
     private readonly SemaphoreSlim wake=new(1,1);
     internal string Status {get;private set;}="Initialisierung";
     internal event Action<string>? StatusChanged;
+    internal event Action<bool>? AvailabilityChanged;
+    private void Availability(bool value){if(AvailabilityChanged is {} listeners)foreach(Action<bool> listener in listeners.GetInvocationList())try{listener(value);}catch{}}
     internal IntegratedSnapshotWorker(ViewerPointStore source,LocalOutboxStore outbox,string channel,string[] users,
         Func<CancellationToken,Task> capabilities,Func<string,CancellationToken,Task<StoredSnapshot?>> read,
         Func<SnapshotMessage,CancellationToken,Task<DeliveryResult>> send)
@@ -56,19 +58,19 @@ internal sealed class IntegratedSnapshotWorker
                 try
                 {
                     await SynchronizeOnceAsync(ct);
-                    failures=0;Report("Cloud synchronisiert (vollständiges RPG)");
+                    Availability(true);failures=0;Report("Cloud synchronisiert (vollständiges RPG)");
                     await wake.WaitAsync(TimeSpan.FromSeconds(30),ct);
                 }
                 catch(Exception error) when(error is SnapshotHeadReadException {Retryable:true} or RetrySyncException)
                 {
-                    failures=Math.Min(6,failures+1);Report("Cloud offline – lokaler Spielstand und Warteschlange bleiben erhalten");
+                    Availability(false);failures=Math.Min(6,failures+1);Report("Cloud offline – lokaler Spielstand und Warteschlange bleiben erhalten");
                     await Task.Delay(TimeSpan.FromSeconds(Math.Min(60,1<<failures)),ct);
                 }
             }
         }
         catch(OperationCanceledException) when(ct.IsCancellationRequested){Report("Cloud-Sender beendet; ausstehende Daten bleiben gespeichert");}
         catch{Report("Cloud-Sender angehalten: Vertrag, Zugang oder Datenkonflikt prüfen; lokale Speicherung bleibt aktiv");}
-        finally{source.Persisted-=Signal;}
+        finally{Availability(false);source.Persisted-=Signal;}
     }
 
     // Reads the committed legacy file, never live mutable objects or cloud-owned player state.

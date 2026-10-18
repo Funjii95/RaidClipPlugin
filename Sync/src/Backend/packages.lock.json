@@ -221,6 +221,9 @@
         "dependencies": {
           "System.CodeDom": "7.0.0"
         }
+      },
+      "snapshotprotocol": {
+        "type": "Project"
       }
     }
   }

@@ -677,7 +677,8 @@
         "type": "Project",
         "dependencies": {
           "Google.Cloud.Firestore": "[4.5.0, )",
-          "Microsoft.AspNetCore.Authentication.JwtBearer": "[10.0.13, )"
+          "Microsoft.AspNetCore.Authentication.JwtBearer": "[10.0.13, )",
+          "SnapshotProtocol": "[1.0.0, )"
         }
       },
       "snapshotdelivery": {
