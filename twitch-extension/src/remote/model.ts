@@ -31,7 +31,7 @@ export function inventoryItem(v:any):InventoryItem {
  dropWeight:optionalNumber(field(v,'DropWeight')),activities:Array.isArray(field(v,'DropActivities'))?field(v,'DropActivities').map((a:any)=>enumValue<Activity>(a,activities,'Aktivität')):[]};
 }
 export function emptyRemoteState():DemoState{return {
- player:{id:'',username:'Spielstand wird geladen …',avatarUrl:'./otter-mage.png',pearls:unknown(),hp:unknown(),maxHp:unknown(),level:unknown(),experience:unknown(),lastPassiveRegen:unknown(),regenRemainder:unknown(),lastChatHeal:unknown(),baseStats:{} as CharacterStats,buffs:[]},
+ player:{id:'',username:'Spielstand wird geladen …',avatarUrl:'./otter-mage-compact.webp',pearls:unknown(),hp:unknown(),maxHp:unknown(),level:unknown(),experience:unknown(),lastPassiveRegen:unknown(),regenRemainder:unknown(),lastChatHeal:unknown(),baseStats:{} as CharacterStats,buffs:[]},
  inventory:[],equipment:{},perks:[],fish:{},sushi:{},boss:{id:'',name:'Bossstatus nicht verfügbar',hp:unknown(),maxHp:unknown(),status:'waiting',damage:unknown(),nextAt:unknown(),endsAt:unknown()},round:unknown(),hotTime:{endsAt:unknown(),active:false},cooldowns:{dive:unknown(),fishing:unknown(),boss:unknown()},effectCooldowns:{},
  remote:{loaded:false,connection:'loading',message:'Twitch-Anmeldung wird erwartet.',pointsText:'–',pointsExact:'',sets:[],recipes:[],perkPrices:{},supported:[],pending:false,syncing:false,bossKnown:false,hotKnown:false}};}
 export function catalogView(catalog:any):{sets:ItemSet[];recipes:RecipeView[];perks:Record<string,any>} {

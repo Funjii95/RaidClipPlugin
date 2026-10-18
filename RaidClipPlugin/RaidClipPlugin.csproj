@@ -7,12 +7,12 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>FunjiiOtterRpgIntegratedTest</AssemblyName>
+    <AssemblyName>RaidClipPlugin</AssemblyName>
     <RootNamespace>RaidClipPlugin</RootNamespace>
     <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
-    <Version>2.1.22-cloudtest.3</Version>
-    <FileVersion>2.1.22.0</FileVersion>
-    <AssemblyVersion>2.1.22.0</AssemblyVersion>
+    <Version>2.1.23</Version>
+    <FileVersion>2.1.23.0</FileVersion>
+    <AssemblyVersion>2.1.23.0</AssemblyVersion>
   </PropertyGroup>
 
 

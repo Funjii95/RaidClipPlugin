@@ -178,7 +178,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
         </div>
       </div>
       <header>
-        <img src="./otter-mage.png" alt="Otter-Magier"/>
+        <picture><source media="(min-width: 901px)" srcSet="./otter-mage.png"/><img src="./otter-mage-compact.webp" alt="Otter-Magier"/></picture>
         <div>
           <small>FUNJII · LEUCHTENDE TIEFE</small>
           <h1>
@@ -294,7 +294,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
             {tab === "Abenteuer" && (<>
                 <article className="adventure">
                   <div className="sea-art">
-                    <img src="./luminous-depths.png" alt="Otter-Magier zwischen leuchtenden Quallen und einem Perlenschatz in versunkenen Ruinen" width="1536" height="1024"/>
+                    <picture><source media="(min-width: 901px)" srcSet="./luminous-depths.png"/><img src="./luminous-depths-compact.webp" alt="Otter-Magier zwischen leuchtenden Quallen und einem Perlenschatz in versunkenen Ruinen" width="1536" height="1024"/></picture>
                     <div className="sea-caption">
                       <span>LEUCHTENDE TIEFE</span>
                       <h3>Ein Meer voller Geheimnisse.</h3>

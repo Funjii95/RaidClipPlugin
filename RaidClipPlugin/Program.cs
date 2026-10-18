@@ -10,7 +10,11 @@ internal static class Program
         try
         {
             var smoke=args.Length==1 && args[0]=="--ui-smoke";
-            if(args.Length!=0 && !smoke)throw new InvalidOperationException("Updater arguments are disabled for the isolated test build.");
+            if (!TestDataPaths.IsTestBuild && UpdateApplier.TryRun(args)) return;
+            if (TestDataPaths.IsTestBuild && args.Length != 0 && !smoke)
+                throw new InvalidOperationException("Updater arguments are disabled for isolated execution.");
+            if (smoke && !TestDataPaths.IsTestBuild)
+                throw new InvalidOperationException("UI smoke tests require an isolated data root.");
             Directory.CreateDirectory(TestDataPaths.Root);
             using var instance=new FileStream(Path.Combine(TestDataPaths.Root,"instance.lock"),FileMode.OpenOrCreate,FileAccess.Write,FileShare.None);
 

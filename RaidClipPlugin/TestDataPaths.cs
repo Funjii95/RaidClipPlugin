@@ -1,19 +1,23 @@
 namespace RaidClipPlugin;
 
+// Keep the historic helper name to avoid unrelated persistence changes.
 internal static class TestDataPaths
 {
-    public static bool IsTestBuild => true;
-    public static string LocalAppData { get; } = Resolve();
+    public static bool IsTestBuild => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FUNJII_RPG_TEST_DATA_ROOT"));
+    public static string LocalAppData { get; } = ResolveLocalAppData(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        Environment.GetEnvironmentVariable("FUNJII_RPG_TEST_DATA_ROOT"));
     public static string Root => Path.Combine(LocalAppData, "RaidClipPlugin");
-    private static string Resolve()
+
+    internal static string ResolveLocalAppData(string normalPath, string? isolatedPath)
     {
-        var normal = Path.GetFullPath(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
-        var value = Environment.GetEnvironmentVariable("FUNJII_RPG_TEST_DATA_ROOT") ??
-            Path.Combine(normal, "FunjiiOtterRpgIntegratedTest", "isolated-appdata");
-        var full = Path.GetFullPath(value).TrimEnd(Path.DirectorySeparatorChar);
+        var normal = Path.GetFullPath(normalPath).TrimEnd(Path.DirectorySeparatorChar);
+        if (string.IsNullOrWhiteSpace(isolatedPath)) return normal;
+        var full = Path.GetFullPath(isolatedPath).TrimEnd(Path.DirectorySeparatorChar);
+        var original = Path.Combine(normal, "RaidClipPlugin");
         if (full.Equals(normal, StringComparison.OrdinalIgnoreCase) ||
-            full.Equals(Path.Combine(normal, "RaidClipPlugin"), StringComparison.OrdinalIgnoreCase) ||
-            full.StartsWith(Path.Combine(normal, "RaidClipPlugin") + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            full.Equals(original, StringComparison.OrdinalIgnoreCase) ||
+            full.StartsWith(original + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("An isolated test directory is required.");
         return full;
     }

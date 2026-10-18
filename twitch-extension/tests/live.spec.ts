@@ -24,10 +24,10 @@ for(const [view,width,height] of [['panel',320,700],['mobile',390,844]] as const
   const server=await backend(page);await page.setViewportSize({width,height});await page.goto('/'+view+'.html');
   await expect(page.locator('.statusbar')).toContainText('1.234');await expect(page.getByRole('heading',{name:'SYNTHETIC Twitch-Testotter'})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Level 7',exact:true})).toBeVisible();await expect(page.locator('.health-label')).toContainText('87 / 150 HP');
-  await expect(page.locator('header img')).toHaveAttribute('src','./otter-mage.png');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await expect(page.locator('header img')).toHaveAttribute('src','./otter-mage-compact.webp');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   expect(await page.locator('body').innerText()).not.toContain('Demo-Perlen');expect(await page.locator('body').innerText()).not.toContain('NaN');
   for(const tab of ['Abenteuer','Inventar','Ausrüstung','Itemsets','Perks','Boss','Kochen']){await page.getByRole('button',{name:tab,exact:true}).click();await expect(page.getByRole('heading',{name:tab,exact:true})).toBeVisible();}
-  await page.getByRole('button',{name:'Abenteuer',exact:true}).click();await expect(page.locator('.sea-art img')).toHaveAttribute('src','./luminous-depths.png');
+  await page.getByRole('button',{name:'Abenteuer',exact:true}).click();await expect(page.locator('.sea-art img')).toHaveAttribute('src','./luminous-depths-compact.webp');
   await page.getByRole('button',{name:'Inventar',exact:true}).click();const card=page.locator('[data-instance-id="owned-trident"]');await expect(card.getByRole('heading',{name:'Gespeicherter Dreizack'})).toBeVisible();
   await expect(card.locator('img')).toHaveAttribute('src','./items/trident.webp');await expect(card).toContainText('12.5');
   await expect(card.getByRole('button',{name:'☆ Favorisieren'})).toHaveCount(0);await expect(card.getByRole('button',{name:'★ Favorisiert'})).toBeDisabled();

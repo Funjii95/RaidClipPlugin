@@ -17,7 +17,7 @@ public partial class MainForm
     private readonly CancellationTokenSource _cloudStop=new();
     private void InitializeCloudIntegration()
     {
-        Text += " – Action Channel Test 2.1.22";
+        if (TestDataPaths.IsTestBuild) Text += " – Isolierter Integrationstest";
         _viewerPoints.Admission=_streamAdmission;
         Shown+=(_,_)=>{_cloudSyncTask=Task.Run(()=>RunCloudSyncAsync(_cloudStop.Token));};
         FormClosed+=async(_,_)=>

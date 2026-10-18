@@ -14,7 +14,7 @@ for(const [view,width,height]of [['panel',320,500],['mobile',390,844],['mobile',
   await page.screenshot({path:`test-results/release-${view}-${width}x${height}.png`});
  });
 }
-test.skip('DEFERRED by owner: mobile initial CDN payload is at most 1MB',async({page})=>{
+test('mobile initial CDN payload is at most 1MB',async({page})=>{
  await prepare(page);await page.setViewportSize({width:390,height:844});const pending:Promise<void>[]=[];const resources:{path:string,bytes:number}[]=[];
  page.on('response',r=>{if(r.url().startsWith('https://localhost:8080/'))pending.push(r.body().then(b=>{resources.push({path:new URL(r.url()).pathname,bytes:b.length});}));});
  await page.goto('/mobile.html');await expect(page.locator('.statusbar')).toContainText('1.234');await page.waitForLoadState('networkidle');await Promise.all(pending);
