@@ -17,4 +17,5 @@
   <ItemGroup>
     <ProjectReference Include="..\RaidClipPlugin.csproj" />
   </ItemGroup>
+  <ItemGroup><ProjectReference Include="../../Sync/tests/Backend.Tests/Backend.Tests.csproj" /></ItemGroup>
 </Project>

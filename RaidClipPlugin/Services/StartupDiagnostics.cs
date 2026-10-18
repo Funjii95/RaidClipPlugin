@@ -9,7 +9,7 @@ public static class StartupDiagnostics
         ArgumentNullException.ThrowIfNull(exception);
 
         var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            TestDataPaths.LocalAppData,
             "RaidClipPlugin",
             "logs");
         Directory.CreateDirectory(directory);

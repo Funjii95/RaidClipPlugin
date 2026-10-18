@@ -7,8 +7,7 @@ public sealed class TwitchCredentialStore
     public TwitchCredentialStore()
     {
         var directory = Path.Combine(
-            Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData),
+            TestDataPaths.LocalAppData,
             "RaidClipPlugin");
         Directory.CreateDirectory(directory);
         _credentialPath = Path.Combine(

@@ -12,6 +12,7 @@ public sealed partial class ViewerPointStore
     internal string BossRoundPath => Path.Combine(Path.GetDirectoryName(_filePath)!,"rpg-boss-round.json");
     internal async Task<IReadOnlyList<(string Id,string Name,int BossHp)>> BossParticipantsAsync(string bossId,CancellationToken token)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(token);
         try
         {
@@ -72,6 +73,7 @@ public sealed partial class ViewerPointStore
     internal async Task<RpgTransactionResult> ApplyRpgAsync(string userId, string displayName,
         string actionId, Func<ViewerPointEntry, RpgMutation> mutate, CancellationToken token, bool backupBeforeCommit = false)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(actionId) || actionId.Length > 200)
             throw new ArgumentException("Twitch-ID und gültige Aktions-ID sind erforderlich.");
         await _lock.WaitAsync(token);

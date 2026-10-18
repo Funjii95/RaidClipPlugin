@@ -1,0 +1,822 @@
+{
+  "sourceArchive": "RaidClipPlugin-2.1.22-Alle-Items.zip",
+  "artVersion": "2.1.22",
+  "entries": {
+    "shell": {
+      "src": "./items/shell.webp",
+      "name": "Alte Muschel",
+      "sourceSha256": "0adad5da9c348c1462f30ee7bb5517c9d264ff60b4cc3495543d00b608e73d3f",
+      "assetSha256": "4042c6935872926bbf93a6c3c0503d0566f3699c3fc12b1307b42221613520ea",
+      "width": 384,
+      "height": 384
+    },
+    "gloves": {
+      "src": "./items/gloves.webp",
+      "name": "Otterhandschuhe",
+      "sourceSha256": "0ac24905c30d3814719ed2f9d97c219bb74874383c03d7f748219ea341fab006",
+      "assetSha256": "4e4c8100b212d1c4364ecd2850aaa0cc73372190abd378a973cf51b8577515f8",
+      "width": 384,
+      "height": 384
+    },
+    "trident": {
+      "src": "./items/trident.webp",
+      "name": "Dreizack der Strömung",
+      "sourceSha256": "0b553a32bee9772eba4ba39cce26bc5c9d5ed673d886f0b70c10096a9c921db4",
+      "assetSha256": "678781806e8b0a1f69de8826ab4da68a7f5ae35a430408f8fcbe29403b6e59d7",
+      "width": 384,
+      "height": 384
+    },
+    "boots": {
+      "src": "./items/boots.webp",
+      "name": "Flossenschuhe",
+      "sourceSha256": "e6230c9836b71f94dc10e44c3802ee61b41f2d9a355ac601385a626f294d16df",
+      "assetSha256": "4ac77f0398c4e6b1cd4fc0be159cb07631a51897910f2004b7f36950fdb34548",
+      "width": 384,
+      "height": 384
+    },
+    "helmet": {
+      "src": "./items/helmet.webp",
+      "name": "Perlenhelm",
+      "sourceSha256": "234d61379ed4a43651a349fc8582e707bd6efa04e41ddb8520d3db3bc96f0aee",
+      "assetSha256": "a9a9d1c5499881da2930a85bc659dc6d2ed54b34536dcea20870cd3a9a0429a2",
+      "width": 384,
+      "height": 384
+    },
+    "chest": {
+      "src": "./items/chest.webp",
+      "name": "Rüstung der Tiefe",
+      "sourceSha256": "ba936e50f794bf884653feda5aeffba58d59cec94e71ba637718b06475b92719",
+      "assetSha256": "9da6a23903916d6804d246fbad419b376c99d56031abdd3e1f9181428067a178",
+      "width": 384,
+      "height": 384
+    },
+    "amulet": {
+      "src": "./items/amulet.webp",
+      "name": "Amulett der Gezeiten",
+      "sourceSha256": "66d08890a8539680b0da6ccbb60056ff2ee59af343fc8735a83549bd04ec0db8",
+      "assetSha256": "4aacdbeb9f5f3671313964c0c770eac1e813d0ca3c31fc024801408370407b4a",
+      "width": 384,
+      "height": 384
+    },
+    "sushi-fighter": {
+      "src": "./items/sushi-fighter.webp",
+      "name": "Sushi des Kämpfers",
+      "sourceSha256": "c1c7e169b105da8c816cd25d866a721b1b0c0a086874d3762c311b8431d08ec1",
+      "assetSha256": "7fc226aa702552baf52f3343773400583f64e0cd01a63584137d5f6159ed6133",
+      "width": 384,
+      "height": 384
+    },
+    "royal-treasure": {
+      "src": "./items/royal-treasure.webp",
+      "name": "Versunkener Königsschatz",
+      "sourceSha256": "75d12ba31bde5f7e39551518c92830c769680f9b2e351709c62cb22931269d14",
+      "assetSha256": "afd6adae7af0512c626f767d3353019c886292f02f35c1a8c026c55bc9848c46",
+      "width": 384,
+      "height": 384
+    },
+    "current-ring": {
+      "src": "./items/current-ring.webp",
+      "name": "Ring der Strömung",
+      "sourceSha256": "4dedca9466cfc2e53e735fd7a0dae88d1c2dbae251993773036d40d90d170209",
+      "assetSha256": "504da64c9797131be9278599d71ea8c36348b2cc01c87d62a93c1c93c9498aa6",
+      "width": 384,
+      "height": 384
+    },
+    "ocean-ring": {
+      "src": "./items/ocean-ring.webp",
+      "name": "Ring der kleinen Strömung",
+      "sourceSha256": "97de9aa110829defed7d0b58f8e6287e58d94473a794a0e22f16047b540883ac",
+      "assetSha256": "bad7375fb3258f938bed9b8eb452f1a566d1bc27064d775808a9a20d1c9ada78",
+      "width": 384,
+      "height": 384
+    },
+    "deep-ring": {
+      "src": "./items/deep-ring.webp",
+      "name": "Ring des Tiefenmeeres",
+      "sourceSha256": "601502812c5a037d6de66ea0e3236220689aaa6e03f795c6f1b405e10cd2f299",
+      "assetSha256": "f8bbdbd112322717bf0ed8bae4aa6ac6116cce53b6f47cd3c94bc28c76076e27",
+      "width": 384,
+      "height": 384
+    },
+    "leviathan-seal": {
+      "src": "./items/leviathan-seal.webp",
+      "name": "Leviathans Siegel",
+      "sourceSha256": "94b8fd8d589c0aa3e24560846e8967c617c0c64d89e425988a0cc928a69bbfad",
+      "assetSha256": "5bb9521110eef9ccf81a5c8c630f48db2d5e08b6acb83de1d2a307a3c37d1773",
+      "width": 384,
+      "height": 384
+    },
+    "deepsea-crown": {
+      "src": "./items/deepsea-crown.webp",
+      "name": "Krone des Abgrunds",
+      "sourceSha256": "f87b75cc7150b59ab627ff6e3947cf30157280e924ce55377b7bde372998baa3",
+      "assetSha256": "c603293ebe127c39745bc5acdff4343fd7a9ecd2d676cb304c294a9ed23ae6be",
+      "width": 384,
+      "height": 384
+    },
+    "deepsea-chest": {
+      "src": "./items/deepsea-chest.webp",
+      "name": "Panzer des Leviathans",
+      "sourceSha256": "454ab9323e98ddc2b5baafc0c9963b16f23d92d8a4b2cff380e7a8c40a16e056",
+      "assetSha256": "7e0321463bca83a8793126ee03d14fc1960b823f7a2fc4939dfde02f32dbadbb",
+      "width": 384,
+      "height": 384
+    },
+    "deepsea-grip": {
+      "src": "./items/deepsea-grip.webp",
+      "name": "Griff der Tiefsee",
+      "sourceSha256": "7a5b86d785bb611bd12e1ee042fca1e5cc9bb382611f6b1859cec0dcb4c0553b",
+      "assetSha256": "53a473cea7d7154b1927ad27ddf28a727a2d59bac5bdf934a9eb3d89eaa29412",
+      "width": 384,
+      "height": 384
+    },
+    "deepsea-boots": {
+      "src": "./items/deepsea-boots.webp",
+      "name": "Schritte des Abgrunds",
+      "sourceSha256": "af627e555045b53717548cded1ed47fcf18d91adee89224d83bbdee40f439bc1",
+      "assetSha256": "75463bdff5f7ea6e1c4c3c65837c4f8eae27865ffc96e07c5aec0f0f424f42ba",
+      "width": 384,
+      "height": 384
+    },
+    "ocean-mask": {
+      "src": "./items/ocean-mask.webp",
+      "name": "Maske des Perlensuchers",
+      "sourceSha256": "f558e60debe874ef4ff3be6b8a7c4d2790feead3b6e8d0bc4740c03b012c5578",
+      "assetSha256": "b325ae2317d8ae97445a44dc43642df5442a66c12c13065d1c398b28f9583c50",
+      "width": 384,
+      "height": 384
+    },
+    "ocean-garment": {
+      "src": "./items/ocean-garment.webp",
+      "name": "Gewand des Schatzsuchers",
+      "sourceSha256": "f4cb730fa04f9c58a240f0c442adb386dce00ccdb60bda2ea2b0daee9592906c",
+      "assetSha256": "b8db528bbe1d5ee8ed6cf28b5d55e3b84faf13ed61d2853e3bb5e01d4ff76c0e",
+      "width": 384,
+      "height": 384
+    },
+    "ocean-fingers": {
+      "src": "./items/ocean-fingers.webp",
+      "name": "Finger des Glücks",
+      "sourceSha256": "c3d3a1a72d0ba15c5b2d9256fd74f5c623c7fa5ea323584f9bf75564bef214b7",
+      "assetSha256": "5886ecf903a9c3721df21922cca82de1641527bdb0c81f58bb4991f2629e91c3",
+      "width": 384,
+      "height": 384
+    },
+    "ocean-flippers": {
+      "src": "./items/ocean-flippers.webp",
+      "name": "Flossen des Entdeckers",
+      "sourceSha256": "173d392f95e2134d7b742a8ba1c27100b8275d1a9ca81715e0b4f72f67d62101",
+      "assetSha256": "5266c7ec091aae412ccf8f5775417dc01417b8fcf5236b181c462fbe3b196604",
+      "width": 384,
+      "height": 384
+    },
+    "leviathan-grip": {
+      "src": "./items/leviathan-grip.webp",
+      "name": "Leviathans Griff",
+      "sourceSha256": "c14768d7e1fe759faedeba9d103e1d68dea2d5b9fab5cb78e3a62ff0bb3a45f6",
+      "assetSha256": "803e480b1792b07b80ec4e66f0b0f23dadc31ed79efbe23fd0ac1d57a29d1112",
+      "width": 384,
+      "height": 384
+    },
+    "tidal-seal": {
+      "src": "./items/tidal-seal.webp",
+      "name": "Siegel der Gezeiten",
+      "sourceSha256": "94bdc8d1897db7ee9c2f6a661719fb0d96eb1c762759788d0b6670977858ae10",
+      "assetSha256": "c33a92b5b2cd4984de025858fda21ace63d04325c40006600a21f3ffb7fc831d",
+      "width": 384,
+      "height": 384
+    },
+    "deepsea-heart": {
+      "src": "./items/deepsea-heart.webp",
+      "name": "Herz der Tiefsee",
+      "sourceSha256": "40f92af2adc2d142a8ffde7727c3999072ccd0fb42b765322d1e5b27f63392ad",
+      "assetSha256": "598e0606ec990a443b8932c50a9e1f2fb6196bb9e74b47272a36777c1b604513",
+      "width": 384,
+      "height": 384
+    },
+    "sunken-king-crown": {
+      "src": "./items/sunken-king-crown.webp",
+      "name": "Krone des versunkenen Königs",
+      "sourceSha256": "f36bd8a2a104b13f2605d5d59316efc2140e2ed11508aab4a89c73386b90ec0a",
+      "assetSha256": "14d6684d5e6156957f0bfa2b4c0bdb5fe9f937486027d723016c88defc3ce255",
+      "width": 384,
+      "height": 384
+    },
+    "leviathan-trident": {
+      "src": "./items/leviathan-trident.webp",
+      "name": "Dreizack des Leviathans",
+      "sourceSha256": "4758353384f169ba4376e88c242379f01a994aef85d80a020ed437d33bfa4287",
+      "assetSha256": "40459bb64c7e68744ff0c41e1e842c6ae59767a60b4a34641ca216d0fdd5ae40",
+      "width": 384,
+      "height": 384
+    },
+    "hp-kelp-boots": {
+      "src": "./items/hp-kelp-boots.webp",
+      "name": "Seetangstiefel",
+      "sourceSha256": "a44403b4764b559875c458a61e855af0242743dc663c6d98fb82043aedbefd29",
+      "assetSha256": "e8ace0bc370e67d3b559ab2b7277bbdb7e161d90b1377e32b998e7c6228f4691",
+      "width": 384,
+      "height": 384
+    },
+    "hp-coral-helmet": {
+      "src": "./items/hp-coral-helmet.webp",
+      "name": "Korallenhelm",
+      "sourceSha256": "d3b6cce3d70cb354640b07a98ce133c34cddbc3d0cb19b1f77704bcb718a3022",
+      "assetSha256": "c8c228b0d016f2b7494aadcf9fbe7addd15a1331cfd33c3027fd727d761d6b10",
+      "width": 384,
+      "height": 384
+    },
+    "hp-shell-chest": {
+      "src": "./items/hp-shell-chest.webp",
+      "name": "Muschelpanzer",
+      "sourceSha256": "8dda61e528dfa541db48446b98ba8a17f1326509aff1146714b06ba1e85a3479",
+      "assetSha256": "83155fd47cc950c5c82829cba2de6f3d84487a57fdf3fa3c307429a061a5fe68",
+      "width": 384,
+      "height": 384
+    },
+    "hp-abyss-chest": {
+      "src": "./items/hp-abyss-chest.webp",
+      "name": "Abgrundrüstung",
+      "sourceSha256": "a4bbbfa189ada39294ebf9665b558f6cd989452c936e0d61416109a4eaca9d8c",
+      "assetSha256": "8a4ad37be9f26635970ad2450d39b12d65d4c89c23852ecda82954a0bf86b463",
+      "width": 384,
+      "height": 384
+    },
+    "hp-leviathan-amulet": {
+      "src": "./items/hp-leviathan-amulet.webp",
+      "name": "Leviathans Herz",
+      "sourceSha256": "9ddb11cdae89c8584928287683e8facd4fc728544b99a02f148f545a7ce6ac11",
+      "assetSha256": "e02393b3b93c9075f240bd774711f7bc48bc79fcbcbd322bb2eeb245ade916e1",
+      "width": 384,
+      "height": 384
+    },
+    "coral-dagger": {
+      "src": "./items/coral-dagger.webp",
+      "name": "Korallendolch",
+      "sourceSha256": "44670705cff09ba67cb2ddaa33f36ccb93efc60d69af720a880b552e394a0075",
+      "assetSha256": "0a69391629d70160d4114fbf40a41fd2d32f64b4c93649e722cd8df4303277f0",
+      "width": 384,
+      "height": 384
+    },
+    "pearl-sabre": {
+      "src": "./items/pearl-sabre.webp",
+      "name": "Perlensäbel",
+      "sourceSha256": "e7e14c20ac4110942943d981fcb2058daa0fc7c913cc60a069fbcaa1d43d2338",
+      "assetSha256": "014e9a3ffb42f7412d142b4f7992133492deb9cd1fa375d99aa05c0b2f6055a0",
+      "width": 384,
+      "height": 384
+    },
+    "depth-blade": {
+      "src": "./items/depth-blade.webp",
+      "name": "Tiefseeklinge",
+      "sourceSha256": "20ab7a4264c59009ee831014ff97ff05425abb391355fc5cdcdd304bfddb6036",
+      "assetSha256": "aa98169942ae57289a976b74b8dbe858ce5c3d805835dd14b963a44c9802f48e",
+      "width": 384,
+      "height": 384
+    },
+    "storm-harpoon": {
+      "src": "./items/storm-harpoon.webp",
+      "name": "Sturmharpune",
+      "sourceSha256": "cc6223bc65b42581824b744d1d73a86c89743455f87aecb883178eefbabfd5e7",
+      "assetSha256": "fca0d629a286698205c8f5d8f261c06ce2157f3e56fd65649018628acc95e21f",
+      "width": 384,
+      "height": 384
+    },
+    "leviathan-wrath": {
+      "src": "./items/leviathan-wrath.webp",
+      "name": "Zorn des Leviathans",
+      "sourceSha256": "1f1ee15c36d5f293f7021790670a9f2855035b3da2d2ce484798783154b1e197",
+      "assetSha256": "541babb52eccaa1e62c77779706925117b7879d8ba6102838e562611449559e5",
+      "width": 384,
+      "height": 384
+    },
+    "shell-helm": {
+      "src": "./items/shell-helm.webp",
+      "name": "Muschelhelm",
+      "sourceSha256": "68771f9c51e993d44437fc83bb682d9ac4bc19cfb84d40b682454799841f3aa3",
+      "assetSha256": "c1c1427e73b9a010b19a32912859aad9bd2aa8fe2fe5bcc2e890e87db0092ac8",
+      "width": 384,
+      "height": 384
+    },
+    "coral-crown": {
+      "src": "./items/coral-crown.webp",
+      "name": "Korallenkrone",
+      "sourceSha256": "1b04ff8cce44ba2cf46490767902340e50ab81766c6e856d92f35522441a665d",
+      "assetSha256": "5dbc2c39c74f25cc8aab9bac6d5ab1e08bd51aecf21082dd64fd5a115af217f1",
+      "width": 384,
+      "height": 384
+    },
+    "depth-helm": {
+      "src": "./items/depth-helm.webp",
+      "name": "Helm der Tiefen",
+      "sourceSha256": "39d33a4bb0afc20cf01c31a608e51ef189a15cb505234930233998dc4a3cb675",
+      "assetSha256": "a3abc832425f58e2c8e809fdfeef404c553c113014e7a2d75356aa0385a532ad",
+      "width": 384,
+      "height": 384
+    },
+    "leviathan-gaze": {
+      "src": "./items/leviathan-gaze.webp",
+      "name": "Leviathans Blick",
+      "sourceSha256": "0ce6ea891f412c20ae3548ccf96c69d99bd0dfeb491e06a190240975a9444d50",
+      "assetSha256": "3d31cab1372bdc4bc52ec0094bcbfb9787bf15ec628cdcab7b914762d866a443",
+      "width": 384,
+      "height": 384
+    },
+    "algae-armour": {
+      "src": "./items/algae-armour.webp",
+      "name": "Algenpanzer",
+      "sourceSha256": "629e755e8115ad258a9d39dc0c7f3e5d71fda58d5a536316e1eb9651f2e0309c",
+      "assetSha256": "2c4214f383291d96ee7091f23657012609954a2f4c07b33a891c48f69889065c",
+      "width": 384,
+      "height": 384
+    },
+    "scale-armour": {
+      "src": "./items/scale-armour.webp",
+      "name": "Schuppenrüstung",
+      "sourceSha256": "943e5120d76710a1d393d6620d2c05bcea24be1c66d0460592e54e5a21fa3ff4",
+      "assetSha256": "97067e7041e323adbfffa363621da4e4512f6e2150f486ab10ac1efed65d7816",
+      "width": 384,
+      "height": 384
+    },
+    "coral-cuirass": {
+      "src": "./items/coral-cuirass.webp",
+      "name": "Korallenharnisch",
+      "sourceSha256": "44645daffda3243af28745a5fe70a26a4088eedefe9b7ea4863f1943059673c5",
+      "assetSha256": "fcc5d08ce8a653acd372f447085e6f6f6b4989b758ca9c43b2c643f38b863de5",
+      "width": 384,
+      "height": 384
+    },
+    "tidal-armour": {
+      "src": "./items/tidal-armour.webp",
+      "name": "Rüstung der Gezeiten",
+      "sourceSha256": "233d36313758f45ff926fb1f6b0189517de72972ef38140d210861a9f587d788",
+      "assetSha256": "9b63463f9c2e735dca2dd3b13ff7e8553fb40d5bd3f4de5c2519b3a3e687a6fd",
+      "width": 384,
+      "height": 384
+    },
+    "abyss-armour": {
+      "src": "./items/abyss-armour.webp",
+      "name": "Panzer des Abgrunds",
+      "sourceSha256": "2a2c4b15c02710b73901801bec7e8f0f32da9e4d860707e066244a325bf51316",
+      "assetSha256": "4e12d072f6bac60f4145efe2844e89dfc7df24653e680cda2313157adfa59266",
+      "width": 384,
+      "height": 384
+    },
+    "diver-gloves": {
+      "src": "./items/diver-gloves.webp",
+      "name": "Taucherhandschuhe",
+      "sourceSha256": "54dc0aed7b4eb3eea860c9bd2f848e10eaaba535d1e664230b48c97c0cce3b40",
+      "assetSha256": "a0376be9a5725b08429a65bd4735916d1b10041102544f8120001f7140182920",
+      "width": 384,
+      "height": 384
+    },
+    "coral-grip": {
+      "src": "./items/coral-grip.webp",
+      "name": "Korallengriff",
+      "sourceSha256": "90dd300a984fabac626c7b7719309004536f311ee7fa4efd4e5269ddd4112a44",
+      "assetSha256": "28915b3a132a14ed93333c10c6214dc1595661babeb94c3903d7b1e6d4c241ed",
+      "width": 384,
+      "height": 384
+    },
+    "depth-gloves": {
+      "src": "./items/depth-gloves.webp",
+      "name": "Handschuhe der Tiefen",
+      "sourceSha256": "52e6fe76bf581c4c0a5953376916b9cc1342c4fbe7bb4c24816f54009b5f2c15",
+      "assetSha256": "5606f869bd96e5483d04a34e39b3e40581fe1d2438031796b248759ae58436d6",
+      "width": 384,
+      "height": 384
+    },
+    "storm-grip": {
+      "src": "./items/storm-grip.webp",
+      "name": "Sturmgreifer",
+      "sourceSha256": "e06c351365cda16f2ac7f0500bbad2bb1072af010018591ef08142482599499f",
+      "assetSha256": "c035da24de271ba761ebb20d2be5a2066ae298dc3e61b1a6d3aac74ed626ff1a",
+      "width": 384,
+      "height": 384
+    },
+    "leviathan-claws": {
+      "src": "./items/leviathan-claws.webp",
+      "name": "Leviathans Klauen",
+      "sourceSha256": "47ef49bd254c984908d6d0bfa5f8f1ce75227b33b9525b8843d87828d7f4f170",
+      "assetSha256": "03e45927117f5873e3e380f281cbfc9d014e1c8bf9103e170ffa20de30239a35",
+      "width": 384,
+      "height": 384
+    },
+    "sand-runner": {
+      "src": "./items/sand-runner.webp",
+      "name": "Sandläufer",
+      "sourceSha256": "990277e291deda37e13d54212da4b0646863de14b4edc49faa39da530a083d41",
+      "assetSha256": "ee7174c8660d2bde6067bf75458135f153aab62ffcda33073bf5f6ad0508d9d9",
+      "width": 384,
+      "height": 384
+    },
+    "coral-boots": {
+      "src": "./items/coral-boots.webp",
+      "name": "Korallenstiefel",
+      "sourceSha256": "9057797dd4f7111df3c82468373e3108336f90eef919a51309b271ec2314f403",
+      "assetSha256": "744fa02f7917f8dc71dd14eb473628237b32662751e9147ae74524ee1b695cf1",
+      "width": 384,
+      "height": 384
+    },
+    "depth-steps": {
+      "src": "./items/depth-steps.webp",
+      "name": "Tiefseeschritte",
+      "sourceSha256": "5d06c90c32d7964cb314da7b94b51fbc66299df22430848a235feb053adb4d3c",
+      "assetSha256": "3a49bd072f65260eccf0f0432efa9000af81154d7c86c0f7a130ceb36d533f63",
+      "width": 384,
+      "height": 384
+    },
+    "current-shoes": {
+      "src": "./items/current-shoes.webp",
+      "name": "Schuhe der Strömung",
+      "sourceSha256": "72cd9c1d01897a7bdc56befb7aff7ba19576629fb414d14be93b773f0baed425",
+      "assetSha256": "c95fddeb321ddac64ab502e44ab2f5e9a3cdea96445d93da5e2406a2ccb1e4fb",
+      "width": 384,
+      "height": 384
+    },
+    "tidal-runner": {
+      "src": "./items/tidal-runner.webp",
+      "name": "Gezeitenläufer",
+      "sourceSha256": "9aecfbb365d33d6ed5553b4432d7c287c1aae8817828932dcb46fbb83162fea4",
+      "assetSha256": "3a73ce55a944c6266aa6b0bd029f4d8066308df5cb8fbd6f0d36247edc1ea1cd",
+      "width": 384,
+      "height": 384
+    },
+    "shell-pendant": {
+      "src": "./items/shell-pendant.webp",
+      "name": "Muschelanhänger",
+      "sourceSha256": "8ac73f818166204da509f5d489864c593fbe897b9620f31572ec1226ada082ff",
+      "assetSha256": "063df557fd88dffd08a06507a34234d1a12f71a2e232d5661f778080416a802b",
+      "width": 384,
+      "height": 384
+    },
+    "lucky-pearl": {
+      "src": "./items/lucky-pearl.webp",
+      "name": "Glücksperle",
+      "sourceSha256": "b123de495490123f69333de00157d27f551a7f2b065c7047cc53299f5f1b374d",
+      "assetSha256": "c0b4c4d235016403447a929321f3dd0f26e2efe4064a9f4d560e90507b98c567",
+      "width": 384,
+      "height": 384
+    },
+    "depth-talisman": {
+      "src": "./items/depth-talisman.webp",
+      "name": "Tiefsee-Talisman",
+      "sourceSha256": "1eb50d5fbcd4c7076d0e99384e4298196d8a31e00ccd38c7b6bc70f146ab56ab",
+      "assetSha256": "ded3a3807cdec5898f8992b108ff8a53cbab54abec92c3f63d0d84e7cf9c8abb",
+      "width": 384,
+      "height": 384
+    },
+    "current-amulet": {
+      "src": "./items/current-amulet.webp",
+      "name": "Amulett der Strömung",
+      "sourceSha256": "710c56a32933fc3d63596a8172eaf565718750cc67c7e6ad15cfcd1f2d0eaeef",
+      "assetSha256": "4d3213cdae0fb1b3ce508c5ec2ac3e2c22c62cb91df0b08867b504392ad4c7c8",
+      "width": 384,
+      "height": 384
+    },
+    "neptune-heart": {
+      "src": "./items/neptune-heart.webp",
+      "name": "Neptuns Herz",
+      "sourceSha256": "b12c8bb3a92aad87269652bce3414e2feb28057fa289367c460168c1276248a9",
+      "assetSha256": "d258239936b2c462b2517127b6717fafdea80f4ea94c02775d4a76b8d1ccd1cb",
+      "width": 384,
+      "height": 384
+    },
+    "shell-ring": {
+      "src": "./items/shell-ring.webp",
+      "name": "Ring der Muscheln",
+      "sourceSha256": "fa3260f6a4fbbab6bd904107f7cfec1755d7e5f4ad1b4019bf7a83a2e033b2a9",
+      "assetSha256": "4634f8f2929009e5513a2c99c67e4c04677be3e9c5f09aeb39bbc16465796984",
+      "width": 384,
+      "height": 384
+    },
+    "tidal-ring": {
+      "src": "./items/tidal-ring.webp",
+      "name": "Gezeitenring",
+      "sourceSha256": "52e1e42975f59ae0e9d252ff6b691a715ea61472c19b96eabc577d1f84d117ec",
+      "assetSha256": "2d27628af6f8fb6c9c6ea3bf3c08a715dbed38d9467863997d5ae6f22a26a480",
+      "width": 384,
+      "height": 384
+    },
+    "hunter-ring": {
+      "src": "./items/hunter-ring.webp",
+      "name": "Ring des Jägers",
+      "sourceSha256": "ebae541f40a6723758e18662e2510c121ebf685b643c3bedfa8aaf40f77049b6",
+      "assetSha256": "a0f0459371af18fa20ddf1992834228afa9eb2a90322e81f9c909717dbe4db1d",
+      "width": 384,
+      "height": 384
+    },
+    "depth-ruby": {
+      "src": "./items/depth-ruby.webp",
+      "name": "Blutrubin der Tiefen",
+      "sourceSha256": "9913abae8f42ad21423addc1fd86466578364802fcfbe78a7ee70759ff304ed2",
+      "assetSha256": "aeeb6d94704057378a2c632c9f15c995589e2b5f0d9ceb3911be43bb1555dff1",
+      "width": 384,
+      "height": 384
+    },
+    "leviathan-oath": {
+      "src": "./items/leviathan-oath.webp",
+      "name": "Leviathans Schwur",
+      "sourceSha256": "d03d92fe7bc6b1b9e58bffb1aa7137158b886f2c91d2e3f499e51c705b671a47",
+      "assetSha256": "668a4512034e3e8c4597b8f2bcb91d9c19ffac56ff0accba9aa17f26676b66a4",
+      "width": 384,
+      "height": 384
+    },
+    "warden-helm": {
+      "src": "./items/warden-helm.webp",
+      "name": "Helm des Tiefseewächters",
+      "sourceSha256": "61ff4a8a62caf077bd21e87f56af6bd6f1e39db37ae0e34cb41e074882ec94dc",
+      "assetSha256": "5c8a60ca61a746890a412e1ef24208b90c415edbf752f5ab93bb4839e90ad41e",
+      "width": 384,
+      "height": 384
+    },
+    "warden-chest": {
+      "src": "./items/warden-chest.webp",
+      "name": "Brustplatte des Tiefseewächters",
+      "sourceSha256": "7e9a7bc25e100554453ac8de1c0c48fd56b35478c96b4fdf70470a51ed9141b1",
+      "assetSha256": "23bc26c7f8ec46c7ee93420e744de30b2b39d141903f7fe75af6df97040a0919",
+      "width": 384,
+      "height": 384
+    },
+    "warden-gloves": {
+      "src": "./items/warden-gloves.webp",
+      "name": "Handschuhe des Tiefseewächters",
+      "sourceSha256": "4fa47775b82d3ffaff7565e451cb1b0f9f6c51b8c1857e0ab53e0c3e9e39fbfb",
+      "assetSha256": "7511063fb0f54e68ef9267ed5f0896c7a82d7541fa116600467c5fabcbc276e6",
+      "width": 384,
+      "height": 384
+    },
+    "warden-boots": {
+      "src": "./items/warden-boots.webp",
+      "name": "Stiefel des Tiefseewächters",
+      "sourceSha256": "1490f8903ade97a72388033f7d2230025e99e64fc5dc0bafa01810753c761578",
+      "assetSha256": "0389fc9131a44151323f1d94d516d1e6b6f68d6439a0276a24dad604d7cd929d",
+      "width": 384,
+      "height": 384
+    },
+    "wrath-helm": {
+      "src": "./items/wrath-helm.webp",
+      "name": "Krone des Ozeanzorns",
+      "sourceSha256": "a00ac679f8dfc1493ec421c31f8a6c7f3953e7159aa16d9ee6cec7a09f380a92",
+      "assetSha256": "1a3761ed39401243022c2182add21575e803e58a50fcd722a7365091b461d911",
+      "width": 384,
+      "height": 384
+    },
+    "wrath-chest": {
+      "src": "./items/wrath-chest.webp",
+      "name": "Panzer des Ozeanzorns",
+      "sourceSha256": "603ce49006ab9d6da65e2551c2126418f411a33c46abd6668a889ed5024e24de",
+      "assetSha256": "5646303301f1f38997d2c5a3f67e84dcf3de714af80303e3f9f01819f0ac26e3",
+      "width": 384,
+      "height": 384
+    },
+    "wrath-gloves": {
+      "src": "./items/wrath-gloves.webp",
+      "name": "Klauen des Ozeanzorns",
+      "sourceSha256": "618f8860ca4459b9355a9e76520e0269a917f6cd146e09af9c5a12cb35aa6686",
+      "assetSha256": "dbc839b93ea2d3fd8da56913113d13c56ff9d7c78e8c3fb1dbb7185957570926",
+      "width": 384,
+      "height": 384
+    },
+    "wrath-boots": {
+      "src": "./items/wrath-boots.webp",
+      "name": "Schritte des Ozeanzorns",
+      "sourceSha256": "eb7622ab0e762d0083b01d6294bfb7699727cbcb0186046567e26e71b83786e2",
+      "assetSha256": "32706b5a26b2767f6d92a471d2be19b0ba43022260602e2a32c2c76d35ef9a78",
+      "width": 384,
+      "height": 384
+    },
+    "lucky-shell": {
+      "src": "./items/lucky-shell.webp",
+      "name": "Kleine Glücksmuschel",
+      "sourceSha256": "5068c3b8ebd14ea843be6d57bd538d2a056bb5c21266268d74f900c117521d75",
+      "assetSha256": "8c57ddfe4f26b8e8a7544dd16fde151b4f89207f9be5a438f568cd71c2c35aa5",
+      "width": 384,
+      "height": 384
+    },
+    "pearl-compass": {
+      "src": "./items/pearl-compass.webp",
+      "name": "Perlenkompass",
+      "sourceSha256": "d7ea714020f0ea643534bd0cc335df76d652d00535719232dd5118e322d1c027",
+      "assetSha256": "706a40da6294b7ddbd4b76a5066731a4b13e318696c72b76cec2287c94d3c8c9",
+      "width": 384,
+      "height": 384
+    },
+    "depth-map": {
+      "src": "./items/depth-map.webp",
+      "name": "Schatzkarte der Tiefsee",
+      "sourceSha256": "b9cdac04d5551a689966170760f0ea1c350191c4ac6e95d093038de8ecfaf515",
+      "assetSha256": "f265c85d25eb34e339244e6ccf88e34885a1768ab4a3f7d7d33643ead3a4458a",
+      "width": 384,
+      "height": 384
+    },
+    "shell-seal": {
+      "src": "./items/shell-seal.webp",
+      "name": "Muschelsammlersiegel",
+      "sourceSha256": "066eacc175b9fc5fe7f252bd376b20f013df657448975b61369c7049e06d3bfd",
+      "assetSha256": "4434bff16254fa7898000b10ad6230e586561a97f29720582fd30d721c5f60da",
+      "width": 384,
+      "height": 384
+    },
+    "wealth-pearl": {
+      "src": "./items/wealth-pearl.webp",
+      "name": "Perle des Reichtums",
+      "sourceSha256": "0548af4858565d3d76261a22debe9ce2b384e9bb30b954f67a0fb045c4486bbc",
+      "assetSha256": "b1b6e6628afcdcf9467f620054bb70a64a57a820a587f405e18bd8bbcc483728",
+      "width": 384,
+      "height": 384
+    },
+    "captain-map": {
+      "src": "./items/captain-map.webp",
+      "name": "Alte Kapitänskarte",
+      "sourceSha256": "c22994d3e4db71b35db7ded086d0276c494a9913b1a5e976be76c7536e07c9e1",
+      "assetSha256": "17e30effdf3cf368944680eaf2fff73ebc2df44e069fb54901e89bfe99751e84",
+      "width": 384,
+      "height": 384
+    },
+    "lucky-compass": {
+      "src": "./items/lucky-compass.webp",
+      "name": "Kompass des Glücks",
+      "sourceSha256": "723d63f0c4d504f600dac55cb88ba301bbc4029ea26bfefff7455e9237b51c9c",
+      "assetSha256": "afa06036d6cf06ac6a3c9f90ad9fd4ba95ecef333a42b244d577d9ff6e021fbb",
+      "width": 384,
+      "height": 384
+    },
+    "tidal-hourglass": {
+      "src": "./items/tidal-hourglass.webp",
+      "name": "Sanduhr der Gezeiten",
+      "sourceSha256": "35dc7d47310f8bb8f72027c5e614612e0bfb558ce8c4d32fb4279b84963c9573",
+      "assetSha256": "5dc5070f584296894a9c47d096a81a37a3fde053764cc8952da1b4f7125076a1",
+      "width": 384,
+      "height": 384
+    },
+    "collector-crown": {
+      "src": "./items/collector-crown.webp",
+      "name": "Krone des Perlensammlers",
+      "sourceSha256": "793bb0ee93cbb14524d5b61d0f32712e1532f4b708c5da85c7785dbca0e3b864",
+      "assetSha256": "9af597feb771cdfd39a15b1199a73c5ecafe24ef5f8d31613aa2965b9fa28301",
+      "width": 384,
+      "height": 384
+    },
+    "golden-shell": {
+      "src": "./items/golden-shell.webp",
+      "name": "Goldene Muschel",
+      "sourceSha256": "64aa7bcdc0c08ab6289786921914bbe958d5b2775f6e7e738964bc930409a59a",
+      "assetSha256": "f4cbafa7ed9a9cc04e721ab1e2b24d5a6b3624aab180d578969d50515f0f82d1",
+      "width": 384,
+      "height": 384
+    },
+    "fish-sardine": {
+      "src": "./items/fish-sardine.webp",
+      "name": "Kleine Sardine",
+      "sourceSha256": "af2bc583df86c54336144e6feb8754c1f1cf536eb37907751edcd7379d952460",
+      "assetSha256": "13ede8411939504065e0001ecf9b6a5131d7298e6091a3c11dcc460ae4189162",
+      "width": 384,
+      "height": 384
+    },
+    "fish-perch": {
+      "src": "./items/fish-perch.webp",
+      "name": "Silberbarsch",
+      "sourceSha256": "1b778dc2c219f4028fa1c7b823d0b1966253982e05dcb5c93d8cded1884e90b4",
+      "assetSha256": "55df56a3473032f4fb909f899d7426a74f966ab06166de52fdb07dd3c65867a7",
+      "width": 384,
+      "height": 384
+    },
+    "fish-crystal-carp": {
+      "src": "./items/fish-crystal-carp.webp",
+      "name": "Kristallkarpfen",
+      "sourceSha256": "dbba1d1583411f7713e2544e6ad10e2ec12a9d969bd112414e86cf33dc429c00",
+      "assetSha256": "9cfc8cd9b92cd59d8962c9893dc98532441c269a6f022b18fe3b6165a9bea71b",
+      "width": 384,
+      "height": 384
+    },
+    "fish-eel": {
+      "src": "./items/fish-eel.webp",
+      "name": "Tiefsee-Aal",
+      "sourceSha256": "1acbf69b9591a831b7b858e31fc8264b70834cc361a49bda95ff4c87b3b7afb1",
+      "assetSha256": "032ddf0db9087276ddf0e56f13dd43cdf4e22e9f52fdbbff60cea2e8abd18851",
+      "width": 384,
+      "height": 384
+    },
+    "fish-leviathan": {
+      "src": "./items/fish-leviathan.webp",
+      "name": "Goldener Leviathan",
+      "sourceSha256": "dfd99c6f5a71656c528c85dfa53f589cdfb7c8150c13c99fe68332bfe68b22d7",
+      "assetSha256": "cec0f17e5dce8f495caf6ae1e771764ca526d4a736ad386c2c743a085822717e",
+      "width": 384,
+      "height": 384
+    },
+    "fish-sea_cucumber": {
+      "src": "./items/fish-sea_cucumber.webp",
+      "name": "Seegurke",
+      "sourceSha256": "0dc87fe72ab5822cf6030f79fa74e116c40391f0f235e14741166c43aae99641",
+      "assetSha256": "e890e4838075d614d80899469d331f30c6d8d449de283b590eb2bba0463e0745",
+      "width": 384,
+      "height": 384
+    },
+    "fish-shrimp": {
+      "src": "./items/fish-shrimp.webp",
+      "name": "Garnele",
+      "sourceSha256": "2268db229058231d321f333161f1108fa95322ebd9819ee42d8e41f0c9d33ba9",
+      "assetSha256": "6ecdf4f752bb737faf43938e2423b68b474737d50639d03fae79f40cc7e7a047",
+      "width": 384,
+      "height": 384
+    },
+    "fish-giant_shrimp": {
+      "src": "./items/fish-giant_shrimp.webp",
+      "name": "Riesengarnele",
+      "sourceSha256": "1714001911c4d66af12da4f66cd35a803ce34e5f07de3531063bcffa44bf37f9",
+      "assetSha256": "4a5c2993a64ecb16550bc7e204e51a8e08cb426dd71a41259c13eb63a49de69b",
+      "width": 384,
+      "height": 384
+    },
+    "fish-pufferfish": {
+      "src": "./items/fish-pufferfish.webp",
+      "name": "Kugelfisch",
+      "sourceSha256": "6f244f848c1ab19c6ec7db1be3d208acb4b0507ea6b2734572ab24ab358b7c73",
+      "assetSha256": "61c25e882d557c5015dbfebe9d61b3063949fd81fb948ba78f492e3a91624c65",
+      "width": 384,
+      "height": 384
+    },
+    "fish-golden_pufferfish": {
+      "src": "./items/fish-golden_pufferfish.webp",
+      "name": "Goldener Kugelfisch",
+      "sourceSha256": "17090ed8ef7e1e0169deea067e39e0ef14ccafad6cf2134f1eecb50c501b67cb",
+      "assetSha256": "ea5dc3fae79bf79fa079d2e7b3d4e0b40c5f39ac9b1c6d87238d30c70d8aa7a1",
+      "width": 384,
+      "height": 384
+    },
+    "fish-vampire_squid": {
+      "src": "./items/fish-vampire_squid.webp",
+      "name": "Vampirtintenfisch",
+      "sourceSha256": "85ac0861c0969390d42b98d347187a27e05a21f692fb7122454c2d4178a83a17",
+      "assetSha256": "ca3e5c627024c03b2491db44e865f8d4ee1a918205fa752bddece304b3203a8c",
+      "width": 384,
+      "height": 384
+    },
+    "fish-tuna": {
+      "src": "./items/fish-tuna.webp",
+      "name": "Thunfisch",
+      "sourceSha256": "116083f46377eab9e25c3d844d1ea0bf5fa9f45288be385d42f76e4914d23414",
+      "assetSha256": "a9920ddf5d0727c5d1bde9765667e2a75c977cbe009dcd9e881600937e21d53b",
+      "width": 384,
+      "height": 384
+    },
+    "sushi-kappa": {
+      "src": "./items/sushi-kappa.webp",
+      "name": "Kappa-Maki",
+      "sourceSha256": "cdce88966d9db85606f682bb706a00c32a8cb77a33203a21c14f77b00bfa5fed",
+      "assetSha256": "763e883399f60b2a03dd1173f153c3d155d86be66cc00819d0fce82fad1ded3a",
+      "width": 384,
+      "height": 384
+    },
+    "sushi-tempura": {
+      "src": "./items/sushi-tempura.webp",
+      "name": "Garnelen-Tempura-Rolle",
+      "sourceSha256": "52b9d0a134d8dc84602db80d2fc87f69aff37bd691f21b4daf4605267b8b4553",
+      "assetSha256": "84510e0a88f13286a96f5d9e2f32a72ae6cff7d63c302c4785ffd6040e0c5a15",
+      "width": 384,
+      "height": 384
+    },
+    "sushi-kugelfisch": {
+      "src": "./items/sushi-kugelfisch.webp",
+      "name": "Kugelfisch-Sashimi",
+      "sourceSha256": "7d27cc82fcd6c032177a09c7edb8d0fee0102f9eb4ade34871206bbe595a0e62",
+      "assetSha256": "c66f4388a6af0466c3ffa6c6b924c9fcf4f3fa8e52db436e5042e115634a1ac0",
+      "width": 384,
+      "height": 384
+    },
+    "sushi-vampir": {
+      "src": "./items/sushi-vampir.webp",
+      "name": "Vampir-Maki",
+      "sourceSha256": "4395c431d2c15cca0e413e686cbb95aaab25ec9e6e11d7f43f2637b64bebd871",
+      "assetSha256": "b09ca2ae42273ab62e303d7c433396689a4b824a2b2fad118e47903215c4b5f7",
+      "width": 384,
+      "height": 384
+    },
+    "sushi-fishing": {
+      "src": "./items/sushi-fishing.webp",
+      "name": "Angler-Sushi",
+      "sourceSha256": "a451f9bf14b6c8c66ffa1c9f7b479ef5435d1a96e742f0d2e856103e39076e9a",
+      "assetSha256": "40517abeecb7449d5b2fbfdfc5cf7b9acae0e04c5d52284c2419854383b282ff",
+      "width": 384,
+      "height": 384
+    },
+    "sushi-critical": {
+      "src": "./items/sushi-critical.webp",
+      "name": "Krit-Sushi",
+      "sourceSha256": "e75b45237eca9a067f06749e3ebf457fe8b9f15df1ac889188b7d632c6f4e6a1",
+      "assetSha256": "3e260e4b99f50b544f2b1347b1c7015728a37fd950e69fcb35c90446ad1a01df",
+      "width": 384,
+      "height": 384
+    },
+    "sushi-dive": {
+      "src": "./items/sushi-dive.webp",
+      "name": "Taucher-Sushi",
+      "sourceSha256": "a42a899a98884485a4cc2928dbcd8cfb44893d6e55b4eb7da6aba07093c9f653",
+      "assetSha256": "36cd1c2ef2d89f045a6c741c2e4591aa86962a3cf96b215013107f4b7eefec5d",
+      "width": 384,
+      "height": 384
+    }
+  }
+}

@@ -1,0 +1,10 @@
+using RaidClipPlugin.Services;
+using RaidClipPlugin.Models;
+if(args.Length!=2 || args[0]!="--directory")throw new ArgumentException("Explicit --directory within this workspace's work folder required.");
+var target=Path.GetFullPath(args[1]);var work=Path.GetFullPath(Path.Combine(Environment.CurrentDirectory,"work"))+Path.DirectorySeparatorChar;
+if(!target.StartsWith(work,StringComparison.OrdinalIgnoreCase) || Path.GetFileName(target)!="release-stage-isolated")throw new InvalidOperationException("Only work/release-stage-isolated is allowed.");
+var players=Path.Combine(target,"RaidClipPlugin","minigame");
+if(File.Exists(Path.Combine(players,"viewer-points.json")))throw new InvalidOperationException("Existing fixture is never overwritten.");
+var store=new ViewerPointStore(players);
+await store.SetPointsAsync("1001","SYNTHETIC-STAGING",2000,0,default);
+Console.WriteLine("Synthetic fixture 1001 created through the original ViewerPointStore. No network connection and no existing save was changed.");

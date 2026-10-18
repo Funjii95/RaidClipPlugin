@@ -116,7 +116,7 @@ public sealed class TwitchChatWebViewService : IDisposable
     private static Task<CoreWebView2Environment> CreateEnvironmentAsync()
     {
         var userDataFolder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            TestDataPaths.LocalAppData,
             "RaidClipPlugin", "WebView2");
         var options = new CoreWebView2EnvironmentOptions
         {

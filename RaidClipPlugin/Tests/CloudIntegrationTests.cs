@@ -1,0 +1,181 @@
+using System.Text.Json;
+using RaidClipPlugin.Models;
+using RaidClipPlugin.Services;
+using SnapshotProtocol;
+using SnapshotDelivery;
+using Xunit;
+
+namespace RaidClipPlugin.Tests;
+
+public sealed class CloudIntegrationTests : IDisposable
+{
+    private readonly string root=Path.Combine(Path.GetTempPath(),"otter-integration",Guid.NewGuid().ToString("N"));
+    private string Players=>Path.Combine(root,"players");
+    private string FilePath=>Path.Combine(Players,"viewer-points.json");
+    private LocalOutboxStore Outbox()=>new(Path.Combine(root,"outbox"),"42");
+    private readonly FakeCloud cloud=new();
+    private async Task<ViewerPointStore> SeedAsync()
+    {
+        var store=new ViewerPointStore(Players);
+        await store.ApplyRpgAsync("1001","SYNTHETIC","seed",a=>
+        {
+            a.Points=100;
+            a.Rpg.Health.SushiRegenRemainder=0.25m;
+            a.Rpg.Inventory.Add(new(){InstanceId="item-1",ItemId="synthetic-item",IsFavorite=true,IsLocked=true,SetId="set-1",
+                SalvageValue=17,CoreStatsVersion=2,FoundAt=DateTimeOffset.UtcNow,
+                Collector=new(){FishingPearls=1.5m},Effects=new(){new(){Id="extra",Name="Extra",Chance=5,Strength=0.5m}}});
+            a.Rpg.Buffs.Add(new(){RecipeId="fighter",EncounterBased=true,LastBossId="boss-1",ExpiresAt=DateTimeOffset.UtcNow.AddMinutes(3),
+                ActivatedAt=DateTimeOffset.UtcNow,PassiveHealing=1.5m,BossLifeleech=2.25m});
+            a.Rpg.Cooldowns["dive"]=DateTimeOffset.UtcNow.AddSeconds(20);
+            a.Rpg.Fish["sardine"]=new(){FishId="sardine",Quantity=4};
+            a.Rpg.Sushi["fighter"]=2;a.Rpg.Perks["power"]=1;
+            return new(true);
+        },default);
+        using var document=JsonDocument.Parse(await File.ReadAllBytesAsync(FilePath));
+        var initial=new SnapshotMessage(1,"42","1001",7,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,
+            document.RootElement.GetProperty("1001").GetRawText());
+        cloud.Apply(initial);
+        return store;
+    }
+    private IntegratedSnapshotWorker Worker(ViewerPointStore store,Func<CancellationToken,Task>? capabilities=null)=>
+        new(store,Outbox(),"42",["1001"],capabilities??(_=>Task.CompletedTask),cloud.Read,cloud.Send);
+    private static Task<RpgTransactionResult> Change(ViewerPointStore store,string action="change")=>
+        store.ApplyRpgAsync("1001","SYNTHETIC",action,a=>{a.Points+=10;a.Rpg.Perks["power"]=2;return new(true);},default);
+
+    [Fact]
+    public async Task Real_mutation_generates_complete_snapshot_without_changing_the_legacy_file()
+    {
+        var store=await SeedAsync();var worker=Worker(store);await worker.SynchronizeOnceAsync();
+        Assert.Empty((await Outbox().ReadAsync("1001"))!.Pending);
+        await Change(store);
+        var bytes=await File.ReadAllBytesAsync(FilePath);
+        await worker.SynchronizeOnceAsync();
+        Assert.Equal(bytes,await File.ReadAllBytesAsync(FilePath));
+        using var profile=JsonDocument.Parse(cloud.Head!.AccountJson!);
+        var rpg=profile.RootElement.GetProperty("Rpg");
+        Assert.Equal(110,profile.RootElement.GetProperty("Points").GetInt64());
+        Assert.Equal(0.25m,rpg.GetProperty("Health").GetProperty("SushiRegenRemainder").GetDecimal());
+        foreach(var property in typeof(RpgProfile).GetProperties().Where(p=>p.Name!="CompletedActions"))Assert.True(rpg.TryGetProperty(property.Name,out _),property.Name);
+        foreach(var property in typeof(RpgItem).GetProperties())Assert.True(rpg.GetProperty("Inventory")[0].TryGetProperty(property.Name,out _),property.Name);
+        foreach(var property in typeof(RpgBuff).GetProperties())Assert.True(rpg.GetProperty("Buffs")[0].TryGetProperty(property.Name,out _),property.Name);
+        Assert.DoesNotContain("CompletedActions",cloud.Head.AccountJson);
+        Assert.Equal(8,cloud.Head.Revision);
+        Assert.Equal(2,cloud.Applied); // Baseline fixture and one new snapshot, no gameplay replay.
+    }
+
+    [Fact]
+    public async Task Lost_ack_and_restart_resend_identical_message_without_double_booking()
+    {
+        var store=await SeedAsync();await Worker(store).SynchronizeOnceAsync();
+        await Change(store);cloud.LoseAcknowledgement=true;
+        await Assert.ThrowsAnyAsync<Exception>(()=>Worker(store).SynchronizeOnceAsync());
+        var queued=Assert.Single((await Outbox().ReadAsync("1001"))!.Pending);
+        var restarted=new ViewerPointStore(Players);
+        await Worker(restarted).SynchronizeOnceAsync();
+        Assert.Equal(queued.SnapshotId,cloud.LastSent);
+        Assert.Equal(2,cloud.Applied);
+        Assert.Empty((await Outbox().ReadAsync("1001"))!.Pending);
+        var duplicate=await Change(restarted);
+        Assert.True(duplicate.Duplicate);
+        Assert.Equal(110,await restarted.GetPointsAsync("1001",default));
+    }
+
+    [Fact]
+    public async Task Offline_save_before_worker_capture_is_recovered_from_authoritative_file()
+    {
+        var store=await SeedAsync();await Worker(store).SynchronizeOnceAsync();
+        cloud.Offline=true;await Change(store);
+        await Assert.ThrowsAsync<SnapshotHeadReadException>(()=>Worker(store).SynchronizeOnceAsync());
+        Assert.Equal(110,await new ViewerPointStore(Players).GetPointsAsync("1001",default));
+        cloud.Offline=false;await Worker(new ViewerPointStore(Players)).SynchronizeOnceAsync();
+        Assert.Equal(8,cloud.Head!.Revision);
+        Assert.Equal(2,cloud.Applied);
+    }
+
+    [Fact]
+    public async Task Snapshot_is_durable_when_network_fails_during_post()
+    {
+        var store=await SeedAsync();await Worker(store).SynchronizeOnceAsync();
+        await Change(store);cloud.FailPost=true;
+        await Assert.ThrowsAnyAsync<Exception>(()=>Worker(store).SynchronizeOnceAsync());
+        var first=Assert.Single((await Outbox().ReadAsync("1001"))!.Pending);
+        cloud.FailPost=false;await Worker(new ViewerPointStore(Players)).SynchronizeOnceAsync();
+        Assert.Equal(first.SnapshotId,cloud.LastSent);
+        Assert.Empty((await Outbox().ReadAsync("1001"))!.Pending);
+    }
+
+    [Fact]
+    public async Task Newer_cloud_state_is_never_rebased_or_overwritten()
+    {
+        var store=await SeedAsync();await Worker(store).SynchronizeOnceAsync();
+        await Change(store);cloud.Head=cloud.Head! with {Revision=100};
+        await Assert.ThrowsAsync<InvalidDataException>(()=>Worker(store).SynchronizeOnceAsync());
+        Assert.Equal(100,cloud.Head.Revision);Assert.Equal(1,cloud.Applied);
+    }
+
+    [Fact]
+    public async Task Incompatible_server_receives_nothing_and_local_save_remains_available()
+    {
+        var store=await SeedAsync();await Change(store);
+        var worker=Worker(store,_=>Task.FromException(new SnapshotHeadReadException(false)));
+        await Assert.ThrowsAsync<SnapshotHeadReadException>(()=>worker.SynchronizeOnceAsync());
+        Assert.Equal(110,await store.GetPointsAsync("1001",default));Assert.Equal(1,cloud.Applied);
+    }
+
+    [Fact]
+    public async Task Store_save_wakes_background_worker_without_waiting_for_network()
+    {
+        var store=await SeedAsync();var worker=Worker(store);await worker.SynchronizeOnceAsync();
+        using var stop=new CancellationTokenSource();
+        var success=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        worker.StatusChanged+=_=>{if(cloud.Applied==2)success.TrySetResult();};
+        var running=Task.Run(()=>worker.RunAsync(stop.Token));
+        await Change(store);
+        await success.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        stop.Cancel();await running;
+        Assert.Equal(110,await store.GetPointsAsync("1001",default));
+    }
+
+    [Fact]
+    public async Task Marker_recovers_both_crash_windows_without_changing_format()
+    {
+        Directory.CreateDirectory(Players);await File.WriteAllTextAsync(FilePath,"{}");
+        var marker=new SaveCommitMarker(FilePath);await marker.RecoverAsync(default);
+        var temp=FilePath+".prepared";await File.WriteAllTextAsync(temp,"{\"1001\":{\"Points\":5}}");
+        await marker.PrepareAsync(temp,default);
+        await new SaveCommitMarker(FilePath).RecoverAsync(default); // Crash before rename.
+        Assert.Equal("{}",await File.ReadAllTextAsync(FilePath));
+        marker=new SaveCommitMarker(FilePath);await marker.RecoverAsync(default);await marker.PrepareAsync(temp,default);
+        File.Move(temp,FilePath,true);
+        await new SaveCommitMarker(FilePath).RecoverAsync(default); // Crash after rename, before marker completion.
+        Assert.Equal("{\"1001\":{\"Points\":5}}",await File.ReadAllTextAsync(FilePath));
+        await File.WriteAllTextAsync(FilePath,"{}");
+        await Assert.ThrowsAsync<InvalidDataException>(()=>new SaveCommitMarker(FilePath).RecoverAsync(default));
+    }
+    public void Dispose(){if(Directory.Exists(root))Directory.Delete(root,true);}
+
+    private sealed class FakeCloud
+    {
+        internal StoredSnapshot? Head;
+        internal bool Offline,FailPost,LoseAcknowledgement;
+        internal int Applied;
+        internal Guid LastSent;
+        internal SnapshotDecision Apply(SnapshotMessage message)
+        {
+            var valid=SnapshotValidation.Validate(message,"42");
+            var decision=SnapshotRules.Decide(Head,valid);
+            if(decision==SnapshotDecision.Applied){Applied++;Head=new("42",message.UserId,message.Revision,message.SnapshotId,message.CapturedAt,false,valid.AccountJson,valid.ContentHash);}
+            return decision;
+        }
+        internal Task<StoredSnapshot?> Read(string user,CancellationToken ct)=>Offline
+            ? Task.FromException<StoredSnapshot?>(new SnapshotHeadReadException(true)) : Task.FromResult(Head);
+        internal Task<DeliveryResult> Send(SnapshotMessage message,CancellationToken ct)
+        {
+            LastSent=message.SnapshotId;
+            if(FailPost)return Task.FromResult(new DeliveryResult(DeliveryStatus.RetryLater));
+            var decision=Apply(message);
+            if(LoseAcknowledgement){LoseAcknowledgement=false;return Task.FromResult(new DeliveryResult(DeliveryStatus.RetryLater));}
+            return Task.FromResult(new DeliveryResult(DeliveryStatus.Delivered,decision));
+        }
+    }
+}

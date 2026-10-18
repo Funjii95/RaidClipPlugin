@@ -1,0 +1,5 @@
+01 JWT verified against synthetic HMAC secret; user=1001, channel=42, initial pearls=2000, snapshot revision=1.
+02 HTTP action queued in Firestore SDK transaction: 176f8f7d-ac0e-4e6f-aa13-69a07352bfd8; kind=buyPerk, perkId=damage.
+03 Outgoing plugin pump claimed, called existing RpgProgressionService/ViewerPointStore and acknowledged applied.
+04 Automatic SnapshotDelivery -> HTTP SnapshotPublisher -> Firestore SDK -> JWT GET /me: pearls=1500, damage perk=1, revision=2. No private action ledger exposed.
+05 Same ActionId after executor restart returned identical receipt; pearls remain 1500. No double booking.

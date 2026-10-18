@@ -24,8 +24,7 @@ public sealed class ConfigurationService
         get
         {
             var directory = Path.Combine(
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.LocalApplicationData),
+                TestDataPaths.LocalAppData,
                 "RaidClipPlugin");
             Directory.CreateDirectory(directory);
             return Path.Combine(directory, "settings.json");
@@ -364,7 +363,7 @@ public sealed class ConfigurationService
         try
         {
             var directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                TestDataPaths.LocalAppData,
                 "RaidClipPlugin");
             Directory.CreateDirectory(directory);
             File.AppendAllText(

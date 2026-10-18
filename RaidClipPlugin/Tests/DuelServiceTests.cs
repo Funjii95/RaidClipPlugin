@@ -134,6 +134,7 @@ public sealed class DuelServiceTests
             await Task.Delay(100);
         }
         Assert.Equal(1000, await f.Points.GetPointsAsync("c", default));
+        await f.Chat.TimeoutMessage.Task.WaitAsync(TimeSpan.FromSeconds(6));
         Assert.Contains(f.Chat.Messages, x => x.Contains("abgelaufen", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -343,12 +344,15 @@ public sealed class DuelServiceTests
     {
         public Dictionary<string, TwitchUser> Users { get; } = new(StringComparer.OrdinalIgnoreCase);
         public List<string> Messages { get; } = new();
+        public TaskCompletionSource TimeoutMessage {get;} = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public List<TimeoutCall> TimeoutCalls { get; } = new();
         public bool TimeoutFails { get; init; }
         public Task<TwitchUser?> GetUserAsync(string login, CancellationToken cancellationToken) =>
             Task.FromResult(Users.TryGetValue(login, out var user) ? user : null);
         public Task SendChatMessageAsync(string broadcasterId, string senderId, string message,
-            CancellationToken cancellationToken) { lock (Messages) Messages.Add(message); return Task.CompletedTask; }
+            CancellationToken cancellationToken) { lock (Messages) Messages.Add(message);
+            if(message.Contains("abgelaufen", StringComparison.OrdinalIgnoreCase))TimeoutMessage.TrySetResult();
+            return Task.CompletedTask; }
         public Task<bool> IsFollowerAsync(string broadcasterId, string userId,
             CancellationToken cancellationToken) => Task.FromResult(false);
         public Task TimeoutUserAsync(string broadcasterId, string moderatorId,

@@ -49,7 +49,7 @@ public sealed partial class MainForm
     {
         get
         {
-            var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RaidClipPlugin");
+            var directory = Path.Combine(TestDataPaths.LocalAppData, "RaidClipPlugin");
             Directory.CreateDirectory(directory);
             return Path.Combine(directory, "window-state.json");
         }

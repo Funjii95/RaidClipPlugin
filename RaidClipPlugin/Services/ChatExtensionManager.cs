@@ -17,7 +17,7 @@ public sealed class ChatExtensionManager
     private static readonly HttpClient Client = CreateClient();
     private static readonly SemaphoreSlim Sync = new(1, 1);
     private static readonly string ExtensionRoot = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        TestDataPaths.LocalAppData,
         "RaidClipPlugin", "ChatExtensions");
 
     public async Task<string> ApplyAsync(CoreWebView2Profile profile,

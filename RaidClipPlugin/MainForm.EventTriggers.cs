@@ -177,7 +177,7 @@ public sealed partial class MainForm
         try
         {
             var directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                TestDataPaths.LocalAppData,
                 "RaidClipPlugin", "EventSounds");
             Directory.CreateDirectory(directory);
             var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dialog.FileName)))[..12];

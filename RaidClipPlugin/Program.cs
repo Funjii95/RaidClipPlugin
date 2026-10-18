@@ -9,12 +9,24 @@ internal static class Program
     {
         try
         {
-            if (UpdateApplier.TryRun(args))
-            {
-                return;
-            }
+            var smoke=args.Length==1 && args[0]=="--ui-smoke";
+            if (!TestDataPaths.IsTestBuild && UpdateApplier.TryRun(args)) return;
+            if (TestDataPaths.IsTestBuild && args.Length != 0 && !smoke)
+                throw new InvalidOperationException("Updater arguments are disabled for isolated execution.");
+            if (smoke && !TestDataPaths.IsTestBuild)
+                throw new InvalidOperationException("UI smoke tests require an isolated data root.");
+            Directory.CreateDirectory(TestDataPaths.Root);
+            using var instance=new FileStream(Path.Combine(TestDataPaths.Root,"instance.lock"),FileMode.OpenOrCreate,FileAccess.Write,FileShare.None);
 
             ApplicationConfiguration.Initialize();
+            if(smoke)
+            {
+                using var form=new MainForm {Opacity=0,ShowInTaskbar=false};
+                form.Shown+=async(_,_)=>{await Task.Delay(200);form.CloseSmoke();};
+                Application.Run(form);
+                Console.WriteLine("Integrated MainForm startup passed; no Twitch connection or gameplay started.");
+                return;
+            }
 
             var credentialStore = new TwitchCredentialStore();
             if (!credentialStore.HasCredentials)
@@ -31,6 +43,8 @@ internal static class Program
         catch (Exception exception)
         {
             var logPath = StartupDiagnostics.Write(exception);
+            Environment.ExitCode=1;
+            if(args.Length==1 && args[0]=="--ui-smoke")return;
             MessageBox.Show(
                 "RaidClipPlugin konnte nicht gestartet werden.\n\n" +
                 "Der Fehler wurde protokolliert unter:\n" + logPath,

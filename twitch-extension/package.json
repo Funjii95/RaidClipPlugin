@@ -1,0 +1,34 @@
+{
+  "name": "funjii-otter-rpg-demo",
+  "private": true,
+  "version": "0.0.2",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "start": "pnpm build && node scripts/serve.mjs",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "build:demo": "tsc --noEmit && vite build --mode demo --outDir dist-demo",
+    "build:repro": "node scripts/reproducible-build.mjs",
+    "build:desktop": "tsc --noEmit && vite build --mode desktop-release --outDir dist-desktop",
+    "test:release": "playwright test --config playwright.release.config.ts"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/node": "^24.0.0",
+    "vite": "^8.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0",
+    "@playwright/test": "^1.56.0",
+    "selfsigned": "^3.0.1"
+  }
+}

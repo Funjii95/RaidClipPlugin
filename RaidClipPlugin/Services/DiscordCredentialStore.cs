@@ -9,7 +9,7 @@ public sealed class DiscordCredentialStore
     public DiscordCredentialStore(string? storagePath = null)
     {
         var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            TestDataPaths.LocalAppData,
             "RaidClipPlugin");
         Directory.CreateDirectory(directory);
         _path = storagePath ?? Path.Combine(directory, "discord-credentials.dat");
