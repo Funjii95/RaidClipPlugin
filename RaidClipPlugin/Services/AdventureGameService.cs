@@ -9,6 +9,8 @@ public sealed record BossAttackResult(bool Success, string PlayerId, int Damage,
 
 public sealed class AdventureGameService
 {
+    internal Func<bool>? GameplayAllowed;
+
     public event Action? DataChanged;
     public Func<CommunityOverlayState>? CommunityOverlay { get; set; }
     private readonly ViewerPointStore _points;
@@ -98,6 +100,7 @@ public sealed class AdventureGameService
     }
     public async Task ControlAsync(string action, long stake, CancellationToken token, TwitchUser? broadcaster = null)
     {
+        if (GameplayAllowed?.Invoke() == false) return;
         if (action is "cancelrace" or "cancelboss")
         {
             await _gate.WaitAsync(token);
@@ -150,6 +153,7 @@ public sealed class AdventureGameService
     }
     public async Task HandleAsync(ChatMessage message, string command, string[] parts, CancellationToken token)
     {
+        if (GameplayAllowed?.Invoke() == false) return;
         if (!Recognizes(command) || !_config.Enabled || !_config.PointsEnabled ||
             message.CommandAuthorization == CommandAuthorization.Denied ||
             _config.PointsBlacklist.Any(p => p.TrimStart('@').Equals(message.UserLogin, StringComparison.OrdinalIgnoreCase) ||
@@ -320,6 +324,7 @@ public sealed class AdventureGameService
     }
     public async Task<BossAttackResult> ExecuteBossAttackAsync(string verifiedUserId, string displayName, string requestId, CancellationToken token)
     {
+        if (GameplayAllowed?.Invoke() == false) return new(false, verifiedUserId, 0, false, 0, false, 0, "Kanal nicht live oder Sitzung nicht spielbereit.");
         if (string.IsNullOrWhiteSpace(verifiedUserId) || string.IsNullOrWhiteSpace(requestId)) throw new ArgumentException("Twitch-ID und Aktions-ID fehlen.");
         await _gate.WaitAsync(token);
         try
@@ -503,6 +508,7 @@ public sealed class AdventureGameService
     }
     public async Task TickAsync(CancellationToken token)
     {
+        if (GameplayAllowed?.Invoke() == false) return;
         await _gate.WaitAsync(token);
         try { await TickCoreAsync(token); }
         finally { PublishStatus(); _gate.Release(); }

@@ -17,8 +17,7 @@ public sealed class MusicRequestStore
     public MusicRequestStore(string? storagePath = null)
     {
         var directory = storagePath is null
-            ? Path.Combine(Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData),
+            ? Path.Combine(TestDataPaths.LocalAppData,
                 "RaidClipPlugin")
             : Path.GetDirectoryName(Path.GetFullPath(storagePath))!;
         Directory.CreateDirectory(directory);

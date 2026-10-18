@@ -16,7 +16,7 @@ public sealed class GiveawayStore
     public GiveawayStore(string? storagePath = null)
     {
         var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            TestDataPaths.LocalAppData,
             "RaidClipPlugin", "giveaways");
         Directory.CreateDirectory(directory);
         _filePath = storagePath ?? Path.Combine(directory, "current-giveaway.json");

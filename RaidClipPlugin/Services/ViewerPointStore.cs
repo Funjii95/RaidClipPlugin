@@ -6,6 +6,10 @@ namespace RaidClipPlugin.Services;
 
 public sealed partial class ViewerPointStore
 {
+    internal StreamAdmission? Admission { get; set; }
+    internal event Action? Persisted;
+    private SaveCommitMarker? _commitMarker;
+    private bool _commitChecked;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -31,8 +35,7 @@ public sealed partial class ViewerPointStore
     public ViewerPointStore(string? storageDirectory = null, Func<DateTimeOffset>? hotTimeClock = null)
     {
         var directory = storageDirectory ?? Path.Combine(
-            Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData),
+            TestDataPaths.LocalAppData,
             "RaidClipPlugin",
             "minigame");
         Directory.CreateDirectory(directory);
@@ -60,6 +63,7 @@ public sealed partial class ViewerPointStore
         string userId,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -118,6 +122,7 @@ public sealed partial class ViewerPointStore
         long maximumPoints,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         if (string.IsNullOrWhiteSpace(senderId) ||
             string.IsNullOrWhiteSpace(recipientId))
         {
@@ -193,6 +198,7 @@ public sealed partial class ViewerPointStore
         int historyLimit,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -222,6 +228,8 @@ public sealed partial class ViewerPointStore
         int historyLimit,
         CancellationToken cancellationToken)
     {
+        using var rollback = Admission?.EnterRollback();
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -254,6 +262,7 @@ public sealed partial class ViewerPointStore
         int historyLimit,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -336,6 +345,7 @@ public sealed partial class ViewerPointStore
         long maximumPoints,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         if (amount <= 0) return 0;
         await _lock.WaitAsync(cancellationToken);
         try
@@ -363,6 +373,7 @@ public sealed partial class ViewerPointStore
         long maximumPoints,
         CancellationToken cancellationToken, string? historyGame = null, int historyLimit = 500, RpgRewardSource source = RpgRewardSource.Administrative)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         if (amount <= 0 && historyGame is null)
         {
             return 0;
@@ -427,6 +438,7 @@ public sealed partial class ViewerPointStore
         long maximumPoints,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         var recipients = awards
             .Where(award => !string.IsNullOrWhiteSpace(award.UserId))
             .GroupBy(award => award.UserId, StringComparer.Ordinal)
@@ -475,6 +487,7 @@ public sealed partial class ViewerPointStore
         long minimumPoints,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -505,6 +518,7 @@ public sealed partial class ViewerPointStore
 
     public async Task ResetAsync(CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -522,6 +536,7 @@ public sealed partial class ViewerPointStore
 
     public async Task<int> CountAsync(CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -538,6 +553,7 @@ public sealed partial class ViewerPointStore
         long points, long minimum, CancellationToken cancellationToken,
         long maximum = long.MaxValue)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -564,6 +580,7 @@ public sealed partial class ViewerPointStore
         long bonus, long minimum, CancellationToken cancellationToken,
         long maximum = long.MaxValue)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -590,6 +607,7 @@ public sealed partial class ViewerPointStore
     public async Task<IReadOnlyList<ViewerPointEntry>> GetTopAsync(int count,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -604,6 +622,7 @@ public sealed partial class ViewerPointStore
     public async Task<ViewerProfileResult> GetProfileAsync(string userId,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -630,6 +649,7 @@ public sealed partial class ViewerPointStore
         Func<ViewerPointEntry, RpgMutation>? rpgMutation = null,
         Func<ViewerPointEntry, long, long>? rpgPayout = null, RpgRewardSource rewardSource = RpgRewardSource.MinigameNetWin,Func<string?>? rpgFishName=null)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         ViewerPointEntry? previousEntry = null;
         var hadEntry = false;
@@ -775,6 +795,7 @@ public sealed partial class ViewerPointStore
         IReadOnlyList<(string UserId, string DisplayName)> players, int winnerIndex, long stake,
         MinigameConfig config, CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         if (players.Count < 2 || players.Select(p => p.UserId).Distinct().Count() != players.Count ||
             winnerIndex < 0 || winnerIndex >= players.Count || stake <= 0)
             return new(false, "Ungültige Rennrunde", 0, 0);
@@ -842,6 +863,7 @@ public sealed partial class ViewerPointStore
         int historyLimit,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         if (participants.Count == 0)
             throw new ArgumentException("Mindestens ein Teilnehmer wird benötigt.", nameof(participants));
 
@@ -897,6 +919,7 @@ public sealed partial class ViewerPointStore
         long startValue,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -914,6 +937,7 @@ public sealed partial class ViewerPointStore
         long startValue,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         if (amount <= 0)
             throw new ArgumentOutOfRangeException(nameof(amount));
         await _lock.WaitAsync(cancellationToken);
@@ -933,6 +957,7 @@ public sealed partial class ViewerPointStore
     public async Task<long> GetJackpotAsync(long startValue,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try { await EnsureLoadedAsync(cancellationToken); return Math.Max(_jackpot, startValue); }
         finally { _lock.Release(); }
@@ -941,6 +966,7 @@ public sealed partial class ViewerPointStore
     public async Task<IReadOnlyList<MinigameHistoryEntry>> GetHistoryAsync(int count,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try { await EnsureLoadedAsync(cancellationToken); return _history.Take(count).ToArray(); }
         finally { _lock.Release(); }
@@ -949,6 +975,7 @@ public sealed partial class ViewerPointStore
     public async Task ExportAsync(string path, MinigameConfig settings,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
         try
         {
@@ -964,6 +991,7 @@ public sealed partial class ViewerPointStore
     public async Task<MinigameConfig> ImportAsync(string path,
         MinigameConfig currentSettings, CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         var json = await File.ReadAllTextAsync(path, cancellationToken);
         var package = JsonSerializer.Deserialize<MinigameExportPackage>(json, JsonOptions)
             ?? throw new InvalidOperationException("Die Importdatei ist ungültig.");
@@ -1028,6 +1056,7 @@ public sealed partial class ViewerPointStore
         long maximumPoints,
         CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         if (string.IsNullOrWhiteSpace(userId))
         {
             throw new ArgumentException("Die Twitch-User-ID fehlt.", nameof(userId));
@@ -1075,6 +1104,12 @@ public sealed partial class ViewerPointStore
 
     private async Task EnsureLoadedAsync(CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
+        if (!_commitChecked)
+        {
+            try { _commitMarker = new SaveCommitMarker(_filePath); await _commitMarker.RecoverAsync(cancellationToken); _commitChecked=true; }
+            catch(InvalidDataException error){throw new InvalidOperationException("Spielstand oder Commit-Marker widersprüchlich; keine automatische Wiederherstellung.",error);}
+        }
         if (_entries is not null)
         {
             return;
@@ -1106,6 +1141,7 @@ public sealed partial class ViewerPointStore
 
     private async Task SaveAllAsync(CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         await SaveAsync(cancellationToken);
         await File.WriteAllTextAsync(_historyPath,
             JsonSerializer.Serialize(_history, JsonOptions), cancellationToken);
@@ -1115,16 +1151,38 @@ public sealed partial class ViewerPointStore
 
     private async Task SaveAsync(CancellationToken cancellationToken)
     {
+        using var operationAdmission = Admission?.EnterOperation();
         var temporaryPath = _filePath + ".tmp";
-        await using (var stream = File.Create(temporaryPath))
+        await using var persistenceLease=await SaveCommitMarker.AcquireAsync(_filePath,cancellationToken);
+        try
         {
-            await JsonSerializer.SerializeAsync(
-                stream,
-                _entries,
-                JsonOptions,
-                cancellationToken);
+            await using (var stream = File.Create(temporaryPath))
+            {
+                await JsonSerializer.SerializeAsync(stream, _entries, JsonOptions, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+                stream.Flush(true);
+            }
+            await _commitMarker!.PrepareAsync(temporaryPath, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (Admission is null) File.Move(temporaryPath, _filePath, true);
+            else Admission.Commit(() => File.Move(temporaryPath, _filePath, true));
+            // Complete is recoverable from the hash-only intent if interrupted after rename.
+            try { await _commitMarker.CompleteAsync(CancellationToken.None); }
+            catch { _commitChecked=false; }
+            if (Persisted is { } listeners)
+                foreach (Action listener in listeners.GetInvocationList()) try { listener(); } catch { }
         }
-        File.Move(temporaryPath, _filePath, overwrite: true);
+        catch
+        {
+            // Some legacy callers mutate entries directly. Restore from the committed file,
+            // so rejected/offline mutations cannot leak into a later successful save.
+            _entries = File.Exists(_filePath)
+                ? JsonSerializer.Deserialize<Dictionary<string, ViewerPointEntry>>(await File.ReadAllTextAsync(_filePath), JsonOptions)!
+                : new(StringComparer.Ordinal);
+            _commitChecked=false;
+            throw;
+        }
+        finally { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
     }
     private sealed class MinigameExportPackage
     {

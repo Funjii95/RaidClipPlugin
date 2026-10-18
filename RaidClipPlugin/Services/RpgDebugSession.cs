@@ -66,7 +66,7 @@ public sealed class RpgDebugSession
     }
     public RpgDebugSession(string? root=null):this(root,IsLocalAdministrator) { }
     internal RpgDebugSession(string? root,Func<bool> authorization)
-    { _directory=Path.Combine(root??Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"RaidClipPlugin"),"rpg-debug");_authorize=authorization; }
+    { _directory=Path.Combine(root??Path.Combine(TestDataPaths.LocalAppData,"RaidClipPlugin"),"rpg-debug");_authorize=authorization; }
     private void Ensure()
     { if(!Active||!_authorize())throw new UnauthorizedAccessException("TESTMODUS ist deaktiviert oder das lokale Konto ist kein Administrator."); }
     private static T Clone<T>(T value)=>JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value))!;

@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+artifacts/
+*.dpapi
+cloud-sync.json
+viewer-points.json*
+cloud-sync-outbox/

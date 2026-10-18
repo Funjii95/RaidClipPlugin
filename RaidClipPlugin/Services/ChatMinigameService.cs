@@ -7,6 +7,11 @@ namespace RaidClipPlugin.Services;
 
 public sealed class ChatMinigameService : IDisposable
 {
+    private StreamAdmission? _streamAdmission;
+    private Guid _streamEpoch;
+    public void BindStreamSession(StreamAdmission admission, Guid epoch)
+    { _streamAdmission=admission; _streamEpoch=epoch; _adventures.GameplayAllowed=()=>admission.CanPlay(epoch); }
+    private bool GameplayAllowed => _streamAdmission?.CanPlay(_streamEpoch) ?? true;
     private readonly string _broadcasterId;
     private readonly string _chatUserId;
     private MinigameConfig _config;
@@ -364,7 +369,7 @@ public sealed class ChatMinigameService : IDisposable
     }
 
     public Task RunTestHeistAsync(CancellationToken cancellationToken) =>
-        _heist?.RunTestAsync(cancellationToken) ?? Task.CompletedTask;
+        !GameplayAllowed ? Task.CompletedTask : _heist?.RunTestAsync(cancellationToken) ?? Task.CompletedTask;
 
     public AdventureStatus AdventureStatus => _adventures.Status;
     public Task ControlAdventureAsync(string action, long stake, CancellationToken token, TwitchUser? broadcaster = null) =>
@@ -374,13 +379,14 @@ public sealed class ChatMinigameService : IDisposable
         _heist?.CancelAsync(true, cancellationToken) ?? Task.CompletedTask;
 
     public Task RunTestDuelAsync(CancellationToken cancellationToken) =>
-        _duel?.RunTestAsync(cancellationToken) ?? Task.CompletedTask;
+        !GameplayAllowed ? Task.CompletedTask : _duel?.RunTestAsync(cancellationToken) ?? Task.CompletedTask;
 
     public Task CancelDuelsAsync(CancellationToken cancellationToken) =>
         _duel?.CancelAllAsync(true, cancellationToken) ?? Task.CompletedTask;
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
+        using var scope = _streamAdmission?.Enter(_streamEpoch);
         ObjectDisposedException.ThrowIf(_disposed, this);
         _isRunning = true;
         _lastRuntimeError = null;
@@ -424,6 +430,8 @@ public sealed class ChatMinigameService : IDisposable
         ChatMessage message,
         CancellationToken cancellationToken)
     {
+        if (_streamAdmission is not null && !_streamAdmission.CanPlay(_streamEpoch, message.ReceivedAt)) return;
+        using var scope = _streamAdmission?.Enter(_streamEpoch);
         try
         {
             TouchHeartbeat();
@@ -513,6 +521,7 @@ public sealed class ChatMinigameService : IDisposable
                     continue;
                 }
 
+                if (!GameplayAllowed) continue;
                 var config = _config;
                 Dictionary<string, string> activeUsers;
                 HashSet<string> lurkingUsers;
@@ -1368,6 +1377,8 @@ public sealed class ChatMinigameService : IDisposable
         MinigamePassiveEvent passiveEvent,
         CancellationToken cancellationToken)
     {
+        if (!GameplayAllowed) return;
+        using var scope = _streamAdmission?.Enter(_streamEpoch);
         try
         {
             if (!_config.PointsEnabled)

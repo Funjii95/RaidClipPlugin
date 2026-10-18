@@ -198,8 +198,7 @@ internal static class UpdateApplier
         try
         {
             var logDirectory = Path.Combine(
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.LocalApplicationData),
+                TestDataPaths.LocalAppData,
                 "RaidClipPlugin",
                 "logs");
             Directory.CreateDirectory(logDirectory);

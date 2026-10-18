@@ -853,6 +853,7 @@ private enum CloseChoice
 
     public MainForm()
     {
+        InitializeCloudIntegration();
         Text = $"Raid Clip Plugin {_updateService.CurrentDisplayVersion}";
         Icon = System.Drawing.Icon.ExtractAssociatedIcon(
                    Application.ExecutablePath) ??
@@ -2555,6 +2556,11 @@ private enum CloseChoice
 
     private async Task StartPluginAsync()
     {
+        if (System.Diagnostics.Process.GetProcessesByName("RaidClipPlugin").Length != 0)
+        {
+            AppendLog("Bitte zuerst die normale RaidClipPlugin-Version beenden, bevor die getrennte Testversion denselben Kanal verbindet.");
+            return;
+        }
         if (_shutdown is not null)
         {
             return;
@@ -2565,6 +2571,8 @@ private enum CloseChoice
         AppendLog("Plugin wird gestartet …");
 
         _shutdown = new CancellationTokenSource();
+        BeginStreamSession();
+        var gameEpoch=_streamEpoch;
         var cancellationToken = _shutdown.Token;
 
         try
@@ -2871,6 +2879,8 @@ private enum CloseChoice
                         config.Duel,
                         config.Commands,
                         _commandRegistry);
+                    _minigame.BindStreamSession(_streamAdmission, _streamEpoch);
+                    StartLiveConfirmation(twitch, _broadcaster.Id, cancellationToken);
                     _chatModeration.Activated += () =>
                         SetMinigameStatus(
                             config.Minigame.Enabled && config.Minigame.PointsEnabled
@@ -2889,7 +2899,7 @@ private enum CloseChoice
                     _minigame.DuelStatusChanged += OnDuelStatusChanged;
                                         _chatModeration.MessageReceived += message =>
                     {
-                        return _minigame.ProcessMessageAsync(
+                        return gameEpoch != _streamEpoch ? Task.CompletedTask : _minigame!.ProcessMessageAsync(
                             message,
                             cancellationToken);
                     };
@@ -2934,7 +2944,7 @@ private enum CloseChoice
                     if (_minigame is not null)
                     {
                         _minigameEvents.EventReceived += passiveEvent =>
-                            _minigame.ProcessPassiveEventAsync(
+                            gameEpoch != _streamEpoch ? Task.CompletedTask : _minigame!.ProcessPassiveEventAsync(
                                 passiveEvent, cancellationToken);
                     }
                     if (musicRequestsRuntimeActive && _musicRequests is not null)
@@ -4586,6 +4596,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
     private async Task StopPluginAsync(bool keepErrorStatus = false)
     {
+        _streamAdmission.End();
         var shutdown = _shutdown;
 
         if (shutdown is null)
@@ -4610,6 +4621,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
         var tasks = new[]
         {
+            _streamMonitorTask,
             _playerTask,
             _eventSubTask,
             _chatModerationTask,
@@ -5148,6 +5160,7 @@ Version 2.0.6
 
     private async Task CheckForUpdatesAsync(bool silent)
     {
+        if (TestDataPaths.IsTestBuild) { if (!silent) MessageBox.Show("Automatische Updates sind in dieser getrennten Testversion gesperrt."); return; }
         if (_updateBusy)
         {
             return;
@@ -6314,7 +6327,7 @@ Version 2.0.6
         try
         {
             var directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                TestDataPaths.LocalAppData,
                 "RaidClipPlugin");
             Directory.CreateDirectory(directory);
             File.AppendAllText(

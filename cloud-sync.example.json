@@ -1,0 +1,7 @@
+{
+  "Enabled": false,
+  "Endpoint": "https://funjii-otter-rpg-publisher-test-134126914046.europe-west3.run.app/api/v1/snapshots",
+  "ChannelId": "42812664",
+  "AllowedUserIds": ["1001", "1002"],
+  "ProtectedKeyFile": "C:\\ABSOLUTER-PFAD\\publisher-test-key.dpapi"
+}

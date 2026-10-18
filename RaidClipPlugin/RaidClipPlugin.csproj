@@ -7,10 +7,10 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>RaidClipPlugin</AssemblyName>
+    <AssemblyName>FunjiiOtterRpgIntegratedTest</AssemblyName>
     <RootNamespace>RaidClipPlugin</RootNamespace>
     <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
-    <Version>2.1.22</Version>
+    <Version>2.1.22-cloudtest.1</Version>
     <FileVersion>2.1.22.0</FileVersion>
     <AssemblyVersion>2.1.22.0</AssemblyVersion>
   </PropertyGroup>
@@ -42,6 +42,10 @@
   </ItemGroup>
 
 
+  <ItemGroup>
+    <ProjectReference Include="../Sync/src/SnapshotProtocol/SnapshotProtocol.csproj" />
+    <ProjectReference Include="../Sync/src/SnapshotDelivery/SnapshotDelivery.csproj" />
+  </ItemGroup>
   <Target Name="GenerateApplicationIcon" BeforeTargets="PrepareForBuild">
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\Tools\GenerateIcon.ps1&quot; -ProjectDirectory &quot;$(MSBuildProjectDirectory)&quot;" />
   </Target>

@@ -15,8 +15,7 @@ public sealed class ClipHistoryService
     public ClipHistoryService()
     {
         var directory = Path.Combine(
-            Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData),
+            TestDataPaths.LocalAppData,
             "RaidClipPlugin");
         Directory.CreateDirectory(directory);
         _path = Path.Combine(directory, "clip-history.json");

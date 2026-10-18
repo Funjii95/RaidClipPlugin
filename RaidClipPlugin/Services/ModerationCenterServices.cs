@@ -180,7 +180,7 @@ public sealed class ModerationHistoryService
     private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly string _path;
     public ModerationHistoryService(string? path = null) =>
-        _path = path ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RaidClipPlugin", "moderation-history.jsonl");
+        _path = path ?? Path.Combine(TestDataPaths.LocalAppData, "RaidClipPlugin", "moderation-history.jsonl");
     public async Task AppendAsync(ModerationActionEntry entry, CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_path) ?? ".");

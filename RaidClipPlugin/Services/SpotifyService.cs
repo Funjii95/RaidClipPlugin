@@ -36,7 +36,7 @@ public sealed class SpotifyService : IDisposable
     {
         _config = config;
         var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            TestDataPaths.LocalAppData,
             "RaidClipPlugin");
         Directory.CreateDirectory(directory);
         _tokenPath = Path.Combine(directory, "spotify-token.dat");

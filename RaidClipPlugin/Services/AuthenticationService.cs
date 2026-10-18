@@ -33,8 +33,7 @@ public sealed class AuthenticationService
         _config = config.Twitch;
         _http.Timeout = TimeSpan.FromSeconds(30);
 
-        var directory = Path.Combine(Environment.GetFolderPath(
-            Environment.SpecialFolder.LocalApplicationData), "RaidClipPlugin");
+        var directory = Path.Combine(TestDataPaths.LocalAppData, "RaidClipPlugin");
         Directory.CreateDirectory(directory);
         _tokenPath = Path.Combine(directory, "twitch-token.dat");
         _legacyTokenPath = Path.Combine(directory, "twitch-token.json");
