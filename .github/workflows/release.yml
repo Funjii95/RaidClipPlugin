@@ -100,8 +100,33 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}" } else { "v$env:APP_VERSION" }
-          gh release view $tag --json tagName 2>$null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $tag --draft --title "RaidClipPlugin $env:APP_VERSION" --generate-notes
+          $repository = "${{ github.repository }}"
+          $releases = gh api "repos/$repository/releases?per_page=100" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $matches = @($releases | Where-Object { $_.tag_name -eq $tag })
+          if ($matches.Count -gt 1) { throw "Mehrere Entwürfe für denselben Tag; manuell prüfen." }
+          if ($matches.Count -eq 0) {
+            gh release create $tag --draft --target "${{ github.sha }}" --title "RaidClipPlugin $env:APP_VERSION" --generate-notes
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $releases = gh api "repos/$repository/releases?per_page=100" | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $matches = @($releases | Where-Object { $_.tag_name -eq $tag })
           }
-          gh release upload $tag "installer-output\RaidClipPlugin-Setup-$env:APP_VERSION.exe" "installer-output\RaidClipPlugin-Update-$env:APP_VERSION.zip" "installer-output\update.json" "installer-output\SHA256.txt"
+          if ($matches.Count -ne 1 -or -not $matches[0].draft) {
+            throw "Nur ein unveröffentlichter Entwurf darf aktualisiert werden."
+          }
+          $release = $matches[0]
+          gh api --method PATCH "repos/$repository/releases/$($release.id)" -f "target_commitish=${{ github.sha }}" --silent
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $headers = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/vnd.github+json" }
+          foreach ($name in @("RaidClipPlugin-Setup-$env:APP_VERSION.exe", "RaidClipPlugin-Update-$env:APP_VERSION.zip", "update.json", "SHA256.txt")) {
+            $current = gh api "repos/$repository/releases/$($release.id)" | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0 -or -not $current.draft) { throw "Entwurfstatus vor Upload nicht bestätigt." }
+            foreach ($asset in @($current.assets | Where-Object { $_.name -eq $name })) {
+              # Retain earlier draft files under explicit backup names; never overwrite published assets.
+              gh api --method PATCH "repos/$repository/releases/assets/$($asset.id)" -f "name=previous-$($asset.id)-$name" --silent
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+            $uri = "https://uploads.github.com/repos/$repository/releases/$($release.id)/assets?name=$([Uri]::EscapeDataString($name))"
+            Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -InFile "installer-output/$name" -ContentType "application/octet-stream" | Out-Null
+          }

@@ -2556,7 +2556,7 @@ private enum CloseChoice
 
     private async Task StartPluginAsync()
     {
-        if (System.Diagnostics.Process.GetProcessesByName("RaidClipPlugin").Length != 0)
+        if (PluginInstanceGuard.AnotherInstanceIsRunning())
         {
             AppendLog("Bitte zuerst die normale RaidClipPlugin-Version beenden, bevor die getrennte Testversion denselben Kanal verbindet.");
             return;
