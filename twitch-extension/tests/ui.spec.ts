@@ -1,0 +1,428 @@
+import { test, expect } from "@playwright/test";
+for (const [view, width, height] of [
+  ["panel", 320, 500],
+  ["mobile", 390, 844],
+] as const) {
+  test(`${view}: navigation, actions, countdown and isolation`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    const requests: string[] = [];
+    page.on("request", (r) => requests.push(r.url()));
+    // Deterministic helper stub: no real Twitch session or account is contacted by tests.
+    await page.route("https://extension-files.twitch.tv/**", (r) =>
+      r.fulfill({
+        contentType: "text/javascript",
+        body: "window.Twitch={ext:{onAuthorized:cb=>cb()}}",
+      }),
+    );
+    await page.goto(`/${view}.html`);
+    await expect(
+      page.getByRole("heading", { name: "Charakter", exact: true }),
+    ).toBeVisible();
+    for (const name of [
+      "Abenteuer",
+      "Inventar",
+      "Ausrüstung",
+      "Itemsets",
+      "Perks",
+      "Boss",
+      "Kochen",
+      "Charakter",
+    ]) {
+      await page.getByRole("button", { name, exact: true }).click();
+      await expect(
+        page.getByRole("heading", { name, exact: true }),
+      ).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({ path: `test-results/character-${view}.png` });
+    await page.getByLabel("Animationen aus").check();
+    await page.getByRole("button", { name: "Abenteuer", exact: true }).click();
+    await page.getByRole("button", { name: "Tauchgang starten" }).click();
+    await expect(
+      page.getByText("+300 Demo-Perlen", { exact: false }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Tauchen ·/ }),
+    ).toBeDisabled();
+    await page.getByRole("button", { name: "Angel auswerfen" }).click();
+    await expect(page.getByText("Ein schimmernder Fang!")).toBeVisible();
+    await expect(page.getByText("Kristallkarpfen · Rare")).toBeVisible();
+    await page.getByRole("button", { name: "Inventar", exact: true }).click();
+    const shell = page.locator('[data-instance-id="demo-shell"]');
+    await shell.getByRole("button", { name: "Favorisieren" }).click();
+    await expect(
+      shell.getByRole("button", { name: /Zerlegen/ }),
+    ).toBeDisabled();
+    await shell.getByRole("button", { name: "Favorisiert" }).click();
+    await shell.getByRole("button", { name: /Zerlegen/ }).click();
+    await expect(shell).toHaveCount(0);
+    const amulet = page
+      .locator("article")
+      .filter({
+        has: page.getByRole("heading", { name: "Amulett der Gezeiten" }),
+      })
+      .first();
+    await amulet
+      .getByRole("button", { name: "Ausrüsten", exact: true })
+      .click();
+    await expect(amulet.getByRole("button", { name: "Ablegen" })).toBeVisible();
+    await amulet.getByRole("button", { name: "Ablegen" }).click();
+    await page.getByRole("button", { name: "Perks", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Kaufen · 500 Demo-Perlen" })
+      .first()
+      .click();
+    await expect(page.getByText("1/5")).toBeVisible();
+    await page.getByRole("button", { name: "Boss", exact: true }).click();
+    await page.getByRole("button", { name: /Teilnehmen/ }).click();
+    await expect(
+      page.getByText("Dein Schaden: 0", { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Hot Time", exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "Kochen", exact: true }).click();
+    await expect(page.locator(".recipe")).toHaveCount(4);
+    await expect(page.locator(".hot-timer")).toHaveText(/^[0-9]:[0-9]{2}$/);
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({ path: `test-results/${view}.png`, fullPage: true });
+    await page.reload();
+    await expect(
+      page.getByText("25.000 Demo-Perlen", { exact: false }),
+    ).toBeVisible();
+    expect(errors).toEqual([]);
+    expect(
+      requests.every(
+        (url) =>
+          url.startsWith("https://localhost:8080/") ||
+          url.startsWith("https://extension-files.twitch.tv/"),
+      ),
+    ).toBe(true);
+  });
+}
+test("configuration and helper as first script, reduced motion", async ({
+  page,
+  request,
+}) => {
+  await page.route("https://extension-files.twitch.tv/**", (r) =>
+    r.fulfill({ contentType: "text/javascript", body: "" }),
+  );
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.clock.install({ time: new Date("2026-10-17T12:00:00Z") });
+  await page.goto("/config.html");
+  await expect(
+    page.getByRole("heading", { name: "Demo-Konfiguration" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "5 Minuten starten" }).click();
+  expect(
+    await page
+      .locator(".burning")
+      .evaluate((e) => getComputedStyle(e).animationName),
+  ).toBe("none");
+  await page.getByRole("button", { name: "Letzte 30 Sekunden" }).click();
+  await expect(page.locator(".hot-timer")).toHaveText("0:30");
+  await expect(
+    page.getByRole("progressbar", { name: "Hot-Time-Restzeit" }),
+  ).toHaveJSProperty("value", 30);
+  await page.clock.runFor(1000);
+  await expect(page.locator(".hot-timer")).toHaveText("0:29");
+  await page.clock.runFor(29000);
+  await expect(
+    page.getByRole("progressbar", { name: "Hot-Time-Restzeit" }),
+  ).toHaveJSProperty("value", 0);
+  await expect(page.locator(".hot-hud")).not.toHaveClass(/burning/);
+  for (const view of ["panel", "mobile", "config"]) {
+    const response = await request.get(`/${view}.html`);
+    expect(response.status()).toBe(200);
+    expect((await response.text()).match(/<script[^>]*src="([^"]+)/)?.[1]).toBe(
+      "https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js",
+    );
+    expect(response.headers()["content-security-policy"]).toContain(
+      "connect-src 'none'",
+    );
+  }
+});
+
+for (const view of ["panel", "mobile"]) {
+  test(`${view}: dismantled dive loot closes the reveal`, async ({ page }) => {
+    await page.setViewportSize({
+      width: view === "panel" ? 320 : 390,
+      height: 500,
+    });
+    await page.addInitScript(() => {
+      Math.random = () => 0;
+    });
+    await page.route("https://extension-files.twitch.tv/**", (route) =>
+      route.fulfill({ contentType: "text/javascript", body: "" }),
+    );
+    await page.goto(`/${view}.html`);
+    await page.getByLabel("Animationen aus").check();
+    await page.getByRole("button", { name: "Abenteuer", exact: true }).click();
+    await page.getByRole("button", { name: "Tauchgang starten" }).click();
+    const reveal = page.locator(".reveal");
+    await expect(
+      reveal.getByRole("heading", { name: "Alte Muschel" }),
+    ).toBeVisible();
+    await reveal.getByRole("button", { name: /Zerlegen/ }).click();
+    await expect(reveal).toHaveCount(0);
+    await page.getByRole("button", { name: "Inventar", exact: true }).click();
+    await expect(page.locator('[data-instance-id="loot-1"]')).toHaveCount(0);
+    await expect(page.locator('[data-instance-id="demo-shell"]')).toHaveCount(
+      1,
+    );
+    await page.getByRole("button", { name: "Abenteuer", exact: true }).click();
+    await expect(reveal).toHaveCount(0);
+  });
+}
+
+// Twitch serves each version under a nested CDN path, never just /panel.html.
+// This test catches relative CSS/image URLs that work on localhost but fail there.
+for (const [view, width, height] of [
+  ["panel", 320, 500],
+  ["mobile", 390, 844],
+] as const) {
+  test(`${view}: luminous design assets work under a hosted version path`, async ({
+    page,
+    request,
+  }) => {
+    const prefix = "/extension/0.0.1/build/";
+    const failures: string[] = [];
+    page.on("requestfailed", (req) => failures.push(req.url()));
+    page.on("response", (res) => {
+      if (res.status() >= 400) failures.push(res.url());
+    });
+    await page.route("https://extension-files.twitch.tv/**", (route) =>
+      route.fulfill({
+        contentType: "text/javascript",
+        body: "window.Twitch={ext:{onAuthorized:cb=>cb()}}",
+      }),
+    );
+    await page.route("https://demo.ext-twitch.tv/**", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (!path.startsWith(prefix)) {
+        await route.fulfill({ status: 404, body: "Bad asset prefix" });
+        return;
+      }
+      await route.fulfill({
+        response: await request.get(
+          "https://localhost:8080/" + path.slice(prefix.length),
+        ),
+      });
+    });
+    await page.setViewportSize({ width, height });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(`https://demo.ext-twitch.tv${prefix}${view}.html`);
+    await page.getByRole("button", { name: "Abenteuer", exact: true }).click();
+    await expect(page.locator(".sea-art img")).toBeVisible();
+    expect(
+      await page
+        .locator(".sea-art img")
+        .evaluate(
+          (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+        ),
+    ).toBe(true);
+    expect(
+      await page
+        .locator("header img")
+        .evaluate(
+          (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+        ),
+    ).toBe(true);
+    const background = await page
+      .locator("body")
+      .evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(background).toContain(prefix + "luminous-depths.png");
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({
+      path: `test-results/luminous-${view}.png`,
+      fullPage: true,
+    });
+    for (const testWidth of [280, 320, 390, 760]) {
+      await page.setViewportSize({ width: testWidth, height });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    expect(failures).toEqual([]);
+  });
+}
+for (const view of ["panel", "mobile"]) {
+  test(`${view}: otter HP, counterattack, defeat and encounter restart`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({
+      width: view === "panel" ? 320 : 390,
+      height: 500,
+    });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.route("https://extension-files.twitch.tv/**", (route) =>
+      route.fulfill({ contentType: "text/javascript", body: "" }),
+    );
+    await page.addInitScript(() => {
+      Math.random = () => 0.99;
+    });
+    await page.goto(`/${view}.html`);
+    const health = page.getByRole("progressbar", {
+      name: "Otter HP",
+      exact: true,
+    });
+    await expect(health).toHaveJSProperty("value", 1000);
+    await page.getByRole("button", { name: "Boss", exact: true }).click();
+    const attack = page.getByRole("button", { name: /Teilnehmen/ });
+    for (let turn = 1; turn <= 29; turn++) {
+      await attack.click();
+      await expect(health).toHaveJSProperty(
+        "value",
+        Math.max(0, 1000 - turn * 35),
+      );
+    }
+    await expect(attack).toBeDisabled();
+    await expect(
+      page.getByText("Dein Otter ist besiegt.", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Gegentreffer: −20 HP", { exact: true }),
+    ).toBeVisible();
+    expect(
+      await page
+        .locator(".health-hit")
+        .evaluate((el) => getComputedStyle(el).animationName),
+    ).toBe("none");
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({
+      path: `test-results/hp-defeat-${view}.png`,
+      fullPage: true,
+    });
+    await page.getByRole("button", { name: "Charakter", exact: true }).click();
+    await expect(health).toHaveJSProperty("value", 0);
+    await page
+      .getByRole("button", { name: "Demokampf neu starten", exact: true })
+      .click();
+    await expect(health).toHaveJSProperty("value", 1000);
+    await expect(
+      page.getByText("25.000 Demo-Perlen", { exact: false }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Boss", exact: true }).click();
+    await expect(
+      page.getByRole("progressbar", { name: "Boss HP", exact: true }),
+    ).toHaveJSProperty("value", 4000);
+    await expect(
+      page.getByText("Dein Schaden: 0", { exact: true }),
+    ).toBeVisible();
+    await attack.click();
+    await expect(health).toHaveJSProperty("value", 965);
+    await expect(
+      page.getByText("Gegentreffer: −35 HP", { exact: true }),
+    ).toBeVisible();
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({
+      path: `test-results/hp-combat-${view}.png`,
+      fullPage: true,
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  });
+}
+
+for (const view of ["panel", "mobile"]) {
+  test(`${view}: cook sushi, eat it and consume activity buffs with pinned hot time`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({
+      width: view === "panel" ? 320 : 390,
+      height: 500,
+    });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.addInitScript(() => {
+      Math.random = () => 0.99;
+    });
+    await page.route("https://extension-files.twitch.tv/**", (route) =>
+      route.fulfill({ contentType: "text/javascript", body: "" }),
+    );
+    await page.goto(`/${view}.html`);
+    await expect(
+      page.getByRole("button", { name: "Hot Time", exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "Kochen", exact: true }).click();
+    const angler = page.locator('[data-recipe-id="fishing"]');
+    for (let i = 0; i < 3; i++)
+      await angler
+        .getByRole("button", { name: "Sushi herstellen", exact: true })
+        .click();
+    await expect(angler.getByText("3 Sushi", { exact: true })).toBeVisible();
+    await expect(
+      angler.getByRole("button", { name: "Sushi herstellen", exact: true }),
+    ).toBeDisabled();
+    await angler
+      .getByRole("button", { name: "Sushi essen", exact: true })
+      .click();
+    await expect(
+      angler.getByText("✓ Aktiv · 3 Anwendungen übrig", { exact: true }),
+    ).toBeVisible();
+    await expect(angler.getByText("2 Sushi", { exact: true })).toBeVisible();
+    await expect(
+      angler.getByRole("button", { name: "Buff aktiv", exact: true }),
+    ).toBeDisabled();
+    await page.getByRole("button", { name: "Abenteuer", exact: true }).click();
+    await page.getByLabel("Animationen aus").check();
+    await page
+      .getByRole("button", { name: "Angel auswerfen", exact: true })
+      .click();
+    await expect(
+      page.getByText("+172 Demo-Perlen", { exact: false }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Kochen", exact: true }).click();
+    await expect(
+      angler.getByText("✓ Aktiv · 2 Anwendungen übrig", { exact: true }),
+    ).toBeVisible();
+    const critical = page.locator('[data-recipe-id="critical"]');
+    await critical
+      .getByRole("button", { name: "Sushi herstellen", exact: true })
+      .click();
+    await critical
+      .getByRole("button", { name: "Sushi essen", exact: true })
+      .click();
+    const dive = page.locator('[data-recipe-id="dive"]');
+    await dive
+      .getByRole("button", { name: "Sushi herstellen", exact: true })
+      .click();
+    await expect(
+      dive.getByRole("button", { name: "Sushi essen", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      dive.getByText(
+        "Bereits drei Buffs aktiv. Verbrauche zuerst einen aktiven Buff.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    const banner = page.locator(".hot-hud");
+    expect(Math.round((await banner.boundingBox())!.y)).toBe(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({
+      path: `test-results/cooking-${view}.png`,
+      fullPage: true,
+    });
+    await page.reload();
+    await page.getByRole("button", { name: "Kochen", exact: true }).click();
+    await expect(angler.getByText("0 Sushi", { exact: true })).toBeVisible();
+  });
+}
