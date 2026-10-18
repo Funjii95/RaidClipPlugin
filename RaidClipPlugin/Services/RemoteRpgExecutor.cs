@@ -26,16 +26,16 @@ internal sealed class RemoteRpgExecutor(ViewerPointStore points,Func<MinigameCon
                 if(saved.Hash!=hash || saved.UserId!=envelope.UserId)return new(false,"action_id_conflict","Aktions-ID ist bereits anders belegt.");
                 return saved.Outcome??Unknown();
             }
-            if(!admission.MatchesStream(epoch,envelope.StreamId) || envelope.ExecuteBefore<=DateTimeOffset.UtcNow || envelope.ExecuteBefore>DateTimeOffset.UtcNow.AddSeconds(10))
-                return new(false,"not_ready","Stream/Sitzung nicht frisch spielbereit.");
+            if(!admission.CanPlay(epoch) || envelope.ExecuteBefore<=DateTimeOffset.UtcNow || envelope.ExecuteBefore>DateTimeOffset.UtcNow.AddSeconds(10))
+                return new(false,"not_ready","Plugin/Sitzung nicht frisch spielbereit.");
             var window=remainingWindow??(envelope.ExecuteBefore-DateTimeOffset.UtcNow);
             if(window<=TimeSpan.Zero || window>TimeSpan.FromSeconds(8))return new(false,"expired","Aktionsfenster abgelaufen.");
-            using var scope=admission.EnterRemote(epoch,envelope.ExecuteBefore,envelope.StreamId,window);
+            using var scope=admission.EnterRemote(epoch,envelope.ExecuteBefore,window);
             // Fsync before calling any gameplay. A crash thereafter is never blindly retried.
             await SaveAsync(file,new(hash,envelope.UserId,null));
             ActionOutcome result;
             try {result=await InvokeAsync(envelope,ct);}
-            catch(GameplayUnavailableException){result=new(false,"not_ready","Speicherung wegen abgelaufener Live-Sitzung abgelehnt.");}
+            catch(GameplayUnavailableException){result=new(false,"not_ready","Speicherung wegen abgelaufener Plugin-Sitzung abgelehnt.");}
             catch{result=Unknown();}
             result=result with{Message=result.Message.Length>1000?result.Message[..1000]:result.Message};
             if(JsonSerializer.SerializeToUtf8Bytes(result).Length>48000)result=result with{DataJson=null,Message="Ergebnis gespeichert. Vollständigen Snapshot aktualisieren."};

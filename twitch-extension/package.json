@@ -11,7 +11,8 @@
     "build": "tsc --noEmit && vite build",
     "start": "pnpm build && node scripts/serve.mjs",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:demo": "tsc --noEmit && vite build --mode demo --outDir dist-demo"
   },
   "dependencies": {
     "react": "^19.2.0",

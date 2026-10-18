@@ -1,3 +1,5 @@
+> Historischer Bericht des vorigen Arbeitspakets. Für den aktuellen Build gelten GRAPHICAL_BACKEND_INTEGRATION.md und TESTERGEBNISSE_GRAPHICAL.md im Repository-Stamm. Eine frühere Twitch-Live-Pflicht ist aufgehoben; Spielfreigabe nur nach Plugin-Bereitschaft und frischem Heartbeat.
+
 # Testergebnisse – integrierte Cloud-Testversion
 
 18.10.2026, Windows x64, .NET SDK 10.0.400. Separate Kopie von RaidClipPlugin 2.1.22; keine Produktivinstallation überschrieben.

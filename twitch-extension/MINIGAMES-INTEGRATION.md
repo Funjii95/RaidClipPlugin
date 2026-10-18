@@ -1,3 +1,5 @@
+> Historischer Bericht des vorigen Arbeitspakets. Für den aktuellen Build gelten GRAPHICAL_BACKEND_INTEGRATION.md und TESTERGEBNISSE_GRAPHICAL.md im Repository-Stamm. Eine frühere Twitch-Live-Pflicht ist aufgehoben; Spielfreigabe nur nach Plugin-Bereitschaft und frischem Heartbeat.
+
 # Perlen-Minispiele: Extension und Backend-Vertrag
 
 ## Umfang

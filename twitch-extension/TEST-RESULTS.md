@@ -1,3 +1,5 @@
+> Historischer Bericht des vorigen Arbeitspakets. Für den aktuellen Build gelten GRAPHICAL_BACKEND_INTEGRATION.md und TESTERGEBNISSE_GRAPHICAL.md im Repository-Stamm. Eine frühere Twitch-Live-Pflicht ist aufgehoben; Spielfreigabe nur nach Plugin-Bereitschaft und frischem Heartbeat.
+
 # Prüfergebnisse – v2.1.21-Abgleich, 17.10.2026
 
 - Reproduzierbarer Export der reinen C#-Defaults des Tags v2.1.21 erfolgreich; keine Profile gelesen. Das bestehende Windows-Plugin wurde nicht installiert oder ersetzt.

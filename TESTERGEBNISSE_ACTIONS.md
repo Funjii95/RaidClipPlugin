@@ -1,3 +1,5 @@
+> Historischer Bericht des vorigen Arbeitspakets. Für den aktuellen Build gelten GRAPHICAL_BACKEND_INTEGRATION.md und TESTERGEBNISSE_GRAPHICAL.md im Repository-Stamm. Eine frühere Twitch-Live-Pflicht ist aufgehoben; Spielfreigabe nur nach Plugin-Bereitschaft und frischem Heartbeat.
+
 # Testergebnisse – sicherer RPG-Aktionskanal
 
 18.10.2026; Windows x64, .NET SDK 10.0.400, Node 24.22.0. Ausschließlich synthetische Konten. Neue getrennte Testversion 2.1.22-cloudtest.2; keine vorhandene Installation überschrieben.

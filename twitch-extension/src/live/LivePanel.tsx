@@ -42,7 +42,7 @@ export function LivePanel({demo}:{demo:()=>void}){
  const enabled=authorized&&availability?.available&&!pending&&!working;
  const actionButton=(kind:string,label:string,args:Record<string,string>={})=><button disabled={!enabled} onClick={()=>void act(kind,args)}>{label}</button>;
  return <main className="live-rpg"><header><h1>Funjii Otter RPG</h1><p>Dein gespeicherter Spielstand</p><button onClick={demo}>Lokale Demo öffnen</button></header>
- <p role="status">{availability?.available?'● Live · Plugin spielbereit':authorized?'Spielaktionen gesperrt · Stream oder Plugin nicht bereit':'Twitch-Anmeldung und Identitätsfreigabe erforderlich'}</p>
+ <p role="status">{availability?.available?'● Plugin online · RPG spielbereit':authorized?'Spielaktionen gesperrt · Plugin nicht bereit':'Twitch-Anmeldung und Identitätsfreigabe erforderlich'}</p>
  {!authorized&&<button onClick={()=>helper()?.actions?.requestIdShare()}>Twitch-Identität freigeben</button>}
  {error&&<p role="alert">{error}</p>}
  {pending&&<aside>Eine Aktion ist noch offen. Keine neue Buchung starten. <button disabled={working} onClick={()=>void retry()}>Dieselbe Aktion prüfen</button></aside>}

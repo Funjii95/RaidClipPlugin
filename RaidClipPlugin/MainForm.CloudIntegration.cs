@@ -11,7 +11,6 @@ public partial class MainForm
     internal void CloseSmoke(){_explicitExitRequested=true;Close();}
     private readonly StreamAdmission _streamAdmission=new();
     private Guid _streamEpoch;
-    private Task? _streamMonitorTask;
     private Task? _cloudSyncTask;
     private Task? _actionChannelTask;
     private volatile bool _cloudSyncReady;
@@ -88,30 +87,7 @@ public partial class MainForm
     {
         _streamEpoch=_streamAdmission.Begin(()=>_shutdown is {IsCancellationRequested:false} &&
             _minigame is {IsRunning:true} && _chatModeration?.Diagnostics is {WebSocketConnected:true,SubscriptionEnabled:true} &&
-            DateTimeOffset.UtcNow-_minigame.LastHeartbeatUtc<=TimeSpan.FromSeconds(20));
-    }
-    private void StartLiveConfirmation(TwitchService twitch,string broadcaster,CancellationToken ct)
-    {
-        var epoch=_streamEpoch;
-        _streamMonitorTask=Task.Run(async()=>
-        {
-            try
-            {
-                while(true)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    var check=_streamAdmission.StartCheck(epoch);
-                    try
-                    {
-                        using var deadline=CancellationTokenSource.CreateLinkedTokenSource(ct);deadline.CancelAfter(TimeSpan.FromSeconds(5));
-                        var live=await twitch.GetLiveStreamAsync(broadcaster,deadline.Token);
-                        _streamAdmission.Observe(check,live is {IsLive:true} && live.BroadcasterId==broadcaster ? live.Id : null);
-                    }
-                    catch{_streamAdmission.Observe(check,null);}
-                    await Task.Delay(TimeSpan.FromSeconds(10),ct);
-                }
-            }
-            catch(OperationCanceledException)when(ct.IsCancellationRequested){}
-        },ct);
+            DateTimeOffset.UtcNow-_minigame.LastHeartbeatUtc<=TimeSpan.FromSeconds(20) &&
+            _minigame.RemoteConfiguration is {Enabled:true,PointsEnabled:true,Adventures.Rpg.Enabled:true});
     }
 }

@@ -10,19 +10,19 @@ Extension → JWT-geschütztes Backend → transaktionale Firestore-Aktionswarte
 - Die vorhandene Plugin-Speicherung, Action-Idempotenz, Regeln und Original-JSON-Struktur bleiben erhalten. Keine Migration.
 - Keine neuen eingehenden lokalen Ports für den Aktionskanal; ausschließlich vom Plugin initiierte HTTPS-Verbindungen. Bereits vorhandene lokale Overlay-/WebView-Funktionen des Plugins bleiben unverändert und sind kein Cloud-Aktionszugang.
 - Getrennte Windows-Testanwendung `FunjiiOtterRpgIntegratedTest.exe`, Version 2.1.22-cloudtest.2. Originalinstallation, alte Testpakete und Produktivspielstände blieben unverändert.
-- Die neueste lokale React-Quelle bf1119f einschließlich aller 102 Itembilder und Demo-Funktionen wurde übernommen. Panel/Mobil starten mit echter Plugin-Ansicht; die ursprüngliche Demo bleibt ausdrücklich getrennt aufrufbar. Keine Demo-Buchung fließt in reale Anfragen.
+- Die neueste lokale React-Quelle bf1119f einschließlich aller 102 Itembilder und Demo-Funktionen wurde übernommen. Panel/Mobil verwenden die ursprüngliche grafische Oberfläche mit BackendRpgDataSource; die Demo ist ausschließlich im gesonderten Build-Modus demo verfügbar. Keine Demo-Buchung fließt in reale Anfragen.
 
 ## Freigabe und Sitzung
 
 Das Backend prüft Twitch-Extension-JWTs mit HS256, dem serverseitigen Extension-Secret, exp/nbf ohne zusätzliche Ablauf-Toleranz, festem channel_id, erlaubter Rolle und verknüpfter numerischer user_id. Die Benutzer-ID stammt ausschließlich aus dem signierten Token. Zusätzliche Browserfelder wie UserId, Kosten, Belohnungen oder frei wählbare Zielkonten werden abgelehnt.
 
-Das Backend bestätigt den Livestatus selbst über Twitch Helix Get Streams. Eine Plugin-Aussage reicht nicht. Helix-Antwort muss Kanal und type=live nennen; Timeout 5 Sekunden, Cache maximal 2 Sekunden, Bestätigungsalter bei Verwendung höchstens 5 Sekunden. Fehler/Offline sperren. Das hierfür verwendete App-/User-Access-Token muss zum konfigurierten Helix Client-ID gehören; bei Ablauf wird gesperrt, bis die geschützte Konfiguration aktualisiert wird. Kein Token-Refresh-Dienst wurde erfunden.
+Der Twitch-Livestatus ist ausdrücklich keine Voraussetzung. ActionRelay nutzt ausschließlich die authentifizierte Plugin-Sitzung und frische spielbereite Heartbeats. Für RPG-Aktionen werden weder Helix Get Streams noch Helix-Zugangsdaten benötigt.
 
-Eine serverseitig erzeugte Plugin-Sitzung wird erst nach einem authentifizierten spielbereiten Heartbeat aktiv. Heartbeats alle 4 Sekunden, Lease höchstens 15 Sekunden; Sequenz streng aufsteigend, Sendezeit maximal ±5 Sekunden. Abgelaufene/alte Sitzungen lassen sich nicht durch Heartbeats wiederbeleben. Neue Broadcast-ID erfordert eine neue Sitzung. Normale Abmeldung sperrt sofort, Netztrennung spätestens beim Ablauf. Die zusätzliche lokale StreamAdmission-Prüfung aus dem vorigen Paket bleibt aktiv.
+Eine serverseitig erzeugte Plugin-Sitzung wird erst nach einem authentifizierten spielbereiten Heartbeat aktiv. Heartbeats alle 4 Sekunden, Lease höchstens 15 Sekunden; Sequenz streng aufsteigend, Sendezeit maximal ±5 Sekunden. Abgelaufene/alte Sitzungen lassen sich nicht durch Heartbeats wiederbeleben. Ein Streamstart oder Streamende verändert die Sitzung nicht. Normale Abmeldung sperrt sofort, Netztrennung spätestens beim Ablauf. Die lokale StreamAdmission prüft ausschließlich die aktuelle Plugin-Verbindung, aktiviertes RPG, Spielbereitschaft und frischen lokalen Heartbeat.
 
 Die Extension muss den SessionId-Wert aus GET /play/state als X-Rpg-Session mitgeben. Eine verspätete Anfrage aus einer alten Sitzung kann nicht in eine neue Sitzung umgehängt werden. Der Header ist kein Secret und ersetzt keine JWT-/Plugin-Authentifizierung.
 
-Aufträge gelten zunächst höchstens 30 Sekunden. Beim Abruf wird erneut Twitch live und Plugin-Frische geprüft; die Ausführung erhält ein höchstens 8 Sekunden langes Zeitfenster, das zusätzlich vor Ablauf der aktuellen Plugin-Lease endet. Plugin prüft Kanal, Testnutzer, Hash, genaue Stream-ID und lokale Sitzung. Das Zeitfenster und die lokale Live-Freigabe werden nochmals unmittelbar vor dem vorhandenen Spielstand-Commit geprüft. Das Plugin zieht die gesamte Abrufdauer mit einer monotonen Uhr vom serverseitig verbleibenden Fenster ab und prüft dieses Budget ebenfalls beim Commit. Eine verschobene Windows-Uhr oder erneute Zustellung verlängert die Lease nicht. Ein bloß wartender Auftrag kann deshalb nach Ablauf nicht verspätet buchen.
+Aufträge gelten zunächst höchstens 30 Sekunden. Beim Abruf wird erneut Plugin-Bereitschaft und Heartbeat-Frische geprüft; die Ausführung erhält ein höchstens 8 Sekunden langes Zeitfenster, das zusätzlich vor Ablauf der aktuellen Plugin-Lease endet. Plugin prüft Kanal, Testnutzer, Hash und lokale Sitzung. Das Zeitfenster und die lokale Plugin-Freigabe werden nochmals unmittelbar vor dem vorhandenen Spielstand-Commit geprüft. Das Plugin zieht die gesamte Abrufdauer mit einer monotonen Uhr vom serverseitig verbleibenden Fenster ab und prüft dieses Budget ebenfalls beim Commit. Eine verschobene Windows-Uhr oder erneute Zustellung verlängert die Lease nicht. Ein bloß wartender Auftrag kann deshalb nach Ablauf nicht verspätet buchen.
 
 Im Windows-Hauptprogramm ist Remote-Freigabe zusätzlich von einer erfolgreich laufenden vollständigen Cloud-Synchronisierung abhängig. Fehlt die Konfiguration, ist der Publisher inkompatibel oder geht der Sender offline, wird keine neue Remote-Sitzung als spielbereit gemeldet. Bereits lokal gespeicherte Änderungen behalten die vorhandene durable Outbox. Normale lokale Plugin-Funktionen werden durch Cloud-Ausfall nicht beendet.
 
@@ -140,8 +140,6 @@ Backend-Umgebungsvariablen (keine Secrets in Dateien/Images einchecken):
 | Actions__Collection | rpgActionChannelsTest |
 | Actions__AllowedUserIds__0 usw. | ausdrücklich gewählte synthetische Testkonten |
 | Actions__PluginKeyHash | Hash des vorgesehenen Plugin-Aktionszugangs, geschützt konfigurieren |
-| Actions__HelixClientId | zum Helix-Token gehörige Client-ID |
-| Actions__HelixAccessToken | ausschließlich Secret Manager / geschützte Server-Konfiguration |
 | Twitch__SecretBase64 | bestehendes serverseitiges Extension-JWT-Secret |
 | Twitch__ChannelId | 42812664 für das vorhandene Testprojekt |
 | Twitch__AllowedOrigins__0 | exakte HTTPS-Origin der Extension, ohne Slash |

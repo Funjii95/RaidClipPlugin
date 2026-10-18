@@ -13,3 +13,6 @@ twitch-extension/dist/
 twitch-extension/.certs/
 twitch-extension/test-results/
 twitch-extension/playwright-report/
+
+twitch-extension/dist-demo/
+**/TestResults/

@@ -5,7 +5,9 @@ export type Authorization={token:string;channelId:string;userId:string};
 export const backend='https://funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app';
 // Preserve Int64 values as display strings. Never calculate game costs or rewards here.
 export function parseWire(text:string):any{return JSON.parse(text.replace(/"(?:[^"\\]|\\.)*"|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:e[+-]?\d+)?/gi,token=>token[0]!== '"' && /^-?\d+$/.test(token) && !Number.isSafeInteger(Number(token))?JSON.stringify(token):token));}
+export class LiveHTTPError extends Error {constructor(readonly status:number,message:string){super(message);}}
 export class LiveRpgClient {
+ private submitting=false;
  private pending?:Intent;
  constructor(private auth:()=>Authorization|undefined,private storage:Storage,private transport:typeof fetch=(...args)=>fetch(...args)){}
  private key(){const a=this.auth();if(!a?.token||!a.channelId||!a.userId)throw Error('Twitch-Anmeldung und Identitätsfreigabe erforderlich.');return 'funjii.action:'+a.channelId+':'+a.userId;}
@@ -16,18 +18,20 @@ export class LiveRpgClient {
   const text=await response.text();if(this.key()!==scope)throw Error("Twitch-Konto wurde gewechselt; alte Antwort verworfen.");
   let parsed:any;try{parsed=text?parseWire(text):undefined;}catch{}
   const refusal=response.status===409&&parsed?.actionId===this.pending?.actionId&&parsed?.state==='rejected';
-  if(!response.ok&&!refusal)throw Error(response.status===401||response.status===403?'Twitch-Zugriff abgelehnt.':response.status===409?'Stream oder Plugin nicht spielbereit / Aktionskonflikt.':'Anfrage nicht bestätigt ('+response.status+').');
+  if(!response.ok&&!refusal)throw new LiveHTTPError(response.status,response.status===401||response.status===403?'Twitch-Zugriff abgelehnt.':response.status===409?'Plugin nicht spielbereit / Aktionskonflikt.':'Anfrage nicht bestätigt ('+response.status+').');
   if(!parsed)throw Error('Ungültige Backend-Antwort.');return parsed;
  }
  state():Promise<Availability>{return this.request('/api/v1/play/state');}
  snapshot(){return this.request('/api/v1/me');}
  async submit(kind:string,args:Record<string,string>):Promise<Receipt>{
+  if(this.submitting)throw Error('Eine Aktion läuft bereits.');this.submitting=true;try{
   if(this.load())throw Error('Vorherige Aktion zuerst klären.');
   if(Object.values(args).some(v=>!v||v.length>150))throw Error('Aktionsparameter fehlen oder sind zu lang.');
   if((kind==='fish'||kind==='dive')&&(!/^(0|[1-9]\d*)$/.test(args.stake??'')||BigInt(args.stake)>9223372036854775807n))throw Error('Einsatz als gültige ganze Zahl eingeben.');
   const ready=await this.state();if(!ready.available||!ready.sessionId)throw Error('Stream oder Plugin nicht spielbereit.');
   this.pending={actionId:crypto.randomUUID(),kind,arguments:args,sessionId:ready.sessionId};this.storage.setItem(this.key(),JSON.stringify(this.pending));
-  return this.sendSame();
+  return await this.sendSame();
+  }finally{this.submitting=false;}
  }
  async sendSame():Promise<Receipt>{const action=this.load();if(!action)throw Error('Keine offene Aktion.');const receipt:Receipt=await this.request('/api/v1/play/actions',{actionId:action.actionId,kind:action.kind,arguments:action.arguments});return this.finish(receipt);}
  async check():Promise<Receipt>{const action=this.load();if(!action)throw Error('Keine offene Aktion.');return this.finish(await this.request('/api/v1/play/actions/'+encodeURIComponent(action.actionId)));}

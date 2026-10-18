@@ -21,9 +21,10 @@ public sealed class RelayClock : TimeProvider
 }
 public sealed class FakeLive(RelayClock clock) : ITwitchLiveProbe
 {
-    public bool Online=true;
+    public bool Online=false;
+    public int Calls;
     public string Stream="synthetic-stream";
-    public Task<LiveConfirmation?> CheckAsync(CancellationToken ct)=>Task.FromResult(Online?new LiveConfirmation(Stream,clock.Now):null);
+    public Task<LiveConfirmation?> CheckAsync(CancellationToken ct){Calls++;return Task.FromResult(Online?new LiveConfirmation(Stream,clock.Now):null);}
 }
 public sealed class ActionApiFixture : IAsyncDisposable
 {
@@ -88,15 +89,23 @@ public sealed class ActionRelayTests
             Assert.Equal(HttpStatusCode.BadRequest,(await f.Viewer.PostAsync("/api/v1/play/actions",content)).StatusCode);
         }
     }
-    [Fact]public async Task Offline_disconnect_and_expired_heartbeat_block()
+    [Fact]public async Task Twitch_offline_allows_play_but_disconnect_and_expired_plugin_heartbeat_block()
     {
         await using var f=new ActionApiFixture();var session=await f.ReadyAsync();f.Live.Online=false;
-        Assert.Equal(HttpStatusCode.Conflict,(await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",ActionApiFixture.Intent())).StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted,(await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",ActionApiFixture.Intent())).StatusCode);
+        Assert.Equal(0,f.Live.Calls);
         f.Live.Online=true;f.Clock.Now=f.Clock.Now.AddSeconds(16);
         Assert.Equal(HttpStatusCode.Conflict,(await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",ActionApiFixture.Intent())).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict,(await f.BeatAsync(session,2)).StatusCode);
         session=await f.ReadyAsync();await f.Plugin.DeleteAsync("/api/v1/plugin/actions/session/"+session);
         Assert.Equal(HttpStatusCode.Conflict,(await f.Plugin.PostAsync("/api/v1/plugin/actions/claim/"+session,null)).StatusCode);
+    }
+    [Fact]public async Task Rpg_not_ready_heartbeat_immediately_revokes_actions()
+    {
+        await using var f=new ActionApiFixture();var session=await f.ReadyAsync();
+        (await f.BeatAsync(session,2,false)).EnsureSuccessStatusCode();
+        Assert.False((await f.Viewer.GetFromJsonAsync<RelayAvailability>("/api/v1/play/state"))!.Available);
+        Assert.Equal(HttpStatusCode.Conflict,(await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",ActionApiFixture.Intent())).StatusCode);
     }
     [Fact]public async Task Stale_heartbeat_sequence_time_and_old_session_cannot_reopen()
     {
@@ -115,14 +124,14 @@ public sealed class ActionRelayTests
         Assert.Equal(HttpStatusCode.Conflict,(await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",action)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized,(await f.Viewer.PostAsync("/api/v1/plugin/actions/session",null)).StatusCode);
     }
-    [Fact]public async Task Claimed_timeout_is_unknown_and_never_requeued_into_new_stream()
+    [Fact]public async Task Claimed_timeout_is_unknown_and_stream_change_never_invalidates_plugin_session()
     {
         await using var f=new ActionApiFixture();var session=await f.ReadyAsync();var action=ActionApiFixture.Intent();await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",action);
         await f.Plugin.PostAsync("/api/v1/plugin/actions/claim/"+session,null);f.Clock.Now=f.Clock.Now.AddSeconds(9);
         Assert.Equal("unknown",(await f.Viewer.GetFromJsonAsync<ActionReceipt>("/api/v1/play/actions/"+action.ActionId))!.State);
         Assert.Equal(HttpStatusCode.NoContent,(await f.Plugin.PostAsync("/api/v1/plugin/actions/claim/"+session,null)).StatusCode);
         f.Live.Stream="new-stream";
-        Assert.Equal(HttpStatusCode.Conflict,(await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",ActionApiFixture.Intent())).StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted,(await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",ActionApiFixture.Intent())).StatusCode);
     }
 
     [Fact]public async Task Delayed_browser_request_from_previous_session_is_never_bound_to_new_session()

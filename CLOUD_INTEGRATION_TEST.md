@@ -35,13 +35,13 @@ Cloud-Revisionen werden vor dem Versand geprüft. Kein automatisches Hochzählen
 
 Die zusätzlichen `.commit.json`, `.writer.lock` und Outbox-Dateien nicht einzeln löschen oder aus unterschiedlichen Backups mischen. Keine Änderung des ursprünglichen Spielstandformats und keine zusätzliche Migration. Vorhandene 2.1.22-Migrations-/Backupmechanismen bleiben bestehen.
 
-## Live-Regel
+## Plugin-Regel (aktuell)
 
-Eine frische echte Twitch-Helix-Antwort muss den Kanal als live bestätigen. Zusätzlich benötigt die aktuelle Plugin-Sitzung laufende Minigames, einen höchstens 20 Sekunden alten Heartbeat und aktive Chat-WebSocket-/Subscription-Verbindung. Abfrage alle 10 Sekunden, Timeout 5 Sekunden, maximale Bestätigungsdauer 20 Sekunden ab Beginn der Abfrage.
+Der Twitch-Stream darf offline sein. Die aktuelle Plugin-Sitzung benötigt laufende Minigames, aktiviertes RPG und Perlenmodul, einen höchstens 20 Sekunden alten lokalen Heartbeat und eine authentifiziert aktive Chat-WebSocket-/Subscription-Verbindung. Keine Helix-Liveabfrage ist Teil dieser Freigabe.
 
-Offline-/Fehlerantworten sperren, verspätete oder überholte Antworten werden verworfen. Neue Broadcast-ID erfordert eine neue Plugin-Sitzung. Alte Nachrichten/Async-Kontexte dürfen auch nach Wiederverbinden keine neue Änderung speichern. Die Speicherung prüft nochmals unmittelbar vor dem Commit. Ein bereits reservierter Duelleinsatz darf beim Abbruch technisch zurückgebucht werden; das erlaubt kein neues Spiel und keinen Gewinn. Diese bestehende Rückabwicklung bleibt erhalten.
+Trennung, deaktiviertes RPG oder veralteter Heartbeat sperren neue Änderungen. Alte Nachrichten und Async-Kontexte bleiben durch Sitzungs-Epoch und erneute Prüfung unmittelbar vor dem Commit ausgeschlossen. Reservierte Duelleinsätze können beim Abbruch technisch zurückgebucht werden, ohne ein neues Spiel oder Gewinne zu erlauben.
 
-Die volle Twitch-Extension-Spielaktionsschnittstelle ist weiterhin nicht Teil dieses Auftrags. Dieser Build integriert Plugin-zu-Cloud-Spielstandsübertragung und die lokale Live-Sperre, keine neue Cloud-Spielengine oder zusätzliche Ökonomie.
+Der aktuelle Aktionskanal und die grafische Backend-Anbindung sind in ACTION_CHANNEL.md und GRAPHICAL_BACKEND_INTEGRATION.md beschrieben. Keine zusätzliche Spielengine oder Ökonomie.
 
 ## Nachbauen
 

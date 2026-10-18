@@ -7,6 +7,7 @@ public sealed class RelayChannel
     public Guid SessionId {get;set;}
     public DateTimeOffset ExpiresAt {get;set;}
     public long Sequence {get;set;}
+    // Legacy wire/storage field retained for compatibility; not an authorization input.
     public string StreamId {get;set;}="";
     public string CatalogJson {get;set;}="{}";
     public List<Guid> Queue {get;set;}=[];
@@ -48,23 +49,21 @@ public sealed class RelayDenied(int status,string code) : Exception(code)
     public int Status {get;}=status;
     public string Code {get;}=code;
 }
+// Optional informational probe only; never registered or consulted by ActionRelay.
 public sealed record LiveConfirmation(string StreamId, DateTimeOffset CheckedAt);
 public interface ITwitchLiveProbe {Task<LiveConfirmation?> CheckAsync(CancellationToken ct);}
 
-public sealed class ActionRelay(IRelayStore store,ITwitchLiveProbe twitch,TimeProvider clock,BackendSettings settings)
+public sealed class ActionRelay(IRelayStore store,TimeProvider clock,BackendSettings settings)
 {
     private DateTimeOffset Now=>clock.GetUtcNow();
-    private bool Fresh(LiveConfirmation? live)=>live is not null && Now-live.CheckedAt<=TimeSpan.FromSeconds(5) && live.CheckedAt<=Now;
-    private bool Ready(RelayChannel s,LiveConfirmation? live)=>Fresh(live) && s.SessionId!=Guid.Empty && s.ExpiresAt>Now && s.StreamId==live!.StreamId;
+    private bool Ready(RelayChannel s)=>s.SessionId!=Guid.Empty && s.ExpiresAt>Now && s.Sequence>0;
     private static ActionReceipt Receipt(RelayAction a)=>new(a.Envelope.Intent.ActionId,a.State,a.Outcome);
     private void Scope(string user){if(!Ids.IsNumeric(user) || !settings.Actions.AllowedUserIds.Contains(user))throw new RelayDenied(403,"test_user_not_allowed");}
     public async Task<RelaySession> OpenAsync(CancellationToken ct)
     {
-        var live=await twitch.CheckAsync(ct);
         return await store.TransactionAsync<RelaySession>(null,false,(s,_)=>{
-            if(!Fresh(live))throw new RelayDenied(409,"stream_not_live");
             if(s.SessionId!=Guid.Empty && s.ExpiresAt>Now)throw new RelayDenied(409,"plugin_already_connected");
-            s.SessionId=Guid.NewGuid();s.Sequence=0;s.ExpiresAt=Now.AddSeconds(10);s.StreamId=live!.StreamId;s.Queue.Clear();
+            s.SessionId=Guid.NewGuid();s.Sequence=0;s.ExpiresAt=Now.AddSeconds(10);s.StreamId="";s.Queue.Clear();
             // Open alone is not gameplay-ready. First authenticated heartbeat must succeed.
             s.CatalogJson="{}";
             return new(new(s.SessionId,s.ExpiresAt));
@@ -74,11 +73,10 @@ public sealed class ActionRelay(IRelayStore store,ITwitchLiveProbe twitch,TimePr
     {
         if(beat.CatalogJson.Length>48000 || Math.Abs((Now-beat.SentAt).TotalSeconds)>5)throw new RelayDenied(400,"stale_heartbeat");
         using(var doc=JsonDocument.Parse(beat.CatalogJson))if(doc.RootElement.ValueKind!=JsonValueKind.Object)throw new RelayDenied(400,"catalog_invalid");
-        var live=await twitch.CheckAsync(ct);
         return await store.TransactionAsync<RelaySession>(null,false,(s,_)=>{
             if(s.SessionId!=beat.SessionId || s.ExpiresAt<=Now || beat.Sequence<=s.Sequence || Math.Abs((Now-beat.SentAt).TotalSeconds)>5)throw new RelayDenied(409,"stale_session");
             s.Sequence=beat.Sequence;
-            if(!beat.Ready || !Fresh(live) || s.StreamId!=live!.StreamId){s.ExpiresAt=Now;return new(new(s.SessionId,s.ExpiresAt));}
+            if(!beat.Ready){s.ExpiresAt=Now;return new(new(s.SessionId,s.ExpiresAt));}
             s.ExpiresAt=Now.AddSeconds(15);s.CatalogJson=beat.CatalogJson;
             return new(new(s.SessionId,s.ExpiresAt));
         },ct);
@@ -88,17 +86,16 @@ public sealed class ActionRelay(IRelayStore store,ITwitchLiveProbe twitch,TimePr
     },ct);
     public async Task<RelayAvailability> AvailabilityAsync(CancellationToken ct)
     {
-        var live=await twitch.CheckAsync(ct);
-        return await store.TransactionAsync<RelayAvailability>(null,false,(s,_)=>new(new(Ready(s,live) && s.Sequence>0,Ready(s,live)&&s.Sequence>0?"ready":Fresh(live)?"plugin_not_ready":"stream_not_live",s.CatalogJson,Ready(s,live)&&s.Sequence>0?s.SessionId:null)),ct);
+        return await store.TransactionAsync<RelayAvailability>(null,false,(s,_)=>new(new(Ready(s) && s.Sequence>0,Ready(s)&&s.Sequence>0?"ready":"plugin_not_ready",s.CatalogJson,Ready(s)&&s.Sequence>0?s.SessionId:null)),ct);
     }
     public async Task<ActionReceipt> EnqueueAsync(string user,RpgIntent intent,Guid expectedSession,CancellationToken ct)
     {
-        Scope(user);var hash=RpgIntents.Hash(intent);var live=await twitch.CheckAsync(ct);
+        Scope(user);var hash=RpgIntents.Hash(intent);
         return await store.TransactionAsync<ActionReceipt>(intent.ActionId,false,(s,a)=>{
             if(a is not null){if(a.Envelope.UserId!=user || a.Envelope.IntentHash!=hash)throw new RelayDenied(409,"action_id_conflict");return new(Receipt(a));}
-            if(expectedSession!=s.SessionId || !Ready(s,live) || s.Sequence<=0){
+            if(expectedSession!=s.SessionId || !Ready(s) || s.Sequence<=0){
                 // Persist a terminal refusal: a delayed duplicate can never become a later play.
-                a=new(){Envelope=new(settings.Twitch.ChannelId,user,expectedSession,s.StreamId,default,intent,hash),QueuedUntil=Now,State="rejected",Outcome=new(false,"not_ready","Aktion nicht ausgeführt: Stream oder Sitzung nicht bereit.")};
+                a=new(){Envelope=new(settings.Twitch.ChannelId,user,expectedSession,s.StreamId,default,intent,hash),QueuedUntil=Now,State="rejected",Outcome=new(false,"not_ready","Aktion nicht ausgeführt: Plugin oder Sitzung nicht bereit.")};
                 return new(Receipt(a),a,true);
             }
             if(s.Queue.Count>=128)throw new RelayDenied(429,"queue_full");
@@ -123,9 +120,8 @@ public sealed class ActionRelay(IRelayStore store,ITwitchLiveProbe twitch,TimePr
     }
     public async Task<ActionEnvelope?> ClaimAsync(Guid session,CancellationToken ct)
     {
-        var live=await twitch.CheckAsync(ct);
         return await store.TransactionAsync<ActionEnvelope?>(null,true,(s,a)=>{
-            if(s.SessionId!=session || !Ready(s,live) || s.Sequence<=0)throw new RelayDenied(409,"not_live_or_plugin_disconnected");
+            if(s.SessionId!=session || !Ready(s) || s.Sequence<=0)throw new RelayDenied(409,"plugin_disconnected");
             if(a is null)return new(null);
             Expire(s,a);
             if(a.State is not ("queued" or "executing")){s.Queue.Remove(a.Envelope.Intent.ActionId);return new(null,a,true);}

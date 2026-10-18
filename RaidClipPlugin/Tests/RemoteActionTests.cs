@@ -29,14 +29,14 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
             a.Points=pearls;a.Rpg.Inventory.Add(new(){InstanceId="ring-owned",ItemId="test-ring",Slot=EquipmentSlot.Ring1});
             a.Rpg.Fish["sardine"]=new(){FishId="sardine",Quantity=2};return new(true);
         },default);
-        epoch=gate.Begin(()=>true);gate.Observe(gate.StartCheck(epoch),"synthetic-stream");points.Admission=gate;
+        epoch=gate.Begin(()=>true);points.Admission=gate;
         return Executor();
     }
     private RemoteRpgExecutor Executor()=>new(points!,()=>config,gate,epoch,"42",new HashSet<string>{"1001"},Path.Combine(root,"receipts"),(_,_)=>true);
     private ActionEnvelope Envelope(RpgIntent intent)=>new("42","1001",Guid.NewGuid(),"synthetic-stream",DateTimeOffset.UtcNow.AddSeconds(8),intent,RpgIntents.Hash(intent));
-    [Fact]public async Task Actual_perk_mutation_is_exactly_once_after_duplicate_and_executor_restart()
+    [Fact]public async Task Offline_Twitch_does_not_block_actual_perk_and_duplicates_after_restart()
     {
-        var executor=await SeedAsync();var e=Envelope(ActionApiFixture.Intent());
+        var executor=await SeedAsync();var e=Envelope(ActionApiFixture.Intent()) with {StreamId=""};
         var first=await executor.ExecuteAsync(e,default);var second=await Executor().ExecuteAsync(e,default);
         Assert.True(first.Success);Assert.Equal(first,second);Assert.Equal(1500,await points!.GetPointsAsync("1001",default));
         Assert.Equal(1,(await points.GetProfileAsync("1001",default)).Entry.Rpg.Perks["damage"]);
@@ -65,13 +65,20 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
         Assert.Empty(profile.Rpg.Equipment);Assert.Equal(0,profile.Rpg.Sushi["fishing"]);Assert.Single(profile.Rpg.Buffs);
         Assert.Equal(1750,profile.Points);
     }
-    [Fact]public async Task Offline_old_stream_expired_request_and_foreign_user_cannot_mutate()
+    [Fact]public async Task Disconnected_plugin_expired_request_and_foreign_user_cannot_mutate()
     {
         var executor=await SeedAsync();var e=Envelope(ActionApiFixture.Intent());
-        Assert.False((await executor.ExecuteAsync(e with{StreamId="another-broadcast"},default)).Success);
         Assert.False((await executor.ExecuteAsync(e with{UserId="1002"},default)).Success);
         Assert.False((await executor.ExecuteAsync(e with{ExecuteBefore=DateTimeOffset.UtcNow.AddSeconds(-1)},default)).Success);
         gate.End();Assert.False((await executor.ExecuteAsync(e,default)).Success);
+        Assert.Equal(2000,await points!.GetPointsAsync("1001",default));
+    }
+    [Theory][InlineData("rpg")][InlineData("points")][InlineData("module")]
+    public async Task Disabled_plugin_configuration_cannot_mutate(string disabled)
+    {
+        var executor=await SeedAsync();if(disabled=="rpg")config.Adventures.Rpg.Enabled=false;
+        if(disabled=="points")config.PointsEnabled=false;if(disabled=="module")config.Enabled=false;
+        Assert.False((await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent()),default)).Success);
         Assert.Equal(2000,await points!.GetPointsAsync("1001",default));
     }
     [Fact]public async Task Crash_after_intent_fsync_is_unknown_and_never_replayed()

@@ -12,7 +12,6 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{Environment.GetEnvironmentVariable("PO
 builder.Services.AddSingleton(settings);
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<ITwitchLiveProbe,HelixLiveProbe>();
 builder.Services.AddSingleton<IRelayStore>(services=>{
     if(settings.Actions.Mode=="Synthetic" && builder.Environment.IsEnvironment("Testing"))return new MemoryRelayStore();
     if(settings.Actions.Mode!="Firestore")throw new InvalidOperationException("Durable action store required outside tests.");

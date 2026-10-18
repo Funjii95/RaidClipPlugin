@@ -11,8 +11,8 @@ public sealed class BackendSettings
         if(Actions.Enabled && (Actions.Mode is not ("Firestore" or "Synthetic") || Actions.AllowedUserIds.Length is <1 or >100 || Actions.AllowedUserIds.Any(id=>!Ids.IsNumeric(id)) ||
             Actions.PluginKeyHash.Length!=64 || Actions.PluginKeyHash.Any(c=>!Uri.IsHexDigit(c)) ||
             !Regex.IsMatch(Actions.Collection,"^[a-zA-Z0-9_-]{1,64}$") || Actions.Collection==Data.Collection ||
-            Actions.Mode=="Firestore" && (string.IsNullOrWhiteSpace(Data.ProjectId) || string.IsNullOrWhiteSpace(Actions.HelixClientId) || string.IsNullOrWhiteSpace(Actions.HelixAccessToken))))
-            throw new InvalidOperationException("Explicit action test scope, credential hash, Helix and durable store required.");
+            Actions.Mode=="Firestore" && (string.IsNullOrWhiteSpace(Data.ProjectId))))
+            throw new InvalidOperationException("Explicit action test scope, credential hash and durable store required.");
         byte[] secret;
         try { secret = Convert.FromBase64String(Twitch.SecretBase64); }
         catch (FormatException) { throw new InvalidOperationException("Twitch secret must be Base64."); }

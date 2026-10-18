@@ -202,6 +202,7 @@ export interface SalvageQuote {
     fingerprint: string;
 }
 export interface DemoState {
+    remote?: import("./remote/model").RemoteView;
     player: PlayerProfile;
     fish: Record<string, number>;
     sushi: Record<string, number>;
@@ -270,5 +271,9 @@ export type Action = {
 export interface RpgDataSource {
     readonly mode: 'demo' | 'remote';
     getSnapshot(): DemoState;
+    canDispatch?(type: Action["type"]): boolean;
+    subscribe?(listener:()=>void):()=>void;
+    retryPending?():Promise<DemoState>;
+    requestIdentity?():void;
     dispatch(action: Action): Promise<DemoState>;
 }

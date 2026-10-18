@@ -30,6 +30,7 @@ if (
   writeFileSync(resolve(certDir, "localhost-key.pem"), pems.private);
 }
 const root = resolve("dist");
+const demoRoot=resolve("dist-demo");
 https
   .createServer(
     {
@@ -40,16 +41,16 @@ https
       let file;
       try {
         const path = new URL(req.url, "https://localhost").pathname;
-        file = resolve(
-          root,
-          "." + (path === "/" ? "/panel.html" : decodeURIComponent(path)),
-        );
+        const demo=path.startsWith("/dev-demo/");
+        const base=demo?demoRoot:root;
+        const local=demo?path.slice("/dev-demo".length):path;
+        file=resolve(base,"."+(local==="/"?"/panel.html":decodeURIComponent(local)));
       } catch {
         res.writeHead(400);
         res.end();
         return;
       }
-      if (!file.startsWith(root + sep)) {
+      if (!file.startsWith(root + sep)&&!file.startsWith(demoRoot+sep)) {
         res.writeHead(403);
         res.end();
         return;
