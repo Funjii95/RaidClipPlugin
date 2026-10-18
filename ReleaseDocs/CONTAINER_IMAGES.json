@@ -1,0 +1,32 @@
+[
+  {
+    "component": "backend",
+    "version": "0.0.1-rc1-2a81f8a",
+    "image": "europe-west3-docker.pkg.dev/funjii-otter-rpg/otter-rpg-test/backend:0.0.1-rc1-2a81f8a",
+    "immutableImage": "europe-west3-docker.pkg.dev/funjii-otter-rpg/otter-rpg-test/backend@sha256:9ef4cc27df7264dd2456a62d885754abaca24ce79ac92b19f384c6cdc5aac19b",
+    "digest": "sha256:9ef4cc27df7264dd2456a62d885754abaca24ce79ac92b19f384c6cdc5aac19b",
+    "archiveName": "funjii-backend-0.0.1-rc1.tar.gz",
+    "archiveSha256": "554507a37bfcee99225ff72168b757d7b1ccc9fc6b98f923e417e8c1ed4c43f4",
+    "architecture": "amd64",
+    "os": "linux",
+    "user": "1654",
+    "allBlobHashesVerified": true,
+    "pushed": false,
+    "deployed": false
+  },
+  {
+    "component": "publisher",
+    "version": "0.0.1-rc1-2a81f8a",
+    "image": "europe-west3-docker.pkg.dev/funjii-otter-rpg/otter-rpg-test/publisher:0.0.1-rc1-2a81f8a",
+    "immutableImage": "europe-west3-docker.pkg.dev/funjii-otter-rpg/otter-rpg-test/publisher@sha256:c703dfb2d619afc9519f7951b1b37db0709458483cacc9140514421e66e10ad8",
+    "digest": "sha256:c703dfb2d619afc9519f7951b1b37db0709458483cacc9140514421e66e10ad8",
+    "archiveName": "funjii-publisher-0.0.1-rc1.tar.gz",
+    "archiveSha256": "cf8468edb18c8722724003e80f1be94d397f57a1371bad054fcc8ee7c745f688",
+    "architecture": "amd64",
+    "os": "linux",
+    "user": "1654",
+    "allBlobHashesVerified": true,
+    "pushed": false,
+    "deployed": false
+  }
+]

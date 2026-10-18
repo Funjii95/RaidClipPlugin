@@ -10,7 +10,7 @@
     <AssemblyName>FunjiiOtterRpgIntegratedTest</AssemblyName>
     <RootNamespace>RaidClipPlugin</RootNamespace>
     <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
-    <Version>2.1.22-cloudtest.2</Version>
+    <Version>2.1.22-cloudtest.3</Version>
     <FileVersion>2.1.22.0</FileVersion>
     <AssemblyVersion>2.1.22.0</AssemblyVersion>
   </PropertyGroup>

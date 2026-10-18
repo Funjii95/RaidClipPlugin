@@ -13,7 +13,7 @@ internal sealed class CloudSyncOptions
     public string ProtectedKeyFile {get;set;}="";
     public void Validate()
     {
-        if(Endpoint!="https://funjii-otter-rpg-publisher-test-134126914046.europe-west3.run.app/api/v1/snapshots" ||
+        if((Endpoint!="https://funjii-otter-rpg-publisher-test-134126914046.europe-west3.run.app/api/v1/snapshots" && Endpoint!="https://rc1---funjii-otter-rpg-publisher-test-cwzl75ajla-ey.a.run.app/api/v1/snapshots") ||
             ChannelId!="42812664" || AllowedUserIds.Length is <1 or >100 ||
             AllowedUserIds.Distinct().Count()!=AllowedUserIds.Length ||
             AllowedUserIds.Any(id=>id.Length is <1 or >25 || id.Any(c=>c is <'0' or >'9')) ||

@@ -29,7 +29,8 @@ if (
   writeFileSync(resolve(certDir, "localhost.pem"), pems.cert);
   writeFileSync(resolve(certDir, "localhost-key.pem"), pems.private);
 }
-const root = resolve("dist");
+const desktopRelease=process.argv.includes("--desktop-release");
+const root = resolve(desktopRelease?"dist-desktop":"dist");
 const demoRoot=resolve("dist-demo");
 https
   .createServer(
@@ -82,6 +83,6 @@ https
   )
   .listen(8080, "localhost", () =>
     console.log(
-      "Demo: https://localhost:8080/panel.html (nur lokal; Zertifikat siehe README)",
+      "Funjii Otter RPG: https://localhost:8080/panel.html (nur lokal; Zertifikat siehe README)",
     ),
   );

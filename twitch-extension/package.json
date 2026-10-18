@@ -12,7 +12,10 @@
     "start": "pnpm build && node scripts/serve.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "build:demo": "tsc --noEmit && vite build --mode demo --outDir dist-demo"
+    "build:demo": "tsc --noEmit && vite build --mode demo --outDir dist-demo",
+    "build:repro": "node scripts/reproducible-build.mjs",
+    "build:desktop": "tsc --noEmit && vite build --mode desktop-release --outDir dist-desktop",
+    "test:release": "playwright test --config playwright.release.config.ts"
   },
   "dependencies": {
     "react": "^19.2.0",

@@ -28,7 +28,7 @@ export class LiveRpgClient {
   if(this.load())throw Error('Vorherige Aktion zuerst klären.');
   if(Object.values(args).some(v=>!v||v.length>150))throw Error('Aktionsparameter fehlen oder sind zu lang.');
   if((kind==='fish'||kind==='dive')&&(!/^(0|[1-9]\d*)$/.test(args.stake??'')||BigInt(args.stake)>9223372036854775807n))throw Error('Einsatz als gültige ganze Zahl eingeben.');
-  const ready=await this.state();if(!ready.available||!ready.sessionId)throw Error('Stream oder Plugin nicht spielbereit.');
+  const ready=await this.state();if(!ready.available||!ready.sessionId)throw Error('Plugin nicht spielbereit.');
   this.pending={actionId:crypto.randomUUID(),kind,arguments:args,sessionId:ready.sessionId};this.storage.setItem(this.key(),JSON.stringify(this.pending));
   return await this.sendSame();
   }finally{this.submitting=false;}

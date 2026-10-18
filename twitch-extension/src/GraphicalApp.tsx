@@ -182,7 +182,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
         <div>
           <small>FUNJII · LEUCHTENDE TIEFE</small>
           <h1>
-            Otter RPG <span>{isDemo?"DEMO":"TWITCH"}</span>
+            Otter RPG <span>{isDemo?"DEMO":"RPG"}</span>
           </h1>
           <p>Dein Abenteuer unter den Wellen.</p>
         </div>

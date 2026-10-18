@@ -11,7 +11,7 @@ internal sealed class ActionChannelOptions
     public string ChannelId {get;set;}="42812664";
     public string[] AllowedUserIds {get;set;}=[];
     public string ProtectedKeyFile {get;set;}="";
-    public void Validate(){if(BackendUrl!="https://funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app" || ChannelId!="42812664" ||
+    public void Validate(){if((BackendUrl!="https://funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app" && BackendUrl!="https://rc1---funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app") || ChannelId!="42812664" ||
         AllowedUserIds.Length is <1 or >100 || AllowedUserIds.Any(id=>id.Length is <1 or >25 || id.Any(c=>c is <'0' or >'9')) || !Path.IsPathFullyQualified(ProtectedKeyFile))throw new InvalidDataException("Invalid explicit test action scope.");}
 }
 internal sealed class CloudActionClient : IDisposable

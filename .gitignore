@@ -16,3 +16,5 @@ twitch-extension/playwright-report/
 
 twitch-extension/dist-demo/
 **/TestResults/
+twitch-extension/dist-desktop/
+/work/
