@@ -103,20 +103,18 @@ jobs:
           $repository = "${{ github.repository }}"
           $releases = gh api "repos/$repository/releases?per_page=100" | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $matches = @($releases | Where-Object { $_.tag_name -eq $tag })
-          if ($matches.Count -gt 1) { throw "Mehrere Entwürfe für denselben Tag; manuell prüfen." }
-          if ($matches.Count -eq 0) {
-            gh release create $tag --draft --target "${{ github.sha }}" --title "RaidClipPlugin $env:APP_VERSION" --generate-notes
+          $releaseCandidates = @($releases | Where-Object { $_.tag_name -eq $tag })
+          if ($releaseCandidates.Count -gt 1) { throw "Mehrere Entwürfe für denselben Tag; manuell prüfen." }
+          if ($releaseCandidates.Count -eq 0) {
+            $created = gh api --method POST "repos/$repository/releases" -f "tag_name=$tag" -f "target_commitish=${{ github.sha }}" -f "name=RaidClipPlugin $env:APP_VERSION" -F draft=true | ConvertFrom-Json
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            $releases = gh api "repos/$repository/releases?per_page=100" | ConvertFrom-Json
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            $matches = @($releases | Where-Object { $_.tag_name -eq $tag })
+            $releaseCandidates = @($created)
           }
-          if ($matches.Count -ne 1 -or -not $matches[0].draft) {
+          if ($releaseCandidates.Count -ne 1 -or -not $releaseCandidates[0].draft) {
             throw "Nur ein unveröffentlichter Entwurf darf aktualisiert werden."
           }
-          $release = $matches[0]
-          gh api --method PATCH "repos/$repository/releases/$($release.id)" -f "target_commitish=${{ github.sha }}" --silent
+          $release = $releaseCandidates[0]
+          gh api --method PATCH "repos/$repository/releases/$($release.id)" -f "tag_name=$tag" -f "target_commitish=${{ github.sha }}" --silent
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $headers = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/vnd.github+json" }
           foreach ($name in @("RaidClipPlugin-Setup-$env:APP_VERSION.exe", "RaidClipPlugin-Update-$env:APP_VERSION.zip", "update.json", "SHA256.txt")) {
