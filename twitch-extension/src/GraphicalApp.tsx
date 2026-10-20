@@ -7,6 +7,7 @@ import "./style.css";
 import { Icon } from "./icons";
 import {ItemArtwork} from "./item-art";
 import {PearlMinigames} from "./minigames/PerlMinigames";
+import {SelfDeletion} from './remote/SelfDeletion';
 import type {MinigameClient} from "./minigames/contracts";
 import type {RecipeView} from "./remote/model";
 export interface DemoPresentation {
@@ -105,7 +106,13 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
     const hot = isDemo?demo!.hotActive(state,now):state.remote?.hotKnown===true&&state.hotTime.active&&state.hotTime.endsAt>now;
     const seconds=remaining(state.hotTime.endsAt,now);
     const stats=isDemo?demo!.characterStats(state):Object.fromEntries(Object.keys(labels).map(k=>[k,state.remote?.stats?.[k as keyof CharacterStats]??Number.NaN])) as unknown as CharacterStats;
-    const info=isDemo?demo!.diveInfo(state,stake,now):{chance:Number.NaN,rarities:[] as string[]};
+    const preview=state.remote?.adventurePreview;
+    const info=isDemo?demo!.diveInfo(state,stake,now):preview?.dive.stake===String(stake)?preview.dive:{chance:Number.NaN,rarities:[] as string[]};
+    useEffect(()=>{
+        if(isDemo||tab!=="Abenteuer"||!source.previewAdventures)return;
+        const timer=setTimeout(()=>void source.previewAdventures!(stake,fishStake).catch(()=>{}),300);
+        return()=>clearTimeout(timer);
+    },[source,isDemo,tab,stake,fishStake,state.remote?.updatedAt,state.remote?.connection,state.remote?.pending]);
     const equipped = (i: InventoryItem) => Object.values(state.equipment).includes(i.instanceId);
     function itemCard(i: InventoryItem) {
         return (<article data-instance-id={i.instanceId} className={`item ${i.rarity}`} key={i.instanceId}>
@@ -251,7 +258,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
               Demo zurücksetzen
             </button>
           </>) : (<>
-            {tab === "Perlen-Minispiele" && (isDemo&&minigameClient?<PearlMinigames client={minigameClient}/>:<article><h3>Die Perlen-Spielhalle</h3><p>Für diese Spiele ist noch kein sicherer Backend-Aufruf freigegeben. Dein gespeicherter Perlenstand bleibt unverändert.</p></article>)}
+            {tab === "Perlen-Minispiele" && ((isDemo?minigameClient:source.minigames)?<PearlMinigames client={(isDemo?minigameClient:source.minigames)!}/>:<article><h3>Die Perlen-Spielhalle</h3><p>Für diese Spiele ist noch kein sicherer Backend-Aufruf freigegeben. Dein gespeicherter Perlenstand bleibt unverändert.</p></article>)}
             {tab === "Charakter" && (<>
                 <article className="hero">
                   <img src={state.player.avatarUrl} alt="Otter-Magier als Spielillustration"/>
@@ -310,13 +317,13 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                       </select>
                     </label>
                     <div className="loot-chance">
-                      <span>Lootchance</span>
+                      <span>Lootchance · Tauchen</span>
                       <strong>{Number.isFinite(info.chance)?info.chance.toFixed(1)+" %":"Nicht übermittelt"}</strong>
                       <small>
-                        {hot ? "Hot Time eingerechnet" : "Aktuelle Itemchance"}
+                        {isDemo?(hot ? "Hot Time eingerechnet" : "Aktuelle Itemchance"):"Primärer Ausrüstungsfund · vom Plugin berechnet"}
                       </small>
                     </div>
-                    <label>Angel-Einsatz<select value={fishStake} onChange={e => setFishStake(Number(e.target.value))}>{[0, 10, 250, 1000].map(n => <option key={n} value={n}>{n} Perlen</option>)}</select></label><div className="adventure-buttons">
+                    <label>Angel-Einsatz<select value={fishStake} onChange={e => setFishStake(Number(e.target.value))}>{[0, 10, 250, 1000].map(n => <option key={n} value={n}>{n} Perlen</option>)}</select></label>{!isDemo&&<small>Ausrüstungs-Lootchance beim Angeln: {preview?.fish.stake===String(fishStake)?preview.fish.chance.toFixed(2)+" %":"Wird vom Plugin geladen …"}</small>}<div className="adventure-buttons">
                       <button className="primary" disabled={!allowed("dive") || busy || (busy || state.player.hp === 0 ||
                     revealing ||
                     remaining(state.cooldowns.dive, now) > 0 ||
@@ -431,7 +438,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                 <p>
                   {!isDemo&&!state.remote?.bossKnown?"Aktueller Bossstatus nicht übermittelt. Bossangriffe sind noch nicht freigegeben.":state.boss.status === "active"
                     ? "Der Kraken wartet auf dich!"
-                    : "Besiegt · Nächster Boss in " +
+                    : !isDemo?"Aktuell ist kein Boss aktiv. Start durch Mods/Broadcaster oder den Plugin-Autostart.":"Besiegt · Nächster Boss in " +
                         time(remaining(state.boss.nextAt, now))}
                 </p>
                 <progress aria-label="Boss HP" value={Number.isFinite(state.boss.hp)?state.boss.hp:undefined} max={Number.isFinite(state.boss.maxHp)&&state.boss.maxHp>0?state.boss.maxHp:undefined}/>
@@ -441,7 +448,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                 <button className="primary" disabled={!allowed("boss") || busy || (busy ||
                     state.player.hp === 0 || state.player.defeatedBossId === state.boss.id || remaining(state.cooldowns.boss, now) > 0 ||
                     (state.boss.status === "waiting" && now < state.boss.nextAt))} onClick={() => void run({ type: "boss" })}>
-                  ⚔ {isDemo?"Demo-Angriff":"Angriff noch nicht freigegeben"} {remaining(state.cooldowns.boss, now) > 0 ? `· ${remaining(state.cooldowns.boss, now)} s` : ""}
+                  ⚔ {isDemo?"Demo-Angriff":"Boss angreifen"} {remaining(state.cooldowns.boss, now) > 0 ? `· ${remaining(state.cooldowns.boss, now)} s` : ""}
                 </button>
                 <p>Dein gespeicherter Schaden: {format(state.boss.damage)}</p>
                 {state.boss.lastExchange && (<div className="combat-exchange" role="status">
@@ -548,6 +555,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
       </main>
       <dialog ref={dialog} onCancel={() => void run({ type: "cancelSalvage" })}><h2>Zerlegen bestätigen</h2>{state.salvageQuote && <><p>Gültig: {remaining(state.salvageQuote.expiresAt, now)} Sekunden</p><ul>{state.salvageQuote.items.map(i => <li key={i.id}>{i.name} · {i.value} Perlen {i.warning ? "· Set / Legendär" : ""}</li>)}</ul><strong>Gesamt: {state.salvageQuote.total} Perlen</strong><div className="actions"><button onClick={() => void run({ type: "confirmSalvage", token: state.salvageQuote!.token })} disabled={!allowed("confirmSalvage") || busy}>Jetzt zerlegen</button><button onClick={() => void run({ type: "cancelSalvage" })} disabled={!allowed("cancelSalvage") || busy}>Abbrechen</button></div></>}</dialog>
       <footer>
+        {!isDemo&&state.remote?.selfDeletionEnabled===true&&<SelfDeletion source={source}/>}
         <label>
           <input type="checkbox" checked={!motion} onChange={(e) => setMotion(!e.target.checked)}/>{" "}
           Animationen aus

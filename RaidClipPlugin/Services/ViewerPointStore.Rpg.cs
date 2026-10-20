@@ -81,6 +81,7 @@ public sealed partial class ViewerPointStore
         {
             await EnsureLoadedAsync(token);
             var existed = _entries!.TryGetValue(userId, out var original);
+            RequireNotPrivacyBlocked(userId);
             var draft = JsonSerializer.Deserialize<ViewerPointEntry>(
                 JsonSerializer.Serialize(original ?? new ViewerPointEntry { UserId = userId }, JsonOptions), JsonOptions)!;
             PrepareRpg(draft);

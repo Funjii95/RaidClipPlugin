@@ -2556,6 +2556,7 @@ private enum CloseChoice
 
     private async Task StartPluginAsync()
     {
+        if(_dataAdministrationBusy || _administrationTestOnly){AppendLog("Im Verwaltungstest bzw. während Datenverwaltung kein Spielstart.");return;}
         if (PluginInstanceGuard.AnotherInstanceIsRunning())
         {
             AppendLog("Bitte zuerst die normale RaidClipPlugin-Version beenden, bevor die getrennte Testversion denselben Kanal verbindet.");

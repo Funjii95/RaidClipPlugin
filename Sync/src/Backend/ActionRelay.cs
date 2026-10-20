@@ -11,6 +11,8 @@ public sealed class RelayChannel
     public string StreamId {get;set;}="";
     public string CatalogJson {get;set;}="{}";
     public List<Guid> Queue {get;set;}=[];
+    public HashSet<string> PrivacyBlockedUsers {get;set;}=[];
+    public Dictionary<string,SelfDeletionJob> DeletionRequests {get;set;}=[];
 }
 public sealed class RelayAction
 {
@@ -22,6 +24,8 @@ public sealed class RelayAction
 public sealed record RelayMutation<T>(T Value, RelayAction? Action = null, bool WriteAction = false);
 public interface IRelayStore
 {
+    Task<RelayChannel> ReadChannelAsync(CancellationToken ct);
+    Task PurgeUserActionsAsync(string user,CancellationToken ct);
     Task<T> TransactionAsync<T>(Guid? id, bool head, Func<RelayChannel,RelayAction?,RelayMutation<T>> operation,CancellationToken ct);
 }
 // Test host only. Production configuration cannot select this store.
@@ -30,6 +34,12 @@ public sealed class MemoryRelayStore : IRelayStore
     private readonly SemaphoreSlim gate=new(1,1);
     private RelayChannel channel=new();
     private readonly Dictionary<Guid,RelayAction> actions=[];
+    public async Task<RelayChannel> ReadChannelAsync(CancellationToken ct){await gate.WaitAsync(ct);try{return JsonSerializer.Deserialize<RelayChannel>(JsonSerializer.Serialize(channel))!;}finally{gate.Release();}}
+    public async Task PurgeUserActionsAsync(string user,CancellationToken ct){
+        await gate.WaitAsync(ct);try{channel.PrivacyBlockedUsers.Add(user);channel.ExpiresAt=default;
+            foreach(var id in actions.Where(p=>p.Value.Envelope.UserId==user).Select(p=>p.Key).ToArray()){actions.Remove(id);channel.Queue.Remove(id);}
+        }finally{gate.Release();}
+    }
     public async Task<T> TransactionAsync<T>(Guid? id,bool head,Func<RelayChannel,RelayAction?,RelayMutation<T>> operation,CancellationToken ct)
     {
         await gate.WaitAsync(ct);
@@ -53,12 +63,13 @@ public sealed class RelayDenied(int status,string code) : Exception(code)
 public sealed record LiveConfirmation(string StreamId, DateTimeOffset CheckedAt);
 public interface ITwitchLiveProbe {Task<LiveConfirmation?> CheckAsync(CancellationToken ct);}
 
-public sealed class ActionRelay(IRelayStore store,TimeProvider clock,BackendSettings settings)
+public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,BackendSettings settings)
 {
     private DateTimeOffset Now=>clock.GetUtcNow();
     private bool Ready(RelayChannel s)=>s.SessionId!=Guid.Empty && s.ExpiresAt>Now && s.Sequence>0;
     private static ActionReceipt Receipt(RelayAction a)=>new(a.Envelope.Intent.ActionId,a.State,a.Outcome);
     private void Scope(string user){if(!Ids.IsNumeric(user) || !settings.Actions.AllowedUserIds.Contains(user))throw new RelayDenied(403,"test_user_not_allowed");}
+    public async Task PurgeUserAsync(string user,CancellationToken ct){Scope(user);if(!settings.Actions.PrivacyDeletionEnabled)throw new RelayDenied(503,"privacy_not_enabled");await store.PurgeUserActionsAsync(user,ct);}
     public async Task<RelaySession> OpenAsync(CancellationToken ct)
     {
         return await store.TransactionAsync<RelaySession>(null,false,(s,_)=>{
@@ -86,12 +97,14 @@ public sealed class ActionRelay(IRelayStore store,TimeProvider clock,BackendSett
     },ct);
     public async Task<RelayAvailability> AvailabilityAsync(CancellationToken ct)
     {
-        return await store.TransactionAsync<RelayAvailability>(null,false,(s,_)=>new(new(Ready(s) && s.Sequence>0,Ready(s)&&s.Sequence>0?"ready":"plugin_not_ready",s.CatalogJson,Ready(s)&&s.Sequence>0?s.SessionId:null)),ct);
+        var s=await store.ReadChannelAsync(ct);
+        return new(Ready(s),Ready(s)?"ready":"plugin_not_ready",s.CatalogJson,Ready(s)?s.SessionId:null,settings.Actions.SelfDeletionEnabled&&settings.Actions.PrivacyDeletionEnabled);
     }
     public async Task<ActionReceipt> EnqueueAsync(string user,RpgIntent intent,Guid expectedSession,CancellationToken ct)
     {
         Scope(user);var hash=RpgIntents.Hash(intent);
         return await store.TransactionAsync<ActionReceipt>(intent.ActionId,false,(s,a)=>{
+            if(s.PrivacyBlockedUsers.Contains(user)||s.DeletionRequests.ContainsKey(user))throw new RelayDenied(403,"privacy_blocked");
             if(a is not null){if(a.Envelope.UserId!=user || a.Envelope.IntentHash!=hash)throw new RelayDenied(409,"action_id_conflict");return new(Receipt(a));}
             if(expectedSession!=s.SessionId || !Ready(s) || s.Sequence<=0){
                 // Persist a terminal refusal: a delayed duplicate can never become a later play.
@@ -123,6 +136,10 @@ public sealed class ActionRelay(IRelayStore store,TimeProvider clock,BackendSett
         return await store.TransactionAsync<ActionEnvelope?>(null,true,(s,a)=>{
             if(s.SessionId!=session || !Ready(s) || s.Sequence<=0)throw new RelayDenied(409,"plugin_disconnected");
             if(a is null)return new(null);
+            if(s.DeletionRequests.ContainsKey(a.Envelope.UserId)&&a.State=="queued"){
+                s.Queue.Remove(a.Envelope.Intent.ActionId);a.State="rejected";a.Outcome=new(false,"privacy_pending","Datenlöschung beantragt.");return new(null,a,true);
+            }
+            if(s.PrivacyBlockedUsers.Contains(a.Envelope.UserId)){s.Queue.Remove(a.Envelope.Intent.ActionId);return new(null);}
             Expire(s,a);
             if(a.State is not ("queued" or "executing")){s.Queue.Remove(a.Envelope.Intent.ActionId);return new(null,a,true);}
             a.State="executing";
@@ -135,6 +152,7 @@ public sealed class ActionRelay(IRelayStore store,TimeProvider clock,BackendSett
         if(done.Outcome.Message.Length>1500 || done.Outcome.Code.Length>80 || done.Outcome.DataJson?.Length>48000 ||
             done.Outcome.Success is null && done.Outcome.Code!="outcome_unknown")throw new RelayDenied(400,"result_invalid");
         return store.TransactionAsync<ActionReceipt>(done.ActionId,false,(s,a)=>{
+            if(a is not null && s.PrivacyBlockedUsers.Contains(a.Envelope.UserId))throw new RelayDenied(410,"privacy_erased");
             if(a is null || a.Envelope.SessionId!=done.SessionId || a.State=="queued")throw new RelayDenied(409,"unclaimed_action");
             if(a.State is "applied" or "rejected"){
                 if(a.Outcome!=done.Outcome)throw new RelayDenied(409,"result_conflict");return new(Receipt(a));

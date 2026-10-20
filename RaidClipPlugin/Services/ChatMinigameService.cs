@@ -5,7 +5,7 @@ using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
-public sealed class ChatMinigameService : IDisposable
+public sealed partial class ChatMinigameService : IDisposable
 {
     private StreamAdmission? _streamAdmission;
     private Guid _streamEpoch;
@@ -17,6 +17,7 @@ public sealed class ChatMinigameService : IDisposable
     private readonly string _chatUserId;
     private MinigameConfig _config;
     private readonly TwitchService _twitch;
+    private readonly Func<string,CancellationToken,Task>? _responseSender;
     private readonly ViewerPointStore _points;
     private readonly AdventureGameService _adventures;
     private readonly CommandRegistry _commandRegistry;
@@ -324,12 +325,13 @@ public sealed class ChatMinigameService : IDisposable
         HeistConfig? heistConfig = null,
         DuelConfig? duelConfig = null,
         CommandsConfig? commandsConfig = null,
-        CommandRegistry? commandRegistry = null)
+        CommandRegistry? commandRegistry = null,Func<string,CancellationToken,Task>? responseSender=null)
     {
         _broadcasterId = broadcasterId;
         _chatUserId = chatUserId;
         _config = config;
         _twitch = twitch;
+        _responseSender=responseSender;
         _points = points;
         _adventures = new AdventureGameService(points, config, TrySendChatAsync, broadcasterId: broadcasterId);
         _adventures.DataChanged += () => DataChanged?.Invoke();
@@ -389,6 +391,7 @@ public sealed class ChatMinigameService : IDisposable
     {
         using var scope = _streamAdmission?.Enter(_streamEpoch);
         ObjectDisposedException.ThrowIf(_disposed, this);
+        await _points.RecoverDuelReservationsAsync(cancellationToken);
         _isRunning = true;
         _lastRuntimeError = null;
         TouchHeartbeat();
@@ -1087,6 +1090,7 @@ public sealed class ChatMinigameService : IDisposable
         {
             _lastRuntimeError = exception.ToString();
             TouchHeartbeat();
+            if (_remoteCasino.Value is {} remote) remote.Faulted = true;
             Console.WriteLine("Minigame-Command fehlgeschlagen: " + exception);
             var failedCommand = ParseMinigameCommand(message.Text);
             if (failedCommand.Command == "!gamble")
@@ -1455,8 +1459,9 @@ public sealed class ChatMinigameService : IDisposable
             _config.MinimumPoints, maximum, dailyGames, dailyLoss, dailyWin,
             contribution, jackpotHit, _config.JackpotStartValue,
             _config.HistoryEnabled ? _config.HistoryLimit : 0,
-            cancellationToken);
+            cancellationToken, rpgMutation: account => RecordCasinoCommit(account,message,game));
 
+        if (_remoteCasino.Value is {} capture) { capture.Result=result; capture.Stake=stake; capture.Payout=checked((result.ActualPayout??payout)+result.JackpotWon); }
         if (!result.Success)
         {
             await TrySendChatAsync(
@@ -1987,6 +1992,8 @@ public sealed class ChatMinigameService : IDisposable
         string message,
         CancellationToken cancellationToken)
     {
+        if (_remoteCasino.Value is {} capture) { capture.Messages.Add(message); return; }
+        if (_responseSender is {} response) { await response(message,cancellationToken); return; }
         try
         {
             await _twitch.SendChatMessageAsync(

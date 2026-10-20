@@ -15,6 +15,8 @@ public sealed class StreamAdmission
     private readonly AsyncLocal<(long Start,TimeSpan Window)?> executionWindow=new();
     private readonly AsyncLocal<DateTimeOffset?> executionDeadline=new();
     private readonly AsyncLocal<bool> rollback = new();
+    private readonly AsyncLocal<bool> administrator = new();
+    private bool maintenance;
     private Guid epoch;
     private DateTimeOffset started;
     private Func<bool> ready = () => false;
@@ -25,11 +27,21 @@ public sealed class StreamAdmission
     {
         lock (gate)
         {
+            if(maintenance)throw new InvalidOperationException("Datenverwaltung läuft. Plugin erst danach starten.");
             epoch=Guid.NewGuid();
             started=clock.GetUtcNow(); ready=connectedAndReady; return epoch;
         }
     }
     public void End() { lock(gate) { epoch=Guid.Empty; ready=()=>false; } }
+    internal bool CanMaintain {get{lock(gate)return epoch==Guid.Empty&&!maintenance;}}
+    internal IDisposable EnterMaintenance()
+    {
+        lock(gate){
+            if(epoch!=Guid.Empty || maintenance)throw new InvalidOperationException("Plugin zuerst vollständig stoppen.");
+            maintenance=true;administrator.Value=true;
+            return new Scope(()=>{lock(gate){administrator.Value=false;maintenance=false;}});
+        }
+    }
     public bool CanPlay(Guid expected, DateTimeOffset? receivedAt = null)
     {
         lock(gate) return Allowed(expected) && (receivedAt is null ||
@@ -54,6 +66,13 @@ public sealed class StreamAdmission
     {
         lock(gate)return Enter(ambient.Value??epoch);
     }
+    internal Task RunSessionTask(Func<Task> work)
+    {
+        // A reservation timeout belongs to the plugin session, not the 8s HTTP action window.
+        // Keep the epoch fence; technical refunds have their own existing rollback lease.
+        Guid expected;lock(gate)expected=ambient.Value??epoch;
+        using(ExecutionContext.SuppressFlow())return Task.Run(async()=>{using var scope=Enter(expected);await work();});
+    }
     // Technical reversal of an already reserved stake, never a new play or reward.
     internal IDisposable EnterRollback()
     {
@@ -63,7 +82,7 @@ public sealed class StreamAdmission
     {
         lock(gate)
         {
-            if(!rollback.Value && !Allowed(ambient.Value ?? epoch)) throw new GameplayUnavailableException();
+            if(!(maintenance && administrator.Value) && !rollback.Value && !Allowed(ambient.Value ?? epoch)) throw new GameplayUnavailableException();
             commit();
         }
     }

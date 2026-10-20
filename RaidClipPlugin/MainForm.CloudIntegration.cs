@@ -19,11 +19,12 @@ public partial class MainForm
     {
         if (TestDataPaths.IsTestBuild) Text += " – Isolierter Integrationstest";
         _viewerPoints.Admission=_streamAdmission;
-        Shown+=(_,_)=>{_cloudSyncTask=Task.Run(()=>RunCloudSyncAsync(_cloudStop.Token));};
+        Shown+=(_,_)=>{if(!_administrationTestOnly){_cloudSyncTask=Task.Run(()=>RunCloudSyncAsync(_cloudStop.Token));_selfDeletionTask=Task.Run(()=>RunSelfDeletionAsync(_cloudStop.Token));}};
         FormClosed+=async(_,_)=>
         {
             _streamAdmission.End();_cloudStop.Cancel();
             if(_cloudSyncTask is not null)try{await _cloudSyncTask.WaitAsync(TimeSpan.FromSeconds(5));}catch{}
+            if(_selfDeletionTask is not null)try{await _selfDeletionTask.WaitAsync(TimeSpan.FromSeconds(5));}catch{}
         };
     }
     private void CloudLog(string status)
@@ -52,7 +53,7 @@ public partial class MainForm
             {
                 var outbox=new LocalOutboxStore(Path.Combine(TestDataPaths.Root,"cloud-sync-outbox"),options.ChannelId);
                 var worker=new IntegratedSnapshotWorker(_viewerPoints,outbox,options.ChannelId,options.AllowedUserIds,
-                    token=>reader.RequireFullProjectionAsync(options.AllowedUserIds,token),reader.ReadAsync,sender.SendAsync);
+                    token=>reader.RequireFullProjectionAsync(options.AllowedUserIds,token),reader.ReadAsync,sender.SendAsync,PurgeCloudPlayerActionsAsync);
                 worker.StatusChanged+=CloudLog;
                 worker.AvailabilityChanged+=ready=>_cloudSyncReady=ready;
                 await worker.RunAsync(ct);
@@ -77,11 +78,24 @@ public partial class MainForm
                 string key;try{if(secret.Length is <32 or >64)throw new InvalidDataException();key=Convert.ToBase64String(secret);}finally{CryptographicOperations.ZeroMemory(secret);}
                 var executor=new RemoteRpgExecutor(_viewerPoints,()=>minigame.RemoteConfiguration,_streamAdmission,epoch,options.ChannelId,
                     options.AllowedUserIds.ToHashSet(StringComparer.Ordinal),Path.Combine(TestDataPaths.Root,"action-receipts"),
-                    (command,name)=>_commandRegistry.Commands.Any(c=>c.CommandText==command && c.Enabled && c.RequiredRole==RaidClipPlugin.Models.CommandRole.Viewer));
+                    (command,name)=>_commandRegistry.Commands.Any(c=>c.CommandText==command && c.Enabled && c.RequiredRole==RaidClipPlugin.Models.CommandRole.Viewer),minigames:minigame);
                 using var client=new CloudActionClient(new Uri(options.BackendUrl),key,executor,()=>_streamAdmission.CanPlay(epoch)&&_cloudSyncReady,CloudLog);
                 await client.RunAsync(ct);
             }catch(OperationCanceledException)when(ct.IsCancellationRequested){}catch{CloudLog("Aktionskanal nicht gestartet: getrennte Konfiguration/Zugang prüfen.");}
         },ct);
+    }
+    private async Task PurgeCloudPlayerActionsAsync(string id,CancellationToken ct)
+    {
+        var path=Path.Combine(TestDataPaths.Root,"action-channel.json");
+        var options=JsonSerializer.Deserialize<ActionChannelOptions>(await File.ReadAllTextAsync(path,ct),new JsonSerializerOptions{PropertyNameCaseInsensitive=true})!;
+        options.Validate();if(!options.Enabled || !options.AllowedUserIds.Contains(id))throw new InvalidOperationException("Cloud-Löschfreigabe für diesen Spieler fehlt.");
+        var protectedKey=ProtectedData.Unprotect(await File.ReadAllBytesAsync(options.ProtectedKeyFile,ct),null,DataProtectionScope.CurrentUser);
+        using var http=new HttpClient(new HttpClientHandler{AllowAutoRedirect=false,UseCookies=false,CheckCertificateRevocationList=true}){BaseAddress=new Uri(options.BackendUrl),Timeout=TimeSpan.FromSeconds(8)};
+        try{http.DefaultRequestHeaders.Authorization=new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer",Convert.ToBase64String(protectedKey));}
+        finally{CryptographicOperations.ZeroMemory(protectedKey);}
+        using var response=await http.PostAsync("/api/v1/plugin/actions/privacy/"+id,null,ct);response.EnsureSuccessStatusCode();
+        var content=await response.Content.ReadAsStringAsync(ct);if(content.Length>1024)throw new InvalidDataException("Ungültige Löschbestätigung.");
+        using var json=JsonDocument.Parse(content);if(!json.RootElement.TryGetProperty("erased",out var erased)||erased.ValueKind!=JsonValueKind.True)throw new InvalidDataException("Löschung nicht bestätigt.");
     }
     private void BeginStreamSession()
     {

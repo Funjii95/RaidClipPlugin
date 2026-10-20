@@ -13,7 +13,7 @@ export class MinigameController {
   this.update({frame:event});
  }
  async connect(){const generation=++this.generation;this.unsubscribe?.();this.update({connection:'connecting',error:''});
-  this.unsubscribe=this.client.subscribe(e=>{if(generation===this.generation)this.accept(e);},reason=>{if(generation===this.generation)this.update({connection:reason,error:'Verbindung unterbrochen. Der letzte Status wird angezeigt.'});});
+  this.unsubscribe=this.client.subscribe(e=>{if(generation===this.generation){if(this.state.frame&&e.streamId!==this.state.frame.streamId){void this.connect();return;}this.accept(e);this.update({connection:'connected',error:''});}},reason=>{if(generation===this.generation)this.update({connection:reason,error:'Verbindung unterbrochen. Der letzte Status wird angezeigt.'});});
   try{const rules=await this.client.getRules();const frame=await this.client.getSnapshot();if(generation!==this.generation)return;
    this.update({rules,frame:!this.state.frame||frame.streamId!==this.state.frame.streamId||frame.revision>=this.state.frame.revision?frame:this.state.frame,connection:'connected',error:''});
   }catch(e){if(generation===this.generation)this.fail(e);}

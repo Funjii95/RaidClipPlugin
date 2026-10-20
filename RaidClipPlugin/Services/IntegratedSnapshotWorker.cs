@@ -30,6 +30,7 @@ internal sealed class IntegratedSnapshotWorker
     private readonly Func<CancellationToken,Task> capabilities;
     private readonly Func<string,CancellationToken,Task<StoredSnapshot?>> read;
     private readonly Func<SnapshotMessage,CancellationToken,Task<DeliveryResult>> send;
+    private readonly Func<string,CancellationToken,Task>? purgeActions;
     private readonly SemaphoreSlim wake=new(1,1);
     internal string Status {get;private set;}="Initialisierung";
     internal event Action<string>? StatusChanged;
@@ -37,8 +38,8 @@ internal sealed class IntegratedSnapshotWorker
     private void Availability(bool value){if(AvailabilityChanged is {} listeners)foreach(Action<bool> listener in listeners.GetInvocationList())try{listener(value);}catch{}}
     internal IntegratedSnapshotWorker(ViewerPointStore source,LocalOutboxStore outbox,string channel,string[] users,
         Func<CancellationToken,Task> capabilities,Func<string,CancellationToken,Task<StoredSnapshot?>> read,
-        Func<SnapshotMessage,CancellationToken,Task<DeliveryResult>> send)
-    {this.source=source;this.outbox=outbox;this.channel=channel;this.users=users;this.capabilities=capabilities;this.read=read;this.send=send;}
+        Func<SnapshotMessage,CancellationToken,Task<DeliveryResult>> send,Func<string,CancellationToken,Task>? purgeActions=null)
+    {this.source=source;this.outbox=outbox;this.channel=channel;this.users=users;this.capabilities=capabilities;this.read=read;this.send=send;this.purgeActions=purgeActions;}
 
     private void Signal(){try{wake.Release();}catch(SemaphoreFullException){}}
     private void Report(string status)
@@ -81,9 +82,27 @@ internal sealed class IntegratedSnapshotWorker
         if(bytes is null)return;
         using var document=JsonDocument.Parse(bytes);
         if(document.RootElement.ValueKind!=JsonValueKind.Object)throw new InvalidDataException("Invalid legacy save.");
-        foreach(var id in users)
+        var privacy=await source.PrivacyRequestsAsync(ct);
+        foreach(var id in users.Concat(privacy.Select(p=>p.UserId)).Distinct())
         {
             await using var dispatch=await outbox.AcquireDispatchLeaseAsync(id,ct);
+            if(await source.ReadPrivacyRequestAsync(id,ct) is {} deletion){
+                if(deletion.CloudErased)continue;
+                if(!deletion.LocalErased || purgeActions is null)throw new RetrySyncException();
+                try{
+                    await purgeActions(id,ct);
+                    var privacyHead=await read(id,ct);
+                    if(privacyHead is not null && !privacyHead.Deleted){
+                        await outbox.QueuePrivacyDeletionAsync(privacyHead,deletion.OperationId,ct);
+                        await DrainAsync(id,ct);
+                        if((await read(id,ct))?.Deleted!=true)throw new RetrySyncException();
+                    }
+                    await outbox.ForgetPrivacyPayloadAsync(id,ct);
+                    await source.MarkPrivacyCloudErasedAsync(id,ct);
+                }catch(OperationCanceledException)when(ct.IsCancellationRequested){throw;}
+                catch{throw new RetrySyncException();}
+                continue;
+            }
             var state=await outbox.ReadAsync(id,ct);
             // Deliver the durable prefix before reserving a newer revision. All messages are full states.
             if(state is not null)await DrainAsync(id,ct);
@@ -121,7 +140,7 @@ internal sealed class IntegratedSnapshotWorker
             var head=await read(id,ct) ?? throw new InvalidDataException("Cloud profile missing.");
             var clean=SnapshotValidation.Validate(message,channel);
             var duplicate=head.Revision==message.Revision && head.SnapshotId==message.SnapshotId && head.ContentHash==clean.ContentHash;
-            if(head.ChannelId!=channel || head.UserId!=id || head.Deleted || (!duplicate && head.Revision!=message.Revision-1))
+            if(head.ChannelId!=channel || head.UserId!=id || head.Deleted && !duplicate || (!duplicate && head.Revision!=message.Revision-1))
                 throw new InvalidDataException("Stale or conflicting snapshot; no new revision or gameplay replay.");
             var result=await send(message,ct);
             if(result.Status==DeliveryStatus.RetryLater)throw new RetrySyncException();

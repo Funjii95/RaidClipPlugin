@@ -57,6 +57,8 @@ public static partial class Ids
 
 public sealed class ActionSettings
 {
+    public bool SelfDeletionEnabled {get;set;}
+    public bool PrivacyDeletionEnabled {get;set;}
     public bool Enabled {get;set;}
     public string Mode {get;set;}="Firestore";
     public string Collection {get;set;}="rpgActionChannelsTest";

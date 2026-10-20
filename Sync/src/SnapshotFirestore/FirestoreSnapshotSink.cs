@@ -10,7 +10,8 @@ public sealed class FirestoreSnapshotSink : ISnapshotSink
     private readonly string channel;
     private readonly string collection;
     private readonly bool sequentialUpdatesOnly;
-    public FirestoreSnapshotSink(FirestoreDb database, string channel, string collection = "rpgReadSnapshots", bool sequentialUpdatesOnly = false)
+    private readonly bool allowSequentialDeletes;
+    public FirestoreSnapshotSink(FirestoreDb database, string channel, string collection = "rpgReadSnapshots", bool sequentialUpdatesOnly = false,bool allowSequentialDeletes=false)
     {
         if (channel.Length is < 1 or > 25 || channel.Any(c => c is < '0' or > '9') ||
             string.IsNullOrWhiteSpace(collection) || collection.Length > 64 ||
@@ -20,6 +21,7 @@ public sealed class FirestoreSnapshotSink : ISnapshotSink
         this.channel = channel;
         this.collection = collection;
         this.sequentialUpdatesOnly = sequentialUpdatesOnly;
+        this.allowSequentialDeletes=allowSequentialDeletes;
     }
 
     // Operator bootstrap inspection: validates exactly the same persisted contract as writes.
@@ -44,7 +46,7 @@ public sealed class FirestoreSnapshotSink : ISnapshotSink
             var decision = SnapshotRules.Decide(current, incoming);
             if (decision == SnapshotDecision.Applied)
             {
-                if (sequentialUpdatesOnly && (current is null || current.Deleted || incoming.Kind != SnapshotKind.Upsert ||
+                if (sequentialUpdatesOnly && (current is null || current.Deleted || (incoming.Kind != SnapshotKind.Upsert && !(allowSequentialDeletes && incoming.Kind==SnapshotKind.Delete)) ||
                     current.Revision == long.MaxValue || incoming.Revision != current.Revision + 1))
                     return SnapshotDecision.Conflict;
                 var fields = new Dictionary<string, object>

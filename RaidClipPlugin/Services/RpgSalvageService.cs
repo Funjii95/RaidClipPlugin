@@ -111,6 +111,36 @@ public sealed class RpgSalvageService(ViewerPointStore points, RpgConfig config,
             return new(true);
         },token);
     }
+    // Stable IDs and explicit desired state prevent stale UI positions and toggle retries.
+    public Task<RpgTransactionResult> SetProtectionInstanceAsync(string userId,string name,string requestId,string instanceId,bool favorite,bool enabled,CancellationToken token) =>
+        points.ApplyRpgAsync(userId,name,requestId,account=>
+        {
+            if(!config.Enabled)return new(false,"RPG ist deaktiviert.");
+            var item=account.Rpg.Inventory.SingleOrDefault(i=>i.InstanceId==instanceId);
+            if(item is null)return new(false,"Gegenstand gehört nicht zu deinem Inventar.");
+            if(favorite)item.IsFavorite=enabled;else item.IsLocked=enabled;
+            return new(true);
+        },token);
+
+    public async Task<RpgSalvagePreview> PreviewBatchAsync(string userId,string selection,CancellationToken token)
+    {
+        var profile=(await points.GetProfileAsync(userId,token)).Entry.Rpg;
+        IEnumerable<RpgItem> chosen=selection switch {
+            "common"=>profile.Inventory.Where(i=>i.Rarity==ItemRarity.Common && Blocked(i,profile) is null && !Sensitive(i)),
+            "duplicates"=>profile.Inventory.Where(i=>!string.IsNullOrWhiteSpace(i.ItemId)).GroupBy(RollSignature)
+                .SelectMany(g=>g.OrderByDescending(i=>Blocked(i,profile) is not null).Skip(1))
+                .Where(i=>Blocked(i,profile) is null && !Sensitive(i)),
+            _=>[]};
+        return await PreviewInstancesAsync(userId,chosen.Select(i=>i.InstanceId).ToArray(),token);
+    }
+
+    public bool CancelQuote(string userId,string quoteToken)
+    {
+        lock(Cache.Users){
+            if(!Cache.Users.TryGetValue(userId,out var pending) || pending.Quote.Token!=quoteToken)return false;
+            return Cache.Users.Remove(userId);
+        }
+    }
     public async Task<RpgSalvageResult> ConfirmAsync(string userId,string name,string requestId,string quoteToken,CancellationToken token)
     {
         Pending? pending;

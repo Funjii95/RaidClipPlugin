@@ -6,12 +6,12 @@ using SnapshotProtocol;
 namespace RaidClipPlugin.Services;
 
 internal sealed record LocalActionRecord(string Hash,string UserId,ActionOutcome? Outcome);
-internal sealed class RemoteRpgExecutor(ViewerPointStore points,Func<MinigameConfig> configuration,
+internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<MinigameConfig> configuration,
     StreamAdmission admission,Guid epoch,string channel,IReadOnlySet<string> users,string journal,
-    Func<string,string,bool> permitted)
+    Func<string,string,bool> permitted,ChatMinigameService? minigames=null)
 {
     private readonly SemaphoreSlim gate=new(1,1);
-    internal static string CommandFor(string kind)=>kind switch {"status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive",_=>""};
+    internal static string CommandFor(string kind)=>kind switch {"status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
     internal async Task<ActionOutcome> ExecuteAsync(ActionEnvelope envelope,CancellationToken ct,TimeSpan? remainingWindow=null)
     {
         var hash=RpgIntents.Hash(envelope.Intent);
@@ -60,12 +60,24 @@ internal sealed class RemoteRpgExecutor(ViewerPointStore points,Func<MinigameCon
         if(!source.RootElement.TryGetProperty(e.UserId,out _))return new(false,"profile_missing","Kein lokales Testprofil vorhanden.");
         var account=(await points.GetProfileAsync(e.UserId,ct)).Entry;
         var config=configuration();var rpg=config.Adventures.Rpg;
-        if(!config.Enabled || !config.PointsEnabled || !rpg.Enabled || !permitted(CommandFor(e.Intent.Kind),account.DisplayName) ||
+        var command=e.Intent.Kind=="casino"?"!"+e.Intent.Arguments.GetProperty("game").GetString():e.Intent.Kind=="community"?minigames?.RemoteCommand(e.Intent.Arguments.GetProperty("game").GetString()!,e.Intent.Arguments.GetProperty("operation").GetString()!)??"":e.Intent.Kind is "preview" or "minigames"?"!stats":CommandFor(e.Intent.Kind);
+        if(!config.Enabled || !config.PointsEnabled || !rpg.Enabled || !permitted(command,account.DisplayName) ||
             config.PointsBlacklist.Any(n=>n.Equals(account.DisplayName,StringComparison.OrdinalIgnoreCase)))return new(false,"command_disabled","Aktion ist im Plugin nicht freigegeben.");
         string Arg(string name)=>e.Intent.Arguments.GetProperty(name).GetString()!;
         var progression=new RpgProgressionService(points,rpg);
         var request="extension:"+e.Intent.ActionId.ToString("N");
         RpgTransactionResult? mutation=null;
+        if(e.Intent.Kind is "bossStatus" or "bossAttack" or "itemlock" or "favorite" or "salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel" or "community")
+            return await InvokeExtendedAsync(e,account,request,ct);
+        if(e.Intent.Kind=="preview")return new(true,"read","Aktuelle primäre Ausrüstungs-Lootchance.",JsonSerializer.Serialize(new{profile=JsonDocument.Parse(SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account)),channel).AccountJson!).RootElement.Clone(),dive=AdventurePreview(account,"dive",long.Parse(Arg("stake"))),fish=AdventurePreview(account,"fish",long.Parse(Arg("fishingStake")))}));
+        if(e.Intent.Kind=="minigames")return new(true,"read","Spielhallenstatus.",JsonSerializer.Serialize(await MinigameDataAsync(account,ct)));
+        if(e.Intent.Kind=="casino"){
+            if(minigames is null)return new(false,"unavailable","Laufender Chat-Spieldienst fehlt.");
+            var result=await minigames.ExecuteRemoteCasinoAsync(e.UserId,account.DisplayName,e.Intent.ActionId,Arg("game"),Arg("stake"),Arg("choice"),ct);
+            if(result.Success)_casinoResults[(e.UserId,Arg("game"))]=(e.Intent.ActionId,result);
+            var current=(await points.GetProfileAsync(e.UserId,ct)).Entry;
+            return new(result.Success,result.Success?"applied":"rule_rejected",result.Message,JsonSerializer.Serialize(await MinigameDataAsync(current,ct)));
+        }
         if(e.Intent.Kind is "status" or "inventory" or "sets" or "perks"){
             var projection=SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account)),channel).AccountJson!;
             return new(true,"read","Aktueller Plugin-Stand.",JsonSerializer.Serialize(new{profile=JsonDocument.Parse(projection).RootElement.Clone(),stats=CharacterStatService.Calculate(account.Rpg,rpg,RpgActivity.Boss),sets=RpgSetService.Progress(account.Rpg,rpg)}));
@@ -98,8 +110,8 @@ internal sealed class RemoteRpgExecutor(ViewerPointStore points,Func<MinigameCon
     {
         var config=configuration();var rpg=config.Adventures.Rpg;
         return JsonSerializer.Serialize(new{supported=RpgIntents.Supported,
-            perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel}),
-            recipes=rpg.Recipes.Select(r=>new{r.Id,Name=RpgChatPresentation.RecipeName(r),r.PearlCost,Ingredients=RpgSushiService.Ingredients(r),Effects=RpgSushiService.Effects(r)}),
-            sets=rpg.Sets,blocked=new[]{"bossAttack","salvage","itemlock","favorite"}});
+            perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
+            recipes=rpg.Recipes.Select(r=>new{r.Id,Name=RpgChatPresentation.RecipeName(r),r.PearlCost,r.Category,r.Activity,BossUses=RpgSushiService.Uses(r,rpg),r.Attributes,r.PassiveHealing,r.ChatHealing,r.BossDamageReduction,r.BossLifeleech,Ingredients=RpgSushiService.Ingredients(r),Effects=RpgSushiService.Effects(r)}),
+            fish=rpg.FishSpecies.Select(f=>new{f.Id,f.Name,f.Rarity}),sets=rpg.Sets,blocked=new[]{"bossStart","heistStart","moderatorCommands","give","reset"}});
     }
 }

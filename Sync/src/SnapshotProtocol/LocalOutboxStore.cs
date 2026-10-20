@@ -14,6 +14,25 @@ public sealed record OutboxState(int Version, string ChannelId, string UserId, l
 public sealed class LocalOutboxStore
 {
     public const int MaxPending = 128;
+    // Privacy deletion deliberately cancels queued profile payloads. It never rebases gameplay.
+    public async Task QueuePrivacyDeletionAsync(StoredSnapshot head,Guid operationId,CancellationToken ct=default)
+    {
+        if(head.ChannelId!=channelId || head.Deleted || head.Revision is <=0 or long.MaxValue || operationId==Guid.Empty)throw new InvalidDataException("Invalid privacy head.");
+        var path=PathFor(head.UserId);await using var lease=await LockAsync(path,ct);
+        var current=await LoadAsync(path,head.UserId,ct);
+        if(current?.LastMessage.Kind==SnapshotKind.Delete){
+            if(current.CommitId!=operationId || current.Revision!=head.Revision+1)throw new InvalidDataException("Privacy revision conflict.");return;
+        }
+        var message=new SnapshotMessage(1,channelId,head.UserId,head.Revision+1,operationId,DateTimeOffset.UtcNow,SnapshotKind.Delete,null);
+        var clean=SnapshotValidation.Validate(message,channelId);
+        var hash=Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(clean.ContentHash+"\n")));
+        await SaveAsync(path,new OutboxState(1,channelId,head.UserId,message.Revision,operationId,hash,true,null,message,[message]),ct);
+    }
+    public async Task ForgetPrivacyPayloadAsync(string userId,CancellationToken ct=default)
+    {
+        var path=PathFor(userId);await using var lease=await LockAsync(path,ct);if(File.Exists(path))File.Delete(path);
+        foreach(var temp in Directory.GetFiles(Path.GetDirectoryName(path)!,Path.GetFileName(path)+".*.tmp"))File.Delete(temp);
+    }
     private const int MaxStateBytes = 16 * 1024 * 1024;
     private readonly string directory;
     private readonly string channelId;

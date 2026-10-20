@@ -36,12 +36,12 @@ public sealed class ActionApiFixture : IAsyncDisposable
     public readonly WebApplicationFactory<Program> Factory;
     public readonly HttpClient Viewer;
     public readonly HttpClient Plugin;
-    public ActionApiFixture(IRelayStore? store=null,IPlayerReader? players=null)
+    public ActionApiFixture(IRelayStore? store=null,IPlayerReader? players=null,bool privacy=false,bool selfDeletion=false)
     {
         Live=new(Clock);
         Factory=original.WithWebHostBuilder(builder=>builder.ConfigureAppConfiguration((_,cfg)=>cfg.AddInMemoryCollection(new Dictionary<string,string?>{
             ["Actions:Enabled"]="true",["Actions:Mode"]="Synthetic",["Actions:AllowedUserIds:0"]="1001",["Actions:AllowedUserIds:1"]="1002",
-            ["Actions:PluginKeyHash"]=Convert.ToHexString(SHA256.HashData(KeyBytes))
+            ["Actions:PluginKeyHash"]=Convert.ToHexString(SHA256.HashData(KeyBytes)),["Actions:PrivacyDeletionEnabled"]=privacy.ToString(),["Actions:SelfDeletionEnabled"]=selfDeletion.ToString()
         })).ConfigureServices(services=>{
             services.RemoveAll<TimeProvider>();services.AddSingleton<TimeProvider>(Clock);
             services.RemoveAll<ITwitchLiveProbe>();services.AddSingleton<ITwitchLiveProbe>(Live);

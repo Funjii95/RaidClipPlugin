@@ -38,7 +38,7 @@ public static class HeistRules
     }
 }
 
-public sealed class HeistService : IAsyncDisposable
+public sealed partial class HeistService : IAsyncDisposable
 {
     private readonly string _broadcasterId;
     private readonly string _chatUserId;
@@ -156,7 +156,7 @@ public sealed class HeistService : IAsyncDisposable
         finally { _gate.Release(); }
     }
 
-    public async Task JoinAsync(ChatMessage user,CancellationToken cancellationToken)
+    public async Task JoinAsync(ChatMessage user,CancellationToken cancellationToken, string? expectedEvent=null)
     {
         if(!_config.Enabled)return;
         if(IsBlocked(user))
@@ -174,6 +174,7 @@ public sealed class HeistService : IAsyncDisposable
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            if(expectedEvent is not null && expectedEvent!=_eventId)return;
             var jackpot=await _points.GetJackpotAsync(_minigame.JackpotStartValue,cancellationToken);
             if(State!=HeistState.Joining||_participants is null||DateTimeOffset.UtcNow>=_joinEndsAt)
             { await SendAsync(Format(_config.NoActiveHeistMessage,user.UserName,0,jackpot,0),cancellationToken); return; }
@@ -181,7 +182,8 @@ public sealed class HeistService : IAsyncDisposable
             { Console.WriteLine($"Doppelter Heist-Beitritt abgelehnt: {user.UserName}."); await SendAsync(Format(_config.AlreadyJoinedMessage,user.UserName,_participants.Count,jackpot,CalculateShare(jackpot,_participants.Count)),cancellationToken); return; }
             if(_participants.Count>=_config.MaximumParticipants)
             { Console.WriteLine("Heist-Maximalteilnehmerzahl erreicht."); await SendAsync(Format(_config.MaximumParticipantsMessage,user.UserName,_participants.Count,jackpot,CalculateShare(jackpot,_participants.Count)),cancellationToken); return; }
-            _participants.Add(user.UserId,new HeistParticipant(user.UserId,user.UserLogin,user.UserName));
+            void AddParticipant()=>_participants.Add(user.UserId,new HeistParticipant(user.UserId,user.UserLogin,user.UserName));
+            if(expectedEvent is not null && _points.Admission is {} admission)admission.Commit(AddParticipant);else AddParticipant();
             Console.WriteLine($"Heist-Beitritt: {user.UserName}; Teilnehmer: {_participants.Count}.");
             if(_config.SendParticipantJoinMessages)
                 await SendAsync(Format(_config.JoinMessage,user.UserName,_participants.Count,jackpot,CalculateShare(jackpot,_participants.Count)),cancellationToken);
@@ -248,7 +250,7 @@ public sealed class HeistService : IAsyncDisposable
             for(var i=candidates.Count-1;i>0;i--){var j=_random.NextInclusive(0,i);(candidates[i],candidates[j])=(candidates[j],candidates[i]);}
             var extras=candidates.Take((int)remainder).ToArray();
             var payout=await _points.PayoutHeistJackpotAsync(participants.Select(x=>(x.UserId,x.DisplayName)).ToArray(),extras,
-                _minigame.JackpotStartValue,_config.ResetJackpotAfterSuccess,_minigame.HistoryLimit,cancellationToken);
+                _minigame.JackpotStartValue,_config.ResetJackpotAfterSuccess,_minigame.HistoryLimit,cancellationToken,_eventId);
             foreach(var item in payout.Payouts)Console.WriteLine($"Heist-Auszahlung: {item.DisplayName} +{item.Payout}; Stand {item.NewBalance}.");
             if(extras.Length>0)Console.WriteLine("Heist-Restpunkte an Teilnehmerindizes: "+string.Join(",",extras));
             Console.WriteLine($"Heist-Jackpot nach Reset: {payout.JackpotAfter}.");

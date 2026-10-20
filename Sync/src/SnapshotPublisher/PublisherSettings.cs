@@ -15,6 +15,7 @@ public sealed class PublisherSettings
     public string DatabaseId { get; set; } = "(default)";
     public string Collection { get; set; } = "";
     public bool WritesEnabled { get; set; }
+    public bool PrivacyDeletionEnabled {get;set;}
     public string[] AllowedUserIds { get; set; } = [];
 
     public void Validate()
@@ -30,9 +31,9 @@ public sealed class PublisherSettings
         if (Mode == "FirestoreProfilesTest")
         {
             if (ProjectId != "funjii-otter-rpg" || DatabaseId != "(default)" || Collection != "rpgReadSnapshots" ||
-                ChannelId != "42812664" || AllowedUserIds.Length != 6 || AllowedUserIds.Distinct().Count() != 6 ||
+                ChannelId != "42812664" || AllowedUserIds.Length is < 1 or > 100 || AllowedUserIds.Distinct().Count() != AllowedUserIds.Length ||
                 AllowedUserIds.Any(id => id.Length is < 1 or > 25 || id.Any(c => c is < '0' or > '9')))
-                throw new InvalidOperationException("Explicit six-account test scope required.");
+                throw new InvalidOperationException("Explicit unique test scope of 1 to 100 accounts required.");
             return;
         }
         // The original synthetic mode keeps its original scope.
@@ -47,5 +48,5 @@ public sealed class PublisherSettings
         : new FirestoreSnapshotSink(new FirestoreDbBuilder
         {
             ProjectId = ProjectId, DatabaseId = DatabaseId, EmulatorDetection = EmulatorDetection.ProductionOnly
-        }.Build(), ChannelId, Collection, sequentialUpdatesOnly: Mode == "FirestoreProfilesTest");
+        }.Build(), ChannelId, Collection, sequentialUpdatesOnly: Mode == "FirestoreProfilesTest",allowSequentialDeletes:PrivacyDeletionEnabled);
 }

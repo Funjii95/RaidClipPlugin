@@ -61,7 +61,7 @@ builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = 429;
     o.AddPolicy("actions",c=>RateLimitPartition.GetFixedWindowLimiter(c.User.FindFirstValue("user_id")??"unknown",_=>new FixedWindowRateLimiterOptions{PermitLimit=120,Window=TimeSpan.FromMinutes(1),QueueLimit=0}));
-    o.AddFixedWindowLimiter("plugin-actions",o=>{o.PermitLimit=180;o.Window=TimeSpan.FromMinutes(1);o.QueueLimit=0;});
+    o.AddFixedWindowLimiter("plugin-actions",o=>{o.PermitLimit=480;o.Window=TimeSpan.FromMinutes(1);o.QueueLimit=0;});
     o.AddPolicy("reads", c => RateLimitPartition.GetFixedWindowLimiter(
         c.User.FindFirstValue("user_id") ?? c.User.Identity?.Name ?? c.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));

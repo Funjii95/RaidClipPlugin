@@ -3,8 +3,9 @@ export type RecipeView=Omit<SushiRecipe,'activity'|'category'|'bossUses'|'attrib
 export interface RemoteView {
  loaded:boolean; connection:'loading'|'unauthorized'|'offline'|'disconnected'|'ready'|'readonly'|'error'; message:string;
  updatedAt?:string; pointsText:string; pointsExact:string; experienceText?:string; sets:ItemSet[]; recipes:RecipeView[];
- stats?:CharacterStats; collectors?:CollectorStats; perkPrices:Record<string,number>;
+ stats?:CharacterStats; collectors?:CollectorStats; perkPrices:Record<string,number>;selfDeletionEnabled?:boolean;
  supported:string[]; pending:boolean; pendingState?:string; syncing:boolean; bossKnown:boolean; hotKnown:boolean;
+ adventurePreview?:{dive:{stake:string;chance:number;rarities:string[]};fish:{stake:string;chance:number;rarities:string[]}};
 }
 export const unknown=()=>Number.NaN;
 export const field=(obj:any,name:string):any=>obj?.[name]??obj?.[name[0].toLowerCase()+name.slice(1)];
@@ -50,6 +51,7 @@ export function mapProfile(raw:any,catalog:any={}):DemoState {
  if(new Set(state.inventory.map(i=>i.instanceId)).size!==state.inventory.length)throw Error('Doppelte Item-Instanz.');
  for(const [slot,id]of Object.entries(object(field(rpg,'Equipment'),'Ausrüstung'))){const target=enumValue<Slot>(/^\d+$/.test(slot)?Number(slot):slot,slots,'Ausrüstungsslot');if(typeof id!=='string'||!state.inventory.some(i=>i.instanceId===id))throw Error('Ausrüstung verweist auf ein fehlendes Item.');state.equipment[target]=id;}
  const perkLevels=counts(field(rpg,'Perks'),'Perks');state.perks=Array.from(new Set([...Object.keys(view.perks),...Object.keys(perkLevels)])).map(id=>({id,name:field(view.perks[id],'Name')??id,level:perkLevels[id]??0,maxLevel:optionalNumber(field(view.perks[id],'MaximumLevel')),bonus:field(view.perks[id],'BonusPerLevel')?attributes(field(view.perks[id],'BonusPerLevel')):{}} as Perk));
+ for(const perk of state.perks){const cost=field(view.perks[perk.id],'Costs')?.[perk.level];if(/^[1-9]\d*$/.test(String(cost))&&Number.isSafeInteger(Number(cost)))state.remote!.perkPrices[perk.id]=Number(cost);}
  for(const [id,stock]of Object.entries(object(field(rpg,'Fish'),'Fische'))){state.fish[id]=number(field(stock,'Quantity'),'Fischanzahl');if(!Number.isSafeInteger(state.fish[id])||state.fish[id]<0)throw Error('Ungültiger Fischvorrat.');}
  state.sushi=counts(field(rpg,'Sushi'),'Sushi');
  const buffs=field(rpg,'Buffs');if(!Array.isArray(buffs))throw Error('Buffs fehlen.');

@@ -269,6 +269,10 @@ export type Action = {
 };
 // Remote adapters must verify JWT/channel/identity and authorize intents server-side.
 export interface RpgDataSource {
+    selfDeletionStatus?():Promise<{request:import('./live/client').SelfDeletionJob|null}>;
+    requestSelfDeletion?(requestId:string):Promise<import('./live/client').SelfDeletionJob>;
+    readonly minigames?:import('./minigames/contracts').MinigameClient;
+    previewAdventures?(stake:number,fishingStake:number):Promise<void>;
     readonly mode: 'demo' | 'remote';
     getSnapshot(): DemoState;
     canDispatch?(type: Action["type"]): boolean;

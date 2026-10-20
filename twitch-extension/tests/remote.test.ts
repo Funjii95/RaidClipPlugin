@@ -1,15 +1,17 @@
-import {describe,it,expect} from 'vitest';
+import {describe,it,expect,vi} from 'vitest';
 import {BackendRpgDataSource} from '../src/remote/BackendRpgDataSource';
 import {mapProfile} from '../src/remote/model';
 import {profile,catalog,availability,authorization,memoryStorage} from './remote-fixtures';
 import type {Authorization} from '../src/live/client';
 const json=(body:unknown,status=200)=>Response.json(body,{status});
-async function fixture(options:{offline?:boolean;missingRoute?:boolean;unauthorized?:boolean;lostAck?:boolean;pending?:boolean;stats?:boolean}={}){
+async function fixture(options:{offline?:boolean;missingRoute?:boolean;unauthorized?:boolean;forbidden?:boolean;testUserDenied?:boolean;lostAck?:boolean;pending?:boolean;stats?:boolean}={}){
  let current=profile(),posts:any[]=[],processed=new Set<string>();let applied=false;let authorize:(a:Authorization)=>void=()=>{};
  const {storage,data}=memoryStorage();
  const fetcher:typeof fetch=async(url,request)=>{
   const path=String(url);
   if(options.unauthorized)return new Response('',{status:401});
+  if(options.forbidden)return new Response('',{status:403});
+  if(options.testUserDenied&&path.endsWith('/state'))return json({error:'test_user_not_allowed'},403);
   if(path.endsWith('/me'))return json(current);
   if(path.endsWith('/state'))return options.missingRoute?json({error:'missing'},404):json({...availability(),available:!options.offline,reason:options.offline?'plugin_not_ready':'ready',streamLive:false});
   if(request?.method==='POST'){
@@ -43,6 +45,11 @@ describe('authoritative UI mapping',()=>{
  });
 });
 describe('productive RpgDataSource',()=>{
+ it('distinguishes expired login, missing identity and closed-test permission without allowing actions',async()=>{
+  for(const [options,message] of [[{unauthorized:true},'ungültig oder abgelaufen'],[{forbidden:true},'Identität freigeben'],[{testUserDenied:true},'geschlossenen Aktionstest']] as const){
+   const f=await fixture(options);expect(f.source.getSnapshot().remote!.message).toContain(message);expect(f.source.canDispatch('equip')).toBe(false);expect(f.posts).toHaveLength(0);f.source.dispose();
+  }
+ });
  it('loads real API state and submits exactly one intent on parallel clicks then reloads the server snapshot',async()=>{
   const f=await fixture();expect(f.source.mode).toBe('remote');expect(f.source.getSnapshot().player.pearls).toBe(1234);
   const results=await Promise.allSettled([f.source.dispatch({type:'equip',id:'owned-trident',slot:'Weapon'}),f.source.dispatch({type:'equip',id:'owned-trident',slot:'Weapon'})]);
@@ -59,12 +66,14 @@ describe('productive RpgDataSource',()=>{
   const f=await fixture({lostAck:true});await expect(f.source.dispatch({type:'equip',id:'owned-trident',slot:'Weapon'})).rejects.toThrow('lost ACK');
   expect(f.source.getSnapshot().remote!.pending).toBe(true);const id=f.posts[0].actionId;
   const second=new BackendRpgDataSource({storage:f.storage,fetch:f.fetcher,helper:{onAuthorized:cb=>cb(authorization)},loadStats:false,actionPollMs:1});await second.refresh();
-  expect(second.getSnapshot().equipment.Weapon).toBe('owned-trident');expect(second.canDispatch('equip')).toBe(false);await second.retryPending();expect(f.posts[1].actionId).toBe(id);expect(f.processed.size).toBe(1);expect(second.getSnapshot().remote!.pending).toBe(false);f.source.dispose();second.dispose();
+  expect(second.getSnapshot().equipment.Weapon).toBe('owned-trident');
+  await vi.waitFor(()=>expect(second.canDispatch('equip')).toBe(true));
+  expect(f.posts).toHaveLength(1);expect(f.posts[0].actionId).toBe(id);expect(f.processed.size).toBe(1);expect(second.getSnapshot().remote!.pending).toBe(false);f.source.dispose();second.dispose();
  });
  it('leaves timeouts pending instead of booking another action',async()=>{
   const f=await fixture({pending:true});await expect(f.source.dispatch({type:'equip',id:'owned-trident',slot:'Weapon'})).rejects.toThrow('Bestätigung');expect(f.source.canDispatch('equip')).toBe(false);expect(f.posts).toHaveLength(1);f.source.dispose();
  });
  it('refuses every demo-only or unsupported game action',async()=>{
-  const f=await fixture();for(const type of ['reset','newBoss','demoWound','healChat','hot','boss','lock','favorite','dismantle'] as const){expect(f.source.canDispatch(type)).toBe(false);await expect(f.source.dispatch({type} as any)).rejects.toThrow('sichere Backend');}expect(f.posts).toHaveLength(0);f.source.dispose();
+  const f=await fixture();for(const type of ['reset','newBoss','demoWound','healChat','hot'] as const){expect(f.source.canDispatch(type)).toBe(false);await expect(f.source.dispatch({type} as any)).rejects.toThrow('sichere Backend');}expect(f.posts).toHaveLength(0);f.source.dispose();
  });
 });

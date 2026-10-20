@@ -196,7 +196,7 @@ public sealed partial class ViewerPointStore
         long amount,
         long minimumPoints,
         int historyLimit,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, string? reservationId=null)
     {
         using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
@@ -205,17 +205,21 @@ public sealed partial class ViewerPointStore
             await EnsureLoadedAsync(cancellationToken);
             var floor = Math.Max(0, minimumPoints);
             var entry = GetOrCreateEntry(userId, displayName, floor);
+            var reservation=reservationId is null?null:DuelReservation(reservationId,amount);
+            if(reservationId is not null && entry.Rpg.CompletedActions.Contains(DuelFinished(reservationId)))return new(false,"Duell bereits abgeschlossen",entry.Points);
+            if(reservation is not null && entry.Rpg.CompletedActions.Contains(reservation))return new(true,"",entry.Points);
             if (amount <= 0 || entry.Points - amount < floor)
                 return new DuelReserveResult(false, "Nicht genug verfügbare Punkte", entry.Points);
 
             var previous = entry.Points;
             var historyBefore = _history.ToList();
             entry.Points -= amount;
+            if(reservation is not null)entry.Rpg.CompletedActions.Add(reservation);
             entry.DisplayName = displayName;
             entry.UpdatedAt = DateTimeOffset.Now;
             AddDuelHistory(userId, displayName, "Einsatz reserviert", -amount, entry.Points, historyLimit);
-            try { await SaveAllAsync(cancellationToken); }
-            catch { entry.Points = previous; _history = historyBefore; throw; }
+            try { if(reservationId is null)await SaveAllAsync(cancellationToken);else await SaveDuelCommitAsync(cancellationToken); }
+            catch { entry.Points = previous;if(reservation is not null)entry.Rpg.CompletedActions.Remove(reservation); _history = historyBefore; throw; }
             return new DuelReserveResult(true, "", entry.Points);
         }
         finally { _lock.Release(); }
@@ -226,7 +230,7 @@ public sealed partial class ViewerPointStore
         string displayName,
         long amount,
         int historyLimit,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, string? reservationId=null)
     {
         using var rollback = Admission?.EnterRollback();
         using var operationAdmission = Admission?.EnterOperation();
@@ -235,16 +239,20 @@ public sealed partial class ViewerPointStore
         {
             await EnsureLoadedAsync(cancellationToken);
             var entry = GetOrCreateEntry(userId, displayName, 0);
+            var finish=reservationId is null?null:DuelFinished(reservationId);
+            if(finish is not null && (entry.Rpg.CompletedActions.Contains(finish) || !entry.Rpg.CompletedActions.Contains(DuelReservation(reservationId!,amount))))return entry.Points;
+            if(finish is not null && amount>long.MaxValue-entry.Points)throw new InvalidOperationException("Gesicherte Duell-Rückgabe überschreitet das technische Limit; manuelle Prüfung erforderlich.");
             var previous = entry.Points;
             var historyBefore = _history.ToList();
             entry.Points = entry.Points > long.MaxValue - Math.Max(0, amount)
                 ? long.MaxValue
                 : entry.Points + Math.Max(0, amount);
+            if(finish is not null)entry.Rpg.CompletedActions.Add(finish);
             entry.DisplayName = displayName;
             entry.UpdatedAt = DateTimeOffset.Now;
             AddDuelHistory(userId, displayName, "Einsatz zurückgegeben", amount, entry.Points, historyLimit);
-            try { await SaveAllAsync(cancellationToken); }
-            catch { entry.Points = previous; _history = historyBefore; throw; }
+            try { if(reservationId is null)await SaveAllAsync(cancellationToken);else await SaveDuelCommitAsync(cancellationToken); }
+            catch { entry.Points = previous;if(finish is not null)entry.Rpg.CompletedActions.Remove(finish); _history = historyBefore; throw; }
             return entry.Points;
         }
         finally { _lock.Release(); }
@@ -260,7 +268,7 @@ public sealed partial class ViewerPointStore
         long minimumPoints,
         long maximumPoints,
         int historyLimit,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, string? reservationId=null)
     {
         using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
@@ -271,6 +279,9 @@ public sealed partial class ViewerPointStore
             var ceiling = Math.Max(floor, maximumPoints);
             var challenger = GetOrCreateEntry(challengerId, challengerName, floor);
             var target = GetOrCreateEntry(targetId, targetName, floor);
+            var finish=reservationId is null?null:DuelFinished(reservationId);
+            if(finish is not null && challenger.Rpg.CompletedActions.Contains(finish))return new(false,"Duell bereits abgeschlossen",challenger.Points,target.Points,0);
+            if(reservationId is not null && !challenger.Rpg.CompletedActions.Contains(DuelReservation(reservationId,stake)))return new(false,"Gesicherter Einsatz fehlt",challenger.Points,target.Points,0);
             if (stake <= 0 || target.Points - stake < floor)
                 return new DuelResolutionResult(false, "Zielspieler hat nicht genug Punkte", challenger.Points, target.Points, stake * 2);
 
@@ -306,6 +317,7 @@ public sealed partial class ViewerPointStore
             if (challengerAfter > ceiling || targetAfter > ceiling)
                 return new DuelResolutionResult(false, "Die Auszahlung würde das technische Punktelimit überschreiten", challengerBefore, targetBefore, pot);
 
+            if(finish is not null)challenger.Rpg.CompletedActions.Add(finish);
             challenger.Points = challengerAfter;
             target.Points = targetAfter;
             challenger.DisplayName = challengerName;
@@ -315,8 +327,8 @@ public sealed partial class ViewerPointStore
             var targetChange = winnerId.Equals(targetId, StringComparison.Ordinal) ? pot - stake : -stake;
             AddDuelHistory(challengerId, challengerName, winnerId == challengerId ? "Duel gewonnen" : "Duel verloren", challengerChange, challengerAfter, historyLimit);
             AddDuelHistory(targetId, targetName, winnerId == targetId ? "Duel gewonnen" : "Duel verloren", targetChange, targetAfter, historyLimit);
-            try { await SaveAllAsync(cancellationToken); }
-            catch { challenger.Points = challengerBefore; target.Points = targetBefore; _history = historyBefore; throw; }
+            try { if(reservationId is null)await SaveAllAsync(cancellationToken);else await SaveDuelCommitAsync(cancellationToken); }
+            catch { challenger.Points = challengerBefore; target.Points = targetBefore;if(finish is not null)challenger.Rpg.CompletedActions.Remove(finish); _history = historyBefore; throw; }
             return new DuelResolutionResult(true, "", challengerAfter, targetAfter, pot);
         }
         finally { _lock.Release(); }
@@ -659,6 +671,7 @@ public sealed partial class ViewerPointStore
         try
         {
             await EnsureLoadedAsync(cancellationToken);
+            RequireNotPrivacyBlocked(userId);
             hadEntry = _entries!.TryGetValue(userId, out previousEntry);
             var entry = previousEntry is null ? new ViewerPointEntry { UserId = userId, DisplayName = name, Points = Math.Max(0, minimum) } : CloneEntry(previousEntry);
             ResetDaily(entry);
@@ -861,16 +874,20 @@ public sealed partial class ViewerPointStore
         long jackpotStart,
         bool resetToStart,
         int historyLimit,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,string? roundId=null)
     {
         using var operationAdmission = Admission?.EnterOperation();
-        if (participants.Count == 0)
+        if (participants.Count == 0 || participants.Select(p=>p.UserId).Distinct().Count()!=participants.Count)
             throw new ArgumentException("Mindestens ein Teilnehmer wird benötigt.", nameof(participants));
 
         await _lock.WaitAsync(cancellationToken);
         try
         {
             await EnsureLoadedAsync(cancellationToken);
+            roundId??=Guid.NewGuid().ToString("N");
+            if(!Guid.TryParseExact(roundId,"N",out _))throw new ArgumentException("Ungültige Heist-Runde.");
+            var marker="heist-paid:"+roundId;
+            if(participants.Any(p=>_entries!.TryGetValue(p.UserId,out var a)&&a.Rpg.CompletedActions.Contains(marker)))throw new InvalidOperationException("Heist bereits ausgezahlt.");
             var jackpot = Math.Max(_jackpot, Math.Max(0, jackpotStart));
             var baseShare = jackpot / participants.Count;
             var remainder = jackpot % participants.Count;
@@ -889,9 +906,11 @@ public sealed partial class ViewerPointStore
                 payouts.Add(new HeistParticipantPayout(participant.UserId, participant.DisplayName, payout, entry.Points + payout));
             }
 
+            await PrepareHeistCommitAsync(new(marker,participants.Select(p=>p.UserId).ToArray(),resetToStart?Math.Max(0,jackpotStart):0),cancellationToken);
             foreach (var payout in payouts)
             {
                 var entry = GetOrCreateEntry(payout.UserId, payout.DisplayName, 0);
+                entry.Rpg.CompletedActions.Add(marker);
                 entry.Points = payout.NewBalance;
                 entry.DisplayName = payout.DisplayName;
                 entry.UpdatedAt = DateTimeOffset.Now;
@@ -910,6 +929,7 @@ public sealed partial class ViewerPointStore
                 _history.RemoveRange(Math.Max(1, historyLimit), _history.Count - Math.Max(1, historyLimit));
             _jackpot = resetToStart ? Math.Max(0, jackpotStart) : 0;
             await SaveAllAsync(cancellationToken);
+            File.Delete(HeistCommitPath);
             return new HeistPayoutResult(jackpot, _jackpot, payouts);
         }
         finally { _lock.Release(); }
@@ -1086,6 +1106,7 @@ public sealed partial class ViewerPointStore
         string displayName,
         long minimumPoints)
     {
+        RequireNotPrivacyBlocked(userId);
         if (_entries!.TryGetValue(userId, out var entry))
         {
             return entry;
@@ -1112,6 +1133,7 @@ public sealed partial class ViewerPointStore
         }
         if (_entries is not null)
         {
+            await ReconcileHeistCommitAsync(cancellationToken);
             return;
         }
 
@@ -1119,6 +1141,7 @@ public sealed partial class ViewerPointStore
         {
             _entries = new Dictionary<string, ViewerPointEntry>(
                 StringComparer.Ordinal);
+            await ReconcileHeistCommitAsync(cancellationToken);
             return;
         }
 
@@ -1137,6 +1160,7 @@ public sealed partial class ViewerPointStore
             throw new InvalidOperationException(
                 "Minigame-Punktedatei konnte nicht geladen werden. Zum Schutz der Spielstände werden keine Konten überschrieben.", exception);
         }
+        await ReconcileHeistCommitAsync(cancellationToken);
     }
 
     private async Task SaveAllAsync(CancellationToken cancellationToken)
@@ -1156,6 +1180,7 @@ public sealed partial class ViewerPointStore
         await using var persistenceLease=await SaveCommitMarker.AcquireAsync(_filePath,cancellationToken);
         try
         {
+            if(_entries!.Keys.Any(IsPrivacyBlocked))throw new InvalidOperationException("Import/Speicherung würde einen gesperrten Spieler wiederherstellen.");
             await using (var stream = File.Create(temporaryPath))
             {
                 await JsonSerializer.SerializeAsync(stream, _entries, JsonOptions, cancellationToken);

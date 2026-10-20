@@ -118,10 +118,12 @@ public sealed class TransactionalFirestoreFixture(WebApplication app, GrpcChanne
             Interlocked.Increment(ref commits);
             lock (gate)
             {
-                if (!transactions.Remove(request.Transaction, out var reads))
+                var direct=request.Transaction.IsEmpty;
+                if (!transactions.Remove(request.Transaction, out var reads)&&!direct)
                     throw new RpcException(new Status(StatusCode.FailedPrecondition, "transaction required"));
+                if(direct)reads=request.Writes.ToDictionary(w=>w.Update.Name,w=>versions.GetValueOrDefault(w.Update.Name));
                 if (Interlocked.Exchange(ref abortNext, 0) == 1 ||
-                    reads.Any(r => versions.GetValueOrDefault(r.Key) != r.Value))
+                    reads!.Any(r => versions.GetValueOrDefault(r.Key) != r.Value))
                     throw new RpcException(new Status(StatusCode.Aborted, "synthetic concurrent modification"));
                 var response = new CommitResponse
                     { CommitTime = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.UtcNow) };
@@ -129,7 +131,7 @@ public sealed class TransactionalFirestoreFixture(WebApplication app, GrpcChanne
                 {
                     Assert.Equal(Google.Cloud.Firestore.V1.Write.OperationOneofCase.Update, write.OperationCase);
                     Assert.Null(write.UpdateMask); // Full replace, never a merge retaining old account data.
-                    Assert.Contains(write.Update.Name, reads.Keys);
+                    Assert.Contains(write.Update.Name, reads!.Keys);
                     documents[write.Update.Name] = write.Update.Clone();
                     // Match the real service's microsecond precision for stored timestamps.
                     foreach (var field in documents[write.Update.Name].Fields.Values)
@@ -141,6 +143,16 @@ public sealed class TransactionalFirestoreFixture(WebApplication app, GrpcChanne
                 }
                 return Task.FromResult(response);
             }
+        }
+        public override async Task RunQuery(RunQueryRequest request,IServerStreamWriter<RunQueryResponse> stream,ServerCallContext context)
+        {
+            Authorize();var query=request.StructuredQuery;var from=Assert.Single(query.From);
+            Assert.False(from.AllDescendants);Assert.Equal("userId",query.Where.FieldFilter.Field.FieldPath);
+            Assert.Equal(StructuredQuery.Types.FieldFilter.Types.Operator.Equal,query.Where.FieldFilter.Op);
+            var user=query.Where.FieldFilter.Value.StringValue;Document[] matches;
+            lock(gate)matches=documents.Values.Where(d=>d.Name.StartsWith(request.Parent+"/"+from.CollectionId+"/",StringComparison.Ordinal)&&d.Fields.TryGetValue("userId",out var v)&&v.StringValue==user).Take(200).Select(d=>d.Clone()).ToArray();
+            foreach(var doc in matches)await stream.WriteAsync(new RunQueryResponse{Document=doc,ReadTime=Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.UtcNow)});
+            if(matches.Length==0)await stream.WriteAsync(new RunQueryResponse{ReadTime=Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.UtcNow)});
         }
         public override Task<Empty> Rollback(RollbackRequest request, ServerCallContext context)
         {

@@ -7,6 +7,7 @@ namespace RaidClipPlugin.Services;
 internal sealed class ActionChannelOptions
 {
     public bool Enabled {get;set;}
+    public bool SelfDeletionEnabled {get;set;}
     public string BackendUrl {get;set;}="https://funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app";
     public string ChannelId {get;set;}="42812664";
     public string[] AllowedUserIds {get;set;}=[];
@@ -69,13 +70,15 @@ internal sealed class CloudActionClient : IDisposable
                             executionWindow=serverWindow-System.Diagnostics.Stopwatch.GetElapsedTime(issued);
                         }
                     }
+                    var handled=pending is not null;
                     if(pending is not null){
                         if(pending.SessionId!=session)throw new InvalidDataException("Session mismatch.");
                         outcome??=ready()?await executor.ExecuteAsync(pending,ct,executionWindow):new(false,"not_ready","Cloud-Synchronisierung oder Sitzung nicht bereit.");
                         await Request<ActionReceipt>(HttpMethod.Post,"/api/v1/plugin/actions/complete",new RelayComplete(session,pending.Intent.ActionId,outcome),ct);
                         pending=null;outcome=null;
                     }
-                    await Task.Delay(1500,ct);
+                    // Drain accepted work promptly; keep bounded polling when no work exists.
+                    await Task.Delay(handled?100:1000,ct);
                 } catch(OperationCanceledException) when(ct.IsCancellationRequested){throw;}
                 catch(HttpRequestException error) when(error.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden){log("Aktionskanal gesperrt: geschützten Zugang prüfen.");return;}
                 catch {

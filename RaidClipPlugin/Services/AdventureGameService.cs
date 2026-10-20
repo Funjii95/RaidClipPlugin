@@ -7,7 +7,7 @@ namespace RaidClipPlugin.Services;
 public sealed record BossAttackResult(bool Success, string PlayerId, int Damage, bool Critical, int BossHp,
     bool Defeated, int RemainingCooldown, string Error);
 
-public sealed class AdventureGameService
+public sealed partial class AdventureGameService
 {
     internal Func<bool>? GameplayAllowed;
 
@@ -151,7 +151,7 @@ public sealed class AdventureGameService
         _cooldowns[key] = _now().AddSeconds(Math.Clamp(seconds, 1, 86400));
         return false;
     }
-    public async Task HandleAsync(ChatMessage message, string command, string[] parts, CancellationToken token)
+    public async Task HandleAsync(ChatMessage message, string command, string[] parts, CancellationToken token, string? expectedRace=null)
     {
         if (GameplayAllowed?.Invoke() == false) return;
         if (!Recognizes(command) || !_config.Enabled || !_config.PointsEnabled ||
@@ -161,6 +161,7 @@ public sealed class AdventureGameService
         await _gate.WaitAsync(token);
         try
         {
+            if(expectedRace is not null && (_race?.Id??"-")!=expectedRace)return;
             await TickCoreAsync(token);
             if (command == "!joinboss") command = "!attack";
             var settings = _config.Adventures;
@@ -251,7 +252,7 @@ public sealed class AdventureGameService
                 await Say($"@{message.UserName}, Nutzung: {(command == "!startrace" ? "!start race" : command)} <Betrag|all>. Einsatz {min}–{max} {Currency}, verfügbar: {available}.", token);
                 return;
             }
-            if (command is "!startrace" or "!joinrace") { await JoinRaceAsync(message, stake, token); return; }
+            if (command is "!startrace" or "!joinrace") { await JoinRaceAsync(message, stake, token,expectedRace is not null); return; }
             var cooldownKey = command + ":" + message.UserId;
             if (Cooling(cooldownKey, game.CooldownSeconds))
             {
@@ -293,7 +294,7 @@ public sealed class AdventureGameService
         return (multipliers[tier], texts[tier], tier);
     }
 
-    private async Task JoinRaceAsync(ChatMessage user, long stake, CancellationToken token)
+    private async Task JoinRaceAsync(ChatMessage user, long stake, CancellationToken token,bool remote=false)
     {
         if (_race is null)
         {
@@ -307,7 +308,8 @@ public sealed class AdventureGameService
         if (_race.Players.ContainsKey(user.UserId)) { await Say($"@{user.UserName}, du bist bereits im Rennen.", token); return; }
         if (_race.Players.Count >= _race.MaximumPlayers) { await Say("Das Rennen ist voll.", token); return; }
         if (Cooling("!startrace:" + user.UserId, _config.Adventures.Race.CooldownSeconds)) return;
-        _race.Players.Add(user.UserId, user.UserName);
+        void AddParticipant()=>_race.Players.Add(user.UserId,user.UserName);
+        if(remote && _points.Admission is {} admission)admission.Commit(AddParticipant);else AddParticipant();
         await Say(Format(_race.Config.Adventures.Race.JoinMessage, ("user", user.UserName), ("count", _race.Players.Count), ("stake", stake), ("currency", Currency)), token);
     }
     private async Task SpawnBossAsync(CancellationToken token)
@@ -322,9 +324,9 @@ public sealed class AdventureGameService
             await Say(Format(c.StartMessage, ("hp", _boss.Hp), ("seconds", Math.Clamp(c.DurationSeconds, 10, 1800)), ("reward", Math.Clamp(c.RewardPool, 0, 1000000000)), ("currency", Currency)), token);
         }
     }
-    public async Task<BossAttackResult> ExecuteBossAttackAsync(string verifiedUserId, string displayName, string requestId, CancellationToken token)
+    public async Task<BossAttackResult> ExecuteBossAttackAsync(string verifiedUserId, string displayName, string requestId, CancellationToken token, bool communityVictory=false)
     {
-        if (GameplayAllowed?.Invoke() == false) return new(false, verifiedUserId, 0, false, 0, false, 0, "Kanal nicht live oder Sitzung nicht spielbereit.");
+        if (GameplayAllowed?.Invoke() == false) return new(false, verifiedUserId, 0, false, 0, false, 0, "Plugin nicht verbunden oder Sitzung nicht spielbereit.");
         if (string.IsNullOrWhiteSpace(verifiedUserId) || string.IsNullOrWhiteSpace(requestId)) throw new ArgumentException("Twitch-ID und Aktions-ID fehlen.");
         await _gate.WaitAsync(token);
         try
@@ -332,7 +334,7 @@ public sealed class AdventureGameService
             if (!_config.Enabled || !_config.PointsEnabled || !_config.Adventures.Boss.Enabled)
                 return new(false, verifiedUserId, 0, false, _boss?.Hp ?? 0, false, 0, "Bosskampf ist deaktiviert.");
             await TickCoreAsync(token);
-            return await AttackBossAsync(new() { UserId = verifiedUserId, UserName = displayName, Id = requestId }, token,false);
+            return await AttackBossAsync(new() { UserId = verifiedUserId, UserName = displayName, Id = requestId }, token,communityVictory);
         }
         finally { PublishStatus(); _gate.Release(); }
     }
@@ -394,6 +396,7 @@ public sealed class AdventureGameService
                     account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(Math.Clamp(_boss.Config.AttackCooldownSeconds, 1, 86400));
                     return new(true);
                 }, token);
+            if(mutation.Duplicate)return new(false,user.UserId,0,false,_boss.Hp,false,0,"Angriff bereits verarbeitet.");
             if (!mutation.Success) { await Say($"@{user.UserName}, {mutation.Error}", token); return new(false, user.UserId, 0, false, _boss.Hp, false, 0, mutation.Error); }
         }
         _boss.Players[user.UserId] = user.UserName;
@@ -549,10 +552,11 @@ public sealed class AdventureGameService
         var race = _race;
         _race = null;
         _nextRace = _now().AddSeconds(Math.Clamp(race.Config.Adventures.Race.RoundCooldownSeconds, 1, 86400));
-        if (race.Players.Count < 2) { await Say(Format(race.Config.Adventures.Race.CancelMessage, ("reason", "weniger als 2 Teilnehmer")), token); return; }
+        if (race.Players.Count < 2) { _lastRemoteRace=new(race.Id,race.Players.Keys.ToArray(),0,race.Stake,false,"Rennen abgesagt: weniger als zwei Teilnehmer; keine Abbuchung.");await Say(Format(race.Config.Adventures.Race.CancelMessage, ("reason", "weniger als 2 Teilnehmer")), token); return; }
         var players = race.Players.Select(p => (UserId:p.Key, DisplayName:p.Value)).ToArray();
         var winner = _random.NextInclusive(0, players.Length - 1);
         var result = await _points.ResolveRaceAsync(players, winner, race.Stake, race.Config, token);
+        _lastRemoteRace=new(race.Id,players.Select(p=>p.UserId).ToArray(),winner,race.Stake,result.Success,result.Success?"Abrechnung des gemeinsamen Plugin-Rennens.":result.Error);
         if (result.Success) DataChanged?.Invoke();
         await Say(result.Success ? Format(race.Config.Adventures.Race.WinMessage, ("user", players[winner].DisplayName),
             ("pot", race.Stake * players.Length), ("currency", Currency), ("balance", result.Balance))

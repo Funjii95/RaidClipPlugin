@@ -85,6 +85,9 @@ public sealed partial class MainForm
         }
         deleteFish.Click += async (_, _) => await Safe(() => Delete(true));
         deleteEquipment.Click += async (_, _) => await Safe(() => Delete(false));
-        return panel;
+        var tabs=new TabControl{Dock=DockStyle.Fill};
+        var individual=new TabPage("Einzelne Items");individual.Controls.Add(panel);tabs.TabPages.Add(individual);
+        var maintenance=new TabPage("Zurücksetzen und Datenschutz");maintenance.Controls.Add(BuildDataAdministrationPanel());tabs.TabPages.Add(maintenance);
+        return tabs;
     }
 }
