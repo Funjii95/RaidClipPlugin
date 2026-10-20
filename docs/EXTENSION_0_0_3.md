@@ -38,3 +38,23 @@ Bis Materialverwaltung, sichere Transaktion und Datenprojektion integriert und g
 6. Synthetische Tests: Doppelklick, Wiederholung, zu wenig Perlen, fremdes Item, Maximalstufe, gleichzeitige Chat-/Extension-Aktionen, Neustart, Altgegenstände und Synchronisation.
 
 Kein Push, GitHub-Release, Cloud-Deployment oder Twitch-Upload ohne weiteren Auftrag.
+
+## Neues Minispiel: Muscheln öffnen
+Verbindliche Vorgaben:
+- Eine Öffnung verbraucht genau eine Muschel.
+- Mengen von 1 bis maximal 100 je Aktion; 10 Öffnungen kosten 10 Muscheln.
+- Bei zu wenig Muscheln keine Teilöffnung oder Abbuchung.
+- Muscheln kommen aus dem bisherigen Nieten-Ausgang beim Angeln (alter Stiefel); vorgesehen ist eine Muschel pro solchem Ausgang. Keine zusätzliche Dropchance erfinden.
+- Bestehende Nietenchance, Einsätze, Cooldowns und Perlenauszahlungen bleiben erhalten.
+
+Fundstellen:
+- Services/AdventureGameService.cs: SoloOutcome liefert Tier 0 mit Text "Ein alter Stiefel – kein Fang!".
+- Services/RpgAdventureService.cs: autoritative Fang-/Spielstandtransaktion über ApplyCasinoAsync; Muschelgewinn muss nach bestehender Aktions-/Cooldown-Prüfung in derselben Transaktion verbucht werden.
+- Die gemeinsame Textfunktion darf nicht bloß "Muschel" behaupten, ohne dass tatsächlich eine Muschel gespeichert wurde. Der Legacy-Modus ohne RPG braucht eine ausdrückliche Behandlung.
+
+Noch vom Betreiber festzulegen:
+- mögliche Inhalte pro Öffnung (insbesondere weiße/blaue/rote Upgrade-Perlen);
+- Chancen, Mengen und mögliche leere Muscheln.
+
+Lokaler Stand: reine Mengen-/Bestandsprüfung vorbereitet und getestet. Noch keine Zufallsbelohnung, keine Inventaränderung und kein aktiver Öffnungsbutton. Kein Upload.
+Spätere Material-/Muschelverwaltung muss rückwärtskompatibel geplant werden; Snapshot-Projektion und UI müssen dieselben tatsächlichen Bestände anzeigen. Öffnung, Verbrauch und Belohnung gemeinsam im vorhandenen Plugin-Transaktionspfad mit persistenter ActionId verarbeiten. Bei 100er-Öffnung genau 100 einzelne, nach denselben genehmigten Regeln ausgewertete Öffnungen; Wiederholungen dürfen keine erneute Buchung erzeugen.
