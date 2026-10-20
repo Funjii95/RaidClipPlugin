@@ -1754,6 +1754,8 @@ private enum CloseChoice
         generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Host", _obsHostBox));
         generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Port", _obsPortControl));
         generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Passwort", _obsPasswordBox));
+        generalSettingsFlow.Controls.Add(_connectTwitchAccountButton);
+        _connectTwitchAccountButton.Click += async (_, _) => await ConnectTwitchAccountAsync();
         generalSettingsFlow.Controls.Add(_autoUpdateCheck);
         generalSettingsFlow.Controls.Add(_saveSettingsButton);
         generalSettingsGroup.Controls.Add(generalSettingsFlow);
@@ -2557,7 +2559,7 @@ private enum CloseChoice
 
     private async Task StartPluginAsync()
     {
-        if(_stoppingTasks.Any(task => !task.IsCompleted) || _dataAdministrationBusy || _maintenanceBusy || _connectionTestBusy || _updateBusy || _administrationTestOnly){AppendLog("Im Verwaltungstest bzw. während Datenverwaltung kein Spielstart.");return;}
+        if(_stoppingTasks.Any(task => !task.IsCompleted) || _dataAdministrationBusy || _accountLoginBusy || _maintenanceBusy || _connectionTestBusy || _updateBusy || _administrationTestOnly){AppendLog("Im Verwaltungstest bzw. während Datenverwaltung kein Spielstart.");return;}
         if (PluginInstanceGuard.AnotherInstanceIsRunning())
         {
             AppendLog("Bitte zuerst die normale RaidClipPlugin-Version beenden, bevor die getrennte Testversion denselben Kanal verbindet.");
@@ -4391,7 +4393,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
     private async Task TestConnectionsAsync()
     {
-        if (_shutdown is not null || _maintenanceBusy || _dataAdministrationBusy || _connectionTestBusy)
+        if (_shutdown is not null || _accountLoginBusy || _maintenanceBusy || _dataAdministrationBusy || _connectionTestBusy)
         {
             return;
         }
@@ -5175,7 +5177,7 @@ Version 2.0.6
     private async Task CheckForUpdatesAsync(bool silent)
     {
         if (TestDataPaths.IsTestBuild) { if (!silent) MessageBox.Show("Automatische Updates sind in dieser getrennten Testversion gesperrt."); return; }
-        if (_updateBusy || _maintenanceBusy)
+        if (_updateBusy || _maintenanceBusy || _accountLoginBusy)
         {
             return;
         }
@@ -5312,7 +5314,7 @@ Version 2.0.6
     private void SkipAvailableUpdate()
     {
         var update = _availableUpdate;
-        if (update is null || _updateBusy || _maintenanceBusy)
+        if (update is null || _updateBusy || _maintenanceBusy || _accountLoginBusy)
         {
             return;
         }
@@ -5337,7 +5339,7 @@ Version 2.0.6
     private async Task InstallAvailableUpdateAsync()
     {
         var update = _availableUpdate;
-        if (update is null || _updateBusy || _maintenanceBusy)
+        if (update is null || _updateBusy || _maintenanceBusy || _accountLoginBusy)
         {
             return;
         }

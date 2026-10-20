@@ -144,6 +144,9 @@ public sealed partial class MainForm
         _accountNameLabel.Margin = new Padding(4, 4, 4, 0);
         _accountNameLabel.Padding = new Padding(6, 0, 6, 0);
         UpdateAccountIdentity(null);
+        _accountNameLabel.Cursor = Cursors.Hand;
+        _accountNameLabel.AccessibleDescription = "Klicken, um sich bei Twitch anzumelden";
+        _accountNameLabel.Click += async (_, _) => await ConnectTwitchAccountAsync();
         right.Controls.Add(_accountNameLabel);
         right.Controls.Add(CreateTopbarChip("●  Aktiv", HealthyStatusColor));
         right.Controls.Add(CreateTopbarChip("🔔", AccentColor));

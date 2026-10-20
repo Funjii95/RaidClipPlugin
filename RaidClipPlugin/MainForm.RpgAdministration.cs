@@ -51,7 +51,7 @@ public sealed partial class MainForm
         }
         async Task Safe(Func<Task> action)
         {
-            if (busy || _maintenanceBusy || _dataAdministrationBusy || _connectionTestBusy || _updateBusy) return;
+            if (busy || _accountLoginBusy || _maintenanceBusy || _dataAdministrationBusy || _connectionTestBusy || _updateBusy) return;
             _dataAdministrationBusy = true;
             SetBusy(true);
             try { await action(); }

@@ -1,5 +1,12 @@
 # Wartung und getrennte Twitch-Konten
 
+Ab Version 2.1.31 ist die Twitch-Anmeldung unabhängig von OBS erreichbar: oben auf
+**Twitch anmelden** klicken oder **Einstellungen → Allgemein → Bei Twitch anmelden** wählen.
+Das Anmeldefenster zeigt bei erforderlicher Freigabe Gerätecode und Browseradresse. Falls kein
+Browser automatisch öffnet, kann die Adresse angeklickt oder manuell geöffnet werden.
+Die Freigabe erfolgt im Browser mit dem eigenen Twitch-Konto. Fehler bleiben sichtbar;
+Abbrechen beendet den Vorgang. Diese Anmeldung startet keine Spiel- oder Cloud-Dienste.
+
 ## Geprüfte Architektur
 
 Die Desktop-Anwendung verwendet .NET 10 / Windows Forms. `Program.cs` hält eine exklusive
