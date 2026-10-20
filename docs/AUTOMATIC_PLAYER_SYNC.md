@@ -1,6 +1,6 @@
 # Automatische Spieler-Synchronisation – Aktivierungsplan
 
-Stand: vorbereitet und lokal getestet, noch NICHT aktiviert. Twitch-Einreichung bleibt ausgesetzt.
+Stand 20.10.2026: Die unten genannten Images sind nach erfolgreichem synthetischem Cloud-Test auf den rc1-Routen aktiviert. Lokale Schalter sind gesetzt. Plugin 2.1.29 muss gestartet werden; die tatsächliche automatische Aufnahme lokaler Konten ist danach zu prüfen. Twitch-Einreichung bleibt ausgesetzt.
 
 ## Ergebnis
 Neue Spieler mit Points > 0 werden aus der bestehenden, vollständig gespeicherten viewer-points.json aufgenommen. Die erste Übertragung wird vor dem Senden in der bestehenden dauerhaften Outbox gespeichert. Nach bestätigter Aufnahme bleiben Spieler auch bei 0 Perlen aufgenommen; der Outbox-Zustand übersteht Neustarts.
@@ -12,7 +12,7 @@ Ein Konflikt mit einem vorhandenen Cloud-Profil wird NICHT automatisch durch Üb
 
 ## Konkrete Serveränderungen
 Projekt: funjii-otter-rpg; Region: europe-west3. Datenbank: (default), STANDARD / FIRESTORE_NATIVE, eur3, am 20.10.2026 lesend verifiziert.
-Version beider Images: 2.1.29-auto-sync.1. Container sind gebaut und in das bestehende Registry-Repository hochgeladen, noch nicht bereitgestellt.
+Version beider Images: 2.1.29-auto-sync.1. Container sind gebaut, hochgeladen und auf rc1 aktiviert: Backend 00012-wg8 und Publisher 00020-6xp. Standardrouten und Privacy-Tags wurden beibehalten.
 
 ### funjii-otter-rpg-backend-test
 Image: `europe-west3-docker.pkg.dev/funjii-otter-rpg/otter-rpg-test/backend@sha256:ddc09b1090e0c5bdbd531133b4bf92e72269927f1e6239148a8e9f9469c811dc`
@@ -43,7 +43,7 @@ Bisherige rc1-Revision: `funjii-otter-rpg-publisher-test-00019-xnm`.
 ## Auswirkungen
 Bei Aktivierung werden zusätzliche bestehende und künftig berechtigte Spielerprofile automatisch an Firestore übertragen und über den bisherigen authentifizierten Zugriff erreichbar. Vorhandene Spielerbestände werden nicht zurückgesetzt oder migriert.
 Mehr Spieler verursachen zusätzliche Firestore-Lese-/Schreibzugriffe. Die vorhandenen Ratenbegrenzungen bleiben unverändert; große Erstsynchronisationen können mehrere Wiederholungsrunden benötigen. Kein Versprechen beliebiger Nutzerzahlen oder gleicher Latenz bei hoher Last.
-Das Windows-Paket ist eine Testversion 2.1.29-auto-sync.1; kein GitHub-Release und kein Auto-Updater-Update.
+Die Server-Images tragen die Version 2.1.29-auto-sync.1; die reguläre Windows-Version ist 2.1.29.
 
 ## Rollback
 - Plugin regulär beenden; beide lokalen AutomaticPlayerEnrollment-Schalter auf false setzen bzw. gesicherte Konfiguration wiederherstellen.
@@ -52,4 +52,4 @@ Das Windows-Paket ist eine Testversion 2.1.29-auto-sync.1; kein GitHub-Release u
 - Persistente Outbox und Aktionsjournale erhalten. Niemals zum Rollback Spielstände oder Bestätigungsdateien löschen.
 
 ## Noch offene Live-Prüfungen
-Canary-/IAM-Prüfung gegen tatsächliches Firestore, echte erstmalige Aufnahme und Wiederanlauf nach Aktivierung sowie Twitch-Mehrspielerprüfung. Die lokalen Firestore-Tests verwenden einen Transaktions-Transport-Doppelgänger, keine vollständige Firestore- oder IAM-Emulation.
+Cloud-Canary bestanden: synthetische Erstanlage, Duplikat, Nullsaldo, veralteter Snapshot, JWT-/Kanal-/Identitätssperren und Aktionssperre bei getrenntem Plugin. Offen bleiben reale automatische Plugin-Aufnahme nach Start sowie Twitch-Mehrspielerprüfung. Die lokalen Firestore-Tests verwenden einen Transaktions-Transport-Doppelgänger, keine vollständige Firestore- oder IAM-Emulation.
