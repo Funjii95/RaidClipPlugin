@@ -441,6 +441,15 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                     : !isDemo?"Aktuell ist kein Boss aktiv. Start durch Mods/Broadcaster oder den Plugin-Autostart.":"Besiegt · Nächster Boss in " +
                         time(remaining(state.boss.nextAt, now))}
                 </p>
+                {(isDemo || state.remote?.bossKnown) && state.boss.status === "active" && (
+                  <p aria-label="Boss-Restzeit">
+                    {Number.isFinite(state.boss.endsAt) && state.boss.endsAt > 0
+                      ? remaining(state.boss.endsAt, now) > 0
+                        ? `Verbleibende Zeit: ${time(remaining(state.boss.endsAt, now))}`
+                        : "Zeit abgelaufen · Bossstatus wird aktualisiert."
+                      : "Verbleibende Zeit: nicht übermittelt"}
+                  </p>
+                )}
                 <progress aria-label="Boss HP" value={Number.isFinite(state.boss.hp)?state.boss.hp:undefined} max={Number.isFinite(state.boss.maxHp)&&state.boss.maxHp>0?state.boss.maxHp:undefined}/>
                 <p>
                   {format(state.boss.hp)} / {format(state.boss.maxHp)} HP
