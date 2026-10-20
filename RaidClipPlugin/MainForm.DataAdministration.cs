@@ -20,7 +20,7 @@ public sealed partial class MainForm
         panel.Controls.AddRange([info,players,load,pearls,items,both,identity,privacy,status]);
         var busy=false;
         async Task Safe(Func<Task> operation){
-            if(busy || _dataAdministrationBusy)return;
+            if(busy || _dataAdministrationBusy || _maintenanceBusy || _connectionTestBusy || _updateBusy)return;
             if(_shutdown is not null || _minigame is {IsRunning:true}){status.Text="Plugin zuerst mit Stop vollständig anhalten. Danach erneut ausführen.";return;}
             busy=true;_dataAdministrationBusy=true;var startEnabled=_startButton.Enabled;_startButton.Enabled=false;foreach(var button in new[]{load,pearls,items,both,privacy})button.Enabled=false;
             try{await operation();}catch(Exception error){status.Text="Nicht abgeschlossen: "+error.Message;}
@@ -35,6 +35,7 @@ public sealed partial class MainForm
         load.Click+=async(_,_)=>await Safe(Load);
         async Task Reset(RpgResetScope scope){
             if(players.SelectedItem is not RpgChoice selected)return;var id=selected.Id=="ALL"?null:selected.Id;
+            await RequireRpgAdministrationScopeAsync();
             var preview=await _viewerPoints.PreviewResetAsync(id,default);
             var mode=scope==RpgResetScope.Pearls?"PERLEN":scope==RpgResetScope.Items?"ITEMS":"PERLEN UND ITEMS";
             var phrase=$"{mode} LÖSCHEN";
@@ -48,6 +49,7 @@ public sealed partial class MainForm
             if(players.SelectedItem is not RpgChoice selected || selected.Id=="ALL"){status.Text="Datenschutz-Löschung benötigt genau einen Spieler.";return;}
             if(!identity.Checked){status.Text="Zuerst Kontoinhaber und Löschanfrage prüfen und bestätigen.";return;}
             if(!ConfirmDataAdministration("Spielerdaten löschen",$"Ziel: {selected.Name}\n\nDas Konto wird gegen automatische Neuanlage gesperrt. Lokaler Spielstand, zuordenbare Spielhistorie und verwaltete Spielstandsicherungen werden ohne neue Sicherung bereinigt. Eine minimale Twitch-ID-Sperre bleibt gegen erneute Übertragung erhalten.\nCloud-Profile und Aktionsbelege gelten erst nach bestätigtem Cloud-Abgleich als bereinigt. Weitere Exporte und Protokolle müssen separat geprüft werden.\n\nZur Bestätigung eingeben:",$"SPIELER {selected.Id} LÖSCHEN"))return;
+            await RequireRpgAdministrationScopeAsync();
             var result=await Task.Run(()=>_viewerPoints.RequestPrivacyDeletionAsync(selected.Id,Guid.NewGuid(),default));
             status.Text=$"Spieler gesperrt. Lokale Bereinigung: {(result.LocalErased?"erledigt":"offen")}. Cloud-Bereinigung: {(result.CloudErased?"bestätigt":"ausstehend; Löschauftrag bleibt gespeichert")}. Externe Kopien und Protokolle separat prüfen.";identity.Checked=false;
         });
