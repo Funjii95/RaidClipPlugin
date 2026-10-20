@@ -35,7 +35,7 @@ Unter **Einstellungen → Wartung**:
 - **Programmdateien reparieren / neu installieren** verwendet das feste offizielle Update-Manifest.
   Die gleiche oder eine neuere Version ist zulässig, ein Downgrade wird abgelehnt.
   Vor dem Download werden Zielversion und Neustart bestätigt. SHA256-Prüfung bleibt erforderlich.
-  Zulässig sind die Programm-EXE, DLLs/PDBs, die zwei Laufzeitmanifeste und die Konfigurationsvorlage.
+  Zulässig sind die Programm-EXE, DLLs/PDBs, die zwei Laufzeitmanifeste, die Konfigurationsvorlage und die drei mitgelieferten WebView2-XML-Dateien.
   Pakete mit Nutzerdaten werden vollständig abgelehnt. Verknüpfte oder überlappende Daten-/Programm-
   und Paketpfade werden abgelehnt. Bei Kopierfehlern werden ersetzte Dateien restauriert und neu
   angelegte Programmdateien entfernt. Bei unvollständigem Rollback erfolgt kein automatischer Start.
@@ -75,7 +75,7 @@ oder eine Änderung von Cloud-Daten ist nicht Bestandteil dieser Umsetzung.
 
 ## Prüfung und Freigabe
 
-Automatisiert: Desktop-Build, vollständige Desktop-Testreihe (760 Tests einschließlich Wartung),
+Automatisiert: Desktop-Build, vollständige Desktop-Testreihe (761 Tests einschließlich Wartung),
 isolierter `--ui-smoke`-Start. Neue Tests prüfen Kontobegrüßung, fremde Cloud-Kanalinhaber,
 verschlüsselte Zugangssicherung und Tokeninvalidierung, Wiederherstellung bei Schreibsperre,
 Ablehnung von Daten im Reparaturpaket sowie Rollback nach teilweisem Kopieren.

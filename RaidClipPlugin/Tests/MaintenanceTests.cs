@@ -74,6 +74,23 @@ public sealed class MaintenanceTests
     }
 
     [Fact]
+    public void Repair_accepts_the_documentation_shipped_by_the_windows_publish()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "repair-publish-test-" + Guid.NewGuid().ToString("N"));
+        var payload = Path.Combine(root, "stage", "payload"); var target = Path.Combine(root, "app");
+        Directory.CreateDirectory(payload); Directory.CreateDirectory(target);
+        try
+        {
+            var published = new[] { "RaidClipPlugin.exe", "Microsoft.Web.WebView2.Core.xml", "Microsoft.Web.WebView2.WinForms.xml", "Microsoft.Web.WebView2.Wpf.xml" };
+            foreach (var name in published) File.WriteAllText(Path.Combine(payload, name), "published content");
+            ApplicationFileRepair.Apply(payload, target, (source, destination) => File.Copy(source, destination, true));
+            foreach (var name in published) Assert.Equal("published content", File.ReadAllText(Path.Combine(target, name)));
+            Assert.False(ApplicationFileRepair.IsApplicationFile("settings.xml"));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public void Repair_restores_partial_copy_failure_and_removes_new_files()
     {
         var root = Path.Combine(Path.GetTempPath(), "repair-test-" + Guid.NewGuid().ToString("N"));

@@ -7,6 +7,8 @@ internal static class ApplicationFileRepair
         var path = relative.Replace('\\', '/');
         if (path.Split('/').Any(part => part is "" or "." or ".." || part.Contains(':'))) return false;
         if (path.Equals("Config/config.template.json", StringComparison.OrdinalIgnoreCase)) return true;
+        if (new[] { "Microsoft.Web.WebView2.Core.xml", "Microsoft.Web.WebView2.WinForms.xml", "Microsoft.Web.WebView2.Wpf.xml" }
+            .Contains(path, StringComparer.OrdinalIgnoreCase)) return true;
         if (path.Equals("RaidClipPlugin.exe", StringComparison.OrdinalIgnoreCase) ||
             path.Equals("RaidClipPlugin.deps.json", StringComparison.OrdinalIgnoreCase) ||
             path.Equals("RaidClipPlugin.runtimeconfig.json", StringComparison.OrdinalIgnoreCase)) return true;
