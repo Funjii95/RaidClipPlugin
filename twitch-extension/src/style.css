@@ -540,9 +540,15 @@ select {
   background: radial-gradient(ellipse at top, #24275999, #081229 75%);
 }
 .boss-art {
-  font-size: 80px;
-  padding: 18px;
-  text-shadow: 0 0 40px #ab69ff77;
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto 14px;
+}
+.boss-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
 }
 .urgent {
   color: #ffb2c3;

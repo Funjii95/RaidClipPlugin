@@ -22,3 +22,6 @@ Vom Nutzer bereitgestellt: `RaidClipPlugin-2.1.22-Alle-Items.zip`, 102 transpare
 Für die Extension wurden die gelieferten Motive ohne gestalterische Änderungen mit erhaltenem Alphakanal auf maximal 384×384 verkleinert und als WebP gespeichert. Die Original-ZIP bleibt unverändert auf dem Desktop. Dateien: `public/items/<item-id>.webp`. Herkunft, Original-/Asset-Prüfsummen und Maße: `src/item-art.json`. Reproduzierbarer Import: `python scripts/import-item-art.py <ZIP>` (Pillow erforderlich, nur zur Vorbereitung).
 
 Alle vorhandenen Inventory-Definitionen sind abgedeckt, außerdem zwölf Fische und acht Sushi-Sorten. Fighter-Sushi verwendet dasselbe Bild für das Loot-Item und das Rezept. Das Bildpaket trägt 2.1.22; die RPG-Spielregeln wurden durch den Grafikimport nicht auf eine andere Version umgestellt.
+
+## public/boss-kraken.png
+Vom Nutzer am 20.10.2026 bereitgestelltes Bild 'Krakens Erwachen in den versunkenen Ruinen.png', unverändert als lokale Boss-Illustration eingebunden. Keine externe Bild-URL.

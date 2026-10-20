@@ -430,8 +430,8 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                   </button>
                 </article>))}
             {tab === "Boss" && (<article className="boss">
-                <div className="boss-art" aria-hidden="true">
-                  🐙
+                <div className="boss-art">
+                  <img src="./boss-kraken.png" alt="Kraken in versunkenen Ruinen" width="1254" height="1254" loading="lazy"/>
                 </div>
                 <small>BOSS DER TIEFSEE</small>
                 <h3>{state.boss.name}</h3>
