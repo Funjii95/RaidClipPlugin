@@ -7,7 +7,7 @@ namespace RaidClipPlugin.Tests;
 public sealed class EventStartCommandTests
 {
     [Theory]
-    [InlineData(" !START boss ", "!boss")]
+    [InlineData(" !START boss ", "!start boss")]
     [InlineData("!START race 100", "!startrace 100")]
     [InlineData("!start race all", "!startrace all")]
     [InlineData("!start heist", "!heist")]
@@ -19,7 +19,7 @@ public sealed class EventStartCommandTests
         Assert.Equal(expected, string.Join(' ', EventStartCommand.Translate(parsed.Parts)!));
     }
     [Theory]
-    [InlineData("!start boss", "!boss")]
+    [InlineData("!start boss", "!start boss")]
     [InlineData("!start race 100", "!startrace 100")]
     [InlineData("!start race all", "!startrace all")]
     [InlineData("!start HEIST", "!heist")]

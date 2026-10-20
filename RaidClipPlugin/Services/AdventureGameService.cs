@@ -76,7 +76,7 @@ public sealed partial class AdventureGameService
 
     public void UpdateConfig(MinigameConfig config) { _config = config; _points.ConfigureHotTime(config.Adventures.Rpg); ScheduleAutoBoss(); }
     private void ScheduleAutoBoss() => _nextAutoBoss = _now().AddMinutes(Math.Clamp(_config.Adventures.Boss.AutoStartMinutes, 1, 1440));
-    public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!boss" or "!attack" or "!joinboss";
+    public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!boss" or "!start boss" or "!attack" or "!joinboss";
     public async Task RunAsync(CancellationToken token)
     {
         var overlay = new AdventureOverlayServer(() => Status,community:()=>CommunityOverlay?.Invoke()??new CommunityOverlayEventManager().Read(Status,_now())).RunAsync(token);
@@ -126,7 +126,7 @@ public sealed partial class AdventureGameService
             finally { PublishStatus(); _gate.Release(); }
             return;
         }
-        var command = action == "boss" ? "!boss" : "!startrace";
+        var command = action == "boss" ? "!start boss" : "!startrace";
         if (action != "boss" && (broadcaster is null || broadcaster.Id != _broadcasterId))
             throw new InvalidOperationException("Das verbundene Twitch-Konto konnte nicht zugeordnet werden. Bitte Module neu verbinden.");
         var parts = action == "boss" ? new[] { command } : new[] { command, stake.ToString(CultureInfo.InvariantCulture) };
@@ -215,22 +215,34 @@ public sealed partial class AdventureGameService
                     string.Join(", ", fish.OrderBy(p => p.Key).Select(p => $"{p.Key}: {p.Value}x")) + $" | Größter Fang: {profile.Entry.BiggestFishName} ({profile.Entry.BiggestFishGrams / 1000.0:0.00} kg)."), token);
                 return;
             }
-            if (command is "!boss" or "!attack")
+            if (command is "!boss" or "!start boss" or "!attack")
             {
                 if (!settings.Boss.Enabled) return;
-                if (parts.Length != 1) { await Say("Nutzung: !boss zum Starten, !attack zum Angreifen – ohne Einsatz.", token); return; }
+                if (parts.Length != 1) { await Say("Nutzung: !boss für die Boss-Pause, !start boss zum Starten, !attack zum Angreifen – ohne Einsatz.", token); return; }
                 if (command == "!boss")
+                {
+                    if (_boss is not null) await Say($"Boss aktiv: {_boss.Hp} LP. Mit !attack angreifen! Die nächste Boss-Pause beginnt nach dem Kampf.", token);
+                    else
+                    {
+                        var next = settings.Boss.AutoStartEnabled && _nextAutoBoss > _nextBoss ? _nextAutoBoss : _nextBoss;
+                        var seconds = Math.Max(0, (long)Math.Ceiling((next - _now()).TotalSeconds));
+                        await Say(seconds > 0
+                            ? $"Nächster Boss in {seconds / 60} Min. {seconds % 60} Sek."
+                            : "Boss-Pause abgelaufen. Mods/Broadcaster können mit !start boss starten.", token);
+                    }
+                }
+                else if (command == "!start boss")
                 {
                     if (!EventStartCommand.IsAllowed(message, _broadcasterId))
                     {
-                        await Say($"@{message.UserName}, nur Mods/Broadcaster dürfen den Boss starten. Mit !attack kannst du einen aktiven Boss angreifen.", token);
+                        await Say($"@{message.UserName}, nur Mods/Broadcaster dürfen mit !start boss einen Boss starten.", token);
                         return;
                     }
                     if (_boss is not null) await Say($"Boss aktiv: {_boss.Hp} LP. Mit !attack angreifen!", token);
-                    else if (_now() < _nextBoss) await Say("Der nächste Boss erscheint nach der Rundenpause.", token);
+                    else if (_now() < _nextBoss) await Say("Der nächste Boss erscheint nach der Rundenpause. Verbleibende Zeit mit !boss.", token);
                     else await SpawnBossAsync(token);
                 }
-                else if (_boss is null) await Say("Aktuell ist kein Boss aktiv. Start mit !boss oder auf den Auto-Start warten.", token);
+                else if (_boss is null) await Say("Aktuell ist kein Boss aktiv. Start mit !start boss oder auf den Auto-Start warten.", token);
                 else await AttackBossAsync(message, token);
                 return;
             }

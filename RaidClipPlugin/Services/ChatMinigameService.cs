@@ -657,7 +657,7 @@ public sealed partial class ChatMinigameService : IDisposable
                 parts = translated;
                 command = parts[0];
                 // Preserve per-command disable switches; the shortcut must not bypass them.
-                var targetId = command == "!boss" ? "adventure.boss" : command == "!startrace" ? "adventure.race" : "heist.start";
+                var targetId = command == "!start boss" ? "event.start.boss" : command == "!startrace" ? "adventure.race" : "heist.start";
                 var target = _commandRegistry.Commands.FirstOrDefault(c => c.CommandId == targetId);
                 if (target is null || !target.Enabled)
                 {

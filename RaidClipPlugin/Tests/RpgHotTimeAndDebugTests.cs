@@ -70,10 +70,10 @@ public sealed class RpgHotTimeAndDebugTests : IDisposable
         var c=Config();c.Adventures.Boss.HitPoints=10;c.Adventures.Rpg.BossLootChance=0;
         var store=new ViewerPointStore(_dir,()=>_now);var messages=new List<string>();
         var service=new AdventureGameService(store,c,(s,_)=>{messages.Add(s);return Task.CompletedTask;},new Low(),()=>_now,"b");
-        await service.HandleAsync(new(){UserId="b",IsBroadcaster=true},"!boss",new[]{"!boss"},default);
+        await service.HandleAsync(new(){UserId="b",IsBroadcaster=true},"!start boss",new[]{"!start boss"},default);
         await service.ExecuteBossAttackAsync("42","TEST","admin",default);Assert.False(store.HotTime.Status.Active);
         _now=_now.AddMinutes(10);
-        await service.HandleAsync(new(){UserId="b",IsBroadcaster=true},"!boss",new[]{"!boss"},default);
+        await service.HandleAsync(new(){UserId="b",IsBroadcaster=true},"!start boss",new[]{"!start boss"},default);
         await service.HandleAsync(new(){UserId="42",UserName="TEST",Id="chat"},"!attack",new[]{"!attack"},default);
         Assert.True(store.HotTime.Status.Active);Assert.Single(messages,s=>s.Contains("🔥 HOT TIME"));
     }

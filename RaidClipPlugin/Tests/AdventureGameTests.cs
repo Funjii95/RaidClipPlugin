@@ -13,7 +13,7 @@ public sealed class AdventureGameTests
         using var f = new Fixture(10);
         f.Config.Adventures.Boss.AttackCooldownSeconds = 10;
         f.Config.Adventures.Boss.AttackCooldownMessage = "@{user}: noch {remaining}s warten";
-        await f.Send("mod", "!boss", moderator:true);
+        await f.Send("mod", "!start boss", moderator:true);
         await f.Send("a", "!attack");
         Assert.Equal(50, f.Service.Status.BossHp);
         f.Now = f.Now.AddSeconds(3);
@@ -28,7 +28,7 @@ public sealed class AdventureGameTests
     public async Task AttackAndLegacyAliasShareCooldownAndRegistryEntry()
     {
         using var f = new Fixture(30);
-        await f.Send("mod", "!boss", moderator:true);
+        await f.Send("mod", "!start boss", moderator:true);
         await f.Send("a", "!attack");
         Assert.Equal(30, f.Service.Status.BossHp);
         await f.Send("a", "!joinboss");
@@ -122,7 +122,7 @@ public sealed class AdventureGameTests
     {
         using var f = new Fixture(30); await f.Seed("a"); await f.Seed("b");
         f.Config.Adventures.Boss.RewardPool = 0;
-        await f.Send("mod", "!boss", moderator:true);
+        await f.Send("mod", "!start boss", moderator:true);
         await f.Send("a", "!joinboss"); await f.Send("b", "!joinboss");
         Assert.Equal(1, (await f.Points.GetProfileAsync("a", default)).Entry.BossDefeats);
         Assert.Equal(1, (await f.Points.GetProfileAsync("b", default)).Entry.BossDefeats);
@@ -140,7 +140,7 @@ public sealed class AdventureGameTests
         await f.Send("a", "!fish 100");
         Assert.Equal("a: 100 -> 800 / 1700", Assert.Single(f.Messages));
         f.Config.Adventures.Boss.StartMessage = new string('x', 600);
-        await f.Send("mod", "!boss", moderator:true);
+        await f.Send("mod", "!start boss", moderator:true);
         Assert.True(f.Messages.Last().Length <= 480);
         Assert.EndsWith("…", f.Messages.Last());
         Assert.Equal("a b", AdventureGameService.Format("a\nb"));
@@ -176,9 +176,9 @@ public sealed class AdventureGameTests
     public async Task BossStartIsModeratorOnlyButAttacksAndRaceAreOpenToViewers()
     {
         using var f = new Fixture(30); await f.Seed("a");
-        await f.Send("a", "!boss", CommandAuthorization.Allowed);
+        await f.Send("a", "!start boss", CommandAuthorization.Allowed);
         Assert.DoesNotContain(f.Messages, m => m.Contains("erscheint!"));
-        await f.Send("mod", "!boss", moderator: true);
+        await f.Send("mod", "!start boss", moderator: true);
         await f.Send("a", "!joinboss");
         Assert.Contains(f.Messages, m => m.Contains("@a trifft"));
         await f.Send("a", "!start race 100");
@@ -187,9 +187,41 @@ public sealed class AdventureGameTests
         config.Commands.CommandRoleOverrides["adventure.boss"] = "Viewer";
         config.Commands.CommandRoleOverrides["heist.start"] = "Viewer";
         var registry = new CommandRegistry(); registry.Update(config);
-        Assert.Equal(CommandRole.Moderator, registry.Commands.Single(c => c.CommandId == "adventure.boss").RequiredRole);
+        Assert.Equal(CommandRole.Viewer, registry.Commands.Single(c => c.CommandId == "adventure.boss").RequiredRole);
         Assert.Equal(CommandRole.Moderator, registry.Commands.Single(c => c.CommandId == "heist.start").RequiredRole);
         Assert.Equal(CommandRole.Viewer, registry.Commands.Single(c => c.CommandId == "adventure.race").RequiredRole);
+    }
+    [Fact]
+    public async Task Boss_query_never_starts_a_round_even_for_moderator_or_with_extra_arguments()
+    {
+        using var f = new Fixture(); await f.Seed("a");
+        await f.Send("a", "!boss"); Assert.False(f.Service.Status.BossActive);
+        Assert.Contains(f.Messages,m=>m.Contains("Boss-Pause abgelaufen")&&m.Contains("!start boss"));
+        await f.Send("mod", "!boss", moderator:true); Assert.False(f.Service.Status.BossActive);
+        await f.Send("mod", "!boss start", moderator:true); Assert.False(f.Service.Status.BossActive);
+        await f.Send("a", "!start boss"); Assert.False(f.Service.Status.BossActive);
+        await f.Send("mod", "!start boss", moderator:true); Assert.True(f.Service.Status.BossActive);
+        var before=f.Service.Status;
+        await f.Send("a", "!boss");
+        Assert.Equal(before.BossEventId,f.Service.Status.BossEventId);
+        Assert.Equal(before.BossHp,f.Service.Status.BossHp);
+        Assert.Contains(f.Messages,m=>m.Contains("Boss aktiv:"));
+    }
+
+    [Fact]
+    public async Task Boss_query_reports_remaining_round_pause_without_shortening_it()
+    {
+        using var f=new Fixture();f.Config.Adventures.Boss.RoundCooldownSeconds=65;
+        await f.Send("mod","!start boss",moderator:true);
+        await f.Service.ControlAsync("cancelboss",0,default);
+        f.Now=f.Now.AddSeconds(5);await f.Send("a","!boss");
+        Assert.Contains(f.Messages,m=>m=="Nächster Boss in 1 Min. 0 Sek.");
+        Assert.False(f.Service.Status.BossActive);
+        await f.Send("mod","!start boss",moderator:true);Assert.False(f.Service.Status.BossActive);
+        f.Now=f.Now.AddSeconds(61);await f.Send("a","!boss");
+        Assert.False(f.Service.Status.BossActive);
+        Assert.Contains(f.Messages,m=>m.Contains("Boss-Pause abgelaufen"));
+        await f.Send("mod","!start boss",moderator:true);Assert.True(f.Service.Status.BossActive);
     }
     private sealed class FixedRandom(int value) : IDuelRandom
     { public int NextInclusive(int minimum, int maximum) => Math.Clamp(value, minimum, maximum); }
@@ -327,7 +359,7 @@ public sealed class AdventureGameTests
     public async Task BossSharesRewardAcrossUniqueAttackersAndEnforcesAttackCooldown()
     {
         using var f = new Fixture(30); await f.Seed("a"); await f.Seed("b");
-        await f.Send("a", "!boss", moderator: true);
+        await f.Send("a", "!start boss", moderator: true);
         await f.Send("a", "!joinboss"); await f.Send("a", "!joinboss");
         Assert.Equal(1000, await f.Balance("a"));
         await f.Send("b", "!joinboss");

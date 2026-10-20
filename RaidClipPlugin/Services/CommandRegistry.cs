@@ -32,7 +32,7 @@ public sealed class CommandRegistry
                 role = ParseRole(roleOverride, role);
             if (module == "music" && role != CommandRole.Broadcaster)
                 role = CommandRole.Moderator;
-            if ((id is "heist.start" or "adventure.boss" || id.StartsWith("event.start.", StringComparison.Ordinal)) &&
+            if ((id is "heist.start" || id.StartsWith("event.start.", StringComparison.Ordinal)) &&
                 role != CommandRole.Broadcaster) role = CommandRole.Moderator;
             if (!config.Commands.IsCommandEnabled(id))
                 enabled = false;
@@ -66,11 +66,11 @@ public sealed class CommandRegistry
         foreach (var game in new[] {
             ("fishing", "!fish", "Fischen", m.Adventures.Fishing.Enabled, "[Betrag|all]", "Kostenloser Fangversuch oder Angeln mit Einsatz; Zutatenvorrat: !fishbag."),
             ("treasure", "!dive", "Schatzsuche", m.Adventures.Treasure.Enabled, "<Betrag|all>", "Erkundet eine Höhle auf der Suche nach Beute."),
-            ("boss", "!boss", "Bosskampf", m.Adventures.Boss.Enabled, "", "Startet einen Bosskampf oder zeigt den aktiven Boss an.") })
+            ("boss", "!boss", "Bosskampf", m.Adventures.Boss.Enabled, "", "Zeigt die verbleibende Boss-Pause oder den aktiven Boss; startet keinen Kampf.") })
             Add("adventure." + game.Item1, game.Item2, null, game.Item1, game.Item3, game.Item3,
                 game.Item6, (game.Item2 + " " + game.Item5).Trim(), game.Item2,
                 m.Enabled && m.PointsEnabled && game.Item4,
-                game.Item1 == "boss" ? CommandRole.Moderator : CommandRole.Viewer, order:50);
+                CommandRole.Viewer, order:50);
         Add("adventure.race.join", "!joinrace", null, "race", "Rennen", "Rennen beitreten",
             "Tritt dem offenen Rennen zum festgelegten Einsatz bei.", "!joinrace", "!joinrace",
             m.Enabled && m.PointsEnabled && m.Adventures.Race.Enabled, order:51);

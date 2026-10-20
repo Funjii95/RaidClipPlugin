@@ -133,7 +133,7 @@ public sealed class RpgChatMessagesTests : IDisposable
         config.Adventures.Rpg = _config;
         var messages = new List<string>();
         var service = new AdventureGameService(_points, config, (text, _) => { messages.Add(text); return Task.CompletedTask; }, new Lowest(), broadcasterId: "b");
-        await service.HandleAsync(new() { UserId = "b", IsBroadcaster = true }, "!boss", new[] { "!boss" }, Token);
+        await service.HandleAsync(new() { UserId = "b", IsBroadcaster = true }, "!start boss", new[] { "!start boss" }, Token);
         messages.Clear();
         await service.ExecuteBossAttackAsync("42", "Funjii", "attack", Token);
         Assert.Contains("Kritischer Treffer!", Assert.Single(messages));

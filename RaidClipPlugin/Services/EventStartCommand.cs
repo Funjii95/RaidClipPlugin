@@ -14,7 +14,7 @@ public static class EventStartCommand
         if (parts.Length < 2) return null;
         return parts[1].ToLowerInvariant() switch
         {
-            "boss" when parts.Length == 2 => new[] { "!boss" },
+            "boss" when parts.Length == 2 => new[] { "!start boss" },
             "race" when parts.Length == 3 => new[] { "!startrace", parts[2] },
             "heist" when parts.Length == 2 => new[] { "!heist" },
             _ => null

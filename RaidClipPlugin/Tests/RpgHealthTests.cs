@@ -17,7 +17,7 @@ public sealed class RpgHealthTests : IDisposable
         c.Adventures.Rpg.BossLootChance=100;return c;
     }
     private AdventureGameService Game(ViewerPointStore s,MinigameConfig c)=>new(s,c,(_,_)=>Task.CompletedTask,new Low(),()=>_now,"b");
-    private async Task Start(AdventureGameService game)=>await game.HandleAsync(new(){UserId="b",IsBroadcaster=true},"!boss",new[]{"!boss"},default);
+    private async Task Start(AdventureGameService game)=>await game.HandleAsync(new(){UserId="b",IsBroadcaster=true},"!start boss",new[]{"!start boss"},default);
     private async Task Seed(ViewerPointStore s,string id,int hp)
     {
         await s.ApplyRpgAsync(id,id,Guid.NewGuid().ToString("N"),a=>

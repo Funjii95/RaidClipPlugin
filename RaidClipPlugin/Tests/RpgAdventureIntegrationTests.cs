@@ -114,7 +114,7 @@ public sealed class RpgAdventureIntegrationTests : IDisposable
         }, Token);
         config.Adventures.Boss.HitPoints = 200;
         var service = new AdventureGameService(store, config, (_, _) => Task.CompletedTask, new Lowest(), broadcasterId: "b");
-        await service.HandleAsync(new() { UserId = "b", IsBroadcaster = true }, "!boss", new[] { "!boss" }, Token);
+        await service.HandleAsync(new() { UserId = "b", IsBroadcaster = true }, "!start boss", new[] { "!start boss" }, Token);
         var attack = new ChatMessage { Id = "attack1", UserId = "42", UserName = "Otter" };
         var accepted = await service.ExecuteBossAttackAsync("42", "Otter", attack.Id, Token);
         Assert.True(accepted.Success);
