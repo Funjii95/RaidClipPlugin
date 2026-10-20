@@ -68,12 +68,12 @@ public sealed class RemoteExtendedTests : IDisposable
         using var pump=new CloudActionClient(transport,Executor(),()=>admission.CanPlay(epoch),_=>{});var pumping=pump.RunAsync(stop.Token);
         try{
             SnapshotProtocol.RelayAvailability? state;
-            do{await Task.Delay(10,stop.Token);state=await api.Viewer.GetFromJsonAsync<SnapshotProtocol.RelayAvailability>("/api/v1/play/state",stop.Token);}while(!state!.Available);
+            do{await Task.Delay(250,stop.Token);state=await api.Viewer.GetFromJsonAsync<SnapshotProtocol.RelayAvailability>("/api/v1/play/state",stop.Token);}while(!state!.Available);
             api.Viewer.DefaultRequestHeaders.Add("X-Rpg-Session",state.SessionId!.Value.ToString());
             var requests=Enumerable.Range(0,12).Select(_=>Envelope("inventory",new{}).Intent).ToArray();
             foreach(var request in requests)(await api.Viewer.PostAsJsonAsync("/api/v1/play/actions",request,stop.Token)).EnsureSuccessStatusCode();
             SnapshotProtocol.ActionReceipt? last;
-            do{await Task.Delay(100,stop.Token);last=await api.Viewer.GetFromJsonAsync<SnapshotProtocol.ActionReceipt>("/api/v1/play/actions/"+requests[^1].ActionId,stop.Token);}while(last!.State is "queued" or "executing");
+            do{await Task.Delay(500,stop.Token);last=await api.Viewer.GetFromJsonAsync<SnapshotProtocol.ActionReceipt>("/api/v1/play/actions/"+requests[^1].ActionId,stop.Token);}while(last!.State is "queued" or "executing");
             Assert.Equal("applied",last.State);Assert.Equal(1000,await points.GetPointsAsync("1001",default));
         }finally{stop.Cancel();await pumping;}
     }
