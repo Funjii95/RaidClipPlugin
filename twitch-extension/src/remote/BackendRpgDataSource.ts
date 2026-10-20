@@ -8,6 +8,18 @@ import {PluginRuleError} from './errors';
 const actionKinds:Partial<Record<Action['type'],string>>={dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
 const canonical=(v:any):any=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k[0].toLowerCase()+k.slice(1),canonical(v)])):v;
 const signature=(v:any)=>JSON.stringify(canonical([field(v,'UserId'),field(v,'Points'),field(v,'Rpg')]));
+// Pearls, fishing stocks and regenerating HP can change while the read-only status
+// response travels through the cloud. They are not inputs to CharacterStatService.
+const statTimes=(value:any):any=>Array.isArray(value)?value.map(statTimes):value&&typeof value==='object'
+ ? Object.fromEntries(Object.entries(value).map(([key,item])=>[key,
+   ['activatedat','expiresat'].includes(key.toLowerCase())&&typeof item==='string'&&Number.isFinite(Date.parse(item))
+    ? new Date(item).toISOString():statTimes(item)])):value;
+const statsSignature=(profile:any)=>{
+ const rpg=field(profile,'Rpg');
+ const cooldowns=Object.fromEntries(Object.entries(field(rpg,'Cooldowns')??{}).map(([key,value])=>
+  [key,typeof value==='string'&&Number.isFinite(Date.parse(value))?new Date(value).toISOString():value]));
+ return JSON.stringify(canonical([field(profile,'UserId'),...['Inventory','Equipment','Perks','Buffs'].map(key=>statTimes(field(rpg,key))),cooldowns]));
+};
 export class BackendRpgDataSource implements RpgDataSource {
  readonly minigames=new RemoteMinigameClient(this);
  private previewCache?:{key:string;value:NonNullable<DemoState['remote']>['adventurePreview']};
@@ -81,7 +93,7 @@ export class BackendRpgDataSource implements RpgDataSource {
     mapped.result=old.result;mapped.salvageQuote=old.salvageQuote;if(old.remote!.bossKnown){mapped.boss=old.boss;mapped.remote!.bossKnown=true;}if(old.remote!.hotKnown){mapped.hotTime=old.hotTime;mapped.remote!.hotKnown=true;}mapped.remote!.pendingState=old.remote!.pendingState;
     mapped.remote!.syncing=old.remote!.syncing&&signature(profile.value)===signature(this.profile);
     this.profile=profile.value;this.state=mapped;
-    if(this.statusPayload?.signature===signature(this.profile))this.state.remote!.stats=this.statusPayload.stats;
+    if(this.statusPayload?.signature===statsSignature(this.profile))this.state.remote!.stats=this.statusPayload.stats;
     if(this.previewCache?.key.startsWith(signature(this.profile)+'|'+JSON.stringify(this.catalog)+'|'))this.state.remote!.adventurePreview=this.previewCache.value;
    }catch(error){this.state=emptyRemoteState();this.state.remote!.connection='error';this.state.remote!.message=error instanceof Error?error.message:'Spielstand ungültig.';this.availability=undefined;this.emit();return this.getSnapshot();}
   }
@@ -183,9 +195,10 @@ export class BackendRpgDataSource implements RpgDataSource {
    if(data?.profile&&data?.stats){
     const origin={...data.profile,Source:'plugin-snapshot'};mapProfile(origin,this.catalog);
     const actual=attributes(data.stats) as CharacterStats;
-    this.statusPayload={signature:signature(origin),stats:actual};
-    this.statusSeen=sig;
-    if(this.statusPayload.signature===signature(this.profile))this.state.remote!.stats=actual;
+    if(field(origin,'UserId')!==field(this.profile,'UserId'))throw Error('Status gehört zu einem anderen Spieler.');
+    this.statusPayload={signature:statsSignature(origin),stats:actual};
+    if(this.statusPayload.signature===statsSignature(this.profile))this.statusSeen=sig;
+    if(this.statusPayload.signature===statsSignature(this.profile))this.state.remote!.stats=actual;
    }
    }catch{} // Character status failures must not suppress the independent live boss read.
    }
