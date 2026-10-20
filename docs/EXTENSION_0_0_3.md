@@ -13,11 +13,12 @@ Autoritative Umsetzung im vorhandenen Plugin, gemeinsame Spielstände für Chat 
 - Faktor: 1 + Stufe * 0,025. Bei +9: 1,225 (+22,5 %).
 - Beispiel: Basiswert 100 ergibt bei +1 102,5, bei +2 105 und bei +9 122,5.
 - Upgrades gelingen immer; kein Zufallswurf.
-- Upgrade-Materialien sind erforderlich. Materialarten und Mengen werden vom Betreiber später festgelegt.
-- Perlenkosten und die konkrete Auswahl aufwertbarer Attribute/etwaige Rundung sind noch nicht festgelegt. Keine Werte erfinden.
+- +7 benötigt 1 Weiße Perle, +8 benötigt 1 Blaue Perle, +9 benötigt 1 Rote Perle. +1 bis +6 benötigen kein Upgrade-Material.
+- Perlenkosten je EINZELNEM Schritt auf die Zielstufe: +1 10.000; +2 25.000; +3 50.000; +4 100.000; +5 200.000; +6 350.000; +7 500.000; +8 750.000; +9 1.000.000. Kein Sammelpreis für alle Stufen. Keine Stufensprünge.
+- Bezug/Verteilung der Materialperlen sowie konkrete Auswahl aufwertbarer Attribute/etwaige Rundung sind noch offen. Keine Dropchancen oder zusätzlichen Kosten erfinden.
 - Die reine Dezimalberechnung ist lokal als RpgEquipmentUpgradeRules vorbereitet und getestet. Noch keine Einbindung in gespeicherte Gegenstände, Aktionen oder Anzeige.
 
-Bis Materialien und Kosten feststehen: keine Upgrade-Aktion aktivieren, keine Materialien oder Perlen abbuchen, keine Items verändern oder migrieren. Vorhandene Grundwerte bleiben unverändert; spätere Berechnung muss immer von unveränderten ursprünglichen Werten ausgehen.
+Bis Materialverwaltung, sichere Transaktion und Datenprojektion integriert und geprüft sind: keine Upgrade-Aktion aktivieren, keine Materialien oder Perlen abbuchen, keine Items verändern oder migrieren. Vorhandene Grundwerte bleiben unverändert; spätere Berechnung muss immer von unveränderten ursprünglichen Werten ausgehen.
 
 ## Bestehende Integrationspunkte
 - RaidClipPlugin/Models/RpgProfile.cs: RpgItem mit InstanceId, Attributes und CoreStatsVersion.
