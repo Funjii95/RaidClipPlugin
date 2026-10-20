@@ -56,13 +56,6 @@ public sealed class ConfigurationService
         appConfig.Twitch.ClientId = credentials.ClientId;
         appConfig.Twitch.ClientSecret = credentials.ClientSecret;
 
-
-        if (string.IsNullOrWhiteSpace(appConfig.Twitch.BroadcasterLogin))
-        {
-            appConfig.Twitch.BroadcasterLogin = "Funjii";
-        }
-
-
         if (string.IsNullOrWhiteSpace(appConfig.OBS.Host))
         {
             appConfig.OBS.Host = "127.0.0.1";

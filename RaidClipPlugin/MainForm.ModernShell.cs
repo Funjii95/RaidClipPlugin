@@ -135,7 +135,16 @@ public sealed partial class MainForm
   Margin = Padding.Empty,
   Padding = Padding.Empty
         };
-        right.Controls.Add(CreateTopbarChip("▣  Funjii", AccentColor));
+        _accountNameLabel.AutoSize = true;
+        _accountNameLabel.MinimumSize = new Size(92, 34);
+        _accountNameLabel.TextAlign = ContentAlignment.MiddleCenter;
+        _accountNameLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+        _accountNameLabel.ForeColor = TextColor;
+        _accountNameLabel.BackColor = SurfaceColor;
+        _accountNameLabel.Margin = new Padding(4, 4, 4, 0);
+        _accountNameLabel.Padding = new Padding(6, 0, 6, 0);
+        UpdateAccountIdentity(null);
+        right.Controls.Add(_accountNameLabel);
         right.Controls.Add(CreateTopbarChip("●  Aktiv", HealthyStatusColor));
         right.Controls.Add(CreateTopbarChip("🔔", AccentColor));
         right.Controls.Add(CreateWindowButton("–", () => WindowState = FormWindowState.Minimized));

@@ -9,6 +9,8 @@ public sealed class SetupWizardForm : Form
         "https://dev.twitch.tv/console/apps";
 
     private readonly TwitchCredentialStore _credentialStore;
+    private readonly bool _replaceExisting;
+    public string? MaintenanceBackupPath { get; private set; }
 
     private readonly TextBox _clientIdBox = new()
     {
@@ -36,9 +38,10 @@ public sealed class SetupWizardForm : Form
         MaximumSize = new Size(540, 0)
     };
 
-    public SetupWizardForm(TwitchCredentialStore credentialStore)
+    public SetupWizardForm(TwitchCredentialStore credentialStore, bool replaceExisting = false)
     {
         _credentialStore = credentialStore;
+        _replaceExisting = replaceExisting;
 
         Text = "Raid Clip Plugin – Einrichtung";
         StartPosition = FormStartPosition.CenterScreen;
@@ -73,7 +76,9 @@ public sealed class SetupWizardForm : Form
             Text =
                 "Um RaidClip zu benutzen, benötigst du eine eigene " +
                 "Twitch Application. Öffne die Twitch Developer Console, " +
-                "erstelle dort eine Anwendung und trage die beiden Werte ein.",
+                "erstelle dort eine Anwendung und trage die beiden Werte ein. " +
+                "Den gewünschten Twitch-Kanal wählst du unter Einstellungen > Allgemein. " +
+                "Beim Austausch wird nur die alte Twitch-Anmeldung entfernt; Spielstände und Cloud-Zuordnung bleiben erhalten.",
             AutoSize = true,
             MaximumSize = new Size(560, 0),
             ForeColor = Color.FromArgb(174, 174, 180)
@@ -223,9 +228,10 @@ public sealed class SetupWizardForm : Form
     {
         try
         {
-            _credentialStore.Save(
-                _clientIdBox.Text,
-                _clientSecretBox.Text);
+            if (_replaceExisting)
+                MaintenanceBackupPath = new PluginMaintenanceService().ReplaceTwitchCredentials(_clientIdBox.Text, _clientSecretBox.Text);
+            else
+                _credentialStore.Save(_clientIdBox.Text, _clientSecretBox.Text);
             DialogResult = DialogResult.OK;
             Close();
         }

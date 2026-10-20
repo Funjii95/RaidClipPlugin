@@ -48,7 +48,16 @@ public sealed partial class MainForm
         var greeting = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty, BackColor = BackgroundColor };
         greeting.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         greeting.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        greeting.Controls.Add(new Label { Text = "Guten Abend, Funjii", Dock = DockStyle.Fill, AutoSize = false, ForeColor = TextColor, Font = new Font("Segoe UI", 20F, FontStyle.Bold), TextAlign = ContentAlignment.BottomLeft }, 0, 0);
+        _accountGreetingLabel.Dock = DockStyle.Fill;
+        _accountGreetingLabel.ForeColor = TextColor;
+        _accountGreetingLabel.Font = new Font("Segoe UI", 20F, FontStyle.Bold);
+        _accountGreetingLabel.TextAlign = ContentAlignment.BottomLeft;
+        _accountGreetingLabel.AutoEllipsis = true;
+        UpdateAccountIdentity(null);
+        greeting.Controls.Add(_accountGreetingLabel, 0, 0);
+        _greetingTimer.Tick += (_, _) => _accountGreetingLabel.Text = AccountGreeting(_accountDisplayName, DateTime.Now.Hour);
+        _greetingTimer.Start();
+        FormClosed += (_, _) => _greetingTimer.Dispose();
         greeting.Controls.Add(new Label { Text = "Dein Stream-System ist bereit.", Dock = DockStyle.Fill, AutoSize = false, ForeColor = MutedTextColor, Font = new Font("Segoe UI", 10.2F), TextAlign = ContentAlignment.TopLeft }, 0, 1);
         layout.Controls.Add(greeting, 0, 0);
         layout.Controls.Add(CreateUpdateStatusCard(), 1, 0);

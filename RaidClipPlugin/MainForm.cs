@@ -1786,6 +1786,7 @@ private enum CloseChoice
             Dock = DockStyle.Fill
         };
         AddMinigameTab(settingsTabs, "Allgemein", generalSettingsGroup);
+        AddMinigameTab(settingsTabs, "Wartung", BuildMaintenancePanel());
         AddMinigameTab(settingsTabs, "Patchnotes", BuildPatchNotesPage());
 
         var settingsLayout = new TableLayoutPanel
@@ -2556,7 +2557,7 @@ private enum CloseChoice
 
     private async Task StartPluginAsync()
     {
-        if(_dataAdministrationBusy || _administrationTestOnly){AppendLog("Im Verwaltungstest bzw. während Datenverwaltung kein Spielstart.");return;}
+        if(_stoppingTasks.Any(task => !task.IsCompleted) || _dataAdministrationBusy || _maintenanceBusy || _connectionTestBusy || _updateBusy || _administrationTestOnly){AppendLog("Im Verwaltungstest bzw. während Datenverwaltung kein Spielstart.");return;}
         if (PluginInstanceGuard.AnotherInstanceIsRunning())
         {
             AppendLog("Bitte zuerst die normale RaidClipPlugin-Version beenden, bevor die getrennte Testversion denselben Kanal verbindet.");
@@ -2619,6 +2620,7 @@ private enum CloseChoice
             _twitch = twitch;
             twitch.ChatMessageSent += UpdateChatLastSent;
             _twitchSession = session;
+            await ShowAuthenticatedAccountAsync(twitch, session, cancellationToken);
 
             _broadcaster = await twitch.GetUserAsync(
                 config.Twitch.BroadcasterLogin,
@@ -2630,6 +2632,7 @@ private enum CloseChoice
                     "Der konfigurierte Twitch-Kanal wurde nicht gefunden.");
             }
 
+            EnsureCloudChannelMatches(_broadcaster.Id);
             UpdateChatAuthenticationDiagnostics(session, _broadcaster);
             AppendLog(
                 $"Twitch-Token validiert: {session.Login} ({session.UserId}); " +
@@ -4321,7 +4324,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         }
     }
 
-    private async Task ImportMinigameDataAsync()
+    private async Task ImportMinigameDataCoreAsync()
     {
         try
         {
@@ -4337,6 +4340,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
                     MessageBoxIcon.Question) != DialogResult.Yes) return;
 
             var config = ReadSettingsFromControls();
+            await RequireRpgAdministrationScopeAsync();
             var settings = await _viewerPoints.ImportAsync(
                 dialog.FileName, config.Minigame,
                 _shutdown?.Token ?? CancellationToken.None);
@@ -4354,10 +4358,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         }
     }
 
-    private async Task ResetPointDataAsync()
+    private async Task ResetPointDataCoreAsync()
     {
         var confirmation = MessageBox.Show(
-            "Wirklich alle lokal gespeicherten Zuschauerpunkte löschen?",
+            "Alle lokalen Perlen auf 0 setzen? RPG-Spielstände, Level und Items bleiben erhalten. Eine Sicherung wird angelegt. Bei Cloud-Sync wird die Änderung synchronisiert.",
             "Punktedaten zurücksetzen",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning);
@@ -4368,8 +4372,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
         try
         {
-            await _viewerPoints.ResetAsync(
-                _shutdown?.Token ?? CancellationToken.None);
+            await RequireRpgAdministrationScopeAsync();
+            var preview = await _viewerPoints.PreviewResetAsync(null, CancellationToken.None);
+            var result = await _viewerPoints.ResetAsync(null, RpgResetScope.Pearls, Guid.NewGuid(), preview.Fingerprint, CancellationToken.None);
+            if (!result.Success) throw new InvalidOperationException(result.Message);
             AppendLog("Alle Minigame-Punktedaten wurden zurückgesetzt.");
             SetMinigameStatus("Punktedaten zurückgesetzt", ActiveColor);
             await RefreshMinigameDashboardAsync();
@@ -4385,13 +4391,14 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
     private async Task TestConnectionsAsync()
     {
-        if (_shutdown is not null)
+        if (_shutdown is not null || _maintenanceBusy || _dataAdministrationBusy || _connectionTestBusy)
         {
             return;
         }
 
         _startButton.Enabled = false;
         _testConnectionsButton.Enabled = false;
+        _connectionTestBusy = true;
         _settingsGroup.Enabled = false;
         _moderationSettingsGroup.Enabled = false;
         SetMinigameSettingsEditingEnabled(false);
@@ -4460,6 +4467,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
                     twitch = new TwitchService(
                         config.Twitch.ClientId,
                         session.AccessToken);
+                    await ShowAuthenticatedAccountAsync(twitch, session, CancellationToken.None);
                     broadcaster = await twitch.GetUserAsync(
                         config.Twitch.BroadcasterLogin,
                         CancellationToken.None);
@@ -4507,6 +4515,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             _settingsGroup.Enabled = true;
             _moderationSettingsGroup.Enabled = true;
             SetMinigameSettingsEditingEnabled(true);
+            _connectionTestBusy = false;
             _startButton.Enabled = true;
             _testConnectionsButton.Enabled = true;
         }
@@ -4595,6 +4604,8 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         }
     }
 
+    private Task[] _stoppingTasks = [];
+
     private async Task StopPluginAsync(bool keepErrorStatus = false)
     {
         _streamAdmission.End();
@@ -4641,6 +4652,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             .Cast<Task>()
             .ToArray();
 
+        _stoppingTasks = tasks;
         if (tasks.Length > 0)
         {
             try
@@ -4685,6 +4697,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         _broadcaster = null;
         _twitch = null;
         _twitchSession = null;
+        UpdateAccountIdentity(null);
         _eventSub = null;
         _chatModeration = null;
         _minigame = null;
@@ -5162,7 +5175,7 @@ Version 2.0.6
     private async Task CheckForUpdatesAsync(bool silent)
     {
         if (TestDataPaths.IsTestBuild) { if (!silent) MessageBox.Show("Automatische Updates sind in dieser getrennten Testversion gesperrt."); return; }
-        if (_updateBusy)
+        if (_updateBusy || _maintenanceBusy)
         {
             return;
         }
@@ -5299,7 +5312,7 @@ Version 2.0.6
     private void SkipAvailableUpdate()
     {
         var update = _availableUpdate;
-        if (update is null || _updateBusy)
+        if (update is null || _updateBusy || _maintenanceBusy)
         {
             return;
         }
@@ -5324,7 +5337,7 @@ Version 2.0.6
     private async Task InstallAvailableUpdateAsync()
     {
         var update = _availableUpdate;
-        if (update is null || _updateBusy)
+        if (update is null || _updateBusy || _maintenanceBusy)
         {
             return;
         }
@@ -6736,6 +6749,7 @@ Version 2.0.6
 
     protected override async void OnFormClosing(FormClosingEventArgs e)
     {
+        if (_maintenanceBusy) { e.Cancel = true; return; }
         if (!_explicitExitRequested &&
             e.CloseReason == CloseReason.UserClosing)
         {
