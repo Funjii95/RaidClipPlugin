@@ -16,10 +16,11 @@ public sealed class TwitchSignInTests
         {
             try
             {
+                var visible = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 using var form = new TwitchSignInForm(async (progress, token) =>
                 {
                     progress.Report(new("https://www.twitch.tv/activate", "DENNIS-CODE"));
-                    await Task.Delay(200, token);
+                    await visible.Task.WaitAsync(TimeSpan.FromSeconds(5), token);
                     return new TwitchSession("synthetic", "synthetic", "1002", "dennis");
                 }) { Opacity = 0, ShowInTaskbar = false };
                 Exception? failure = null;
@@ -31,6 +32,7 @@ public sealed class TwitchSignInTests
                     {
                         var code = Assert.IsType<TextBox>(Assert.Single(form.Controls.Find("TwitchDeviceCode", true)));
                         codeWasVisible |= code.Visible && code.Text == "DENNIS-CODE";
+                        if (codeWasVisible) visible.TrySetResult();
                     }
                     catch (Exception error) { failure = error; form.Close(); }
                 };
