@@ -152,12 +152,12 @@ export class BackendRpgDataSource implements RpgDataSource {
   }catch{}finally{this.mutating=false;if(generation===this.generation){this.markPending();this.emit();}}
  }
  private async complete(first:Receipt,generation:number,action?:Action){
-  let receipt=first;const deadline=performance.now()+(this.options.actionTimeoutMs??25000);
+  let receipt=first;let firstCheck=true;const deadline=performance.now()+(this.options.actionTimeoutMs??25000);
   while(receipt.state==='queued'||receipt.state==='executing'){
    if(generation!==this.generation)return;
    this.state.remote!.pendingState=receipt.state;this.state.remote!.message=receipt.state==='queued'?'Aktion wartet auf das verbundene Spiel …':'Aktion wird verarbeitet …';this.emit();
    if(performance.now()>=deadline)throw Error('Noch keine endgültige Bestätigung. Bitte dieselbe Aktion prüfen.');
-   await new Promise(resolve=>setTimeout(resolve,this.options.actionPollMs??1000));receipt=await this.client.check();
+   await new Promise(resolve=>setTimeout(resolve,this.options.actionPollMs??(firstCheck?250:1000)));firstCheck=false;receipt=await this.client.check();
   }
   if(generation!==this.generation)return;
   this.state.remote!.pendingState=receipt.state;this.markPending();
@@ -219,11 +219,11 @@ export class BackendRpgDataSource implements RpgDataSource {
   try{
    const pending=this.client.current();
    if(pending&&(!actionId||pending.actionId!==actionId||pending.kind!==kind||JSON.stringify(pending.arguments)!==JSON.stringify(args)))throw Error('Vorherige Aktion zuerst klären.');
-   let receipt=pending?await this.client.sendSame():await this.client.submit(kind,args,actionId);
+   let receipt=pending?await this.client.sendSame():await this.client.submit(kind,args,actionId);let firstCheck=true;
    this.markPending();this.emit();const deadline=performance.now()+(this.options.actionTimeoutMs??25000);
    while(receipt.state==='queued'||receipt.state==='executing'){
     if(generation!==this.generation||performance.now()>deadline)throw Error('Ergebnis noch offen. Ausschließlich dieselbe Anfrage prüfen.');
-    await new Promise(r=>setTimeout(r,this.options.actionPollMs??1000));receipt=await this.client.check();
+    await new Promise(r=>setTimeout(r,this.options.actionPollMs??(firstCheck?250:1000)));firstCheck=false;receipt=await this.client.check();
    }
    if(generation!==this.generation)throw Error('Twitch-Identität gewechselt.');
    if(receipt.state==='rejected'||receipt.outcome?.success===false)throw new PluginRuleError(receipt.outcome?.message||'Auftrag abgelehnt.');
@@ -243,11 +243,11 @@ export class BackendRpgDataSource implements RpgDataSource {
    const storage={getItem:(k:string)=>values.get(k)??null,setItem:(k:string,v:string)=>{values.set(k,v);},removeItem:(k:string)=>{values.delete(k);}} as Storage;
    const auth=this.authorization;
    const reader=new LiveRpgClient(()=>generation===this.generation?this.authorization:undefined,storage,this.options.fetch);
-   let receipt=await reader.submit(kind,args);const deadline=performance.now()+(this.options.actionTimeoutMs??25000);
+   let receipt=await reader.submit(kind,args);let firstCheck=true;const deadline=performance.now()+(this.options.actionTimeoutMs??25000);
    while(receipt.state==='queued'||receipt.state==='executing'){
     if(generation!==this.generation||this.authorization!==auth&&this.authorization?.userId!==auth.userId)throw Error('Twitch-Identität gewechselt.');
     if(performance.now()>=deadline)throw Error('Status noch nicht verfügbar. Bitte erneut laden.');
-    await new Promise(resolve=>setTimeout(resolve,this.options.actionPollMs??1000));receipt=await reader.check();
+    await new Promise(resolve=>setTimeout(resolve,this.options.actionPollMs??(firstCheck?250:1000)));firstCheck=false;receipt=await reader.check();
    }
    if(generation!==this.generation)throw Error('Twitch-Identität gewechselt.');
    if(receipt.state!=='applied'||receipt.outcome?.success!==true||!receipt.outcome.dataJson)throw Error(receipt.outcome?.message||'Status nicht bestätigt.');

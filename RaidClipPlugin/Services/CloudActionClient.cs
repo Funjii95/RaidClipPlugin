@@ -78,7 +78,7 @@ internal sealed class CloudActionClient : IDisposable
                         pending=null;outcome=null;
                     }
                     // Drain accepted work promptly; keep bounded polling when no work exists.
-                    await Task.Delay(handled?100:1000,ct);
+                    await Task.Delay(handled?100:500,ct);
                 } catch(OperationCanceledException) when(ct.IsCancellationRequested){throw;}
                 catch(HttpRequestException error) when(error.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden){log("Aktionskanal gesperrt: geschützten Zugang prüfen.");return;}
                 catch {

@@ -154,6 +154,31 @@ public sealed class CloudIntegrationTests : IDisposable
     }
     public void Dispose(){if(Directory.Exists(root))Directory.Delete(root,true);}
 
+    [Fact]
+    public async Task Independent_accounts_sync_two_at_a_time_without_changing_local_saves()
+    {
+        var store=new ViewerPointStore(Players);
+        var ids=Enumerable.Range(1001,8).Select(i=>i.ToString()).ToArray();
+        foreach(var id in ids)await store.ApplyRpgAsync(id,"SYNTHETIC","seed",a=>{a.Points=100;return new(true);},default);
+        var before=await File.ReadAllBytesAsync(FilePath);
+        using var accounts=JsonDocument.Parse(before);
+        var sink=new LocalSnapshotStore(Path.Combine(root,"parallel-cloud"),"42");
+        foreach(var id in ids)await sink.ApplyAsync(new(1,"42",id,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,accounts.RootElement.GetProperty(id).GetRawText()),default);
+        int active=0,peak=0,reads=0;
+        async Task<StoredSnapshot?> Read(string id,CancellationToken ct){
+            var concurrency=Interlocked.Increment(ref active);Interlocked.Increment(ref reads);
+            int previous;do{previous=Volatile.Read(ref peak);if(previous>=concurrency)break;}while(Interlocked.CompareExchange(ref peak,concurrency,previous)!=previous);
+            try{Assert.InRange(concurrency,1,2);await Task.Delay(100,ct);return JsonSerializer.Deserialize<StoredSnapshot>(await File.ReadAllTextAsync(Path.Combine(root,"parallel-cloud","42-"+id+".json"),ct));}
+            finally{Interlocked.Decrement(ref active);}
+        }
+        var worker=new IntegratedSnapshotWorker(store,Outbox(),"42",ids,_=>Task.CompletedTask,Read,
+            (_,_)=>throw new InvalidOperationException("Unchanged profiles must not be sent."));
+        var watch=System.Diagnostics.Stopwatch.StartNew();await worker.SynchronizeOnceAsync();watch.Stop();
+        Assert.Equal(2,peak);Assert.Equal(8,reads);
+        Assert.Equal(before,await File.ReadAllBytesAsync(FilePath));
+        foreach(var id in ids){var state=await Outbox().ReadAsync(id);Assert.NotNull(state);Assert.Empty(state.Pending);}
+        Console.WriteLine($"Eight synthetic 100ms cloud heads: parallel pass {watch.ElapsedMilliseconds}ms; serialized network waits alone: 800ms.");
+    }
     private sealed class FakeCloud
     {
         internal StoredSnapshot? Head;

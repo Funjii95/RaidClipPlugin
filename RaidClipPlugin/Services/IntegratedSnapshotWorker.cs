@@ -83,11 +83,16 @@ internal sealed class IntegratedSnapshotWorker
         using var document=JsonDocument.Parse(bytes);
         if(document.RootElement.ValueKind!=JsonValueKind.Object)throw new InvalidDataException("Invalid legacy save.");
         var privacy=await source.PrivacyRequestsAsync(ct);
-        foreach(var id in users.Concat(privacy.Select(p=>p.UserId)).Distinct())
+        // Independent account heads can be checked concurrently. Every account
+        // retains its own dispatch lease, durable order and revision validation.
+        await Parallel.ForEachAsync(users.Concat(privacy.Select(p=>p.UserId)).Distinct(),
+            new ParallelOptions {MaxDegreeOfParallelism=2,CancellationToken=ct},
+            (id,_)=>new ValueTask(SynchronizeUserAsync(id)));
+        async Task SynchronizeUserAsync(string id)
         {
             await using var dispatch=await outbox.AcquireDispatchLeaseAsync(id,ct);
             if(await source.ReadPrivacyRequestAsync(id,ct) is {} deletion){
-                if(deletion.CloudErased)continue;
+                if(deletion.CloudErased)return;
                 if(!deletion.LocalErased || purgeActions is null)throw new RetrySyncException();
                 try{
                     await purgeActions(id,ct);
@@ -101,7 +106,7 @@ internal sealed class IntegratedSnapshotWorker
                     await source.MarkPrivacyCloudErasedAsync(id,ct);
                 }catch(OperationCanceledException)when(ct.IsCancellationRequested){throw;}
                 catch{throw new RetrySyncException();}
-                continue;
+                return;
             }
             var state=await outbox.ReadAsync(id,ct);
             // Deliver the durable prefix before reserving a newer revision. All messages are full states.
@@ -110,7 +115,7 @@ internal sealed class IntegratedSnapshotWorker
             if(!document.RootElement.TryGetProperty(id,out var account))
             {
                 if(state is not null)throw new InvalidDataException("Account disappeared; explicit deletion/restore required.");
-                continue;
+                return;
             }
             var candidate=new SnapshotMessage(1,channel,id,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,account.GetRawText());
             var clean=SnapshotValidation.Validate(candidate,channel).AccountJson!;
@@ -121,13 +126,13 @@ internal sealed class IntegratedSnapshotWorker
                 // Bootstrap only if the existing cloud content hash proves exact equality.
                 var baseline=candidate with {Revision=head.Revision,SnapshotId=head.SnapshotId,CapturedAt=head.CapturedAt,AccountJson=clean};
                 await outbox.InitializeBaselineAsync(baseline,head.ContentHash,ct);
-                continue;
+                return;
             }
             var last=SnapshotValidation.Validate(state.LastMessage,channel);
             if(head.ChannelId!=channel || head.UserId!=id || head.Revision!=state.Revision ||
                 head.SnapshotId!=state.CommitId || head.ContentHash!=last.ContentHash)
                 throw new InvalidDataException("Cloud and local revision diverged; automatic rebase forbidden.");
-            if(state.PrivateAccountJson==clean)continue;
+            if(state.PrivateAccountJson==clean)return;
             await outbox.CommitAsync(id,state.Revision,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,clean,ct:ct);
             await DrainAsync(id,ct);
         }
