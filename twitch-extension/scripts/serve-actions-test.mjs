@@ -30,7 +30,7 @@ if (
   writeFileSync(resolve(certDir, "localhost-key.pem"), pems.private);
 }
 const desktopRelease=process.argv.includes("--desktop-release");
-const root = resolve(desktopRelease?"dist-desktop":"dist");
+const root = resolve(process.argv.includes("--hosted-test")?"dist-hosted-test":desktopRelease?"dist-desktop":"dist");
 const demoRoot=resolve("dist-demo");
 https
   .createServer(
@@ -71,7 +71,7 @@ https
         );
         res.setHeader(
           "Content-Security-Policy",
-          "default-src 'self'; script-src 'self' https://extension-files.twitch.tv; style-src 'self'; img-src 'self' data:; connect-src https://funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app; object-src 'none'; base-uri 'none'",
+          `default-src 'self'; script-src 'self' https://extension-files.twitch.tv; style-src 'self'; img-src 'self' data:; connect-src https://${process.argv.includes("--hosted-test")?"rc1---":""}funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app; object-src 'none'; base-uri 'none'`,
         );
         res.setHeader("X-Content-Type-Options", "nosniff");
         res.end(data);

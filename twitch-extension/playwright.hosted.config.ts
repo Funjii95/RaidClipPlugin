@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'./tests',testMatch:['**/character-stats.spec.ts','**/boss-timer.spec.ts'],grep:/panel:/,workers:1,use:{baseURL:'https://localhost:8083',ignoreHTTPSErrors:true},webServer:{command:'node scripts/serve-actions-test.mjs --hosted-test',url:'https://localhost:8083/panel.html',ignoreHTTPSErrors:true,reuseExistingServer:false}});

@@ -15,7 +15,7 @@
     "test:e2e": "playwright test",
     "build:demo": "tsc --noEmit && vite build --mode demo --outDir dist-demo",
     "build:repro": "node scripts/reproducible-build.mjs",
-    "build:hosted-test": "tsc --noEmit && vite build --mode hosted-test --outDir dist-hosted-test",
+    "build:hosted-test": "tsc --noEmit && vite build --mode hosted-test --outDir dist-hosted-test && node scripts/verify-hosted-build.mjs",
     "build:desktop": "tsc --noEmit && vite build --mode desktop-release --outDir dist-desktop",
     "test:release": "playwright test --config playwright.release.config.ts"
   },
