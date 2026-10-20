@@ -24,16 +24,21 @@ public sealed class AuthenticationService
     public static IReadOnlyList<string> RequiredChatScopes { get; } =
         new[] { "user:read:chat", "user:write:chat" };
     private readonly TwitchConfig _config;
-    private readonly HttpClient _http = new();
+    private readonly HttpClient _http;
+    private readonly Action<string> _openBrowser;
     private readonly string _tokenPath;
     private readonly string _legacyTokenPath;
 
-    public AuthenticationService(AppConfig config)
+    public AuthenticationService(AppConfig config) : this(config, new HttpClient(), null, null) { }
+
+    internal AuthenticationService(AppConfig config, HttpClient http, Action<string>? openBrowser, string? tokenDirectory)
     {
         _config = config.Twitch;
+        _http = http;
+        _openBrowser = openBrowser ?? (url => { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); });
         _http.Timeout = TimeSpan.FromSeconds(30);
 
-        var directory = Path.Combine(TestDataPaths.LocalAppData, "RaidClipPlugin");
+        var directory = tokenDirectory ?? Path.Combine(TestDataPaths.LocalAppData, "RaidClipPlugin");
         Directory.CreateDirectory(directory);
         _tokenPath = Path.Combine(directory, "twitch-token.dat");
         _legacyTokenPath = Path.Combine(directory, "twitch-token.json");
@@ -46,7 +51,7 @@ public sealed class AuthenticationService
         Console.WriteLine("Gespeicherte Twitch-Anmeldung wurde entfernt.");
     }
 
-    public async Task<TwitchSession> GetSessionAsync(CancellationToken cancellationToken)
+    public async Task<TwitchSession> GetSessionAsync(CancellationToken cancellationToken, IProgress<TwitchAuthorizationRequest>? authorization = null)
     {
         var saved = await LoadTokenAsync(cancellationToken);
         if (saved is not null)
@@ -62,10 +67,10 @@ public sealed class AuthenticationService
                     return refreshed;
             }
         }
-        return await SignInAsync(cancellationToken);
+        return await SignInAsync(cancellationToken, authorization);
     }
 
-    private async Task<TwitchSession> SignInAsync(CancellationToken cancellationToken)
+    private async Task<TwitchSession> SignInAsync(CancellationToken cancellationToken, IProgress<TwitchAuthorizationRequest>? authorization)
     {
         using var response = await _http.PostAsync(DeviceUrl,
             new FormUrlEncodedContent(new Dictionary<string, string>
@@ -81,12 +86,13 @@ public sealed class AuthenticationService
         var device = JsonSerializer.Deserialize<DeviceCodeResponse>(body, JsonOptions)
             ?? throw new InvalidOperationException("Twitch hat keinen Gerätecode geliefert.");
 
+        authorization?.Report(new TwitchAuthorizationRequest(device.VerificationUri, device.UserCode));
         Console.WriteLine();
         Console.WriteLine("Twitch-Anmeldung erforderlich");
         Console.WriteLine($"1. Öffne: {device.VerificationUri}");
         Console.WriteLine($"2. Gib diesen Code ein: {device.UserCode}");
         Console.WriteLine();
-        try { Process.Start(new ProcessStartInfo(device.VerificationUri) { UseShellExecute = true }); }
+        try { _openBrowser(device.VerificationUri); }
         catch { }
 
         var deadline = DateTimeOffset.UtcNow.AddSeconds(device.ExpiresIn);
@@ -297,3 +303,5 @@ public sealed record TwitchSession(
     public bool HasScope(string scope) =>
         Scopes?.Contains(scope, StringComparer.Ordinal) == true;
 }
+
+public sealed record TwitchAuthorizationRequest(string VerificationUri, string UserCode);

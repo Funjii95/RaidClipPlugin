@@ -13,7 +13,7 @@ public sealed partial class MainForm
 
     private async Task RunExclusiveRpgChangeAsync(Func<Task> action)
     {
-        if (_dataAdministrationBusy || _maintenanceBusy || _connectionTestBusy || _updateBusy || _shutdown is not null || _stoppingTasks.Any(task => !task.IsCompleted))
+        if (_accountLoginBusy || _dataAdministrationBusy || _maintenanceBusy || _connectionTestBusy || _updateBusy || _shutdown is not null || _stoppingTasks.Any(task => !task.IsCompleted))
         { AppendLog("Plugin vor der RPG-Verwaltung vollständig stoppen und laufende Vorgänge beenden."); return; }
         _dataAdministrationBusy = true;
         try { await action(); }
@@ -37,7 +37,7 @@ public sealed partial class MainForm
         panel.Controls.AddRange([info, reload, credentials, repair, status]);
         async Task Safe(Func<Task> action)
         {
-            if (_maintenanceBusy || _dataAdministrationBusy || _updateBusy) return;
+            if (_accountLoginBusy || _maintenanceBusy || _dataAdministrationBusy || _updateBusy) return;
             // Start/connection tests disable Start before their first await. Do not race them,
             // or the background tasks that Stop has not yet successfully joined.
             if (_shutdown is not null || !_startButton.Enabled || _administrationTestOnly ||

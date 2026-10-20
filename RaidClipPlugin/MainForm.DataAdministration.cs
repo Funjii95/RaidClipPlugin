@@ -20,7 +20,7 @@ public sealed partial class MainForm
         panel.Controls.AddRange([info,players,load,pearls,items,both,identity,privacy,status]);
         var busy=false;
         async Task Safe(Func<Task> operation){
-            if(busy || _dataAdministrationBusy || _maintenanceBusy || _connectionTestBusy || _updateBusy)return;
+            if(busy || _accountLoginBusy || _dataAdministrationBusy || _maintenanceBusy || _connectionTestBusy || _updateBusy)return;
             if(_shutdown is not null || _minigame is {IsRunning:true}){status.Text="Plugin zuerst mit Stop vollständig anhalten. Danach erneut ausführen.";return;}
             busy=true;_dataAdministrationBusy=true;var startEnabled=_startButton.Enabled;_startButton.Enabled=false;foreach(var button in new[]{load,pearls,items,both,privacy})button.Enabled=false;
             try{await operation();}catch(Exception error){status.Text="Nicht abgeschlossen: "+error.Message;}
