@@ -29,7 +29,7 @@ export class BackendRpgDataSource implements RpgDataSource {
  private lastRead=-Infinity;private availabilityAt=-Infinity;private statusSeen='';private statusPayload?:{signature:string;stats:CharacterStats};
  private pollTimer?:ReturnType<typeof setInterval>;
  private deleting=false;private deletionCompleted=false;
- private readingStats=false;
+ private readingStats=false;private confirmedProfile:any;
  private reads=new Map<string,Promise<any>>();
  constructor(private options:{helper?:TwitchHelper;storage?:Storage;fetch?:typeof fetch;pollMs?:number;actionPollMs?:number;actionTimeoutMs?:number;loadStats?:boolean}={}){
   this.client=new LiveRpgClient(()=>this.authorization,options.storage??(()=>{try{return sessionStorage;}catch{return {getItem(){throw Error("Sicherer Aktionsspeicher nicht verfügbar.");},setItem(){throw Error("Sicherer Aktionsspeicher nicht verfügbar.");},removeItem(){throw Error("Sicherer Aktionsspeicher nicht verfügbar.");}} as unknown as Storage;}})(),options.fetch);
@@ -38,7 +38,7 @@ export class BackendRpgDataSource implements RpgDataSource {
  private authorize(auth:Authorization){
   const scope=(a?:Authorization)=>a?`${a.channelId}:${a.userId}`:'';
   if(scope(auth)!==scope(this.authorization)){
-   this.generation++;this.deleting=false;this.deletionCompleted=false;this.state=emptyRemoteState();this.profile=undefined;this.catalog={};this.statusSeen='';this.statusPayload=undefined;this.availability=undefined;this.availabilityAt=-Infinity;this.lastRead=-Infinity;
+   this.generation++;this.deleting=false;this.deletionCompleted=false;this.state=emptyRemoteState();this.profile=undefined;this.confirmedProfile=undefined;this.catalog={};this.statusSeen='';this.statusPayload=undefined;this.availability=undefined;this.availabilityAt=-Infinity;this.lastRead=-Infinity;
   }
   this.authorization=auth?.token&&auth.channelId&&auth.userId?auth:undefined;
   if(!this.authorization){this.state.remote!.connection='unauthorized';this.state.remote!.message='Bitte deine Twitch-Identität freigeben.';this.emit();return;}
@@ -58,7 +58,7 @@ export class BackendRpgDataSource implements RpgDataSource {
    !this.mutating && !this.state.remote!.pending && (type!=='boss'||this.state.remote!.bossKnown&&this.state.boss.status==='active');
  }
  private markPending(){try{this.state.remote!.pending=!!this.client.current();}catch{this.state.remote!.pending=true;this.state.remote!.message='Der Browser kann den sicheren Aktionsbeleg nicht speichern. Spielaktionen bleiben gesperrt.';}}
- async selfDeletionStatus(){const generation=this.generation;const status=await this.client.selfDeletion();if(generation!==this.generation)throw Error('Twitch-Identität gewechselt.');if(status.request){this.deleting=true;this.state.remote!.connection='readonly';if(status.request.completed){this.deletionCompleted=true;this.client.clearAfterConfirmedDeletion();this.profile=undefined;this.state=emptyRemoteState();this.state.remote!.selfDeletionEnabled=true;this.state.remote!.message='RPG-Spielstand gelöscht.';}this.emit();}return status;}
+ async selfDeletionStatus(){const generation=this.generation;const status=await this.client.selfDeletion();if(generation!==this.generation)throw Error('Twitch-Identität gewechselt.');if(status.request){this.deleting=true;this.state.remote!.connection='readonly';if(status.request.completed){this.deletionCompleted=true;this.client.clearAfterConfirmedDeletion();this.profile=undefined;this.confirmedProfile=undefined;this.state=emptyRemoteState();this.state.remote!.selfDeletionEnabled=true;this.state.remote!.message='RPG-Spielstand gelöscht.';}this.emit();}return status;}
  async requestSelfDeletion(requestId:string){const generation=this.generation;const job=await this.client.requestSelfDeletion(requestId);if(generation!==this.generation)throw Error('Twitch-Identität gewechselt.');this.deleting=true;this.state.remote!.connection='readonly';this.emit();return job;}
  async refresh(force=false):Promise<DemoState>{
   while(this.refreshing){await this.refreshing;if(!force)return this.getSnapshot();}
@@ -78,7 +78,7 @@ export class BackendRpgDataSource implements RpgDataSource {
    const errors=[profile,availability].flatMap(r=>r.status==='rejected'&&r.reason instanceof LiveHTTPError?[r.reason]:[]);
    this.state=emptyRemoteState();this.state.remote!.connection='unauthorized';
    this.state.remote!.message=errors.some(e=>e.status===401)?'Twitch-Zugriff abgelehnt. Die Anmeldung ist ungültig oder abgelaufen. Bitte die Twitch-Kanalseite neu laden.':errors.some(e=>e.code==='test_user_not_allowed')?'Dieses Twitch-Konto ist für den geschlossenen Aktionstest noch nicht freigegeben.':'Twitch-Zugriff abgelehnt. Bitte unten deine Twitch-Identität freigeben. Falls sie bereits freigegeben ist, die Twitch-Kanalseite neu laden.';
-   this.availability=undefined;this.profile=undefined;this.emit();return this.getSnapshot();
+   this.availability=undefined;this.profile=undefined;this.confirmedProfile=undefined;this.emit();return this.getSnapshot();
   }
   this.availability=availability.status==='fulfilled'?availability.value:undefined;
   this.availabilityAt=availability.status==='fulfilled'?performance.now():-Infinity;
@@ -88,11 +88,18 @@ export class BackendRpgDataSource implements RpgDataSource {
   }
   if(profile.status==='fulfilled'){
    try{
-    const old=this.state;const mapped=mapProfile(profile.value,this.catalog);
+    const observed=profile.value;
+    const validated=mapProfile(observed,this.catalog);const hadConfirmedProfile=!!this.confirmedProfile;
+    if(this.confirmedProfile){
+     if(field(observed,'UserId')!==field(this.confirmedProfile,'UserId'))throw Error('Unerwarteter Spielerwechsel.');
+     if(signature(observed)===signature(this.confirmedProfile)||Date.parse(field(observed,'UpdatedAt'))>Date.parse(field(this.confirmedProfile,'UpdatedAt')))this.confirmedProfile=undefined;
+    }
+    const incoming=this.confirmedProfile??observed;
+    const old=this.state;const mapped=this.confirmedProfile?mapProfile(incoming,this.catalog):validated;
     if(old.remote!.loaded&&old.player.id!==mapped.player.id)throw Error('Unerwarteter Spielerwechsel ohne neue Twitch-Autorisierung.');
     mapped.result=old.result;mapped.salvageQuote=old.salvageQuote;if(old.remote!.bossKnown){mapped.boss=old.boss;mapped.remote!.bossKnown=true;}if(old.remote!.hotKnown){mapped.hotTime=old.hotTime;mapped.remote!.hotKnown=true;}mapped.remote!.pendingState=old.remote!.pendingState;
-    mapped.remote!.syncing=old.remote!.syncing&&signature(profile.value)===signature(this.profile);
-    this.profile=profile.value;this.state=mapped;
+    mapped.remote!.syncing=!!this.confirmedProfile||(!hadConfirmedProfile&&old.remote!.syncing&&signature(observed)===signature(this.profile));
+    this.profile=incoming;this.state=mapped;
     if(this.statusPayload?.signature===statsSignature(this.profile))this.state.remote!.stats=this.statusPayload.stats;
     if(this.previewCache?.key.startsWith(signature(this.profile)+'|'+JSON.stringify(this.catalog)+'|'))this.state.remote!.adventurePreview=this.previewCache.value;
    }catch(error){this.state=emptyRemoteState();this.state.remote!.connection='error';this.state.remote!.message=error instanceof Error?error.message:'Spielstand ungültig.';this.availability=undefined;this.emit();return this.getSnapshot();}
@@ -170,6 +177,22 @@ export class BackendRpgDataSource implements RpgDataSource {
   }
   if(action?.type==='confirmSalvage')this.state.salvageQuote=undefined;
   if(action?.type==='boss'&&data?.boss)this.acceptBoss(data.boss);
+  if(data?.profile){
+   const committed={...data.profile,Source:'plugin-snapshot'};
+   const fresh=mapProfile(committed,this.catalog);
+   if(fresh.player.id!==this.state.player.id)throw Error('Kaufbestätigung gehört zu einem anderen Spieler.');
+   if(!Number.isFinite(Date.parse(field(committed,'UpdatedAt'))))throw Error('Zeitpunkt der Kaufbestätigung fehlt.');
+   if(Date.parse(field(committed,'UpdatedAt'))<Date.parse(field(this.profile,'UpdatedAt')))throw Error('Kaufbestätigung ist älter als der angezeigte Spielstand.');
+   const old=this.state;
+   fresh.boss=old.boss;fresh.hotTime=old.hotTime;fresh.result=old.result;fresh.salvageQuote=old.salvageQuote;
+   fresh.remote={...old.remote,...fresh.remote!,connection:old.remote!.connection,supported:old.remote!.supported,
+    bossKnown:old.remote!.bossKnown,hotKnown:old.remote!.hotKnown,syncing:true,message:'Perk gekauft. Gespeicherter Plugin-Stand aktualisiert; Cloud-Abgleich läuft.'};
+   if(data.stats){const actual=attributes(data.stats) as CharacterStats;this.statusPayload={signature:statsSignature(committed),stats:actual};fresh.remote.stats=actual;}
+   this.confirmedProfile=committed;this.profile=committed;this.state=fresh;this.emit();
+   // Background reconciliation never holds the purchase button behind a slow GET.
+   void this.refresh(true).catch(()=>{});
+   return;
+  }
   const before=signature(this.profile);
   await this.refresh(true);
   if(generation!==this.generation)return;

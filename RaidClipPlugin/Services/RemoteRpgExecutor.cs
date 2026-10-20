@@ -103,6 +103,14 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             var adventure=await new RpgAdventureService(points,config).ExecuteAsync(e.UserId,account.DisplayName,request,e.Intent.Kind=="fish"?RpgActivity.Fishing:RpgActivity.Dive,long.Parse(Arg("stake"),System.Globalization.CultureInfo.InvariantCulture),ct);
             return new(adventure.Success,adventure.Success?"applied":"rule_rejected",adventure.Error,JsonSerializer.Serialize(adventure));
         }
+        if(e.Intent.Kind=="buyPerk" && mutation?.Success==true){
+            // Read the committed authoritative state; the viewer need not wait for
+            // the independent Firestore delivery before seeing the purchased level.
+            var committed=(await points.GetProfileAsync(e.UserId,ct)).Entry;
+            var projection=SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(committed)),channel).AccountJson!;
+            return new(true,"applied",mutation.Error,JsonSerializer.Serialize(new{mutation.Balance,mutation.Details,
+                profile=JsonDocument.Parse(projection).RootElement.Clone(),stats=CharacterStatService.Calculate(committed.Rpg,rpg,RpgActivity.Boss)}));
+        }
         if(mutation is null)return new(false,"unsupported","Kein sicherer Aufrufweg.");
         return new(mutation.Success,mutation.Success?"applied":mutation.Duplicate?"already_committed":"rule_rejected",mutation.Error,JsonSerializer.Serialize(new{mutation.Balance,mutation.Details}));
     }

@@ -39,6 +39,13 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
         var executor=await SeedAsync();var e=Envelope(ActionApiFixture.Intent()) with {StreamId=""};
         var first=await executor.ExecuteAsync(e,default);var second=await Executor().ExecuteAsync(e,default);
         Assert.True(first.Success);Assert.Equal(first,second);Assert.Equal(1500,await points!.GetPointsAsync("1001",default));
+        using var response=JsonDocument.Parse(first.DataJson!);
+        var committed=response.RootElement.GetProperty("profile");
+        Assert.Equal("1001",committed.GetProperty("UserId").GetString());
+        Assert.Equal(1500,committed.GetProperty("Points").GetInt64());
+        Assert.Equal(1,committed.GetProperty("Rpg").GetProperty("Perks").GetProperty("damage").GetInt32());
+        Assert.True(response.RootElement.TryGetProperty("stats",out _));
+        Assert.False(committed.GetProperty("Rpg").TryGetProperty("CompletedActions",out _));
         Assert.Equal(1,(await points.GetProfileAsync("1001",default)).Entry.Rpg.Perks["damage"]);
     }
     [Theory][InlineData("buyPerk","{\"perkId\":\"damage\"}",0)][InlineData("equip","{\"instanceId\":\"foreign-item\"}",2000)]
