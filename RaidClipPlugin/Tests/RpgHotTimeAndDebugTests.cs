@@ -16,6 +16,25 @@ public sealed class RpgHotTimeAndDebugTests : IDisposable
     private static MinigameConfig Config(){var c=new MinigameConfig{Enabled=true,PointsEnabled=true};c.Adventures.Rpg.Enabled=true;return c;}
 
     [Fact]
+    public void Advancing_clock_does_not_add_fractional_minutes_to_start_message()
+    {
+        var config=new RpgHotTimeConfig{StartMessage="Für {minutes} Minuten"};
+        var hot=new RpgHotTimeService(_dir,()=>{var current=_now;_now=_now.AddMilliseconds(1);return current;});
+        Assert.True(hot.StartAfterBoss("real",config,true));
+        var state=hot.Status.Event!;
+        Assert.Equal(TimeSpan.FromMinutes(5),state.End-state.Start);
+        Assert.Equal("Für 5 Minuten",Assert.Single(hot.PollMessages(config)));
+    }
+    [Fact]
+    public void Legacy_clock_jitter_is_not_exposed_in_restored_start_message()
+    {
+        var config=new RpgHotTimeConfig{StartMessage="Für {minutes} Minuten"};
+        Directory.CreateDirectory(_dir);
+        var state=new RpgHotTimeState("legacy","real",_now,_now.AddMinutes(5).AddTicks(200),true);
+        File.WriteAllText(Path.Combine(_dir,"hot-time.json"),JsonSerializer.Serialize(state));
+        Assert.Equal("Für 5 Minuten",Assert.Single(Hot().PollMessages(config)));
+    }
+    [Fact]
     public void ExactlyFiveMinutesNoStackingRestartAndAtMostOnceAnnouncements()
     {
         var c=new RpgHotTimeConfig();var hot=Hot();Assert.False(hot.StartAfterBoss("test",c,false));

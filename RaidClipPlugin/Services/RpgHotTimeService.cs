@@ -35,7 +35,8 @@ public sealed class RpgHotTimeService
         {
             if(!realCommunityVictory||!config.Enabled||!config.AutoAfterBoss||Status.Active||_state?.BossId==bossId)return false;
             if(_error.Length>0)throw new InvalidDataException(_error);
-            var state=new RpgHotTimeState(Guid.NewGuid().ToString("N"),bossId,_now(),_now().AddMinutes(config.DurationMinutes),true);
+            var start=_now();
+            var state=new RpgHotTimeState(Guid.NewGuid().ToString("N"),bossId,start,start.AddMinutes(config.DurationMinutes),true);
             RpgAtomicFile.Save(_path,state,Validate);_state=state;return true;
         }
     }
@@ -53,7 +54,7 @@ public sealed class RpgHotTimeService
             if(state.Active&&(!config.Enabled||state.End<=_now()))state=state with {Active=false};
             if(state.Active&&!state.StartAnnounced)
             {
-                messages.Add(config.StartMessage.Replace("{minutes}",RpgChatPresentation.Number((decimal)(state.End-state.Start).TotalMinutes)).Replace("{drop}",RpgChatPresentation.Number(config.DropBonusPercent)).Replace("{pearls}",RpgChatPresentation.Number(config.PearlBonusPercent)).Replace("{reward}",config.PearlBonusPercent==100?"doppelte Perlenbelohnungen":"+"+RpgChatPresentation.Number(config.PearlBonusPercent)+"% Perlenbelohnungen"));
+                messages.Add(config.StartMessage.Replace("{minutes}",RpgChatPresentation.Number(decimal.Round((decimal)(state.End-state.Start).TotalMinutes,2))).Replace("{drop}",RpgChatPresentation.Number(config.DropBonusPercent)).Replace("{pearls}",RpgChatPresentation.Number(config.PearlBonusPercent)).Replace("{reward}",config.PearlBonusPercent==100?"doppelte Perlenbelohnungen":"+"+RpgChatPresentation.Number(config.PearlBonusPercent)+"% Perlenbelohnungen"));
                 state=state with {StartAnnounced=true};
             }
             if(!state.Active&&!state.EndAnnounced) { if(state.StartAnnounced)messages.Add(config.EndMessage);state=state with {EndAnnounced=true,StartAnnounced=true}; }

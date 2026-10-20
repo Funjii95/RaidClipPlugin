@@ -32,7 +32,7 @@ public sealed class CommandRegistry
                 role = ParseRole(roleOverride, role);
             if (module == "music" && role != CommandRole.Broadcaster)
                 role = CommandRole.Moderator;
-            if ((id is "heist.start" || id.StartsWith("event.start.", StringComparison.Ordinal)) &&
+            if ((id is "heist.start" or "admin.rpg.heal" or "admin.boss.kill" || id.StartsWith("event.start.", StringComparison.Ordinal)) &&
                 role != CommandRole.Broadcaster) role = CommandRole.Moderator;
             if (!config.Commands.IsCommandEnabled(id))
                 enabled = false;
@@ -51,6 +51,12 @@ public sealed class CommandRegistry
                 m.Enabled && m.PointsEnabled && m.Adventures.Rpg.Enabled, userCooldown:2, order:54);
         Add("adventure.collection", "!sammlung", null, "fishing", "Fischen", "Fischsammlung",
             "Zeigt deine gesammelten Fische und den größten Fang.", "!sammlung", "!sammlung", m.Enabled && m.PointsEnabled, order:53);
+        Add("admin.rpg.heal", "!heal", null, "points", "RPG", "Spieler heilen",
+            "Heilt einen gespeicherten Spieler oder alle vollständig. Nur Mods/Broadcaster.", "!heal <@Spieler|all>", "!heal @spieler",
+            m.Enabled && m.PointsEnabled && m.Adventures.Rpg.Enabled && m.Adventures.Rpg.Health.Enabled, CommandRole.Moderator, order:52);
+        Add("admin.boss.kill", "!kill boss", null, "boss", "Bosskampf", "Boss besiegen",
+            "Beendet den aktiven Boss als Sieg mit regulärer Teilnehmerbelohnung und Hot Time. Nur Mods/Broadcaster.", "!kill boss", "!kill boss",
+            m.Enabled && m.PointsEnabled && m.Adventures.Boss.Enabled, CommandRole.Moderator, order:52);
         Add("event.start.boss", "!start boss", null, "boss", "Bosskampf", "Boss-Event starten",
             "Startet den Bosskampf (Mods/Broadcaster).", "!start boss", "!start boss",
             m.Enabled && m.PointsEnabled && m.Adventures.Boss.Enabled, CommandRole.Moderator, order:52);

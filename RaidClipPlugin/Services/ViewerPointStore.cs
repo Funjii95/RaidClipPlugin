@@ -383,7 +383,7 @@ public sealed partial class ViewerPointStore
         long amount,
         long minimumPoints,
         long maximumPoints,
-        CancellationToken cancellationToken, string? historyGame = null, int historyLimit = 500, RpgRewardSource source = RpgRewardSource.Administrative)
+        CancellationToken cancellationToken, string? historyGame = null, int historyLimit = 500, RpgRewardSource source = RpgRewardSource.Administrative, IDictionary<string,long>? creditedAmounts = null)
     {
         using var operationAdmission = Admission?.EnterOperation();
         if (amount <= 0 && historyGame is null)
@@ -408,6 +408,7 @@ public sealed partial class ViewerPointStore
             var floor = Math.Max(0, minimumPoints);
             var ceiling = Math.Max(floor, maximumPoints);
             amount=RewardAmount(amount,source);
+            var credits=new Dictionary<string,long>();
             foreach (var recipient in recipients)
             {
                 var entry = GetOrCreateEntry(
@@ -417,6 +418,7 @@ public sealed partial class ViewerPointStore
                     ? long.MaxValue
                     : entry.Points + amount;
                 entry.Points = Math.Clamp(increased, floor, ceiling);
+                credits[recipient.UserId]=entry.Points-before;
                 entry.DisplayName = recipient.DisplayName;
                 entry.UpdatedAt = DateTimeOffset.Now;
                 if (historyGame is not null)
@@ -435,6 +437,7 @@ public sealed partial class ViewerPointStore
                 if (_history.Count > limit) _history.RemoveRange(limit, _history.Count - limit);
                 await SaveAllAsync(cancellationToken);
             }
+            if(creditedAmounts is not null)foreach(var credit in credits)creditedAmounts[credit.Key]=credit.Value;
             return recipients.Length;
         }
         finally

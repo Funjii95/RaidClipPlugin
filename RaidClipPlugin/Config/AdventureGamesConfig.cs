@@ -60,6 +60,22 @@ public sealed class RaceAdventureConfig : StakeAdventureConfig
     [DisplayName("Rundenpause (Sekunden)")] public int RoundCooldownSeconds { get; set; } = 60;
 }
 
+[TypeConverter(typeof(BossHpModeConverter))]
+public enum BossHpMode { Fixed, Dynamic }
+
+public sealed class BossHpModeConverter : EnumConverter
+{
+    public BossHpModeConverter() : base(typeof(BossHpMode)) { }
+    public override object? ConvertTo(ITypeDescriptorContext? context, System.Globalization.CultureInfo? culture, object? value, Type destinationType)
+        => destinationType == typeof(string) && value is BossHpMode mode
+            ? mode == BossHpMode.Dynamic ? "Dynamisch" : "Feste HP"
+            : base.ConvertTo(context, culture, value, destinationType);
+    public override object? ConvertFrom(ITypeDescriptorContext? context, System.Globalization.CultureInfo? culture, object value)
+        => value is string label && label == "Dynamisch" ? BossHpMode.Dynamic
+            : value is string fixedLabel && fixedLabel == "Feste HP" ? BossHpMode.Fixed
+            : base.ConvertFrom(context, culture, value);
+}
+
 public sealed class BossAdventureConfig
 {
     [DisplayName("Angriffs-Cooldown-Text"), Description("{user}, {remaining} (Sekunden)")]
@@ -73,7 +89,9 @@ public sealed class BossAdventureConfig
     [Browsable(false), DisplayName("Automatisch starten")] public bool AutoStartEnabled { get; set; }
     [DisplayName("Auto-Start alle X Minuten")] public int AutoStartMinutes { get; set; } = 15;
     [Browsable(false), DisplayName("Aktiviert")] public bool Enabled { get; set; } = true;
-    [DisplayName("Lebenspunkte")] public int HitPoints { get; set; } = 200;
+    [DisplayName("HP-Modus"), Description("Dynamisch: 100 HP pro unterschiedlichem Teilnehmer. Feste HP: verwendet Lebenspunkte. Gilt ab dem nächsten Boss.")]
+    public BossHpMode HpMode { get; set; } = BossHpMode.Fixed;
+    [DisplayName("Lebenspunkte"), Description("Boss-HP im Modus Feste HP. Im dynamischen Modus gilt 100 HP pro Teilnehmer.")] public int HitPoints { get; set; } = 200;
     [DisplayName("Zeitlimit (Sekunden)")] public int DurationSeconds { get; set; } = 120;
     [DisplayName("Angriffs-Cooldown je Nutzer (Sekunden)")] public int AttackCooldownSeconds { get; set; } = 10;
     [DisplayName("Belohnungstopf")] public long RewardPool { get; set; } = 500;
