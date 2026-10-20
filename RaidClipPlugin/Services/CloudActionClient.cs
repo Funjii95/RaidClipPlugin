@@ -7,6 +7,7 @@ namespace RaidClipPlugin.Services;
 internal sealed class ActionChannelOptions
 {
     public bool Enabled {get;set;}
+    public bool AutomaticPlayerEnrollment {get;set;}
     public bool SelfDeletionEnabled {get;set;}
     public string BackendUrl {get;set;}="https://funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app";
     public string ChannelId {get;set;}="42812664";

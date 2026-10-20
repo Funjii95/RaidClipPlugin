@@ -7,6 +7,7 @@ namespace RaidClipPlugin.Services;
 internal sealed class CloudSyncOptions
 {
     public bool Enabled {get;set;}
+    public bool AutomaticPlayerEnrollment {get;set;}
     public string Endpoint {get;set;}="https://funjii-otter-rpg-publisher-test-134126914046.europe-west3.run.app/api/v1/snapshots";
     public string ChannelId {get;set;}="42812664";
     public string[] AllowedUserIds {get;set;}=[];
@@ -27,6 +28,8 @@ internal sealed class IntegratedSnapshotWorker
     private readonly LocalOutboxStore outbox;
     private readonly string channel;
     private readonly string[] users;
+    private readonly bool automaticPlayerEnrollment;
+    private readonly Func<string,string,bool>? eligible;
     private readonly Func<CancellationToken,Task> capabilities;
     private readonly Func<string,CancellationToken,Task<StoredSnapshot?>> read;
     private readonly Func<SnapshotMessage,CancellationToken,Task<DeliveryResult>> send;
@@ -38,8 +41,8 @@ internal sealed class IntegratedSnapshotWorker
     private void Availability(bool value){if(AvailabilityChanged is {} listeners)foreach(Action<bool> listener in listeners.GetInvocationList())try{listener(value);}catch{}}
     internal IntegratedSnapshotWorker(ViewerPointStore source,LocalOutboxStore outbox,string channel,string[] users,
         Func<CancellationToken,Task> capabilities,Func<string,CancellationToken,Task<StoredSnapshot?>> read,
-        Func<SnapshotMessage,CancellationToken,Task<DeliveryResult>> send,Func<string,CancellationToken,Task>? purgeActions=null)
-    {this.source=source;this.outbox=outbox;this.channel=channel;this.users=users;this.capabilities=capabilities;this.read=read;this.send=send;this.purgeActions=purgeActions;}
+        Func<SnapshotMessage,CancellationToken,Task<DeliveryResult>> send,Func<string,CancellationToken,Task>? purgeActions=null,bool automaticPlayerEnrollment=false,Func<string,string,bool>? eligible=null)
+    {this.source=source;this.outbox=outbox;this.channel=channel;this.users=users;this.capabilities=capabilities;this.read=read;this.send=send;this.purgeActions=purgeActions;this.automaticPlayerEnrollment=automaticPlayerEnrollment;this.eligible=eligible;}
 
     private void Signal(){try{wake.Release();}catch(SemaphoreFullException){}}
     private void Report(string status)
@@ -85,7 +88,14 @@ internal sealed class IntegratedSnapshotWorker
         var privacy=await source.PrivacyRequestsAsync(ct);
         // Independent account heads can be checked concurrently. Every account
         // retains its own dispatch lease, durable order and revision validation.
-        await Parallel.ForEachAsync(users.Concat(privacy.Select(p=>p.UserId)).Distinct(),
+        var selected=users.ToHashSet(StringComparer.Ordinal);
+        if(automaticPlayerEnrollment)foreach(var entry in document.RootElement.EnumerateObject()){
+            if(entry.Name.Length is <1 or >25 || entry.Name.Any(c=>c is <'0' or >'9'))continue;
+            var name=entry.Value.TryGetProperty("DisplayName",out var display)?display.GetString()??"":"";
+            if(eligible?.Invoke(entry.Name,name)==false)continue;
+            if(entry.Value.TryGetProperty("Points",out var points)&&points.TryGetInt64(out var balance)&&balance>0 || await outbox.ReadAsync(entry.Name,ct) is not null)selected.Add(entry.Name);
+        }
+        await Parallel.ForEachAsync(selected.Concat(privacy.Select(p=>p.UserId)).Distinct(),
             new ParallelOptions {MaxDegreeOfParallelism=2,CancellationToken=ct},
             (id,_)=>new ValueTask(SynchronizeUserAsync(id)));
         async Task SynchronizeUserAsync(string id)
@@ -119,8 +129,13 @@ internal sealed class IntegratedSnapshotWorker
             }
             var candidate=new SnapshotMessage(1,channel,id,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,account.GetRawText());
             var clean=SnapshotValidation.Validate(candidate,channel).AccountJson!;
-            var head=await read(id,ct) ?? throw new InvalidDataException("Cloud account requires explicit initial provisioning.");
-            if(head.Deleted)throw new InvalidDataException("Explicit restore required.");
+            var head=await read(id,ct);
+            if(head is null){
+                if(!automaticPlayerEnrollment || state is not null)throw new InvalidDataException("Cloud account requires explicit initial provisioning.");
+                await outbox.CommitAsync(id,0,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,clean,ct:ct);
+                await DrainAsync(id,ct);return;
+            }
+            if(head.Deleted){if(automaticPlayerEnrollment)return;throw new InvalidDataException("Explicit restore required.");}
             if(state is null)
             {
                 // Bootstrap only if the existing cloud content hash proves exact equality.
@@ -142,10 +157,13 @@ internal sealed class IntegratedSnapshotWorker
     {
         while((await outbox.ReadAsync(id,ct))?.Pending.FirstOrDefault() is {} message)
         {
-            var head=await read(id,ct) ?? throw new InvalidDataException("Cloud profile missing.");
+            var head=await read(id,ct);
+            if(head is null){
+                if(!automaticPlayerEnrollment || message.Revision!=1 || message.Kind!=SnapshotKind.Upsert)throw new InvalidDataException("Cloud profile missing.");
+            }
             var clean=SnapshotValidation.Validate(message,channel);
-            var duplicate=head.Revision==message.Revision && head.SnapshotId==message.SnapshotId && head.ContentHash==clean.ContentHash;
-            if(head.ChannelId!=channel || head.UserId!=id || head.Deleted && !duplicate || (!duplicate && head.Revision!=message.Revision-1))
+            var duplicate=head is not null && head.Revision==message.Revision && head.SnapshotId==message.SnapshotId && head.ContentHash==clean.ContentHash;
+            if(head is not null && (head.ChannelId!=channel || head.UserId!=id || head.Deleted && !duplicate || (!duplicate && head.Revision!=message.Revision-1)))
                 throw new InvalidDataException("Stale or conflicting snapshot; no new revision or gameplay replay.");
             var result=await send(message,ct);
             if(result.Status==DeliveryStatus.RetryLater)throw new RetrySyncException();

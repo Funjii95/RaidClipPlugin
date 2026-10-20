@@ -20,7 +20,7 @@ builder.Services.AddSingleton<IRelayStore>(services=>{
 });
 builder.Services.AddSingleton<ActionRelay>();
 builder.Services.AddSingleton<IPlayerReader>(_ => settings.Data.Mode == "Mock"
-    ? new MockPlayerReader() : new FirestorePlayerReader(settings.Data));
+    ? new MockPlayerReader() : new FirestorePlayerReader(settings.Data,settings.Twitch.ChannelId));
 builder.Services.AddAuthentication("Bearer").AddJwtBearer(o =>
 {
     o.MapInboundClaims = false;

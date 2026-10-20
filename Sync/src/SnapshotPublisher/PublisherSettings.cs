@@ -16,6 +16,7 @@ public sealed class PublisherSettings
     public string Collection { get; set; } = "";
     public bool WritesEnabled { get; set; }
     public bool PrivacyDeletionEnabled {get;set;}
+    public bool AutomaticPlayerEnrollment {get;set;}
     public string[] AllowedUserIds { get; set; } = [];
 
     public void Validate()
@@ -23,6 +24,7 @@ public sealed class PublisherSettings
         if (ChannelId.Length is < 1 or > 25 || ChannelId.Any(c => c is < '0' or > '9') ||
             ApiKeyHash.Length != 64 || ApiKeyHash.Any(c => !Uri.IsHexDigit(c)))
             throw new InvalidOperationException("Publisher channel and credential hash required.");
+        if (AutomaticPlayerEnrollment && Mode != "FirestoreProfilesTest") throw new InvalidOperationException("Enrollment requires the protected profile publisher.");
         if (Mode == "LocalPrototype")
         {
             if (string.IsNullOrWhiteSpace(StoreDirectory)) throw new InvalidOperationException("Explicit local directory required.");
@@ -48,5 +50,5 @@ public sealed class PublisherSettings
         : new FirestoreSnapshotSink(new FirestoreDbBuilder
         {
             ProjectId = ProjectId, DatabaseId = DatabaseId, EmulatorDetection = EmulatorDetection.ProductionOnly
-        }.Build(), ChannelId, Collection, sequentialUpdatesOnly: Mode == "FirestoreProfilesTest",allowSequentialDeletes:PrivacyDeletionEnabled);
+        }.Build(), ChannelId, Collection, sequentialUpdatesOnly: Mode == "FirestoreProfilesTest",allowSequentialDeletes:PrivacyDeletionEnabled,allowInitialProfiles:AutomaticPlayerEnrollment);
 }

@@ -25,7 +25,7 @@ public partial class MainForm
                     if(jobs.Length>100)throw new InvalidDataException();return jobs;
                 },async(job,token)=>{
                     using var response=await http.PostAsJsonAsync("/api/v1/plugin/actions/privacy-requests/"+job.UserId+"/complete",new SelfDeletionIntent(job.RequestId,"DELETE_MY_RPG_ACCOUNT"),token);response.EnsureSuccessStatusCode();
-                });
+                },options.AutomaticPlayerEnrollment?id=>IsAutomaticallyEnrolled(id):null);
             while(!ct.IsCancellationRequested){
                 async ValueTask Maintain(CancellationToken token){
                     if(_dataAdministrationBusy)return;

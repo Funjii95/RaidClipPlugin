@@ -8,14 +8,14 @@ namespace RaidClipPlugin.Services;
 internal sealed record LocalActionRecord(string Hash,string UserId,ActionOutcome? Outcome);
 internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<MinigameConfig> configuration,
     StreamAdmission admission,Guid epoch,string channel,IReadOnlySet<string> users,string journal,
-    Func<string,string,bool> permitted,ChatMinigameService? minigames=null)
+    Func<string,string,bool> permitted,ChatMinigameService? minigames=null,Func<string,bool>? enrolled=null)
 {
     private readonly SemaphoreSlim gate=new(1,1);
     internal static string CommandFor(string kind)=>kind switch {"status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
     internal async Task<ActionOutcome> ExecuteAsync(ActionEnvelope envelope,CancellationToken ct,TimeSpan? remainingWindow=null)
     {
         var hash=RpgIntents.Hash(envelope.Intent);
-        if(envelope.ChannelId!=channel || !users.Contains(envelope.UserId) || envelope.IntentHash!=hash || envelope.SessionId==Guid.Empty)
+        if(envelope.ChannelId!=channel || !(users.Contains(envelope.UserId)||enrolled?.Invoke(envelope.UserId)==true) || envelope.IntentHash!=hash || envelope.SessionId==Guid.Empty)
             return new(false,"scope_denied","Aktionszuordnung ungültig.");
         await gate.WaitAsync(ct);
         try {

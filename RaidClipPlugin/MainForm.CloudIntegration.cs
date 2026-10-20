@@ -52,8 +52,10 @@ public partial class MainForm
             using(sender)using(reader)
             {
                 var outbox=new LocalOutboxStore(Path.Combine(TestDataPaths.Root,"cloud-sync-outbox"),options.ChannelId);
+                var excludedNames=_configurationService.LoadForEditing().Minigame.PointsBlacklist.ToHashSet(StringComparer.OrdinalIgnoreCase);
                 var worker=new IntegratedSnapshotWorker(_viewerPoints,outbox,options.ChannelId,options.AllowedUserIds,
-                    token=>reader.RequireFullProjectionAsync(options.AllowedUserIds,token),reader.ReadAsync,sender.SendAsync,PurgeCloudPlayerActionsAsync);
+                    token=>reader.RequireFullProjectionAsync(options.AllowedUserIds,token,options.AutomaticPlayerEnrollment),reader.ReadAsync,sender.SendAsync,PurgeCloudPlayerActionsAsync,options.AutomaticPlayerEnrollment,
+                    (id,name)=>id!="216527497" && !name.Equals("SoundAlerts",StringComparison.OrdinalIgnoreCase) && !excludedNames.Contains(name) && !(_minigame?.RemoteConfiguration.PointsBlacklist.Contains(name,StringComparer.OrdinalIgnoreCase)??false));
                 worker.StatusChanged+=CloudLog;
                 worker.AvailabilityChanged+=ready=>_cloudSyncReady=ready;
                 await worker.RunAsync(ct);
@@ -73,12 +75,12 @@ public partial class MainForm
                 if(!options.Enabled)return;options.Validate();
                 var sync=JsonSerializer.Deserialize<CloudSyncOptions>(await File.ReadAllTextAsync(Path.Combine(TestDataPaths.Root,"cloud-sync.json"),ct),new JsonSerializerOptions{PropertyNameCaseInsensitive=true})!;
                 sync.Validate();
-                if(!sync.Enabled || sync.ChannelId!=options.ChannelId || options.AllowedUserIds.Any(id=>!sync.AllowedUserIds.Contains(id)))throw new InvalidDataException("Action users require the enabled snapshot pipeline.");
+                if(!sync.Enabled || sync.ChannelId!=options.ChannelId || options.AutomaticPlayerEnrollment!=sync.AutomaticPlayerEnrollment || options.AllowedUserIds.Any(id=>!sync.AllowedUserIds.Contains(id)))throw new InvalidDataException("Action users require the enabled snapshot pipeline.");
                 var secret=ProtectedData.Unprotect(await File.ReadAllBytesAsync(options.ProtectedKeyFile,ct),null,DataProtectionScope.CurrentUser);
                 string key;try{if(secret.Length is <32 or >64)throw new InvalidDataException();key=Convert.ToBase64String(secret);}finally{CryptographicOperations.ZeroMemory(secret);}
                 var executor=new RemoteRpgExecutor(_viewerPoints,()=>minigame.RemoteConfiguration,_streamAdmission,epoch,options.ChannelId,
                     options.AllowedUserIds.ToHashSet(StringComparer.Ordinal),Path.Combine(TestDataPaths.Root,"action-receipts"),
-                    (command,name)=>_commandRegistry.Commands.Any(c=>c.CommandText==command && c.Enabled && c.RequiredRole==RaidClipPlugin.Models.CommandRole.Viewer),minigames:minigame);
+                    (command,name)=>_commandRegistry.Commands.Any(c=>c.CommandText==command && c.Enabled && c.RequiredRole==RaidClipPlugin.Models.CommandRole.Viewer),minigames:minigame,enrolled:options.AutomaticPlayerEnrollment?id=>IsAutomaticallyEnrolled(id):null);
                 using var client=new CloudActionClient(new Uri(options.BackendUrl),key,executor,()=>_streamAdmission.CanPlay(epoch)&&_cloudSyncReady,CloudLog);
                 await client.RunAsync(ct);
             }catch(OperationCanceledException)when(ct.IsCancellationRequested){}catch{CloudLog("Aktionskanal nicht gestartet: getrennte Konfiguration/Zugang prüfen.");}
@@ -88,7 +90,7 @@ public partial class MainForm
     {
         var path=Path.Combine(TestDataPaths.Root,"action-channel.json");
         var options=JsonSerializer.Deserialize<ActionChannelOptions>(await File.ReadAllTextAsync(path,ct),new JsonSerializerOptions{PropertyNameCaseInsensitive=true})!;
-        options.Validate();if(!options.Enabled || !options.AllowedUserIds.Contains(id))throw new InvalidOperationException("Cloud-Löschfreigabe für diesen Spieler fehlt.");
+        options.Validate();if(!options.Enabled || !(options.AllowedUserIds.Contains(id)||options.AutomaticPlayerEnrollment))throw new InvalidOperationException("Cloud-Löschfreigabe für diesen Spieler fehlt.");
         var protectedKey=ProtectedData.Unprotect(await File.ReadAllBytesAsync(options.ProtectedKeyFile,ct),null,DataProtectionScope.CurrentUser);
         using var http=new HttpClient(new HttpClientHandler{AllowAutoRedirect=false,UseCookies=false,CheckCertificateRevocationList=true}){BaseAddress=new Uri(options.BackendUrl),Timeout=TimeSpan.FromSeconds(8)};
         try{http.DefaultRequestHeaders.Authorization=new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer",Convert.ToBase64String(protectedKey));}
@@ -96,6 +98,15 @@ public partial class MainForm
         using var response=await http.PostAsync("/api/v1/plugin/actions/privacy/"+id,null,ct);response.EnsureSuccessStatusCode();
         var content=await response.Content.ReadAsStringAsync(ct);if(content.Length>1024)throw new InvalidDataException("Ungültige Löschbestätigung.");
         using var json=JsonDocument.Parse(content);if(!json.RootElement.TryGetProperty("erased",out var erased)||erased.ValueKind!=JsonValueKind.True)throw new InvalidDataException("Löschung nicht bestätigt.");
+    }
+    private bool IsAutomaticallyEnrolled(string id)
+    {
+        if(id.Length is <1 or >25 || id.Any(c=>c is <'0' or >'9') || id=="216527497")return false;
+        var path=Path.Combine(TestDataPaths.Root,"cloud-sync-outbox","42812664-"+id+".outbox.json");
+        try{
+            var state=JsonSerializer.Deserialize<OutboxState>(File.ReadAllText(path));
+            return state is not null && state.UserId==id && state.ChannelId=="42812664" && !state.Deleted && (state.Pending.Length==0 || state.Revision>1);
+        }catch{return false;}
     }
     private void BeginStreamSession()
     {

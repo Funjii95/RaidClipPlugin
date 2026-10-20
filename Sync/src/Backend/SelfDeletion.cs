@@ -14,7 +14,7 @@ public sealed partial class ActionRelay
             var job=new SelfDeletionJob(user,intent.RequestId,Now);s.DeletionRequests.Add(user,job);return new(job);
         },ct);
     }
-    public async Task<SelfDeletionJob[]> PendingSelfDeletionsAsync(CancellationToken ct){RequireSelfDeletion();return (await store.ReadChannelAsync(ct)).DeletionRequests.Values.Where(j=>!j.Completed&&settings.Actions.AllowedUserIds.Contains(j.UserId)).Take(100).ToArray();}
+    public async Task<SelfDeletionJob[]> PendingSelfDeletionsAsync(CancellationToken ct){RequireSelfDeletion();return (await store.ReadChannelAsync(ct)).DeletionRequests.Values.Where(j=>!j.Completed&&(settings.Actions.AutomaticPlayerEnrollment||settings.Actions.AllowedUserIds.Contains(j.UserId))).Take(100).ToArray();}
     public Task<SelfDeletionJob> CompleteSelfDeletionAsync(string user,Guid requestId,CancellationToken ct){
         Scope(user);RequireSelfDeletion();return store.TransactionAsync<SelfDeletionJob>(null,false,(s,_)=>{
             if(!s.DeletionRequests.TryGetValue(user,out var job)||job.RequestId!=requestId)throw new RelayDenied(409,"deletion_request_mismatch");

@@ -63,12 +63,12 @@ public sealed class RelayDenied(int status,string code) : Exception(code)
 public sealed record LiveConfirmation(string StreamId, DateTimeOffset CheckedAt);
 public interface ITwitchLiveProbe {Task<LiveConfirmation?> CheckAsync(CancellationToken ct);}
 
-public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,BackendSettings settings)
+public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,BackendSettings settings,IPlayerReader? players=null)
 {
     private DateTimeOffset Now=>clock.GetUtcNow();
     private bool Ready(RelayChannel s)=>s.SessionId!=Guid.Empty && s.ExpiresAt>Now && s.Sequence>0;
     private static ActionReceipt Receipt(RelayAction a)=>new(a.Envelope.Intent.ActionId,a.State,a.Outcome);
-    private void Scope(string user){if(!Ids.IsNumeric(user) || !settings.Actions.AllowedUserIds.Contains(user))throw new RelayDenied(403,"test_user_not_allowed");}
+    private void Scope(string user){if(!Ids.IsNumeric(user) || !settings.Actions.AutomaticPlayerEnrollment && !settings.Actions.AllowedUserIds.Contains(user))throw new RelayDenied(403,"test_user_not_allowed");}
     public async Task PurgeUserAsync(string user,CancellationToken ct){Scope(user);if(!settings.Actions.PrivacyDeletionEnabled)throw new RelayDenied(503,"privacy_not_enabled");await store.PurgeUserActionsAsync(user,ct);}
     public async Task<RelaySession> OpenAsync(CancellationToken ct)
     {
@@ -102,7 +102,9 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     }
     public async Task<ActionReceipt> EnqueueAsync(string user,RpgIntent intent,Guid expectedSession,CancellationToken ct)
     {
-        Scope(user);var hash=RpgIntents.Hash(intent);
+        Scope(user);
+        if(settings.Actions.AutomaticPlayerEnrollment && (players is null || await players.GetAsync(user,ct) is null))throw new RelayDenied(403,"profile_not_enrolled");
+        var hash=RpgIntents.Hash(intent);
         return await store.TransactionAsync<ActionReceipt>(intent.ActionId,false,(s,a)=>{
             if(s.PrivacyBlockedUsers.Contains(user)||s.DeletionRequests.ContainsKey(user))throw new RelayDenied(403,"privacy_blocked");
             if(a is not null){if(a.Envelope.UserId!=user || a.Envelope.IntentHash!=hash)throw new RelayDenied(409,"action_id_conflict");return new(Receipt(a));}

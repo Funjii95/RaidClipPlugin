@@ -179,6 +179,59 @@ public sealed class CloudIntegrationTests : IDisposable
         foreach(var id in ids){var state=await Outbox().ReadAsync(id);Assert.NotNull(state);Assert.Empty(state.Pending);}
         Console.WriteLine($"Eight synthetic 100ms cloud heads: parallel pass {watch.ElapsedMilliseconds}ms; serialized network waits alone: 800ms.");
     }
+
+    private IntegratedSnapshotWorker AutomaticWorker(ViewerPointStore store,Func<string,string,bool>? eligible=null)=>
+        new(store,Outbox(),"42",[],_=>Task.CompletedTask,cloud.Read,cloud.Send,
+            automaticPlayerEnrollment:true,eligible:eligible);
+
+    [Fact]
+    public async Task Automatic_enrollment_creates_profile_without_touching_local_save_and_keeps_zero_balance_after_restart()
+    {
+        var store=await SeedAsync();cloud.Head=null;cloud.Applied=0;
+        var before=await File.ReadAllBytesAsync(FilePath);
+        await AutomaticWorker(store).SynchronizeOnceAsync();
+        Assert.Equal(before,await File.ReadAllBytesAsync(FilePath));
+        Assert.Equal(1,cloud.Head!.Revision);Assert.Equal(1,cloud.Applied);
+        await store.ApplyRpgAsync("1001","SYNTHETIC","zero",a=>{a.Points=0;return new(true);},default);
+        await AutomaticWorker(new ViewerPointStore(Players)).SynchronizeOnceAsync();
+        Assert.Equal(2,cloud.Head!.Revision);
+        using var account=JsonDocument.Parse(cloud.Head.AccountJson!);
+        Assert.Equal(0,account.RootElement.GetProperty("Points").GetInt64());
+        Assert.Empty((await Outbox().ReadAsync("1001"))!.Pending);
+    }
+
+    [Fact]
+    public async Task Initial_upload_with_lost_acknowledgement_is_recovered_once_after_restart()
+    {
+        var store=await SeedAsync();cloud.Head=null;cloud.Applied=0;cloud.LoseAcknowledgement=true;
+        await Assert.ThrowsAnyAsync<Exception>(()=>AutomaticWorker(store).SynchronizeOnceAsync());
+        Assert.Single((await Outbox().ReadAsync("1001"))!.Pending);
+        await AutomaticWorker(new ViewerPointStore(Players)).SynchronizeOnceAsync();
+        Assert.Equal(1,cloud.Applied);Assert.Equal(1,cloud.Head!.Revision);
+        Assert.Empty((await Outbox().ReadAsync("1001"))!.Pending);
+    }
+
+    [Fact]
+    public async Task Unenrolled_zero_balance_and_excluded_bot_are_not_uploaded()
+    {
+        var store=await SeedAsync();cloud.Head=null;cloud.Applied=0;
+        await AutomaticWorker(store,(_,_)=>false).SynchronizeOnceAsync();
+        Assert.Null(cloud.Head);Assert.Null(await Outbox().ReadAsync("1001"));
+        await store.ApplyRpgAsync("1001","SYNTHETIC","zero",a=>{a.Points=0;return new(true);},default);
+        await AutomaticWorker(store).SynchronizeOnceAsync();
+        Assert.Null(cloud.Head);Assert.Equal(0,cloud.Applied);
+    }
+
+    [Fact]
+    public async Task Automatic_enrollment_never_restores_a_cloud_tombstone()
+    {
+        var store=await SeedAsync();
+        cloud.Head=cloud.Head! with{Deleted=true,AccountJson=null};
+        var head=cloud.Head;
+        await AutomaticWorker(store).SynchronizeOnceAsync();
+        Assert.Equal(head,cloud.Head);Assert.Null(await Outbox().ReadAsync("1001"));
+    }
+
     private sealed class FakeCloud
     {
         internal StoredSnapshot? Head;

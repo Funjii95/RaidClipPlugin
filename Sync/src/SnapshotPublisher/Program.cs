@@ -69,11 +69,11 @@ public partial class PublisherProgram
         });
         app.UseRateLimiter();
         app.MapGet("/health/live", () => Results.Ok(new { status = "ok" }));
-        app.MapGet("/api/v1/snapshots/capabilities", () => Results.Json(new { rpgProjectionVersion = SnapshotValidation.RpgProjectionVersion, channelId = channel, allowedUserIds = settings.AllowedUserIds, maxMessageBytes = SnapshotValidation.MaxMessageBytes }));
+        app.MapGet("/api/v1/snapshots/capabilities", () => Results.Json(new { rpgProjectionVersion = SnapshotValidation.RpgProjectionVersion, channelId = channel, automaticPlayerEnrollment = settings.AutomaticPlayerEnrollment, allowedUserIds = settings.AllowedUserIds, maxMessageBytes = SnapshotValidation.MaxMessageBytes }));
         app.MapGet("/api/v1/snapshots/{userId}/head", async (string userId, CancellationToken ct) =>
         {
             if (settings.Mode is not ("FirestoreProfilesTest" or "FirestoreTest")) return Results.NotFound();
-            if (!settings.AllowedUserIds.Contains(userId)) return Results.StatusCode(403);
+            if (!settings.AutomaticPlayerEnrollment && !settings.AllowedUserIds.Contains(userId)) return Results.StatusCode(403);
             if (store is not SnapshotFirestore.FirestoreSnapshotSink reader) return Results.StatusCode(503);
             try
             {
@@ -106,7 +106,7 @@ public partial class PublisherProgram
                 // Validate fully (including duplicate keys) before deciding channel access.
                 var validated = await SnapshotValidation.ReadAsync(buffer, declared.ChannelId, ct);
                 if (validated.ChannelId != channel) return Results.StatusCode(403);
-                if (settings.AllowedUserIds.Length > 0 && !settings.AllowedUserIds.Contains(validated.UserId))
+                if (!settings.AutomaticPlayerEnrollment && settings.AllowedUserIds.Length > 0 && !settings.AllowedUserIds.Contains(validated.UserId))
                     return Results.StatusCode(403);
                 if(settings.Mode=="FirestoreProfilesTest" && validated.Kind==SnapshotKind.Delete && !settings.PrivacyDeletionEnabled)return Results.StatusCode(503);
                 var clean = declared with { AccountJson = validated.AccountJson };

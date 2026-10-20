@@ -48,16 +48,18 @@ public sealed class FirestorePlayerReader : IPlayerReader
 {
     private readonly FirestoreDb db;
     private readonly string collection;
-    public FirestorePlayerReader(DataSettings settings)
+    private readonly string? expectedChannel;
+    public FirestorePlayerReader(DataSettings settings,string? expectedChannel=null)
         : this(new FirestoreDbBuilder
         {
             ProjectId = settings.ProjectId, DatabaseId = settings.DatabaseId,
             EmulatorDetection = Google.Api.Gax.EmulatorDetection.ProductionOnly
-        }.Build(), settings.Collection) { }
-    public FirestorePlayerReader(FirestoreDb database, string collectionName)
+        }.Build(), settings.Collection,expectedChannel) { }
+    public FirestorePlayerReader(FirestoreDb database, string collectionName,string? expectedChannel=null)
     {
         db = database;
         collection = collectionName;
+        this.expectedChannel=expectedChannel;
     }
     public async Task<PlayerView?> GetAsync(string userId, CancellationToken ct)
     {
@@ -66,6 +68,7 @@ public sealed class FirestorePlayerReader : IPlayerReader
         deadline.CancelAfter(TimeSpan.FromSeconds(5));
         var document = await GetDocumentAsync(userId, ct, deadline.Token);
         if (!document.Exists) return null;
+        if(expectedChannel is not null && (!document.TryGetValue<string>("channelId",out var ownerChannel)||ownerChannel!=expectedChannel))throw new InvalidDataException("Snapshot channel mismatch.");
         if (document.ContainsField("deleted"))
         {
             if (!document.TryGetValue<bool>("deleted", out var deleted))

@@ -13,6 +13,7 @@ public sealed class BackendSettings
             !Regex.IsMatch(Actions.Collection,"^[a-zA-Z0-9_-]{1,64}$") || Actions.Collection==Data.Collection ||
             Actions.Mode=="Firestore" && (string.IsNullOrWhiteSpace(Data.ProjectId))))
             throw new InvalidOperationException("Explicit action test scope, credential hash and durable store required.");
+        if(Actions.AutomaticPlayerEnrollment && (!Actions.Enabled || Actions.Mode!="Firestore" || Data.Mode!="FirestoreReadOnly"))throw new InvalidOperationException("Automatic admission requires authoritative published profiles.");
         byte[] secret;
         try { secret = Convert.FromBase64String(Twitch.SecretBase64); }
         catch (FormatException) { throw new InvalidOperationException("Twitch secret must be Base64."); }
@@ -57,6 +58,7 @@ public static partial class Ids
 
 public sealed class ActionSettings
 {
+    public bool AutomaticPlayerEnrollment {get;set;}
     public bool SelfDeletionEnabled {get;set;}
     public bool PrivacyDeletionEnabled {get;set;}
     public bool Enabled {get;set;}

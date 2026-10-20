@@ -77,7 +77,7 @@ public sealed class HttpSnapshotHeadReader : IDisposable
         catch (JsonException) { throw new SnapshotHeadReadException(false); }
     }
 
-    public async Task RequireFullProjectionAsync(IReadOnlyCollection<string> allowedUsers, CancellationToken ct=default)
+    public async Task RequireFullProjectionAsync(IReadOnlyCollection<string> allowedUsers, CancellationToken ct=default, bool automaticPlayerEnrollment=false)
     {
         using var deadline=CancellationTokenSource.CreateLinkedTokenSource(ct);
         deadline.CancelAfter(TimeSpan.FromSeconds(15));
@@ -96,7 +96,8 @@ public sealed class HttpSnapshotHeadReader : IDisposable
                 root.GetProperty("maxMessageBytes").GetInt32()<SnapshotValidation.MaxMessageBytes)
                 throw new SnapshotHeadReadException(false);
             var users=root.GetProperty("allowedUserIds").EnumerateArray().Select(v=>v.GetString()).ToHashSet(StringComparer.Ordinal);
-            if(allowedUsers.Any(id=>!users.Contains(id)))throw new SnapshotHeadReadException(false);
+            if(automaticPlayerEnrollment && (!root.TryGetProperty("automaticPlayerEnrollment",out var auto) || auto.ValueKind!=JsonValueKind.True))throw new SnapshotHeadReadException(false);
+            if(!automaticPlayerEnrollment && allowedUsers.Any(id=>!users.Contains(id)))throw new SnapshotHeadReadException(false);
         }
         catch(HttpRequestException){throw new SnapshotHeadReadException(true);}
         catch(IOException){throw new SnapshotHeadReadException(true);}
