@@ -23,6 +23,13 @@ public partial class PublisherProgram
         builder.Services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = 429;
+            // Authenticated revision checks must not consume the write budget shared by players.
+            options.AddFixedWindowLimiter("snapshot-heads", limiter =>
+            {
+                limiter.PermitLimit = 600;
+                limiter.Window = TimeSpan.FromMinutes(1);
+                limiter.QueueLimit = 0;
+            });
             options.AddFixedWindowLimiter("snapshots", limiter =>
             {
                 limiter.PermitLimit = 60;
@@ -75,7 +82,7 @@ public partial class PublisherProgram
                     current.UserId, current.Revision, current.SnapshotId, current.CapturedAt, current.Deleted, current.ContentHash));
             }
             catch (Exception) when (!ct.IsCancellationRequested) { return Results.StatusCode(503); }
-        }).RequireRateLimiting("snapshots");
+        }).RequireRateLimiting("snapshot-heads");
         app.MapPost("/api/v1/snapshots", async (HttpRequest request, CancellationToken ct) =>
         {
             if (settings.Mode is "FirestoreTest" or "FirestoreProfilesTest" && !settings.WritesEnabled) return Results.StatusCode(503);
