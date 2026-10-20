@@ -180,6 +180,7 @@ public sealed partial class MainForm
     private Control CreateDashboardActionBar(Control actions)
     {
         var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 4, 0, 0) };
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         host.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         for (var i = 0; i < 5; i++) host.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
         _testChannelBox.Dock = DockStyle.Fill;
@@ -190,6 +191,7 @@ public sealed partial class MainForm
         AddQuickAction(host, 2, "◯   Chat testen", () => _ = SendChatDiagnosticTestAsync());
         AddQuickAction(host, 3, "◷   Timer öffnen", () => ShowSection("timer"));
         AddQuickAction(host, 4, "♜   Minigames", () => ShowSection("minigame"));
+        _createObsSourceButton.AutoSize = false;
         _createObsSourceButton.Dock = DockStyle.Fill;
         _createObsSourceButton.TextAlign = ContentAlignment.MiddleLeft;
         _createObsSourceButton.Font = new Font("Segoe UI", 9.6F);
@@ -228,7 +230,7 @@ public sealed partial class MainForm
         main.Controls.Add(CreateModuleGrid(), 0, 2);
         main.Controls.Add(CreateDashboardSection("Heutige Aktivität", CreateDashboardStatsGrid()), 0, 3);
         var side = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = BackgroundColor, Margin = Padding.Empty, Padding = Padding.Empty };
-        side.RowStyles.Add(new RowStyle(SizeType.Absolute, 312));
+        side.RowStyles.Add(new RowStyle(SizeType.Absolute, 356));
         side.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         side.Controls.Add(dashboardActions, 0, 0);
         side.Controls.Add(CreateDashboardSection("Letzte Ereignisse", CreateRecentActivityList()), 0, 1);
