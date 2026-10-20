@@ -7,13 +7,17 @@ Basis: main / Plugin 2.1.29, Commit a9043ee32ee3e474fab19e67ed69d1ffef9d1cd1.
 ## Geplante Erweiterung: Ausrüstungs-Upgrades
 Autoritative Umsetzung im vorhandenen Plugin, gemeinsame Spielstände für Chat und Extension. Keine zweite Spielökonomie in Frontend oder Cloud.
 
-Vor Umsetzung festzulegen:
-- maximale Upgrade-Stufe;
-- Kosten je Stufe und mögliche Abhängigkeit von Seltenheit;
-- welche Attribute wie stark steigen;
-- garantierter Erfolg oder Fehlschlag, einschließlich Folgen eines Fehlschlags.
+## Verbindliche Regeln
+- Maximalstufe +9.
+- Pro Stufe +2,5 % additiv auf den ursprünglichen Attributwert; kein Zinseszins.
+- Faktor: 1 + Stufe * 0,025. Bei +9: 1,225 (+22,5 %).
+- Beispiel: Basiswert 100 ergibt bei +1 102,5, bei +2 105 und bei +9 122,5.
+- Upgrades gelingen immer; kein Zufallswurf.
+- Upgrade-Materialien sind erforderlich. Materialarten und Mengen werden vom Betreiber später festgelegt.
+- Perlenkosten und die konkrete Auswahl aufwertbarer Attribute/etwaige Rundung sind noch nicht festgelegt. Keine Werte erfinden.
+- Die reine Dezimalberechnung ist lokal als RpgEquipmentUpgradeRules vorbereitet und getestet. Noch keine Einbindung in gespeicherte Gegenstände, Aktionen oder Anzeige.
 
-Bis diese Regeln feststehen, keine Upgrade-Aktion aktivieren, keine Perlen abbuchen und keine gespeicherten Items migrieren.
+Bis Materialien und Kosten feststehen: keine Upgrade-Aktion aktivieren, keine Materialien oder Perlen abbuchen, keine Items verändern oder migrieren. Vorhandene Grundwerte bleiben unverändert; spätere Berechnung muss immer von unveränderten ursprünglichen Werten ausgehen.
 
 ## Bestehende Integrationspunkte
 - RaidClipPlugin/Models/RpgProfile.cs: RpgItem mit InstanceId, Attributes und CoreStatsVersion.
