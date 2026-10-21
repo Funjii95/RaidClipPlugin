@@ -37,7 +37,7 @@ public sealed class SelfDeletionEndToEndTests
                 Assert.Equal(SnapshotKind.Delete,message.Kind);Assert.Null(message.AccountJson);var decision=await sink.ApplyAsync(message,ct);
                 if(lost){lost=false;throw new IOException("synthetic lost ACK");}return new DeliveryResult(DeliveryStatus.Delivered,decision);
             },async(id,ct)=>(await api.Plugin.PostAsync("/api/v1/plugin/actions/privacy/"+id,null,ct)).EnsureSuccessStatusCode());
-            await Assert.ThrowsAnyAsync<Exception>(()=>Sync(store).SynchronizeOnceAsync());
+            var interrupted=Sync(store);await interrupted.SynchronizeOnceAsync();Assert.Equal(1,interrupted.PendingPrivacyCount);
             var pending=await api.Viewer.GetStringAsync("/api/v1/play/privacy/deletion");Assert.Contains("\"completed\":false",pending);
             store=new ViewerPointStore(directory);await Sync(store).SynchronizeOnceAsync();await Privacy(store).TickAsync(default);
             Assert.True((await ReadHead(default))!.Deleted);Assert.Null(await outbox.ReadAsync("1001"));

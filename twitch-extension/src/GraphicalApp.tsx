@@ -53,6 +53,9 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
     const setCount=(s:typeof state,id:string)=>isDemo?demo!.setCount(s,id):new Set(s.inventory.filter(i=>i.setId===id&&sets.find(v=>v.id===id)?.itemIds.includes(i.itemId)&&Object.values(s.equipment).includes(i.instanceId)).map(i=>i.itemId)).size;
     const collectors=(s:typeof state)=>isDemo?demo!.collectors(s):s.remote?.collectors??{};
     const dialog = useRef<HTMLDialogElement>(null);
+    const upgradeDialog=useRef<HTMLDialogElement>(null);
+    const [upgradeItem,setUpgradeItem]=useState<string|null>(null);
+    useEffect(()=>{if(upgradeItem){upgradeDialog.current?.showModal();upgradeDialog.current?.querySelector<HTMLElement>("h2")?.focus();}else upgradeDialog.current?.close();},[upgradeItem]);
     useEffect(() => { if (state.salvageQuote)
         dialog.current?.showModal();
     else
@@ -137,6 +140,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
         {i.setId && (<small>Set: {sets.find((s) => s.id === i.setId)?.name}</small>)}
         {i.collector && <p>{collectorText(i.collector).join(" · ")}</p>}
         <div className="actions">
+          {i.slot && <button onClick={()=>setUpgradeItem(i.name)} disabled={busy}>Aufwerten</button>}
           <button aria-pressed={i.locked} onClick={() => void run({ type: "lock", id: i.instanceId })} disabled={!allowed("lock") || busy}>{i.locked ? "Entsperren" : "Sperren"}</button>
           {i.slot &&
                 (equipped(i) ? (<button onClick={() => {
@@ -577,6 +581,16 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
           {message}
         </p>
       </main>
+      <dialog ref={upgradeDialog} aria-labelledby="upgrade-heading" onCancel={()=>setUpgradeItem(null)}>
+        <h2 id="upgrade-heading" tabIndex={-1}>Ausrüstung aufwerten</h2>
+        <p>{upgradeItem}</p>
+        <p>Vorschau · Aufwertung noch nicht freigeschaltet.</p>
+        <p>Bis +9, je Stufe +2,5 % additiv auf die ursprünglichen Werte. Jedes Upgrade gelingt.</p>
+        <p>Perlenkosten pro Schritt:</p>
+        <ul>{[10000,25000,50000,100000,200000,350000,500000,750000,1000000].map((cost,index)=><li key={index}>+{index+1}: {format(cost)} Perlen{index===6?" + 1 weiße Perle":index===7?" + 1 blaue Perle":index===8?" + 1 rote Perle":""}</li>)}</ul>
+        <p>Es werden keine Perlen oder Materialien verbraucht. Die aktuelle Aufwertungsstufe wird noch nicht vom Plugin übermittelt.</p>
+        <button onClick={()=>setUpgradeItem(null)}>Schließen</button>
+      </dialog>
       <dialog ref={dialog} onCancel={() => void run({ type: "cancelSalvage" })}><h2>Zerlegen bestätigen</h2>{state.salvageQuote && <><p>Gültig: {remaining(state.salvageQuote.expiresAt, now)} Sekunden</p><ul>{state.salvageQuote.items.map(i => <li key={i.id}>{i.name} · {i.value} Perlen {i.warning ? "· Set / Legendär" : ""}</li>)}</ul><strong>Gesamt: {state.salvageQuote.total} Perlen</strong><div className="actions"><button onClick={() => void run({ type: "confirmSalvage", token: state.salvageQuote!.token })} disabled={!allowed("confirmSalvage") || busy}>Jetzt zerlegen</button><button onClick={() => void run({ type: "cancelSalvage" })} disabled={!allowed("cancelSalvage") || busy}>Abbrechen</button></div></>}</dialog>
       <footer>
         {!isDemo&&state.remote?.selfDeletionEnabled===true&&<SelfDeletion source={source}/>}

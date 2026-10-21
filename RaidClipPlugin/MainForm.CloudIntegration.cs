@@ -22,15 +22,20 @@ public partial class MainForm
         Shown+=(_,_)=>{if(!_administrationTestOnly){_cloudSyncTask=Task.Run(()=>RunCloudSyncAsync(_cloudStop.Token));_selfDeletionTask=Task.Run(()=>RunSelfDeletionAsync(_cloudStop.Token));}};
         FormClosed+=async(_,_)=>
         {
-            _streamAdmission.End();_cloudStop.Cancel();
+            _streamAdmission.End();_cloudStop.Cancel();_cloudStatusTip.Dispose();
             if(_cloudSyncTask is not null)try{await _cloudSyncTask.WaitAsync(TimeSpan.FromSeconds(5));}catch{}
             if(_selfDeletionTask is not null)try{await _selfDeletionTask.WaitAsync(TimeSpan.FromSeconds(5));}catch{}
         };
     }
+    private readonly Label _cloudIntegrationStatusLabel=new() {
+        Text="RPG-Cloud: Verbindung wird geprüft …",Dock=DockStyle.Fill,AutoSize=false,AutoEllipsis=true,
+        ForeColor=Color.DimGray,Font=new Font("Segoe UI",9F),TextAlign=ContentAlignment.TopLeft
+    };
+    private readonly ToolTip _cloudStatusTip=new();
     private void CloudLog(string status)
     {
         if(IsDisposed)return;
-        try{BeginInvoke(()=>AppendLog(status));}catch(InvalidOperationException){}
+        try{BeginInvoke(()=>{_cloudIntegrationStatusLabel.Text="RPG-Cloud: "+status;_cloudStatusTip.SetToolTip(_cloudIntegrationStatusLabel,status);AppendLog(status);});}catch(InvalidOperationException){}
     }
     private async Task RunCloudSyncAsync(CancellationToken ct)
     {
