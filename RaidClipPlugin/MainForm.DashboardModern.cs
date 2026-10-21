@@ -58,7 +58,7 @@ public sealed partial class MainForm
         _greetingTimer.Tick += (_, _) => _accountGreetingLabel.Text = AccountGreeting(_accountDisplayName, DateTime.Now.Hour);
         _greetingTimer.Start();
         FormClosed += (_, _) => _greetingTimer.Dispose();
-        greeting.Controls.Add(new Label { Text = "Dein Stream-System ist bereit.", Dock = DockStyle.Fill, AutoSize = false, ForeColor = MutedTextColor, Font = new Font("Segoe UI", 10.2F), TextAlign = ContentAlignment.TopLeft }, 0, 1);
+        greeting.Controls.Add(_cloudIntegrationStatusLabel, 0, 1);
         layout.Controls.Add(greeting, 0, 0);
         layout.Controls.Add(CreateUpdateStatusCard(), 1, 0);
         return layout;

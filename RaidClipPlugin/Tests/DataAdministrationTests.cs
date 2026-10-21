@@ -73,14 +73,14 @@ public sealed class DataAdministrationTests:IDisposable
         var outbox=new LocalOutboxStore(Path.Combine(root,"outbox"),"42");await outbox.InitializeBaselineAsync(baseline,SnapshotValidation.Validate(baseline,"42").ContentHash);
         await outbox.CommitAsync("1001",1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,json);
         var cloudFile=Path.Combine(root,"cloud","42-1001.json");Task<StoredSnapshot?> Read(string _,CancellationToken ct)=>ReadFile(ct);async Task<StoredSnapshot?> ReadFile(CancellationToken ct)=>JsonSerializer.Deserialize<StoredSnapshot>(await File.ReadAllTextAsync(cloudFile,ct));
-        var lost=true;var purges=0;
+        var lost=true;var purges=0;var clock=DateTimeOffset.UtcNow;
         var worker=new IntegratedSnapshotWorker(store,outbox,"42",["1001"],_=>Task.CompletedTask,Read,async(message,ct)=>{
             Assert.Equal(SnapshotKind.Delete,message.Kind);Assert.Null(message.AccountJson);var decision=await sink.ApplyAsync(message,ct);
             if(lost){lost=false;throw new IOException("synthetic lost acknowledgement");}return new DeliveryResult(DeliveryStatus.Delivered,decision);
-        },(_,_)=>{purges++;return Task.CompletedTask;});
+        },(_,_)=>{purges++;return Task.CompletedTask;},now:()=>clock);
         await store.RequestPrivacyDeletionAsync("1001",Guid.NewGuid(),default);
-        await Assert.ThrowsAnyAsync<Exception>(()=>worker.SynchronizeOnceAsync());Assert.False((await store.PrivacyRequestsAsync())[0].CloudErased);
-        await worker.SynchronizeOnceAsync();Assert.True((await store.PrivacyRequestsAsync())[0].CloudErased);Assert.True((await ReadFile(default))!.Deleted);Assert.Null(await outbox.ReadAsync("1001"));
+        await worker.SynchronizeOnceAsync();Assert.Equal(1,worker.PendingPrivacyCount);Assert.False((await store.PrivacyRequestsAsync())[0].CloudErased);
+        clock=clock.AddSeconds(6);await worker.SynchronizeOnceAsync();Assert.True((await store.PrivacyRequestsAsync())[0].CloudErased);Assert.True((await ReadFile(default))!.Deleted);Assert.Null(await outbox.ReadAsync("1001"));
         await worker.SynchronizeOnceAsync();Assert.Equal(2,purges);Assert.Equal(SnapshotDecision.RestoreRequired,await sink.ApplyAsync(baseline with{Revision=10,SnapshotId=Guid.NewGuid()}));
     }
     [Fact]public async Task Interrupted_privacy_cleanup_stays_blocked_and_can_resume_after_restart(){

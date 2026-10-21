@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using SnapshotProtocol;
 using SnapshotDelivery;
@@ -35,14 +36,32 @@ internal sealed class IntegratedSnapshotWorker
     private readonly Func<SnapshotMessage,CancellationToken,Task<DeliveryResult>> send;
     private readonly Func<string,CancellationToken,Task>? purgeActions;
     private readonly SemaphoreSlim wake=new(1,1);
+    private readonly Func<DateTimeOffset> now;
+    private sealed record PrivacyRetry(int Failures, DateTimeOffset NextAttempt, string Reason);
+    private readonly ConcurrentDictionary<string,PrivacyRetry> privacyRetries=new();
+    internal int PendingPrivacyCount=>privacyRetries.Count;
+    internal string PrivacyStatus=>privacyRetries.IsEmpty ? "" :
+        $"{privacyRetries.Count} Cloud-Löschauftrag/-aufträge ausstehend; nur betroffene Konten gesperrt. " +
+        string.Join("; ",privacyRetries.Values.Select(r=>r.Reason).Distinct());
+    private static string FailureReason(Exception error)=>error switch {
+        HttpRequestException {StatusCode:{} status}=>$"Cloud-Löschabschluss abgelehnt (HTTP {(int)status}); Serverfreigabe/Zugang prüfen",
+        SnapshotHeadReadException {Retryable:true}=>"Cloud-Löschabschluss vorübergehend nicht erreichbar",
+        SnapshotHeadReadException=>"Publisher-Vertrag oder Zugang für Löschabschluss prüfen",
+        InvalidDataException=>"Löschdaten-/Revisionskonflikt; keine automatische Überschreibung",
+        UnauthorizedAccessException=>"Lokaler Dateizugriff für Löschabschluss gesperrt",
+        IOException=>"Lokale Löschdatei vorübergehend nicht verfügbar",
+        PrivacyPrerequisiteException prerequisite=>prerequisite.Message,
+        _=>"Cloud-Löschabschluss fehlgeschlagen; automatischer Wiederholungsversuch vorgesehen"
+    };
+    private sealed class PrivacyPrerequisiteException(string message):Exception(message);
     internal string Status {get;private set;}="Initialisierung";
     internal event Action<string>? StatusChanged;
     internal event Action<bool>? AvailabilityChanged;
     private void Availability(bool value){if(AvailabilityChanged is {} listeners)foreach(Action<bool> listener in listeners.GetInvocationList())try{listener(value);}catch{}}
     internal IntegratedSnapshotWorker(ViewerPointStore source,LocalOutboxStore outbox,string channel,string[] users,
         Func<CancellationToken,Task> capabilities,Func<string,CancellationToken,Task<StoredSnapshot?>> read,
-        Func<SnapshotMessage,CancellationToken,Task<DeliveryResult>> send,Func<string,CancellationToken,Task>? purgeActions=null,bool automaticPlayerEnrollment=false,Func<string,string,bool>? eligible=null)
-    {this.source=source;this.outbox=outbox;this.channel=channel;this.users=users;this.capabilities=capabilities;this.read=read;this.send=send;this.purgeActions=purgeActions;this.automaticPlayerEnrollment=automaticPlayerEnrollment;this.eligible=eligible;}
+        Func<SnapshotMessage,CancellationToken,Task<DeliveryResult>> send,Func<string,CancellationToken,Task>? purgeActions=null,bool automaticPlayerEnrollment=false,Func<string,string,bool>? eligible=null,Func<DateTimeOffset>? now=null)
+    {this.source=source;this.outbox=outbox;this.channel=channel;this.users=users;this.capabilities=capabilities;this.read=read;this.send=send;this.purgeActions=purgeActions;this.automaticPlayerEnrollment=automaticPlayerEnrollment;this.eligible=eligible;this.now=now??(()=>DateTimeOffset.UtcNow);}
 
     private void Signal(){try{wake.Release();}catch(SemaphoreFullException){}}
     private void Report(string status)
@@ -62,18 +81,21 @@ internal sealed class IntegratedSnapshotWorker
                 try
                 {
                     await SynchronizeOnceAsync(ct);
-                    Availability(true);failures=0;Report("Cloud synchronisiert (vollständiges RPG)");
-                    await wake.WaitAsync(TimeSpan.FromSeconds(30),ct);
+                    Availability(true);failures=0;
+                    Report("Cloud synchronisiert (vollständiges RPG)"+(privacyRetries.IsEmpty?"":" – "+PrivacyStatus));
+                    await wake.WaitAsync(TimeSpan.FromSeconds(privacyRetries.IsEmpty?30:5),ct);
                 }
-                catch(Exception error) when(error is SnapshotHeadReadException {Retryable:true} or RetrySyncException)
+                catch(Exception error) when(error is SnapshotHeadReadException {Retryable:true} or RetrySyncException or UnauthorizedAccessException || (error is IOException && error is not InvalidDataException))
                 {
-                    Availability(false);failures=Math.Min(6,failures+1);Report("Cloud offline – lokaler Spielstand und Warteschlange bleiben erhalten");
+                    Availability(false);failures=Math.Min(6,failures+1);Report(error is UnauthorizedAccessException or IOException ? "Cloud pausiert: lokaler Dateizugriff blockiert; automatische Wiederholung, Warteschlange bleibt erhalten" : "Cloud nicht erreichbar oder Anfrage begrenzt; automatische Wiederholung, Spielstand und Warteschlange bleiben erhalten");
                     await Task.Delay(TimeSpan.FromSeconds(Math.Min(60,1<<failures)),ct);
                 }
             }
         }
         catch(OperationCanceledException) when(ct.IsCancellationRequested){Report("Cloud-Sender beendet; ausstehende Daten bleiben gespeichert");}
-        catch{Report("Cloud-Sender angehalten: Vertrag, Zugang oder Datenkonflikt prüfen; lokale Speicherung bleibt aktiv");}
+        catch(Exception error){Report(error is SnapshotHeadReadException ?
+            "Cloud-Sender angehalten: Publisher-Vertrag oder Zugang ungültig; lokale Speicherung bleibt aktiv" :
+            "Cloud-Sender angehalten: Daten-/Revisionskonflikt oder Konfiguration prüfen; keine automatische Überschreibung");}
         finally{Availability(false);source.Persisted-=Signal;}
     }
 
@@ -100,11 +122,13 @@ internal sealed class IntegratedSnapshotWorker
             (id,_)=>new ValueTask(SynchronizeUserAsync(id)));
         async Task SynchronizeUserAsync(string id)
         {
-            await using var dispatch=await outbox.AcquireDispatchLeaseAsync(id,ct);
             if(await source.ReadPrivacyRequestAsync(id,ct) is {} deletion){
-                if(deletion.CloudErased)return;
-                if(!deletion.LocalErased || purgeActions is null)throw new RetrySyncException();
+                if(deletion.CloudErased){privacyRetries.TryRemove(id,out _);return;}
+                if(privacyRetries.TryGetValue(id,out var retry) && retry.NextAttempt>now())return;
                 try{
+                    await using var privacyDispatch=await outbox.AcquireDispatchLeaseAsync(id,ct);
+                    if(!deletion.LocalErased)throw new PrivacyPrerequisiteException("Lokaler Löschabschluss ausstehend; Konto bleibt gesperrt");
+                    if(purgeActions is null)throw new PrivacyPrerequisiteException("Cloud-Löschkanal nicht eingerichtet; Konto bleibt gesperrt");
                     await purgeActions(id,ct);
                     var privacyHead=await read(id,ct);
                     if(privacyHead is not null && !privacyHead.Deleted){
@@ -114,10 +138,17 @@ internal sealed class IntegratedSnapshotWorker
                     }
                     await outbox.ForgetPrivacyPayloadAsync(id,ct);
                     await source.MarkPrivacyCloudErasedAsync(id,ct);
+                    privacyRetries.TryRemove(id,out _);
                 }catch(OperationCanceledException)when(ct.IsCancellationRequested){throw;}
-                catch{throw new RetrySyncException();}
+                catch(Exception error){
+                    // The durable request and local block remain. A failure for this
+                    // deleted account must never make unrelated synced accounts offline.
+                    var failures=Math.Min(5,(retry?.Failures??0)+1);
+                    privacyRetries[id]=new(failures,now().AddSeconds(Math.Min(60,5*(1<<(failures-1)))),FailureReason(error));
+                }
                 return;
             }
+            await using var dispatch=await outbox.AcquireDispatchLeaseAsync(id,ct);
             var state=await outbox.ReadAsync(id,ct);
             // Deliver the durable prefix before reserving a newer revision. All messages are full states.
             if(state is not null)await DrainAsync(id,ct);

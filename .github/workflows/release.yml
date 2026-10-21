@@ -36,6 +36,10 @@ jobs:
           }
           "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Deployment-Sicherungsprüfungen
+        shell: pwsh
+        run: '& "..\Sync\scripts\Test-DeploymentConfiguration.Tests.ps1"'
+
       - name: Unit-Tests ausführen
         shell: pwsh
         run: |
