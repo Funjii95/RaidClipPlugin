@@ -1,5 +1,15 @@
 # Animiertes Heist-Overlay und Community-Anzeige
 
+## Erweiterung 2.1.37: Original-Ottergrafiken
+
+Die bereitgestellte Grafik „Otter-Abenteuer: Rennen, Bosskampf und Heist“ liegt unverändert als eingebettete Programmressource vor. Drei SVG-Sichtfenster wählen jeweils nur das passende Motiv; weiße Ränder und Trennflächen der Collage werden nicht angezeigt. Das Bild wird nicht neu generiert, gestreckt oder extern geladen. Die folgenden Beschreibungen der ursprünglichen SVG-Piraten betreffen den Stand 2.1.22 und wurden durch die neue Darstellung ersetzt.
+
+Live-Daten stehen auf einer eigenen dunklen Statusfläche, bei 900 × 600 neben dem Bild, bei 600 × 500 darunter. Countdown, Boss-HP, Teilnehmer, Teilnahmebefehl, Jackpot und tatsächliche Heist-Auszahlungen kommen weiterhin aus den bestehenden Services. Ein dezenter Lichtlauf zeigt die Heist-Auswertung; erfolgreiche Ergebnisse können Perleneffekte zeigen. Keine neue Ergebnisberechnung oder Animation, die Belohnungen auslöst.
+
+Die OBS-URL bleibt unverändert. Die ausschließlich lokale, lesende Bildroute `/assets/otter-events.png` liefert die feste eingebettete PNG; sie bietet keinen beliebigen Zugriff auf lokale Dateien. Keine Bildauswahl oder manuelle Dateipfad-Eingabe in OBS nötig. Aktualisieren der Browserquelle lädt die neue Darstellung. Ohne aktives Event bzw. bei Verbindungsfehlern bleibt die Ausgabe transparent.
+
+Prüfung: `node Tools/Test-OverlayArtwork.cjs` verwendet ausschließlich synthetische Zustände und einen getrennten lokalen Testserver. Playwright muss verfügbar sein; `PLAYWRIGHT_MODULE` und optional `OVERLAY_CHROMIUM` können auf vorhandene Installationen zeigen. Enthält Größen-/Überlaufkontrollen, drei Eventtypen, Heist-Phasen, lange Namen, Ausblenden und Vorschau. Verändert weder OBS noch Chat noch Spielstände. Originalquelle: `Assets/Overlay/otter-events.png`.
+
 Release 2.1.22, Veröffentlichung separat vom Benutzer beauftragt. Keine zweite Heist-Ökonomie, keine Streamer.bot-Abhängigkeit und keine öffentliche Extension-API.
 
 ## Tatsächliche Spielregeln

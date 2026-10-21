@@ -10,9 +10,9 @@
     <AssemblyName>RaidClipPlugin</AssemblyName>
     <RootNamespace>RaidClipPlugin</RootNamespace>
     <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
-    <Version>2.1.36</Version>
-    <FileVersion>2.1.36.0</FileVersion>
-    <AssemblyVersion>2.1.36.0</AssemblyVersion>
+    <Version>2.1.37</Version>
+    <FileVersion>2.1.37.0</FileVersion>
+    <AssemblyVersion>2.1.37.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(IsolatedActionsTest)' == 'true'">
@@ -37,6 +37,10 @@
 
 
   <ItemGroup>
+    <EmbeddedResource Include="Assets\Overlay\otter-events.png" LogicalName="RaidClipPlugin.Overlay.OtterEvents.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4022.49" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.9" />
@@ -56,6 +60,9 @@
 
 
 </Project>
+
+
+
 
 
 

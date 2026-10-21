@@ -4911,6 +4911,12 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.37 – Originalgrafiken für OBS-Events
+
+- Eigene Rennen-, Bosskampf- und Heist-Motive aus der gelieferten Otter-Grafik: ohne weiße Trennflächen, ohne Verzerrung und ohne externe Bildserver.
+- Klare Live-Statusfläche neben dem Bild, bei schmalen OBS-Quellen darunter. Geprüft für 900 × 600 und 600 × 500; echte Zeiten, Boss-HP, Teilnehmer und Heist-Auszahlungen bleiben erhalten.
+- Originalgrafik fest im Programm eingebettet. Keine zusätzliche Datei-Einrichtung in OBS erforderlich.
+
 2.1.34 – Unterwassergegner: 0–100 %
 
 - Begegnungschance unter RPG → Unterwassergegner von 0 bis 100 % einstellbar, mit Nachkommastellen. 0 %: keine Begegnung; 100 %: bei jedem gültigen Tauchgang, sofern Gegner- und HP-System aktiv sind.
