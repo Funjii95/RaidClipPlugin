@@ -28,7 +28,8 @@ public sealed class UpdateService
 
     public async Task<UpdateInfo?> CheckAsync(
         string manifestUrl,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool allowCurrentVersion = false)
     {
         var manifestUri = RequireHttpsUri(
             manifestUrl,
@@ -55,7 +56,7 @@ public sealed class UpdateService
                 "update.json enthält keine gültige latestVersion.");
         }
 
-        if (availableVersion <= CurrentVersion)
+        if (availableVersion < CurrentVersion || (!allowCurrentVersion && availableVersion == CurrentVersion))
         {
             return null;
         }

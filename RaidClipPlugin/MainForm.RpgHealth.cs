@@ -8,14 +8,14 @@ public sealed partial class MainForm
     private readonly PropertyGrid _enemySettings=NewAdventureGrid();
     private readonly DataGridView _enemyTierEditor=new(){Dock=DockStyle.Fill,AllowUserToAddRows=false,AllowUserToDeleteRows=false,RowHeadersVisible=false};
     private readonly CheckBox _enemyEnabled=new(){Text="Unterwassergegner aktiv",AutoSize=true};
-    private readonly NumericUpDown _enemyChance=new(){Minimum=10,Maximum=20,DecimalPlaces=2,Value=15,Width=110};
+    private readonly NumericUpDown _enemyChance=new(){Minimum=0,Maximum=100,DecimalPlaces=2,Value=15,Width=110};
     private readonly NumericUpDown _enemyRounds=new(){Minimum=1,Maximum=20,Value=6,Width=110};
     private RpgEnemyConfig _lastLoadedEnemies=new();
     private Control BuildRpgEnemyPanel()
     {
         var panel=new TableLayoutPanel {Dock=DockStyle.Fill,ColumnCount=1,RowCount=4,Padding=new(12)};
         panel.RowStyles.Add(new(SizeType.Absolute,65));panel.RowStyles.Add(new(SizeType.Absolute,65));panel.RowStyles.Add(new(SizeType.Percent,100));panel.RowStyles.Add(new(SizeType.Absolute,95));
-        panel.Controls.Add(new Label {Dock=DockStyle.Fill,Text="Unterwassergegner: 10–20 % pro gültigem Tauchgang. Jede Stufe braucht einen eindeutigen Mindesteinsatz; eine Stufe muss bei 0 beginnen. Sieg: EXP und der bessere von zwei normalen Lootwürfen. Keine zusätzlichen Perlenverluste; aktives HP-System erforderlich."},0,0);
+        panel.Controls.Add(new Label {Dock=DockStyle.Fill,Text="Unterwassergegner: 0–100 % pro gültigem Tauchgang (0 %: nie, 100 %: immer). Jede Stufe braucht einen eindeutigen Mindesteinsatz; eine Stufe muss bei 0 beginnen. Sieg: EXP und der bessere von zwei normalen Lootwürfen. Keine zusätzlichen Perlenverluste; aktives HP-System erforderlich."},0,0);
         var fields=new FlowLayoutPanel{Dock=DockStyle.Fill,AutoScroll=true};fields.Controls.AddRange(new Control[]{_enemyEnabled,new Label{Text="Chance (%)",AutoSize=true},_enemyChance,new Label{Text="Kampfrunden",AutoSize=true},_enemyRounds});panel.Controls.Add(fields,0,1);
         foreach(var title in new[]{"Mindesteinsatz","Name","Lebenspunkte","Min. Schaden","Max. Schaden","EXP"})_enemyTierEditor.Columns.Add(new DataGridViewTextBoxColumn{HeaderText=title,Width=135,SortMode=DataGridViewColumnSortMode.NotSortable});
         _enemySettings.SelectedObjectsChanged+=(_,_)=>{if(_enemySettings.SelectedObject is RpgEnemyConfig c)LoadEnemyEditor(c);};
@@ -29,7 +29,7 @@ public sealed partial class MainForm
     private void LoadEnemyEditor(RpgEnemyConfig c)
     {
         _lastLoadedEnemies=System.Text.Json.JsonSerializer.Deserialize<RpgEnemyConfig>(System.Text.Json.JsonSerializer.Serialize(c))!;
-        _enemyEnabled.Checked=c.Enabled;_enemyChance.Value=Math.Clamp(c.EncounterChance,10,20);_enemyRounds.Value=Math.Clamp(c.MaximumRounds,1,20);
+        _enemyEnabled.Checked=c.Enabled;_enemyChance.Value=Math.Clamp(c.EncounterChance,0,100);_enemyRounds.Value=Math.Clamp(c.MaximumRounds,1,20);
         _enemyTierEditor.Rows.Clear();foreach(var t in c.Tiers)_enemyTierEditor.Rows.Add(t.MinimumStake,t.Name,t.HitPoints,t.MinimumDamage,t.MaximumDamage,t.Experience);
     }
     private RpgEnemyConfig ReadEnemyEditor()

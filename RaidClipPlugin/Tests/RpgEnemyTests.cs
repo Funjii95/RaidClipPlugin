@@ -25,6 +25,9 @@ public sealed class RpgEnemyTests : IDisposable
     [Theory]
     [InlineData(10,1000,true)] [InlineData(10,1001,false)] [InlineData(15,1500,true)] [InlineData(15,1501,false)]
     [InlineData(20,2000,true)] [InlineData(20,2001,false)]
+    [InlineData(0,1,false)] [InlineData(0,10000,false)]
+    [InlineData(50,5000,true)] [InlineData(50,5001,false)]
+    [InlineData(100,1,true)] [InlineData(100,10000,true)]
     public void ConfiguredChanceHasExactBoundaries(int chance,int roll,bool expected)
     {
         var c=Config();c.Enemies.EncounterChance=chance;

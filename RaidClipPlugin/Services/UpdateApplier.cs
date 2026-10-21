@@ -56,7 +56,7 @@ internal static class UpdateApplier
         {
             WriteLog("Update fehlgeschlagen: " + exception);
 
-            if (!string.IsNullOrWhiteSpace(targetExecutable) &&
+            if (exception is not AggregateException && !string.IsNullOrWhiteSpace(targetExecutable) &&
                 File.Exists(targetExecutable))
             {
                 try
@@ -96,43 +96,7 @@ internal static class UpdateApplier
         string payloadDirectory,
         string targetDirectory)
     {
-        if (!Directory.Exists(payloadDirectory))
-        {
-            throw new DirectoryNotFoundException(
-                "Der vorbereitete Update-Ordner wurde nicht gefunden.");
-        }
-
-        Directory.CreateDirectory(targetDirectory);
-        var sourceRoot = payloadDirectory
-            .TrimEnd(Path.DirectorySeparatorChar) +
-            Path.DirectorySeparatorChar;
-        var targetRoot = Path.GetFullPath(targetDirectory)
-            .TrimEnd(Path.DirectorySeparatorChar) +
-            Path.DirectorySeparatorChar;
-
-        foreach (var sourcePath in Directory.EnumerateFiles(
-                     sourceRoot,
-                     "*",
-                     SearchOption.AllDirectories))
-        {
-            var relativePath = Path.GetRelativePath(
-                sourceRoot,
-                sourcePath);
-            var targetPath = Path.GetFullPath(
-                Path.Combine(targetRoot, relativePath));
-
-            if (!targetPath.StartsWith(
-                    targetRoot,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException(
-                    "Das Update enthält einen unzulässigen Zielpfad.");
-            }
-
-            Directory.CreateDirectory(
-                Path.GetDirectoryName(targetPath)!);
-            CopyWithRetry(sourcePath, targetPath);
-        }
+        ApplicationFileRepair.Apply(payloadDirectory, targetDirectory, CopyWithRetry);
     }
 
     private static void CopyWithRetry(

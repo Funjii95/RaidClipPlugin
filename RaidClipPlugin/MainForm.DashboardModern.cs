@@ -48,7 +48,16 @@ public sealed partial class MainForm
         var greeting = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty, BackColor = BackgroundColor };
         greeting.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         greeting.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        greeting.Controls.Add(new Label { Text = "Guten Abend, Funjii", Dock = DockStyle.Fill, AutoSize = false, ForeColor = TextColor, Font = new Font("Segoe UI", 20F, FontStyle.Bold), TextAlign = ContentAlignment.BottomLeft }, 0, 0);
+        _accountGreetingLabel.Dock = DockStyle.Fill;
+        _accountGreetingLabel.ForeColor = TextColor;
+        _accountGreetingLabel.Font = new Font("Segoe UI", 20F, FontStyle.Bold);
+        _accountGreetingLabel.TextAlign = ContentAlignment.BottomLeft;
+        _accountGreetingLabel.AutoEllipsis = true;
+        UpdateAccountIdentity(null);
+        greeting.Controls.Add(_accountGreetingLabel, 0, 0);
+        _greetingTimer.Tick += (_, _) => _accountGreetingLabel.Text = AccountGreeting(_accountDisplayName, DateTime.Now.Hour);
+        _greetingTimer.Start();
+        FormClosed += (_, _) => _greetingTimer.Dispose();
         greeting.Controls.Add(new Label { Text = "Dein Stream-System ist bereit.", Dock = DockStyle.Fill, AutoSize = false, ForeColor = MutedTextColor, Font = new Font("Segoe UI", 10.2F), TextAlign = ContentAlignment.TopLeft }, 0, 1);
         layout.Controls.Add(greeting, 0, 0);
         layout.Controls.Add(CreateUpdateStatusCard(), 1, 0);
@@ -170,9 +179,10 @@ public sealed partial class MainForm
 
     private Control CreateDashboardActionBar(Control actions)
     {
-        var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 4, 0, 0) };
+        var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 4, 0, 0) };
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         host.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        for (var i = 0; i < 4; i++) host.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
+        for (var i = 0; i < 5; i++) host.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
         _testChannelBox.Dock = DockStyle.Fill;
         _testChannelBox.Margin = new Padding(0, 3, 0, 3);
         _testChannelBox.PlaceholderText = "Clip-Kanal (leer = eigener Kanal)";
@@ -181,6 +191,12 @@ public sealed partial class MainForm
         AddQuickAction(host, 2, "◯   Chat testen", () => _ = SendChatDiagnosticTestAsync());
         AddQuickAction(host, 3, "◷   Timer öffnen", () => ShowSection("timer"));
         AddQuickAction(host, 4, "♜   Minigames", () => ShowSection("minigame"));
+        _createObsSourceButton.AutoSize = false;
+        _createObsSourceButton.Dock = DockStyle.Fill;
+        _createObsSourceButton.TextAlign = ContentAlignment.MiddleLeft;
+        _createObsSourceButton.Font = new Font("Segoe UI", 9.6F);
+        _createObsSourceButton.Margin = new Padding(0, 4, 0, 4);
+        host.Controls.Add(_createObsSourceButton, 0, 5);
         return CreateDashboardSection("Schnellaktionen", host);
     }
 
@@ -214,7 +230,7 @@ public sealed partial class MainForm
         main.Controls.Add(CreateModuleGrid(), 0, 2);
         main.Controls.Add(CreateDashboardSection("Heutige Aktivität", CreateDashboardStatsGrid()), 0, 3);
         var side = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = BackgroundColor, Margin = Padding.Empty, Padding = Padding.Empty };
-        side.RowStyles.Add(new RowStyle(SizeType.Absolute, 312));
+        side.RowStyles.Add(new RowStyle(SizeType.Absolute, 356));
         side.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         side.Controls.Add(dashboardActions, 0, 0);
         side.Controls.Add(CreateDashboardSection("Letzte Ereignisse", CreateRecentActivityList()), 0, 1);

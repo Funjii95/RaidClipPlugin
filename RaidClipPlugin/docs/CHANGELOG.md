@@ -1,3 +1,178 @@
+## 2.1.34 – Unterwassergegner: 0–100 %
+
+- Begegnungschance unter RPG → Unterwassergegner von 0 bis 100 % einstellbar, einschließlich Nachkommastellen. 0 % bedeutet keine Begegnung; 100 % bedeutet eine Begegnung bei jedem gültigen Tauchgang, sofern Gegner- und HP-System aktiv sind.
+- Oberfläche, Laden und Validierung verwenden denselben Bereich. Bisherige Einstellungen und Standardwert 15 % bleiben erhalten; Gegnerwerte und Loot unverändert.
+
+# Patchnotes
+
+## 2.1.33 – OBS-Eventquellen automatisch aktualisieren
+
+- Boss, Heist und Rennen laden ihre OBS-Browserquelle beim Start einmal einschließlich Cache neu.
+- Hintergrundverarbeitung und Wiederholungsschutz: OBS-Fehler stoppen weder Spiel noch Auszahlung.
+- Auf aktuellem Stand 2.1.32 aufgebaut; Twitch-Anmeldung und OBS-Schnellaktion bleiben erhalten.
+- Fehlende Patchnotes 2.1.23–2.1.32 aus den veröffentlichten Versionshinweisen nachgetragen.
+
+## 2.1.32
+
+- **OBS-Quelle erstellen** ist wieder unter **Dashboard → Schnellaktionen** erreichbar.
+- Der vorhandene Ablauf erstellt bzw. aktualisiert die Browserquelle in der aktiven OBS-Szene.
+  OBS muss geöffnet sein; Host, Port und Passwort werden weiterhin aus den Einstellungen verwendet.
+- Keine Änderung an Twitch-Zugangsdaten, RPG-Spielständen oder Cloud-Zuordnungen.
+
+
+## 2.1.31
+
+- Neuer direkter Anmeldeweg: oben auf **Twitch anmelden** klicken oder unter
+  **Einstellungen → Allgemein → Bei Twitch anmelden**. Die Anmeldung ist unabhängig von OBS,
+  gestarteten Plugin-Diensten und der Cloud-Zuordnung möglich.
+- Ein eigenes Fenster zeigt den Twitch-Gerätecode und einen anklickbaren Browserlink.
+  Auch wenn Windows den Browser nicht automatisch öffnet, bleibt die Anmeldung erreichbar.
+- Fehler bei der Anmeldung werden im Fenster angezeigt. Abbrechen beendet das Warten.
+- Nach validierter Anmeldung erscheinen Kontoname und Begrüßung. Ein leerer Zielkanal wird
+  mit dem angemeldeten Login vorbelegt; vorhandene Kanaleinstellungen bleiben erhalten.
+- Spielstände und Cloud-Zuordnung werden durch die direkte Anmeldung nicht verändert.
+
+Version 2.1.30 bot die erneute Einrichtung der App-Zugangsdaten. Die eigentliche Twitch-Anmeldung
+erfolgte beim normalen Plugin-Start jedoch erst nach dem OBS-Verbindungsaufbau. Der neue Knopf
+macht diesen Schritt unabhängig und sichtbar.
+
+Die Anmeldung wurde automatisiert mit simulierten Twitch-Antworten einschließlich fehlendem
+Browser, Abbruch, abgelehnten Zugangsdaten und dem Windows-Anmeldefenster geprüft. Eine
+erfolgreiche Anmeldung mit Dennis' echtem Konto wurde nicht vorweggenommen.
+
+
+## 2.1.30
+
+- Neue Wartungsseite unter **Einstellungen → Wartung**: gespeicherte Einstellungen neu laden,
+  Twitch Client ID und Secret austauschen sowie die aktuelle Programmversion erneut installieren.
+- Twitch-Zugangsdaten werden vor dem Austausch verschlüsselt gesichert. Die alte Twitch-Anmeldung
+  wird entfernt; RPG-Spielstände, Programmeinstellungen und Cloud-Zuordnung bleiben erhalten.
+- Obere Leiste und Begrüßung zeigen nach validierter Anmeldung das tatsächliche Twitch-Konto.
+  Der Anzeigename ist nicht mehr fest auf „Funjii“ gesetzt. Neue Nutzer wählen ihren Kanal selbst.
+- Programmreparatur und Updates sichern ersetzte Dateien vorab und stellen sie bei Kopierfehlern
+  wieder her. Nutzerdaten in Update-Paketen werden abgelehnt.
+- Schutz vor versehentlich gemeinsam verwendeten Cloud-Zuordnungen: Zielkanal und Cloud-Kanal
+  müssen zusammenpassen. RPG-Verwaltung mit Cloud-Sync verlangt die Anmeldung des Kanalinhabers.
+- „Punktedaten zurücksetzen“ setzt nur noch Perlen zurück und erhält RPG-Level und Inventar.
+
+Für getrennte Nutzer sind eigene Twitch-Anwendungen und eigene Cloud-Zugänge erforderlich.
+Eine neue Twitch Client ID trennt bestehende Cloud-Daten nicht automatisch. Weitergegebene
+Cloud-Schlüssel müssen separat ersetzt werden; die Desktop-Prüfung ersetzt keine Serverberechtigung.
+
+Nach dem Update Plugin neu starten. Keine Spielstandmigration und keine automatische Zurücksetzung.
+Details und Grenzen: [Wartungsdokumentation](https://github.com/Funjii95/RaidClipPlugin/blob/v2.1.30/docs/PLUGIN_MAINTENANCE.md).
+
+Validierung: 761 Desktop-Tests, 232 Backend-/Publisher-Tests und isolierter Windows-Starttest.
+Echte Twitch-Anmeldungen und produktive Cloud-Löschungen wurden nicht ausgeführt.
+
+
+## 2.1.29
+
+- Automatische Cloud-Aufnahme bestehender Spieler mit Perlen, wenn der Betreiber den neuen Modus aktiviert hat.
+- Einmal aufgenommene Spieler bleiben auch bei 0 Perlen synchronisiert.
+- Neue Cloud-Profile entstehen aus den vollständig gespeicherten Plugin-Spielständen. Keine manuelle Datenbankanlage pro Spieler erforderlich.
+- Bestehende dauerhafte Warteschlange, Wiederholungsversuche und Revisionsprüfung bleiben erhalten. Alte Snapshots überschreiben keine neueren; gelöschte Konten werden nicht automatisch wiederhergestellt.
+- SoundAlerts und konfigurierte Perlen-Sperrlisten werden bei der automatischen Aufnahme ausgeschlossen.
+- Twitch-Identität, Kanalbindung, Plugin-Verbindung und vorhandene RPG-Spielregeln bleiben maßgeblich. Der Stream muss nicht live sein.
+
+## Installation
+
+Das Plugin vor dem Update regulär beenden und anschließend Version 2.1.29 starten. Vorhandene Spielstände und geschützte Zugänge behalten.
+
+Für Funjiis vorhandene Installation sind die beiden lokalen Synchronisationsschalter bereits vorbereitet und die dazugehörigen Serverrevisionen aktiviert. Die automatische Aufnahme startet mit dem neuen Plugin. Ein Twitch-Konto ohne vorhandenes Plugin-Profil bzw. ohne bisherige Perlen wird erst nach einem normalen Chat-/Plugin-Vorgang mit Perlen aufgenommen.
+
+Für andere Betreiber wird Cloud-Synchronisation dadurch nicht automatisch eingerichtet. Benötigt werden die passende geschützte Betreiberkonfiguration und ein entsprechend konfigurierter Server.
+
+## Prüfung
+
+Lokal 748 Plugin-Tests und 232 Backend-/Publisher-Tests bestanden. Synthetischer Cloud-Test für Erstanlage, Duplikate, Nullsaldo, veraltete Snapshots, JWT-/Kanal-/Identitätsprüfung und Aktionssperre bei getrenntem Plugin bestanden.
+
+Die tatsächliche automatische Aufnahme der lokalen Spieler nach Start sowie die vollständige Twitch-Mehrspielerabnahme bleiben separat zu prüfen. Dies ist keine öffentliche Freigabe der Twitch Extension.
+
+Rollback: Version 2.1.28 bleibt verfügbar. Spielstände, Outbox und Aktionsjournale beim Rollback erhalten; die Betreiberkonfiguration und Serverrevisionen können auf den gesicherten Stand zurückgestellt werden.
+
+
+## 2.1.28
+
+- Erfolgreiche Perk-Käufe liefern den tatsächlich gespeicherten Spielerstand und die vom Plugin berechneten Statuswerte direkt mit der bestätigten Antwort.
+- Das aktualisierte Twitch-Panel übernimmt Perk-Level, Preise und Perlen nach der Kaufbestätigung, während der Cloud-Abgleich im Hintergrund läuft. Ein langsamer Snapshot-GET hält den Kaufknopf nicht mehr gesperrt.
+- Ältere Cloud-Snapshots dürfen den bestätigten Spielerstand nicht zurücksetzen. Fremde Spielerprofile werden abgewiesen. ActionId, Speicherung, Kostenprüfung und Doppelbuchungsschutz bleiben erhalten.
+- Ältere Plugin-Versionen funktionieren weiter mit dem bisherigen Nachladeweg; die Beschleunigung setzt das neue Plugin und das aktualisierte Hosted-Test-Paket voraus.
+
+Validierung: 744 Plugin-Tests, 94 Frontend-Tests, drei Browserprüfungen am konkreten Hosted-Test-Build; der Release-Build prüft zusätzlich die Backend-/Publisher-Tests. Synthetischer Nachweis: Der nächste Kaufknopf wird freigegeben, obwohl der Cloud-GET absichtlich unbeantwortet bleibt. Ein älterer nachgelieferter Snapshot setzt weder Level noch Perlen zurück. Kein echter Kauf für die Tests ausgeführt; die genaue Zeitersparnis über Twitch muss nach dem Update geprüft werden.
+
+Update: Plugin über den Auto-Updater aktualisieren und neu starten, Twitch-Kanalseite neu laden.
+Rollback: Plugin schließen und den erhaltenen Installer von v2.1.27 erneut installieren. Spielstände und Einstellungen nicht löschen. Die neue Extension unterstützt weiterhin die alte Antwort ohne Profil. Keine Cloud-Bereitstellung oder Änderung der Spielökonomie.
+
+
+## 2.1.27
+
+- Der geschützte Aktionskanal ruft wartende Aufträge im Leerlauf alle 500 statt 1000 Millisekunden ab.
+- Die Cloud-Synchronisierung prüft bis zu zwei unabhängige Konten gleichzeitig. Pro Konto bleiben Warteschlange, Reihenfolge, Hash- und Revisionsschutz erhalten.
+- Twitch-Extension: frühere erste Antwortprüfung nach 250 Millisekunden; separate Aktualisierung des Hosted-Test-Pakets erforderlich. Enthält die Charakterwerte-Korrektur und den Boss-Countdown.
+
+Validierung vor Veröffentlichung: 744 Plugin-Tests, 227 Backend-/Publisher-Tests und 92 Frontend-Tests; zwei Browserprüfungen gegen das konkrete Hosted-Test-Paket. Synthetische Konten; keine Spielstände zurückgesetzt oder Spielregeln geändert. Ein vollständiger echter Mehrspielertest dieser Optimierung ist noch offen.
+
+Hinweis: Der schnellere Aktionsabruf erzeugt im Leerlauf etwa 120 statt 60 Claims pro Minute. Vorhandene Serverlimits und Sicherheitsprüfungen bleiben unverändert. Keine neue Cloud-Bereitstellung nötig.
+
+Update: Über den Plugin-Auto-Updater aktualisieren und das Plugin neu starten. Laufende Aktionen vorher abschließen lassen.
+Rollback: Plugin schließen und den unverändert verfügbaren Installer von v2.1.26 erneut installieren. Spielstände und Konfiguration nicht löschen. Für die Extension kann das vorherige Hosted-Test-Paket mit korrekter rc1-Adresse erneut hochgeladen werden.
+
+
+## 2.1.26
+
+- Boss-Einstellungen: HP-Modus als Dropdown „Dynamisch“ oder „Feste HP“. Dynamisch startet mit 100 HP und ergänzt je weiterem Teilnehmer 100 HP; bestehender Schaden bleibt erhalten. Ein Moduswechsel gilt erst ab dem nächsten Boss. Vorhandene Einstellungen bleiben auf feste HP.
+- Moderator/Broadcaster: !heal @Spieler und !heal all füllen die HP vorhandener Konten auf. Boss-Ausschluss und Cooldowns bleiben bestehen.
+- Moderator/Broadcaster: !kill boss beendet einen aktiven Kampf mit Teilnehmern über die reguläre Sieg-Abrechnung einschließlich Belohnungen und Hot Time.
+- Boss-Sieg zeigt die tatsächlich gutgeschriebenen Perlen pro belohntem Spieler an, einschließlich Kontolimit.
+- Hot-Time-Chatmeldung enthält keine Zeitmessungs-Nachkommastellen mehr.
+- Publisher: Getrennte Limits für Statusabfragen und Snapshot-Schreibzugriffe; kein zusätzliches Cloud-Deployment durch dieses Plugin-Release.
+
+Validierung: 743 Plugin-Tests und 227 Backend-/Publisher-Tests bestanden. Tests mit synthetischen Konten; kein vollständiger manueller Twitch-Mehrspielertest dieser Version durchgeführt.
+
+Update: Laufenden Boss vorher beenden, Plugin aktualisieren und neu starten. Unter Boss-Einstellungen den gewünschten HP-Modus auswählen.
+Rollback: Plugin schließen, Windows-Installer von v2.1.25 erneut installieren. Nicht während eines aktiven dynamischen Bosskampfs zurückwechseln. Keine Spielstände löschen oder zurücksetzen; die bisherigen festen HP und das Spieler-Speicherformat bleiben erhalten. v2.1.25 bleibt als Release verfügbar.
+
+
+## 2.1.25
+
+- `!boss` zeigt die verbleibende Boss-Pause in Minuten und Sekunden. Während eines Kampfes zeigt es den aktiven Bossstatus. Der Befehl startet keinen Boss mehr.
+- Der einzige manuelle Chat-Befehl zum Bossstart ist `!start boss`, weiterhin nur für Moderatoren und Broadcaster.
+- `!attack` / `!joinboss`, Bossregeln, Belohnungen und bestehender automatischer Bossstart bleiben unverändert.
+- Befehlsübersicht und Berechtigungen wurden passend getrennt. `!boss` ist standardmäßig für Zuschauer sichtbar; eigene Rollenüberschreibungen werden berücksichtigt.
+
+733 Plugin-Tests bestanden, einschließlich neuer Status-/Cooldown-/Berechtigungstests. Keine Spielstandmigration oder Zurücksetzung.
+
+Nach dem Update das Plugin und seine Module neu starten. Twitch bleibt im geschlossenen Hosted Test; dieses Plugin-Release ist keine öffentliche Twitch-Veröffentlichung.
+
+## 2.1.24
+
+Die reguläre Windows-Version enthält jetzt die bereits getestete erweiterte RPG-Anbindung für die Twitch Extension. Damit meldet das laufende Plugin auch Bossstatus, Perlen-Minispiele und die weiteren integrierten Aktionen an das Backend.
+
+- Gemeinsame autoritative Spielstände und Cooldowns für Chat und Extension; keine zweite Spielökonomie.
+- Geschützte ausgehende Aktionsverbindung und automatische vollständige Cloud-Snapshots mit Wiederholungs-/Revisionsschutz.
+- Bestehende RPG-, Inventar-, Perk-, Boss- und Minispielregeln bleiben maßgeblich.
+- Testerlisten bleiben ausdrücklich konfiguriert; der Publisher unterstützt bis zu 100 freigegebene Konten.
+- Spielen benötigt ein verbundenes, spielbereites Plugin; ein Livestream ist keine Voraussetzung.
+- Selbstlöschung durch Zuschauer bleibt standardmäßig deaktiviert. Keine Cloud-Ressourcen oder Serverflags werden durch dieses Update verändert.
+
+Bestehende Spielstände und geschützte lokale Zugänge werden nicht mit dem Updatepaket ausgeliefert oder zurückgesetzt. Nach dem Update das Plugin und seine Module starten und die Twitch-Seite neu laden.
+
+Die Twitch Extension bleibt im geschlossenen Hosted Test. Die vollständige echte Abnahme mit zwei Twitch-Konten ist noch offen; dieses Plugin-Release ist keine öffentliche Twitch-Genehmigung.
+
+## 2.1.23
+
+RaidClipPlugin 2.1.23 integriert die geschützte RPG-Cloud-Synchronisierung und den ausgehenden Aktionskanal zur Twitch Extension. Die vorhandene Plugin-Spiellogik bleibt autoritativ. Spielaktionen benötigen ein verbundenes, spielbereites Plugin; der Twitch-Stream darf offline sein.
+
+- Startschutz korrigiert: Das Plugin zählt seinen eigenen Prozess nicht mehr als zweite Instanz.
+- Vorhandenes Spielstandformat und normale lokale Speicherung bleiben erhalten. Cloud-Anbindung benötigt die separate geschützte Konfiguration; Zugangsdaten sind nicht im Download enthalten.
+- Geprüfter Windows-Build: 693 Plugin- und 196 Backend-/Publisher-Tests erfolgreich. Zusätzlich synthetische End-to-End-Prüfungen und echter Twitch-Hosted-Test mit reinen Statusaktionen.
+- Weitere Extension-Aktionen und manuelle Geräte-/Upgrade-Abnahmen bleiben in Arbeit. Die Twitch Extension befindet sich im geschlossenen Hosted Test und ist nicht öffentlich von Twitch freigegeben.
+
+Für bestehende Installationen das Update-ZIP bzw. den integrierten Auto-Updater verwenden; für Neuinstallationen den Setup-Installer. Kein Spielstand-Reset enthalten.
+
+**Full Changelog**: https://github.com/Funjii95/RaidClipPlugin/compare/v2.1.22...v2.1.23
+
 ## 2.1.22 – Heist-OBS-Overlay und Gegner-Einstellungen
 
 - Gemeinsame Event-Browserquelle um animierte Unterwasser-Heists mit eigenen SVG-Otter-Piraten, Countdown, Crew, Schatzkammer und tatsächlichen Jackpot-Auszahlungen erweitert. Keine neue Heist-Ökonomie; echte Punkteverteilung bleibt im vorhandenen Service.
@@ -539,3 +714,4 @@
 - Sicherer Einrichtungsassistent für Twitch-Zugangsdaten
 - OBS-Browserquelle auf Knopfdruck erstellen
 - GitHub-Auto-Update mit SHA256-Prüfung
+

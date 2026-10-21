@@ -51,11 +51,12 @@ public sealed partial class MainForm
         }
         async Task Safe(Func<Task> action)
         {
-            if (busy) return;
+            if (busy || _accountLoginBusy || _maintenanceBusy || _dataAdministrationBusy || _connectionTestBusy || _updateBusy) return;
+            _dataAdministrationBusy = true;
             SetBusy(true);
             try { await action(); }
             catch (Exception ex) { status.Text = "Fehler: " + ex.Message; AppendLog("RPG-Verwaltung: " + ex.Message); }
-            finally { if (!panel.IsDisposed) SetBusy(false); }
+            finally { _dataAdministrationBusy = false; if (!panel.IsDisposed) SetBusy(false); }
         }
         load.Click += async (_, _) => await Safe(async () =>
         {
@@ -74,6 +75,7 @@ public sealed partial class MainForm
             var target = isFish ? $"{quantity}x {selected.Id}" : selected.Name;
             if (MessageBox.Show(this, $"Wirklich löschen?\nSpieler: {player.Name}\n{target}\n\nAusgerüstetes Equipment wird auch abgelegt. Perlen werden nicht erstattet. Eine Kontosicherung wird angelegt.",
                 "RPG-Daten löschen", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+            await RequireRpgAdministrationScopeAsync();
             var name = (await _viewerPoints.GetProfileAsync(player.Id, CancellationToken.None)).Entry.DisplayName;
             var service = new RpgAdministrationService(_viewerPoints);
             var id = "admin-delete:" + Guid.NewGuid().ToString("N");

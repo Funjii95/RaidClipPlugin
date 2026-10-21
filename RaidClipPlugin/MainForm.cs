@@ -1754,6 +1754,8 @@ private enum CloseChoice
         generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Host", _obsHostBox));
         generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Port", _obsPortControl));
         generalSettingsFlow.Controls.Add(CreateSettingEditor("OBS Passwort", _obsPasswordBox));
+        generalSettingsFlow.Controls.Add(_connectTwitchAccountButton);
+        _connectTwitchAccountButton.Click += async (_, _) => await ConnectTwitchAccountAsync();
         generalSettingsFlow.Controls.Add(_autoUpdateCheck);
         generalSettingsFlow.Controls.Add(_saveSettingsButton);
         generalSettingsGroup.Controls.Add(generalSettingsFlow);
@@ -1786,6 +1788,7 @@ private enum CloseChoice
             Dock = DockStyle.Fill
         };
         AddMinigameTab(settingsTabs, "Allgemein", generalSettingsGroup);
+        AddMinigameTab(settingsTabs, "Wartung", BuildMaintenancePanel());
         AddMinigameTab(settingsTabs, "Patchnotes", BuildPatchNotesPage());
 
         var settingsLayout = new TableLayoutPanel
@@ -2556,7 +2559,7 @@ private enum CloseChoice
 
     private async Task StartPluginAsync()
     {
-        if(_dataAdministrationBusy || _administrationTestOnly){AppendLog("Im Verwaltungstest bzw. während Datenverwaltung kein Spielstart.");return;}
+        if(_stoppingTasks.Any(task => !task.IsCompleted) || _dataAdministrationBusy || _accountLoginBusy || _maintenanceBusy || _connectionTestBusy || _updateBusy || _administrationTestOnly){AppendLog("Im Verwaltungstest bzw. während Datenverwaltung kein Spielstart.");return;}
         if (PluginInstanceGuard.AnotherInstanceIsRunning())
         {
             AppendLog("Bitte zuerst die normale RaidClipPlugin-Version beenden, bevor die getrennte Testversion denselben Kanal verbindet.");
@@ -2619,6 +2622,7 @@ private enum CloseChoice
             _twitch = twitch;
             twitch.ChatMessageSent += UpdateChatLastSent;
             _twitchSession = session;
+            await ShowAuthenticatedAccountAsync(twitch, session, cancellationToken);
 
             _broadcaster = await twitch.GetUserAsync(
                 config.Twitch.BroadcasterLogin,
@@ -2630,6 +2634,7 @@ private enum CloseChoice
                     "Der konfigurierte Twitch-Kanal wurde nicht gefunden.");
             }
 
+            EnsureCloudChannelMatches(_broadcaster.Id);
             UpdateChatAuthenticationDiagnostics(session, _broadcaster);
             AppendLog(
                 $"Twitch-Token validiert: {session.Login} ({session.UserId}); " +
@@ -2881,6 +2886,13 @@ private enum CloseChoice
                         config.Commands,
                         _commandRegistry);
                     _minigame.BindStreamSession(_streamAdmission, _streamEpoch);
+                    var overlayReload = new CommunityOverlayReloadService(() =>
+                    {
+                        if(cancellationToken.IsCancellationRequested || gameEpoch != _streamEpoch)return 0;
+                        var obs=_obs??throw new InvalidOperationException("OBS ist nicht verbunden.");
+                        return obs.RefreshCommunityOverlay(_activeConfig?.Heist.Overlay??config.Heist.Overlay);
+                    }, AppendLog);
+                    _minigame.OverlayEventStarted += (type,id) => _ = overlayReload.RequestAsync(type,id);
                     StartActionChannel(cancellationToken);
                     _chatModeration.Activated += () =>
                         SetMinigameStatus(
@@ -4321,7 +4333,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         }
     }
 
-    private async Task ImportMinigameDataAsync()
+    private async Task ImportMinigameDataCoreAsync()
     {
         try
         {
@@ -4337,6 +4349,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
                     MessageBoxIcon.Question) != DialogResult.Yes) return;
 
             var config = ReadSettingsFromControls();
+            await RequireRpgAdministrationScopeAsync();
             var settings = await _viewerPoints.ImportAsync(
                 dialog.FileName, config.Minigame,
                 _shutdown?.Token ?? CancellationToken.None);
@@ -4354,10 +4367,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         }
     }
 
-    private async Task ResetPointDataAsync()
+    private async Task ResetPointDataCoreAsync()
     {
         var confirmation = MessageBox.Show(
-            "Wirklich alle lokal gespeicherten Zuschauerpunkte löschen?",
+            "Alle lokalen Perlen auf 0 setzen? RPG-Spielstände, Level und Items bleiben erhalten. Eine Sicherung wird angelegt. Bei Cloud-Sync wird die Änderung synchronisiert.",
             "Punktedaten zurücksetzen",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning);
@@ -4368,8 +4381,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
         try
         {
-            await _viewerPoints.ResetAsync(
-                _shutdown?.Token ?? CancellationToken.None);
+            await RequireRpgAdministrationScopeAsync();
+            var preview = await _viewerPoints.PreviewResetAsync(null, CancellationToken.None);
+            var result = await _viewerPoints.ResetAsync(null, RpgResetScope.Pearls, Guid.NewGuid(), preview.Fingerprint, CancellationToken.None);
+            if (!result.Success) throw new InvalidOperationException(result.Message);
             AppendLog("Alle Minigame-Punktedaten wurden zurückgesetzt.");
             SetMinigameStatus("Punktedaten zurückgesetzt", ActiveColor);
             await RefreshMinigameDashboardAsync();
@@ -4385,13 +4400,14 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
     private async Task TestConnectionsAsync()
     {
-        if (_shutdown is not null)
+        if (_shutdown is not null || _accountLoginBusy || _maintenanceBusy || _dataAdministrationBusy || _connectionTestBusy)
         {
             return;
         }
 
         _startButton.Enabled = false;
         _testConnectionsButton.Enabled = false;
+        _connectionTestBusy = true;
         _settingsGroup.Enabled = false;
         _moderationSettingsGroup.Enabled = false;
         SetMinigameSettingsEditingEnabled(false);
@@ -4460,6 +4476,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
                     twitch = new TwitchService(
                         config.Twitch.ClientId,
                         session.AccessToken);
+                    await ShowAuthenticatedAccountAsync(twitch, session, CancellationToken.None);
                     broadcaster = await twitch.GetUserAsync(
                         config.Twitch.BroadcasterLogin,
                         CancellationToken.None);
@@ -4507,6 +4524,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             _settingsGroup.Enabled = true;
             _moderationSettingsGroup.Enabled = true;
             SetMinigameSettingsEditingEnabled(true);
+            _connectionTestBusy = false;
             _startButton.Enabled = true;
             _testConnectionsButton.Enabled = true;
         }
@@ -4595,6 +4613,8 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         }
     }
 
+    private Task[] _stoppingTasks = [];
+
     private async Task StopPluginAsync(bool keepErrorStatus = false)
     {
         _streamAdmission.End();
@@ -4641,6 +4661,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             .Cast<Task>()
             .ToArray();
 
+        _stoppingTasks = tasks;
         if (tasks.Length > 0)
         {
             try
@@ -4685,6 +4706,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         _broadcaster = null;
         _twitch = null;
         _twitchSession = null;
+        UpdateAccountIdentity(null);
         _eventSub = null;
         _chatModeration = null;
         _minigame = null;
@@ -4889,6 +4911,57 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.34 – Unterwassergegner: 0–100 %
+
+- Begegnungschance unter RPG → Unterwassergegner von 0 bis 100 % einstellbar, mit Nachkommastellen. 0 %: keine Begegnung; 100 %: bei jedem gültigen Tauchgang, sofern Gegner- und HP-System aktiv sind.
+- Bisherige Einstellungen und Standardwert 15 % bleiben erhalten. Gegnerwerte, Loot und Cloud-Datenformat unverändert. Ältere Plugin-Versionen akzeptieren nur 10–20 %; vor einem Downgrade entsprechend zurückstellen.
+
+2.1.33 – OBS-Eventquellen automatisch neu laden
+
+- Boss, Heist und Rennen laden die passende OBS-Browserquelle beim Start einmal einschließlich Cache neu. OBS-Fehler stoppen weder Spiel noch Auszahlung. Alle Änderungen aus 2.1.32 bleiben erhalten.
+
+2.1.32 – OBS-Schnellaktion
+
+- OBS-Quelle erstellen ist wieder im Dashboard erreichbar; die Schaltfläche bleibt vollständig sichtbar. Bestehende OBS-Einstellungen werden weiterverwendet.
+
+2.1.31 – Direkte Twitch-Anmeldung
+
+- Twitch-Anmeldung unabhängig von OBS und Modulstart. Eigenes Fenster mit Gerätecode, Browserlink, Abbruch und Fehlermeldungen. Bestehende Kanaleinstellungen und Spielstände bleiben erhalten.
+
+2.1.30 – Wartung und Kontenschutz
+
+- Neue Wartungsseite, Zugangsdaten sicher austauschen und Programm reparieren. Tatsächlicher Twitch-Kontoname, Cloud-Kanalprüfung und rückrollbare Updates. Perlenreset erhält Level und Inventar.
+
+2.1.29 – Automatische Cloud-Aufnahme
+
+- Optional werden vorhandene Spieler mit Perlen automatisch synchronisiert; aufgenommene Konten bleiben bei Nullsaldo erhalten. Sperrlisten, Revisionen und Löschschutz gelten weiterhin.
+
+2.1.28 – Schnellere Perk-Kaufbestätigung
+
+- Bestätigte Käufe liefern gespeicherte Perk-Level, Perlen und Statuswerte direkt zurück. Ältere Cloud-Snapshots überschreiben keine bestätigten Käufe. Aktualisiertes Hosted-Test-Panel separat erforderlich.
+
+2.1.27 – Kürzere Cloud-Wartezeiten
+
+- Wartende Aktionen werden alle 500 ms abgefragt; zwei unabhängige Konten können gleichzeitig synchronisieren. Reihenfolge und Schutz vor Doppelbuchungen bleiben erhalten.
+
+2.1.26 – Dynamische Boss-HP und Heilbefehle
+
+- Boss-HP wahlweise dynamisch oder fest. !heal @Spieler / !heal all und !kill boss für Mods/Broadcaster. Boss-Sieg zeigt tatsächliche Perlengutschriften; Hot-Time-Zeiten ohne Nachkommastellen.
+
+2.1.25 – Bossstatus und eindeutiger Start
+
+- !boss zeigt Status bzw. Rundenpause. Manueller Start ausschließlich mit !start boss für Mods/Broadcaster. Automatischer Start und Angriffe bleiben erhalten.
+
+2.1.24 – Erweiterte RPG-Anbindung
+
+- Reguläre Windows-Version mit erweitertem Bossstatus und Minispielaktionen für die Extension. Gemeinsame autoritative Spielstände und Cooldowns; Cloud-Konfiguration bleibt separat.
+
+2.1.23 – RPG-Cloud-Synchronisierung
+
+- Geschützter Cloud-Abgleich und ausgehender Aktionskanal. Startschutz zählt den eigenen Prozess nicht als zweite Instanz. Keine Änderung am lokalen Spielstandformat; Extension bleibt im geschlossenen Hosted Test.
+
+Cloud- und Extension-Funktionen benötigen weiterhin ihre separate Einrichtung; dieses Desktop-Update stellt keine Twitch- oder Cloud-Veröffentlichung dar.
+
 2.1.22 – Heist-OBS-Overlay und Gegner-Einstellungen
 
 - Heist mit Otter-Piraten, Countdown und Schatzkammer in der gemeinsamen Browserquelle. Echte Jackpot-Punkte werden weiterhin vom vorhandenen Heist-Service verteilt.
@@ -5162,7 +5235,7 @@ Version 2.0.6
     private async Task CheckForUpdatesAsync(bool silent)
     {
         if (TestDataPaths.IsTestBuild) { if (!silent) MessageBox.Show("Automatische Updates sind in dieser getrennten Testversion gesperrt."); return; }
-        if (_updateBusy)
+        if (_updateBusy || _maintenanceBusy || _accountLoginBusy)
         {
             return;
         }
@@ -5299,7 +5372,7 @@ Version 2.0.6
     private void SkipAvailableUpdate()
     {
         var update = _availableUpdate;
-        if (update is null || _updateBusy)
+        if (update is null || _updateBusy || _maintenanceBusy || _accountLoginBusy)
         {
             return;
         }
@@ -5324,7 +5397,7 @@ Version 2.0.6
     private async Task InstallAvailableUpdateAsync()
     {
         var update = _availableUpdate;
-        if (update is null || _updateBusy)
+        if (update is null || _updateBusy || _maintenanceBusy || _accountLoginBusy)
         {
             return;
         }
@@ -6736,6 +6809,7 @@ Version 2.0.6
 
     protected override async void OnFormClosing(FormClosingEventArgs e)
     {
+        if (_maintenanceBusy) { e.Cancel = true; return; }
         if (!_explicitExitRequested &&
             e.CloseReason == CloseReason.UserClosing)
         {
@@ -6769,6 +6843,7 @@ Version 2.0.6
         base.OnFormClosing(e);
     }
 }
+
 
 
 
