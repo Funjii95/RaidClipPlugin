@@ -8,6 +8,7 @@ public sealed record RpgAdventureResult(bool Success, string PlayerId, long Stak
 {
     public IReadOnlyList<RpgItem> AdditionalItems { get; init; } = Array.Empty<RpgItem>();
     public RpgEnemyResult? Enemy { get; init; }
+    public int ShellsAwarded { get; init; }
 }
 
 public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig config,
@@ -97,6 +98,11 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                     var equipment = new RpgLootService(_random).RollReward(rpg.DiveLoot, clock, RpgActivity.Fishing, rpg.FishingEquipmentChance, ItemRarity.Epic,points.HotTime.DropBonus(rpg.HotTime)).Item;
                     if (equipment is not null) { account.Rpg.Inventory.Add(equipment); additional.Add(equipment); }
                 }
+                if(fishing && tier==0){
+                    account.Rpg.Materials ??= new();account.Rpg.Materials.Validate();
+                    account.Rpg.Materials.Shells=checked(account.Rpg.Materials.Shells+1);
+                    outcome="Eine Muschel gefunden!";
+                }
                 RpgPassiveService.ConsumeBuffs(account.Rpg, activity, rpg, _random, clock, stake);
                 account.Rpg.Cooldowns[command] = clock.AddSeconds(Math.Clamp(game.CooldownSeconds, 1, 86400));
                 if (string.IsNullOrWhiteSpace(requestId) || requestId.Length > 200) throw new ArgumentException("Ungültige Aktions-ID.");
@@ -122,6 +128,6 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
             },RpgRewardSource.AlreadyBoosted,rpgFishName:()=>caughtFish?.PearlReward.HasValue==true?caughtFish.Name:fishName);
         return new(result.Success, userId, stake, payout, result.Balance, result.Error, outcome,
             result.Success ? loot : null, remaining, result.Success ? applied : Array.Empty<string>())
-            { AdditionalItems = result.Success ? additional : Array.Empty<RpgItem>(),Enemy=result.Success?enemy:null };
+            { AdditionalItems = result.Success ? additional : Array.Empty<RpgItem>(),Enemy=result.Success?enemy:null,ShellsAwarded=result.Success && fishing && tier==0?1:0 };
     }
 }

@@ -105,6 +105,7 @@ public sealed class RpgProfile
     public long Experience { get; set; }
     public RpgHealthState Health { get; set; } = new();
     public int SchemaVersion { get; set; } = 1;
+    public RpgMaterials Materials { get; set; } = new();
     public bool LegacyFishImported { get; set; }
     public List<RpgItem> Inventory { get; set; } = new();
     public Dictionary<EquipmentSlot, string> Equipment { get; set; } = new();

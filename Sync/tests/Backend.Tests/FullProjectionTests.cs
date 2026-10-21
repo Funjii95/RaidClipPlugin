@@ -18,6 +18,10 @@ public sealed class FullProjectionTests
         Assert.Equal(HttpStatusCode.Unauthorized,(await http.GetAsync("/api/v1/snapshots/capabilities")).StatusCode);
         using var reader=new HttpSnapshotHeadReader(new Uri("http://localhost/api/v1/snapshots"),Convert.ToBase64String(new byte[32]),"42",app.Server.CreateHandler(),true);
         await reader.RequireFullProjectionAsync(["1001"]);
+        http.DefaultRequestHeaders.Authorization=new("Bearer",Convert.ToBase64String(new byte[32]));
+        using var capabilities=System.Text.Json.JsonDocument.Parse(await http.GetStringAsync("/api/v1/snapshots/capabilities"));
+        Assert.Equal(2,capabilities.RootElement.GetProperty("rpgProjectionVersion").GetInt32());
+        Assert.Contains(capabilities.RootElement.GetProperty("supportedRpgProjectionVersions").EnumerateArray(),v=>v.GetInt32()==3);
         Assert.False((await Assert.ThrowsAsync<SnapshotHeadReadException>(()=>reader.RequireFullProjectionAsync(["9999"]))).Retryable);
     }
     [Fact]
@@ -39,6 +43,16 @@ public sealed class FullProjectionTests
         Assert.True(player.Rpg.Inventory[0].GetProperty("IsFavorite").GetBoolean());
         Assert.Equal("set",player.Rpg.Inventory[0].GetProperty("SetId").GetString());
         Assert.Equal(2.25m,player.Rpg.Buffs[0].GetProperty("BossLifeleech").GetDecimal());
+    }
+    [Fact]
+    public async Task Version_two_only_publisher_cannot_accept_material_snapshots()
+    {
+        using var reader=new HttpSnapshotHeadReader(new Uri("http://localhost/api/v1/snapshots"),Convert.ToBase64String(new byte[32]),"42",new VersionTwoOnly(),true);
+        Assert.False((await Assert.ThrowsAsync<SnapshotHeadReadException>(()=>reader.RequireFullProjectionAsync(["1001"]))).Retryable);
+    }
+    private sealed class VersionTwoOnly : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken ct)=>Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent("""{"rpgProjectionVersion":2,"channelId":"42","maxMessageBytes":262144,"allowedUserIds":["1001"]}""")});
     }
     private sealed class OldServer : HttpMessageHandler
     {

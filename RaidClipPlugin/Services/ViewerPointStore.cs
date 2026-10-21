@@ -649,6 +649,7 @@ public sealed partial class ViewerPointStore
             var index = Array.FindIndex(ordered, x => x.Key == userId);
             var entry = index >= 0 ? CloneEntry(ordered[index].Value) : new ViewerPointEntry
             { UserId = userId, Points = 0 };
+            entry.Rpg.Materials ??= new();entry.Rpg.Materials.Validate();
             RpgCoreStatService.Upgrade(entry.Rpg);
             RpgSushiService.Upgrade(entry.Rpg);
             return new ViewerProfileResult(entry, index >= 0 ? index + 1 : 0);

@@ -57,7 +57,7 @@ public sealed partial class ViewerPointStore
                 if(entry.Rpg is null || entry.Rpg.SchemaVersion!=1)throw new InvalidDataException("Unbekanntes RPG-Format; keine Zurücksetzung.");
                 if(scope is RpgResetScope.Pearls or RpgResetScope.PearlsAndItems)entry.Points=0;
                 if(scope is RpgResetScope.Items or RpgResetScope.PearlsAndItems){
-                    entry.Rpg.Inventory.Clear();entry.Rpg.Equipment.Clear();entry.Rpg.Fish.Clear();entry.Rpg.Sushi.Clear();entry.Rpg.Buffs.Clear();
+                    entry.Rpg.Inventory.Clear();entry.Rpg.Equipment.Clear();entry.Rpg.Fish.Clear();entry.Rpg.Sushi.Clear();entry.Rpg.Buffs.Clear();entry.Rpg.Materials=new();
                     // Historical catch statistics remain; never reimport them as stock.
                     entry.Rpg.LegacyFishImported=true;
                 }

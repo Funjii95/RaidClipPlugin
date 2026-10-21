@@ -11,10 +11,11 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     Func<string,string,bool> permitted,ChatMinigameService? minigames=null,Func<string,bool>? enrolled=null)
 {
     private readonly SemaphoreSlim gate=new(1,1);
-    internal static string CommandFor(string kind)=>kind switch {"status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
+    internal static string CommandFor(string kind)=>kind switch {"openShells"=>"!muscheln","status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
     internal async Task<ActionOutcome> ExecuteAsync(ActionEnvelope envelope,CancellationToken ct,TimeSpan? remainingWindow=null)
     {
         var hash=RpgIntents.Hash(envelope.Intent);
+        if(envelope.Intent.Kind=="openShells")return new(false,"chat_only","Muscheln sind derzeit ausschließlich im Chat verfügbar: !muscheln [1–100].");
         if(envelope.ChannelId!=channel || !(users.Contains(envelope.UserId)||enrolled?.Invoke(envelope.UserId)==true) || envelope.IntentHash!=hash || envelope.SessionId==Guid.Empty)
             return new(false,"scope_denied","Aktionszuordnung ungültig.");
         await gate.WaitAsync(ct);
@@ -117,7 +118,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     internal string CatalogJson()
     {
         var config=configuration();var rpg=config.Adventures.Rpg;
-        return JsonSerializer.Serialize(new{supported=RpgIntents.Supported,
+        return JsonSerializer.Serialize(new{supported=RpgIntents.Supported.Where(kind=>kind!="openShells"),
             perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
             recipes=rpg.Recipes.Select(r=>new{r.Id,Name=RpgChatPresentation.RecipeName(r),r.PearlCost,r.Category,r.Activity,BossUses=RpgSushiService.Uses(r,rpg),r.Attributes,r.PassiveHealing,r.ChatHealing,r.BossDamageReduction,r.BossLifeleech,Ingredients=RpgSushiService.Ingredients(r),Effects=RpgSushiService.Effects(r)}),
             fish=rpg.FishSpecies.Select(f=>new{f.Id,f.Name,f.Rarity}),sets=rpg.Sets,blocked=new[]{"bossStart","heistStart","moderatorCommands","give","reset"}});

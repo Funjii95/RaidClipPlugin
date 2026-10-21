@@ -201,7 +201,9 @@ export interface SalvageQuote {
     total: number;
     fingerprint: string;
 }
+export interface MaterialStock { shells:number; whitePearls:number; bluePearls:number; redPearls:number; stoneChips:number; }
 export interface DemoState {
+    materials?: MaterialStock;
     remote?: import("./remote/model").RemoteView;
     player: PlayerProfile;
     fish: Record<string, number>;
@@ -221,7 +223,7 @@ export interface DemoState {
     salvageQuote?: SalvageQuote;
     effectCooldowns: Record<string, number>;
 }
-export type Action = {
+export type Action = {type:'openShells';count:number;} | {
     type: 'dive';
     stake: number;
 } | {

@@ -91,7 +91,9 @@ public sealed class HttpSnapshotHeadReader : IDisposable
             using var document=JsonDocument.Parse(buffer.ToArray());var root=document.RootElement;
             var names=root.EnumerateObject().Select(p=>p.Name).ToArray();
             if(names.Distinct(StringComparer.OrdinalIgnoreCase).Count()!=names.Length ||
-                root.GetProperty("rpgProjectionVersion").GetInt32()!=SnapshotValidation.RpgProjectionVersion ||
+                (root.GetProperty("rpgProjectionVersion").GetInt32()!=SnapshotValidation.RpgProjectionVersion &&
+                 (!root.TryGetProperty("supportedRpgProjectionVersions",out var versions) || versions.ValueKind!=JsonValueKind.Array ||
+                  !versions.EnumerateArray().Any(v=>v.ValueKind==JsonValueKind.Number && v.TryGetInt32(out var version) && version==SnapshotValidation.RpgProjectionVersion))) ||
                 root.GetProperty("channelId").GetString()!=channel ||
                 root.GetProperty("maxMessageBytes").GetInt32()<SnapshotValidation.MaxMessageBytes)
                 throw new SnapshotHeadReadException(false);
