@@ -4911,6 +4911,14 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.38 – Perks, Talente und Mimic
+
+- 31 Perks mit maximal 5/5, eigener Übersicht und echten Perlenkäufen. Talentpunkte bleiben separat.
+- Mimic als gemeinsamer Tauchboss: 0,5 % Grundchance, mit Abgrundsinn 5/5 insgesamt 1 %.
+- Neuer Reiter RPG → Mimic & Bossbeute für Fundchance, Bosswerte und Legendary-Chancen.
+- Separater Legendary-Wurf je berechtigtem Überlebenden: normaler Boss 5 %, Mimic 50 %.
+- Neue Extension-Oberfläche mit Mimic-Bild. Für die neuen Regeln Plugin und Module neu starten.
+
 2.1.37 – Originalgrafiken für OBS-Events
 
 - Eigene Rennen-, Bosskampf- und Heist-Motive aus der gelieferten Otter-Grafik: ohne weiße Trennflächen, ohne Verzerrung und ohne externe Bildserver.
