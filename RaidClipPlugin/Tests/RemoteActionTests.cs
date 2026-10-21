@@ -155,8 +155,10 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
         using var cancel=new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var transport=api.Factory.CreateClient();transport.DefaultRequestHeaders.Authorization=new("Bearer",ActionApiFixture.Key);
         using var pump=new CloudActionClient(transport,executor,()=>gate.CanPlay(epoch),_=>{});var running=pump.RunAsync(cancel.Token);
-        while(!(await api.Viewer.GetFromJsonAsync<RelayAvailability>("/api/v1/play/state",cancel.Token))!.Available)await Task.Delay(30,cancel.Token);
-        api.Viewer.DefaultRequestHeaders.Add("X-Rpg-Session",(await api.Viewer.GetFromJsonAsync<RelayAvailability>("/api/v1/play/state",cancel.Token))!.SessionId!.Value.ToString());
+        // Respect the production read limit (60/minute), including on slower CI workers.
+        RelayAvailability? availability;
+        do {await Task.Delay(1100,cancel.Token);availability=await api.Viewer.GetFromJsonAsync<RelayAvailability>("/api/v1/play/state",cancel.Token);}while(!availability!.Available);
+        api.Viewer.DefaultRequestHeaders.Add("X-Rpg-Session",availability.SessionId!.Value.ToString());
         var intent=ActionApiFixture.Intent();(await api.Viewer.PostAsJsonAsync("/api/v1/play/actions",intent,cancel.Token)).EnsureSuccessStatusCode();
         ActionReceipt? receipt=null;
         do {await Task.Delay(50,cancel.Token);receipt=await api.Viewer.GetFromJsonAsync<ActionReceipt>("/api/v1/play/actions/"+intent.ActionId,cancel.Token);}while(receipt!.State is "queued" or "executing");
