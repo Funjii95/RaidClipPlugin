@@ -10,9 +10,9 @@
     <AssemblyName>RaidClipPlugin</AssemblyName>
     <RootNamespace>RaidClipPlugin</RootNamespace>
     <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
-    <Version>2.1.38</Version>
-    <FileVersion>2.1.38.0</FileVersion>
-    <AssemblyVersion>2.1.38.0</AssemblyVersion>
+    <Version>2.1.39</Version>
+    <FileVersion>2.1.39.0</FileVersion>
+    <AssemblyVersion>2.1.39.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(IsolatedActionsTest)' == 'true'">
@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Assets\Overlay\otter-events.png" LogicalName="RaidClipPlugin.Overlay.OtterEvents.png" />
+    <EmbeddedResource Include="Assets\Overlay\mimic.png" LogicalName="RaidClipPlugin.Overlay.Mimic.png" />
   </ItemGroup>
 
   <ItemGroup>

@@ -20,6 +20,13 @@ public sealed class AdventureOverlayServer
         return buffer.ToArray();
     });
     public const string Url = "http://127.0.0.1:18769/";
+    public const string MimicUrl = Url + "mimic";
+    private static readonly Lazy<byte[]> MimicArtwork = new(() =>
+    {
+        using var stream=typeof(AdventureOverlayServer).Assembly.GetManifestResourceStream("RaidClipPlugin.Overlay.Mimic.png")
+            ?? throw new InvalidOperationException("Die eingebettete Mimic-Grafik fehlt.");
+        using var buffer=new MemoryStream();stream.CopyTo(buffer);return buffer.ToArray();
+    });
     private readonly Func<AdventureStatus> _status;
     private readonly string _url;
     private readonly Func<CommunityOverlayState>? _community;
@@ -45,13 +52,13 @@ public sealed class AdventureOverlayServer
                 try
                 {
                     var path = context.Request.Url?.AbsolutePath;
-                    if (context.Request.HttpMethod != "GET" || path is not ("/" or "/state" or "/community" or "/preview" or "/assets/otter-events.png"))
+                    if (context.Request.HttpMethod != "GET" || path is not ("/" or "/mimic" or "/state" or "/community" or "/preview" or "/assets/otter-events.png" or "/assets/mimic.png"))
                     { context.Response.StatusCode = 404; continue; }
-                    if (path == "/assets/otter-events.png")
+                    if (path is "/assets/otter-events.png" or "/assets/mimic.png")
                     {
                         context.Response.ContentType = "image/png";
                         context.Response.Headers["Cache-Control"] = "public, max-age=3600";
-                        var image = Artwork.Value;
+                        var image = path=="/assets/mimic.png"?MimicArtwork.Value:Artwork.Value;
                         context.Response.ContentLength64 = image.Length;
                         await context.Response.OutputStream.WriteAsync(image, token);
                         continue;

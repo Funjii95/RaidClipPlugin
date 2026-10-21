@@ -4911,6 +4911,12 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.39 – Mimic-Overlay für OBS
+
+- Eigenes Mimic-Motiv mit Boss-HP, Countdown, Teilnehmern und !attack.
+- Separate transparente OBS-Browserquelle: http://127.0.0.1:18769/mimic (900 × 600).
+- Das gemeinsame Event-Overlay erkennt Mimics ebenfalls automatisch.
+
 2.1.38 – Perks, Talente und Mimic
 
 - 31 Perks mit maximal 5/5, eigener Übersicht und echten Perlenkäufen. Talentpunkte bleiben separat.
