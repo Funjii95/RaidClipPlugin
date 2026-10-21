@@ -93,7 +93,7 @@ public sealed partial class AdventureGameService
 
     public void UpdateConfig(MinigameConfig config) { _config = config; _points.ConfigureHotTime(config.Adventures.Rpg); ScheduleAutoBoss(); }
     private void ScheduleAutoBoss() => _nextAutoBoss = _now().AddMinutes(Math.Clamp(_config.Adventures.Boss.AutoStartMinutes, 1, 1440));
-    public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!heal" or "!kill" or "!boss" or "!start boss" or "!attack" or "!joinboss";
+    public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!heal" or "!kill" or "!sim" or "!boss" or "!start boss" or "!attack" or "!joinboss";
     public async Task RunAsync(CancellationToken token)
     {
         var overlay = new AdventureOverlayServer(() => Status,community:()=>CommunityOverlay?.Invoke()??new CommunityOverlayEventManager().Read(Status,_now())).RunAsync(token);
@@ -179,6 +179,7 @@ public sealed partial class AdventureGameService
         try
         {
             if(expectedRace is not null && (_race?.Id??"-")!=expectedRace)return;
+            if (command == "!sim") { await SimulateBossAsync(message,parts,token); return; }
             await TickCoreAsync(token);
             if (command == "!joinboss") command = "!attack";
             var settings = _config.Adventures;

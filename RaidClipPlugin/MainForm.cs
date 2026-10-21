@@ -4911,6 +4911,12 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.40 – Bosskampf im Chat simulieren
+
+- Neuer Broadcaster-Befehl !sim: kompletter Testkampf mit fünf simulierten Ottern und deinen Charakterwerten.
+- Beschleunigte Runden, Schaden, kritische Treffer und Ergebnis im Chat.
+- Keine echten Belohnungen, keine Hot Time und keine Änderungen an laufenden Bossrunden.
+
 2.1.39 – Mimic-Overlay für OBS
 
 - Eigenes Mimic-Motiv mit Boss-HP, Countdown, Teilnehmern und !attack.

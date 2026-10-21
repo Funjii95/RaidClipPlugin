@@ -30,6 +30,7 @@ public sealed class CommandRegistry
             if (normalized.Length == 0) return;
             if (config.Commands.CommandRoleOverrides.TryGetValue(id, out var roleOverride))
                 role = ParseRole(roleOverride, role);
+            if (id == "admin.boss.sim") role = CommandRole.Broadcaster;
             if (module == "music" && role != CommandRole.Broadcaster)
                 role = CommandRole.Moderator;
             if ((id is "heist.start" or "admin.rpg.heal" or "admin.boss.kill" || id.StartsWith("event.start.", StringComparison.Ordinal)) &&
@@ -45,6 +46,9 @@ public sealed class CommandRegistry
         }
 
         var m = config.Minigame;
+        Add("admin.boss.sim", "!sim", null, "boss", "Bosskampf", "Bosskampf simulieren",
+            "Vollständiger Testkampf im Chat, ohne echte Belohnungen oder Hot Time.", "!sim", "!sim",
+            m.Enabled && m.PointsEnabled && m.Adventures.Boss.Enabled, CommandRole.Broadcaster, userCooldown:60, order:52);
         foreach (var definition in RpgCommandCatalog.Definitions)
             Add("rpg." + definition.Command[1..], definition.Command, definition.Aliases, "points", "RPG", definition.Command[1..],
                 "RPG-Inventar, Charakter und permanente Entwicklung.", (definition.Command + " " + definition.Usage).Trim(), definition.Command,
