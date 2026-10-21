@@ -6,6 +6,23 @@ namespace RaidClipPlugin.Tests;
 public sealed class RpgEnemyValidationTests
 {
     [Theory]
+    [InlineData(0)] [InlineData(1)] [InlineData(15)] [InlineData(50)] [InlineData(100)]
+    public void FullPercentageRangeIsAcceptedAndPreserved(int chance)
+    {
+        var config=new RpgEnemyConfig {EncounterChance=chance};
+        config.Validate();
+        var restored=System.Text.Json.JsonSerializer.Deserialize<RpgEnemyConfig>(System.Text.Json.JsonSerializer.Serialize(config))!;
+        restored.Validate();
+        Assert.Equal(chance,restored.EncounterChance);
+    }
+    [Theory]
+    [InlineData(-1)] [InlineData(101)]
+    public void ValuesOutsidePercentageRangeAreRejected(int chance)
+    {
+        var config=new RpgEnemyConfig {EncounterChance=chance};
+        Assert.Throws<InvalidOperationException>(config.Validate);
+    }
+    [Theory]
     [InlineData("chance","Begegnungschance")]
     [InlineData("rounds","Kampfrunden")]
     [InlineData("duplicate","mehrfach")]
@@ -18,7 +35,7 @@ public sealed class RpgEnemyValidationTests
         var c=new RpgEnemyConfig();
         switch(field)
         {
-            case "chance":c.EncounterChance=0;break;
+            case "chance":c.EncounterChance=-1;break;
             case "rounds":c.MaximumRounds=0;break;
             case "duplicate":c.Tiers.Add(new(){MinimumStake=0});break;
             case "missingzero":c.Tiers[0].MinimumStake=1;break;
