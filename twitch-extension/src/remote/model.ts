@@ -54,6 +54,12 @@ export function mapProfile(raw:any,catalog:any={}):DemoState {
  for(const perk of state.perks){const cost=field(view.perks[perk.id],'Costs')?.[perk.level];if(/^[1-9]\d*$/.test(String(cost))&&Number.isSafeInteger(Number(cost)))state.remote!.perkPrices[perk.id]=Number(cost);}
  for(const [id,stock]of Object.entries(object(field(rpg,'Fish'),'Fische'))){state.fish[id]=number(field(stock,'Quantity'),'Fischanzahl');if(!Number.isSafeInteger(state.fish[id])||state.fish[id]<0)throw Error('Ungültiger Fischvorrat.');}
  state.sushi=counts(field(rpg,'Sushi'),'Sushi');
+ const materials=field(rpg,'Materials');
+ if(materials!=null){
+  const stock=object(materials,'Materialvorrat');
+  const read=(name:string)=>{const value=number(field(stock,name),'Materialanzahl');if(!Number.isSafeInteger(value)||value<0||value>2147483647)throw Error('Ungültiger Materialvorrat.');return value;};
+  state.materials={shells:read('Shells'),whitePearls:read('WhitePearls'),bluePearls:read('BluePearls'),redPearls:read('RedPearls'),stoneChips:read('StoneChips')};
+ }
  const buffs=field(rpg,'Buffs');if(!Array.isArray(buffs))throw Error('Buffs fehlen.');
  state.player.buffs=buffs.map((b:any)=>({recipeId:string(field(b,'RecipeId'),'Buff-ID'),name:view.recipes.find(r=>r.id===field(b,'RecipeId'))?.name??field(b,'RecipeId'),activity:enumValue<Activity>(field(b,'Activity'),activities,'Buff-Aktivität'),category:enumValue<SushiCategory>(field(b,'Category'),['Offensive','Defensive'],'Sushi-Slot'),remainingUses:number(field(b,'RemainingUses'),'Aufladungen'),attributes:attributes(field(b,'Attributes')),activatedAt:time(field(b,'ActivatedAt')),expiresAt:field(b,'ExpiresAt')==null?undefined:time(field(b,'ExpiresAt')),lastBossId:field(b,'LastBossId')||undefined,passiveHealing:optionalNumber(field(b,'PassiveHealing')),chatHealing:optionalNumber(field(b,'ChatHealing')),bossDamageReduction:optionalNumber(field(b,'BossDamageReduction')),bossLifeleech:optionalNumber(field(b,'BossLifeleech'))}));
  const cooldowns=object(field(rpg,'Cooldowns'),'Cooldowns');for(const [target,key]of [['dive','!dive'],['fishing','!fish'],['boss','!attack']] as const){state.cooldowns[target]=own(cooldowns,key)?time(cooldowns[own(cooldowns,key)!]):0;if(!Number.isFinite(state.cooldowns[target]))throw Error('Ungültiger Cooldown.');}

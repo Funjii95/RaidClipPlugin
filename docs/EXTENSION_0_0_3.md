@@ -1,6 +1,6 @@
 # Funjii Otter RPG 0.0.3 – lokale Entwicklung
 
-Status: lokale Entwicklung, nicht hochgeladen oder veröffentlicht.
+Status: private Twitch-Testversion 0.0.3; Frontend hochgeladen, neue Server-/Plugin-Funktionen noch nicht bereitgestellt.
 Basis: main / Plugin 2.1.29, Commit a9043ee32ee3e474fab19e67ed69d1ffef9d1cd1.
 0.0.2 bleibt unverändert in der Twitch-Prüfung.
 
@@ -15,7 +15,7 @@ Autoritative Umsetzung im vorhandenen Plugin, gemeinsame Spielstände für Chat 
 - Upgrades gelingen immer; kein Zufallswurf.
 - +7 benötigt 1 Weiße Perle, +8 benötigt 1 Blaue Perle, +9 benötigt 1 Rote Perle. +1 bis +6 benötigen kein Upgrade-Material.
 - Perlenkosten je EINZELNEM Schritt auf die Zielstufe: +1 10.000; +2 25.000; +3 50.000; +4 100.000; +5 200.000; +6 350.000; +7 500.000; +8 750.000; +9 1.000.000. Kein Sammelpreis für alle Stufen. Keine Stufensprünge.
-- Bezug/Verteilung der Materialperlen sowie konkrete Auswahl aufwertbarer Attribute/etwaige Rundung sind noch offen. Keine Dropchancen oder zusätzlichen Kosten erfinden.
+- Materialperlen stammen aus Muscheln. Konkrete Auswahl aufwertbarer Attribute/etwaige Rundung sind noch offen. Keine Dropchancen oder zusätzlichen Kosten erfinden.
 - Die reine Dezimalberechnung ist lokal als RpgEquipmentUpgradeRules vorbereitet und getestet. Noch keine Einbindung in gespeicherte Gegenstände, Aktionen oder Anzeige.
 
 Bis Materialverwaltung, sichere Transaktion und Datenprojektion integriert und geprüft sind: keine Upgrade-Aktion aktivieren, keine Materialien oder Perlen abbuchen, keine Items verändern oder migrieren. Vorhandene Grundwerte bleiben unverändert; spätere Berechnung muss immer von unveränderten ursprünglichen Werten ausgehen.
@@ -52,9 +52,12 @@ Fundstellen:
 - Services/RpgAdventureService.cs: autoritative Fang-/Spielstandtransaktion über ApplyCasinoAsync; Muschelgewinn muss nach bestehender Aktions-/Cooldown-Prüfung in derselben Transaktion verbucht werden.
 - Die gemeinsame Textfunktion darf nicht bloß "Muschel" behaupten, ohne dass tatsächlich eine Muschel gespeichert wurde. Der Legacy-Modus ohne RPG braucht eine ausdrückliche Behandlung.
 
-Noch vom Betreiber festzulegen:
-- mögliche Inhalte pro Öffnung (insbesondere weiße/blaue/rote Upgrade-Perlen);
-- Chancen, Mengen und mögliche leere Muscheln.
+Genehmigte Belohnungen pro Muschel: 3 % eine weiße Perle, 2 % eine blaue Perle, 1 % eine rote Perle, 47 % gleichverteilt 10–50 gewöhnliche Perlen (einschließlich Grenzen), 47 % ein Steinstückchen.
 
-Lokaler Stand: reine Mengen-/Bestandsprüfung vorbereitet und getestet. Noch keine Zufallsbelohnung, keine Inventaränderung und kein aktiver Öffnungsbutton. Kein Upload.
-Spätere Material-/Muschelverwaltung muss rückwärtskompatibel geplant werden; Snapshot-Projektion und UI müssen dieselben tatsächlichen Bestände anzeigen. Öffnung, Verbrauch und Belohnung gemeinsam im vorhandenen Plugin-Transaktionspfad mit persistenter ActionId verarbeiten. Bei 100er-Öffnung genau 100 einzelne, nach denselben genehmigten Regeln ausgewertete Öffnungen; Wiederholungen dürfen keine erneute Buchung erzeugen.
+Implementiert: atomarer Muschelverbrauch und Belohnung in ViewerPointStore, persistente ActionId, Chatbefehl !muscheln [1–100], authentifizierte openShells-Aktion, vollständige Materialprojektion und vorhandene Minispielansicht mit Mengenwahl. Angeln vergibt eine Muschel bei Tier 0 innerhalb der bestehenden Transaktion. Legacy-Angeln ohne RPG bleibt unverändert.
+
+Speicherung: RpgProfile.Materials mit fünf nichtnegativen Zählern. Alte Profile ohne Materials starten mit leeren Materialbeständen. Vor erster Speicherung entsteht eine .pre-materials-v1.bak. Unvollständige oder ungültige Materialobjekte werden abgelehnt. Keine Änderung bestehender Gegenstände oder Perlen beim bloßen Synchronisieren.
+
+Kompatibilität: Snapshot-Projektion 3 erforderlich. Der derzeitige Publisher unterstützt Version 2; neue Plugin-Snapshots scheitern dort sicher. Vor realem Test passenden privaten Publisher und Backend sowie isolierte Plugin-Testversion bereitstellen. Alte Plugin-Versionen können unbekannte Materialfelder beim Speichern verlieren; nach Einführung nicht ohne geplante Wiederherstellung auf 2.1.29 zurückwechseln. Keine produktiven Spielstände dafür verwenden.
+
+Das hochgeladene Frontend bleibt am bisherigen Backend angeschlossen. Ohne Materialdaten und openShells-Freigabe ist die neue Aktion gesperrt. Ausrüstungs-Upgrades bleiben reine Regelvorbereitung, noch kein Kaufweg.

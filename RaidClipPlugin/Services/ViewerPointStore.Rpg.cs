@@ -24,6 +24,8 @@ public sealed partial class ViewerPointStore
     }
     private void EnsureItemSystemBackup()
     {
+        if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-materials-v1.bak"))
+            File.Copy(_filePath,_filePath+".pre-materials-v1.bak",overwrite:false);
         if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-sushi-2.bak"))
             File.Copy(_filePath,_filePath+".pre-sushi-2.bak",overwrite:false);
         if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-core-stats.bak"))
@@ -45,6 +47,17 @@ public sealed partial class ViewerPointStore
         {
             // Accounts predating RPG may legitimately have no RPG property.
             if (!Property(account.Value, "Rpg", out var rpg)) continue;
+            if (Property(rpg, "Materials", out var materials))
+            {
+                string[] keys = ["Shells","WhitePearls","BluePearls","RedPearls","StoneChips"];
+                if (materials.ValueKind != JsonValueKind.Object ||
+                    materials.EnumerateObject().Count() != keys.Length ||
+                    materials.EnumerateObject().Select(p=>p.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=keys.Length)
+                    throw new InvalidDataException("Gespeicherter Materialvorrat ist unvollständig.");
+                foreach (var key in keys)
+                    if (!Property(materials,key,out var value) || !value.TryGetInt32(out var count) || count<0)
+                        throw new InvalidDataException("Gespeicherter Materialvorrat ist ungültig.");
+            }
             if (!Property(rpg, "Inventory", out var inventory) || inventory.ValueKind != JsonValueKind.Array)
                 throw new InvalidDataException("Gespeichertes RPG-Inventar fehlt oder ist keine Liste.");
             foreach (var item in inventory.EnumerateArray())
@@ -56,6 +69,8 @@ public sealed partial class ViewerPointStore
     {
         account.Rpg ??= new();
         if (account.Rpg.SchemaVersion != 1) throw new InvalidOperationException("Unbekannte RPG-Datenversion.");
+        account.Rpg.Materials ??= new();
+        account.Rpg.Materials.Validate();
         RpgCoreStatService.Upgrade(account.Rpg);
         RpgSushiService.Upgrade(account.Rpg);
         if (account.Rpg.LegacyFishImported) return;

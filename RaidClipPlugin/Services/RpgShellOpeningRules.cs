@@ -1,10 +1,23 @@
 namespace RaidClipPlugin.Services;
 
-// Validation only until the operator defines and approves shell contents.
-// The future mutation must debit shells and award contents in one existing RPG transaction.
+internal enum ShellRewardKind { WhitePearl, BluePearl, RedPearl, Pearls, StoneChips }
+
+// The plugin evaluates each opening independently using these approved integer ranges.
 internal static class RpgShellOpeningRules
 {
     internal const int MaximumBatchSize = 100;
+    internal const int MinimumPearlReward = 10;
+    internal const int MaximumPearlReward = 50;
+
+    internal static ShellRewardKind Reward(int roll) => roll switch
+    {
+        < 1 or > 100 => throw new ArgumentOutOfRangeException(nameof(roll)),
+        <= 3 => ShellRewardKind.WhitePearl,
+        <= 5 => ShellRewardKind.BluePearl,
+        <= 6 => ShellRewardKind.RedPearl,
+        <= 53 => ShellRewardKind.Pearls,
+        _ => ShellRewardKind.StoneChips
+    };
 
     internal static long RemainingShells(long availableShells, int count)
     {
@@ -13,7 +26,7 @@ internal static class RpgShellOpeningRules
         if (count < 1 || count > MaximumBatchSize)
             throw new ArgumentOutOfRangeException(nameof(count));
         if (availableShells < count)
-            throw new InvalidOperationException("Nicht genügend Muscheln.");
+            throw new InvalidOperationException("Nicht genÃ¼gend Muscheln.");
         return availableShells - count;
     }
 }

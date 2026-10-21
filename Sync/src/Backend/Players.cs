@@ -10,6 +10,7 @@ public sealed class RpgView
     public int? PlayerLevel { get; init; }
     public long? Experience { get; init; }
     public int? SushiVersion { get; init; }
+    public MaterialView? Materials { get; init; }
     public HealthView? Health { get; init; }
     public JsonElement[] Inventory { get; init; } = [];
     public Dictionary<string, string> Equipment { get; init; } = [];
@@ -20,6 +21,7 @@ public sealed class RpgView
     public Dictionary<string, DateTimeOffset> Cooldowns { get; init; } = [];
     // CompletedActions are private plugin idempotency tokens and never exposed.
 }
+public sealed record MaterialView(int Shells, int WhitePearls, int BluePearls, int RedPearls, int StoneChips);
 public sealed class HealthView
 {
     public long? CurrentHp { get; init; }
@@ -117,6 +119,7 @@ public static class SnapshotParser
         if (account.UserId != expectedId || account.Points is null or < 0 || account.UpdatedAt is null ||
             account.Rpg?.SchemaVersion != 1 || string.IsNullOrWhiteSpace(account.DisplayName))
             throw new InvalidDataException("Invalid snapshot identity, balance or schema.");
+        if(account.Rpg.Materials is {} m && (m.Shells<0 || m.WhitePearls<0 || m.BluePearls<0 || m.RedPearls<0 || m.StoneChips<0))throw new InvalidDataException("Invalid material balance.");
         return new(account.UserId, account.DisplayName, account.Points.Value, account.Rpg,
             account.UpdatedAt.Value, "plugin-snapshot");
     }

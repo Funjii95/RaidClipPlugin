@@ -16,7 +16,7 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 2;
+    public const int RpgProjectionVersion = 3;
     public const int MaxMessageBytes = 256 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
@@ -81,13 +81,22 @@ public static class SnapshotValidation
             throw new InvalidDataException("Invalid account identity, balance, date or RPG object.");
         var rpg = Clean(JsonSerializer.SerializeToElement(root["Rpg"]),
             ["SchemaVersion", "LegacyFishImported", "Inventory", "Equipment", "Perks", "Fish", "Sushi", "Buffs", "Cooldowns",
-                "PlayerLevel", "Experience", "Health", "SushiVersion"]);
+                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials"]);
         if (rpg["SchemaVersion"]?.GetValue<int>() != 1) throw new InvalidDataException("Unsupported RPG schema.");
         foreach (var key in new[] { "PlayerLevel", "Experience", "SushiVersion" })
             if (rpg.ContainsKey(key) && (rpg[key] is not JsonValue value ||
                 !value.TryGetValue<long>(out var count) || count < (key == "PlayerLevel" ? 1 : 0) ||
                 (key != "Experience" && count > int.MaxValue)))
                 throw new InvalidDataException("Invalid RPG progression value.");
+        if (rpg.ContainsKey("Materials"))
+        {
+            var materials = Clean(JsonSerializer.SerializeToElement(rpg["Materials"]),
+                ["Shells", "WhitePearls", "BluePearls", "RedPearls", "StoneChips"]);
+            foreach (var key in new[] {"Shells","WhitePearls","BluePearls","RedPearls","StoneChips"})
+                if (materials[key] is not JsonValue value || !value.TryGetValue<int>(out var count) || count < 0)
+                    throw new InvalidDataException("Invalid RPG material balance.");
+            rpg["Materials"] = materials;
+        }
         if (rpg.ContainsKey("Health"))
         {
             var health = Clean(JsonSerializer.SerializeToElement(rpg["Health"]),

@@ -11,7 +11,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     Func<string,string,bool> permitted,ChatMinigameService? minigames=null,Func<string,bool>? enrolled=null)
 {
     private readonly SemaphoreSlim gate=new(1,1);
-    internal static string CommandFor(string kind)=>kind switch {"status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
+    internal static string CommandFor(string kind)=>kind switch {"openShells"=>"!muscheln","status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
     internal async Task<ActionOutcome> ExecuteAsync(ActionEnvelope envelope,CancellationToken ct,TimeSpan? remainingWindow=null)
     {
         var hash=RpgIntents.Hash(envelope.Intent);
@@ -95,6 +95,14 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
         if(e.Intent.Kind=="unequip"){
             if(!Enum.TryParse<EquipmentSlot>(Arg("slot"),false,out var slot) || !Enum.IsDefined(slot))return new(false,"invalid_slot","Ungültiger Slot.");
             mutation=await progression.UnequipAsync(e.UserId,account.DisplayName,request,slot,ct);
+        }
+        if(e.Intent.Kind=="openShells"){
+            var opened=await new RpgShellService(points,rpg,maximumBalance:config.MaximumAccountEnabled?config.MaximumAccountPoints:long.MaxValue)
+                .OpenAsync(e.UserId,account.DisplayName,request,int.Parse(Arg("count"),System.Globalization.CultureInfo.InvariantCulture),ct);
+            if(!opened.Success)return new(false,opened.Duplicate?"already_committed":"rule_rejected",opened.Message);
+            var committed=(await points.GetProfileAsync(e.UserId,ct)).Entry;
+            var projected=SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(committed)),channel).AccountJson!;
+            return new(true,"applied",opened.Message,JsonSerializer.Serialize(new{profile=JsonDocument.Parse(projected).RootElement.Clone()}));
         }
         if(e.Intent.Kind=="buyPerk")mutation=await progression.BuyPerkAsync(e.UserId,account.DisplayName,request,Arg("perkId"),ct);
         if(e.Intent.Kind=="craft")mutation=await progression.CraftAsync(e.UserId,account.DisplayName,request,Arg("recipeId"),ct);

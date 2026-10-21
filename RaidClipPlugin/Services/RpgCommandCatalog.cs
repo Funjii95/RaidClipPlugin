@@ -22,6 +22,7 @@ public static class RpgCommandCatalog
         new("!sushi", new[]{"!eat"}, "[Rezept|status [Seite]|recipes [Seite]]"),
         new("!craft", new[]{"!cook"}, "<Rezept>"),
         new("!fishbag", Array.Empty<string>(), "[Seite]"),
+        new("!muscheln", new[]{"!shells"}, "[1–100]"),
         new("!stats", Array.Empty<string>(), ""),
         new("!hp", Array.Empty<string>(), ""),
         new("!rpg", Array.Empty<string>(), "[hilfe]"),

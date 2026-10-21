@@ -62,6 +62,8 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
         const update=()=>void source.dispatch({type:"refresh"}).then(setState).catch(e=>setMessage(e instanceof Error?e.message:"Spielstand nicht erreichbar."));
         update();const timer=setInterval(update,1000);return()=>{unsubscribe?.();clearInterval(timer);};
     },[source]);
+    const [shellCount,setShellCount]=useState(1);
+    const canOpenShells=(count:number)=>!isDemo && allowed("openShells") && !busy && Number.isInteger(count) && count>=1 && count<=100 && state.materials!==undefined && state.materials.shells>=count;
     const config = location.pathname.endsWith("config.html");
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), 250);
@@ -258,7 +260,20 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
               Demo zurücksetzen
             </button>
           </>) : (<>
-            {tab === "Perlen-Minispiele" && ((isDemo?minigameClient:source.minigames)?<PearlMinigames client={(isDemo?minigameClient:source.minigames)!}/>:<article><h3>Die Perlen-Spielhalle</h3><p>Für diese Spiele ist noch kein sicherer Backend-Aufruf freigegeben. Dein gespeicherter Perlenstand bleibt unverändert.</p></article>)}
+            {tab === "Perlen-Minispiele" && <>
+              <article><h3>Muscheln öffnen</h3>
+                <p>Eine Öffnung verbraucht eine Muschel. Muscheln findest du statt des alten Stiefels beim Angeln.</p>
+                {state.materials ? <><p>Muscheln: {format(state.materials.shells)}</p>
+                  <p>Upgrade-Perlen: {format(state.materials.whitePearls)} weiß · {format(state.materials.bluePearls)} blau · {format(state.materials.redPearls)} rot</p>
+                  <p>Steinstückchen: {format(state.materials.stoneChips)}</p></>
+                  : <p>Materialbestand nicht übermittelt. Öffnen ist noch nicht verfügbar.</p>}
+                <p className="muted">3 % weiße, 2 % blaue, 1 % rote Upgrade-Perle; 47 % ergeben 10–50 Perlen, 47 % ein Steinstückchen.</p>
+                <div className="actions">{[1,10,100].map(count=><button key={count} disabled={!canOpenShells(count)} onClick={()=>void run({type:"openShells",count})}>{count} öffnen</button>)}</div>
+                <label>Anzahl (1–100)<input type="number" min="1" max="100" step="1" value={Number.isNaN(shellCount)?"":shellCount} onChange={event=>setShellCount(event.target.value===""?Number.NaN:Number(event.target.value))}/></label>
+                <button disabled={!canOpenShells(shellCount)} onClick={()=>void run({type:"openShells",count:shellCount})}>Auswahl öffnen</button>
+              </article>
+              {(isDemo?minigameClient:source.minigames)?<PearlMinigames client={(isDemo?minigameClient:source.minigames)!}/>:<article><h3>Die Perlen-Spielhalle</h3><p>Für diese Spiele ist noch kein sicherer Backend-Aufruf freigegeben. Dein gespeicherter Perlenstand bleibt unverändert.</p></article>}
+            </>}
             {tab === "Charakter" && (<>
                 <article className="hero">
                   <img src={state.player.avatarUrl} alt="Otter-Magier als Spielillustration"/>

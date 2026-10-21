@@ -72,6 +72,7 @@ public static class RpgChatPresentation
     private static string Label(string name) => Clean(name);
     public static string AdventureOutcome(RpgAdventureResult result, RpgActivity activity)
     {
+        if(activity==RpgActivity.Fishing && result.ShellsAwarded>0)return "Eine Muschel gefunden! Öffnen: !muscheln <1–100>.";
         if (activity == RpgActivity.Fishing)
             return (result.Item is null ? "🎣 Diesmal kein Fisch gefangen." : $"🎣 Gefangen: 1× {Label(ItemName(result.Item))} ({result.Item.Rarity}).") +
                 (result.AdditionalItems.Count > 0 ? " Ausrüstung gefunden: " + string.Join(", ", result.AdditionalItems.Select(i => Label(ItemName(i)))) + "." : "");

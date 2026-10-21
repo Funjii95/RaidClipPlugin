@@ -38,6 +38,16 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         if (!config.Enabled) return "🦦 RPG ist aktuell deaktiviert.";
         var progression = new RpgProgressionService(points, config);
         var id = string.IsNullOrWhiteSpace(user.Id) ? Guid.NewGuid().ToString("N") : user.Id;
+        if (command == "!muscheln")
+        {
+            if(parts.Length==1){
+                var stock=(await points.GetProfileAsync(user.UserId,token)).Entry.Rpg.Materials ?? new();
+                stock.Validate();
+                return $"Muscheln: {stock.Shells}. Upgrade-Perlen: {stock.WhitePearls} weiße, {stock.BluePearls} blaue, {stock.RedPearls} rote. Öffnen: !muscheln <1–100>.";
+            }
+            var opened=await new RpgShellService(points,config,maximumBalance:maximumBalance).OpenAsync(user.UserId,user.UserName,id,int.Parse(parts[1]),token);
+            return opened.Message;
+        }
         if (command == "!hp")
         {
             if (!config.Health.Enabled) return "❤️ Das HP-System ist deaktiviert.";
@@ -188,6 +198,7 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
             "!salvage" => parts.Length>=2 && parts.Length<=4,
             "!itemlock" or "!favorite" => parts.Length is 2 or 3 && Page(parts[1]) && (parts.Length==2 || parts[2].Equals("on",StringComparison.OrdinalIgnoreCase) || parts[2].Equals("off",StringComparison.OrdinalIgnoreCase)),
             "!item" => parts.Length == 2 || parts.Length == 3 && Page(parts[2]),
+            "!muscheln" => parts.Length==1 || parts.Length==2 && int.TryParse(parts[1],out var shells) && shells is >=1 and <=100,
             "!stats" or "!hp" => parts.Length == 1,
             "!sushi" => parts.Length is 1 or 2 || parts.Length == 3 && parts[1] is "status" or "recipes" && Page(parts[2]),
             "!rpg" => true,

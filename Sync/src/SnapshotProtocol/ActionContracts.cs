@@ -23,12 +23,12 @@ public sealed record SelfDeletionJob(string UserId,Guid RequestId,DateTimeOffset
 
 public static class RpgIntents
 {
-    public static readonly string[] Supported = ["status","inventory","sets","perks","equip","unequip","buyPerk","dive","fish","craft","eat","preview","minigames","casino","bossStatus","bossAttack","itemlock","favorite","salvagePreview","salvageBatch","salvageConfirm","salvageCancel","community"];
+    public static readonly string[] Supported = ["status","inventory","sets","perks","equip","unequip","buyPerk","dive","fish","craft","eat","preview","minigames","casino","bossStatus","bossAttack","itemlock","favorite","salvagePreview","salvageBatch","salvageConfirm","salvageCancel","community","openShells"];
     public static string Canonical(RpgIntent intent)
     {
         if(intent.ActionId==Guid.Empty || !Supported.Contains(intent.Kind) || intent.Arguments.ValueKind!=JsonValueKind.Object)
             throw new ArgumentException("Unsupported RPG intent.");
-        string[] required=intent.Kind switch {"equip"=>["instanceId"],"unequip"=>["slot"],"buyPerk"=>["perkId"],"dive" or "fish"=>["stake"],"craft" or "eat"=>["recipeId"],"preview"=>["stake","fishingStake"],"casino"=>["game","stake","choice"],"itemlock" or "favorite"=>["instanceId","enabled"],"salvagePreview"=>["instanceId"],"salvageBatch"=>["selection"],"salvageConfirm" or "salvageCancel"=>["token"],"community"=>["game","operation","eventId","stake","target"],_=>[]};
+        string[] required=intent.Kind switch {"openShells"=>["count"],"equip"=>["instanceId"],"unequip"=>["slot"],"buyPerk"=>["perkId"],"dive" or "fish"=>["stake"],"craft" or "eat"=>["recipeId"],"preview"=>["stake","fishingStake"],"casino"=>["game","stake","choice"],"itemlock" or "favorite"=>["instanceId","enabled"],"salvagePreview"=>["instanceId"],"salvageBatch"=>["selection"],"salvageConfirm" or "salvageCancel"=>["token"],"community"=>["game","operation","eventId","stake","target"],_=>[]};
         var values=new SortedDictionary<string,string>(StringComparer.Ordinal);
         foreach(var field in intent.Arguments.EnumerateObject())
         {
@@ -47,6 +47,7 @@ public static class RpgIntents
         if(values.TryGetValue("stake",out var stake) && (!long.TryParse(stake,System.Globalization.NumberStyles.None,System.Globalization.CultureInfo.InvariantCulture,out var amount) || amount<0 || amount.ToString(System.Globalization.CultureInfo.InvariantCulture)!=stake))
             throw new ArgumentException("Stake must be a canonical non-negative Int64 string.");
         if(values.TryGetValue("fishingStake",out var fish) && (!long.TryParse(fish,System.Globalization.NumberStyles.None,System.Globalization.CultureInfo.InvariantCulture,out var f) || f<0 || f.ToString(System.Globalization.CultureInfo.InvariantCulture)!=fish))throw new ArgumentException("Invalid fishing stake.");
+        if(intent.Kind=="openShells" && (!int.TryParse(values["count"],System.Globalization.NumberStyles.None,System.Globalization.CultureInfo.InvariantCulture,out var count)||count is <1 or >100||count.ToString(System.Globalization.CultureInfo.InvariantCulture)!=values["count"]))throw new ArgumentException("Invalid shell count.");
         return JsonSerializer.Serialize(new {intent.Kind,Arguments=values});
     }
     public static string Hash(RpgIntent intent)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Canonical(intent))));
