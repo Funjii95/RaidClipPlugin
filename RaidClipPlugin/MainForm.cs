@@ -4911,6 +4911,13 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.41 – Transparenter OBS-Chat
+
+- Eigene OBS-Chatquelle: http://127.0.0.1:18770/ (500 × 700).
+- Benutzerfarben, Rollen-Symbole und Twitch-/aktivierte BTTV-/7TV-Emotes.
+- Nachrichten von unten nach oben, vorhandene Livechat-Filter und automatisches Ausblenden nach 60 Sekunden.
+- URL kopieren und Testvorschau direkt im Livechat-Reiter.
+
 2.1.40 – Bosskampf im Chat simulieren
 
 - Neuer Broadcaster-Befehl !sim: kompletter Testkampf mit fünf simulierten Ottern und deinen Charakterwerten.
