@@ -120,6 +120,24 @@ public sealed class ObsService : IDisposable
 
     public string[] GetBrowserSourceNames()
     {EnsureConnected();return _obs.GetInputList("browser_source").Select(i=>i.InputName).ToArray();}
+    internal static bool IsCommunityOverlayUrl(string? url)=>Uri.TryCreate(url,UriKind.Absolute,out var uri) &&
+        uri.Scheme=="http" && (uri.Host=="127.0.0.1" || uri.Host.Equals("localhost",StringComparison.OrdinalIgnoreCase)) && uri.Port==18769 && uri.AbsolutePath=="/";
+    public int RefreshCommunityOverlay(HeistOverlayConfig config)
+    {
+        EnsureConnected();
+        var available=GetBrowserSourceNames();
+        var names=string.IsNullOrWhiteSpace(config.BrowserSource)
+            ? available.Where(name=>!name.Equals(_config.Player.BrowserSource,StringComparison.OrdinalIgnoreCase) &&
+                IsCommunityOverlayUrl(_obs.GetInputSettings(name).Settings["url"]?.ToString())).ToArray()
+            : new[]{config.BrowserSource.Trim()};
+        foreach(var name in names)
+        {
+            if(name.Equals(_config.Player.BrowserSource,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Die Clip-Player-Quelle wird nicht als Eventquelle neu geladen.");
+            if(!available.Contains(name,StringComparer.Ordinal))throw new InvalidOperationException($"Die ausgewählte Event-Browserquelle '{name}' fehlt in OBS.");
+            _obs.PressInputPropertiesButton(name,"refreshnocache");
+        }
+        return names.Length;
+    }
     public string[] GetSceneNames()
     {EnsureConnected();return _obs.GetSceneList().Scenes.Select(s=>s.Name).ToArray();}
     public void EnsureCommunityOverlay(HeistOverlayConfig config)

@@ -12,6 +12,7 @@ public sealed partial class AdventureGameService
     internal Func<bool>? GameplayAllowed;
 
     public event Action? DataChanged;
+    public event Action<CommunityEventType,string>? OverlayEventStarted;
     public Func<CommunityOverlayState>? CommunityOverlay { get; set; }
     private readonly ViewerPointStore _points;
     private readonly Func<string, CancellationToken, Task> _send;
@@ -41,10 +42,23 @@ public sealed partial class AdventureGameService
         RpgAtomicFile.Save(_points.BossRoundPath,new HealthBossSnapshot {Active=boss is not null,Id=boss?.Id??"",Config=boss?.Config??new(),End=boss?.End??default,DynamicScaling=boss?.DynamicScaling??false},_=>{});
     }
     public AdventureStatus Status => Volatile.Read(ref _status);
-    private void PublishStatus() => Volatile.Write(ref _status, new(
+    private void PublishStatus()
+    {
+        var previous=Status;
+        var current=new AdventureStatus(
         _boss is not null, _boss?.Hp ?? 0, _boss?.MaximumHp ?? 0,
         _boss?.Players.Count ?? 0, _boss?.End, _race is not null, _race?.Players.Count ?? 0, _race?.Stake ?? 0, _race?.End,
-        _boss?.Id??"",_boss?.End.AddSeconds(-Math.Clamp(_boss.Config.DurationSeconds,10,1800)),_race?.Id??"",_race?.End.AddSeconds(-Math.Clamp(_race.Config.Adventures.Race.JoinSeconds,5,600))));
+        _boss?.Id??"",_boss?.End.AddSeconds(-Math.Clamp(_boss.Config.DurationSeconds,10,1800)),_race?.Id??"",_race?.End.AddSeconds(-Math.Clamp(_race.Config.Adventures.Race.JoinSeconds,5,600)));
+        Volatile.Write(ref _status,current);
+        if(current.BossActive && current.BossEventId!=previous.BossEventId)NotifyOverlayStart(CommunityEventType.Boss,current.BossEventId);
+        if(current.RaceActive && current.RaceEventId!=previous.RaceEventId)NotifyOverlayStart(CommunityEventType.Race,current.RaceEventId);
+    }
+    private void NotifyOverlayStart(CommunityEventType type,string id)
+    {
+        if(OverlayEventStarted is null)return;
+        foreach(Action<CommunityEventType,string> callback in OverlayEventStarted.GetInvocationList())
+            try{callback(type,id);}catch(Exception ex){Console.WriteLine("Event-Anzeige konnte nicht aktualisiert werden: "+ex.Message);}
+    }
     private sealed record RaceRound(long Stake, DateTimeOffset End, int MaximumPlayers,
         MinigameConfig Config, Dictionary<string, string> Players)
     {

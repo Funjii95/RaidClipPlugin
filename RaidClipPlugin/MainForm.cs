@@ -2886,6 +2886,13 @@ private enum CloseChoice
                         config.Commands,
                         _commandRegistry);
                     _minigame.BindStreamSession(_streamAdmission, _streamEpoch);
+                    var overlayReload = new CommunityOverlayReloadService(() =>
+                    {
+                        if(cancellationToken.IsCancellationRequested || gameEpoch != _streamEpoch)return 0;
+                        var obs=_obs??throw new InvalidOperationException("OBS ist nicht verbunden.");
+                        return obs.RefreshCommunityOverlay(_activeConfig?.Heist.Overlay??config.Heist.Overlay);
+                    }, AppendLog);
+                    _minigame.OverlayEventStarted += (type,id) => _ = overlayReload.RequestAsync(type,id);
                     StartActionChannel(cancellationToken);
                     _chatModeration.Activated += () =>
                         SetMinigameStatus(
@@ -4904,6 +4911,52 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.33 – OBS-Eventquellen automatisch neu laden
+
+- Boss, Heist und Rennen laden die passende OBS-Browserquelle beim Start einmal einschließlich Cache neu. OBS-Fehler stoppen weder Spiel noch Auszahlung. Alle Änderungen aus 2.1.32 bleiben erhalten.
+
+2.1.32 – OBS-Schnellaktion
+
+- OBS-Quelle erstellen ist wieder im Dashboard erreichbar; die Schaltfläche bleibt vollständig sichtbar. Bestehende OBS-Einstellungen werden weiterverwendet.
+
+2.1.31 – Direkte Twitch-Anmeldung
+
+- Twitch-Anmeldung unabhängig von OBS und Modulstart. Eigenes Fenster mit Gerätecode, Browserlink, Abbruch und Fehlermeldungen. Bestehende Kanaleinstellungen und Spielstände bleiben erhalten.
+
+2.1.30 – Wartung und Kontenschutz
+
+- Neue Wartungsseite, Zugangsdaten sicher austauschen und Programm reparieren. Tatsächlicher Twitch-Kontoname, Cloud-Kanalprüfung und rückrollbare Updates. Perlenreset erhält Level und Inventar.
+
+2.1.29 – Automatische Cloud-Aufnahme
+
+- Optional werden vorhandene Spieler mit Perlen automatisch synchronisiert; aufgenommene Konten bleiben bei Nullsaldo erhalten. Sperrlisten, Revisionen und Löschschutz gelten weiterhin.
+
+2.1.28 – Schnellere Perk-Kaufbestätigung
+
+- Bestätigte Käufe liefern gespeicherte Perk-Level, Perlen und Statuswerte direkt zurück. Ältere Cloud-Snapshots überschreiben keine bestätigten Käufe. Aktualisiertes Hosted-Test-Panel separat erforderlich.
+
+2.1.27 – Kürzere Cloud-Wartezeiten
+
+- Wartende Aktionen werden alle 500 ms abgefragt; zwei unabhängige Konten können gleichzeitig synchronisieren. Reihenfolge und Schutz vor Doppelbuchungen bleiben erhalten.
+
+2.1.26 – Dynamische Boss-HP und Heilbefehle
+
+- Boss-HP wahlweise dynamisch oder fest. !heal @Spieler / !heal all und !kill boss für Mods/Broadcaster. Boss-Sieg zeigt tatsächliche Perlengutschriften; Hot-Time-Zeiten ohne Nachkommastellen.
+
+2.1.25 – Bossstatus und eindeutiger Start
+
+- !boss zeigt Status bzw. Rundenpause. Manueller Start ausschließlich mit !start boss für Mods/Broadcaster. Automatischer Start und Angriffe bleiben erhalten.
+
+2.1.24 – Erweiterte RPG-Anbindung
+
+- Reguläre Windows-Version mit erweitertem Bossstatus und Minispielaktionen für die Extension. Gemeinsame autoritative Spielstände und Cooldowns; Cloud-Konfiguration bleibt separat.
+
+2.1.23 – RPG-Cloud-Synchronisierung
+
+- Geschützter Cloud-Abgleich und ausgehender Aktionskanal. Startschutz zählt den eigenen Prozess nicht als zweite Instanz. Keine Änderung am lokalen Spielstandformat; Extension bleibt im geschlossenen Hosted Test.
+
+Cloud- und Extension-Funktionen benötigen weiterhin ihre separate Einrichtung; dieses Desktop-Update stellt keine Twitch- oder Cloud-Veröffentlichung dar.
+
 2.1.22 – Heist-OBS-Overlay und Gegner-Einstellungen
 
 - Heist mit Otter-Piraten, Countdown und Schatzkammer in der gemeinsamen Browserquelle. Echte Jackpot-Punkte werden weiterhin vom vorhandenen Heist-Service verteilt.
@@ -6785,6 +6838,7 @@ Version 2.0.6
         base.OnFormClosing(e);
     }
 }
+
 
 
 

@@ -313,6 +313,7 @@ public sealed partial class ChatMinigameService : IDisposable
     public event Action<int, long>? PointsAwarded;
     public event Action? DataChanged;
     public event Action<HeistStatus>? HeistStatusChanged;
+    public event Action<CommunityEventType,string>? OverlayEventStarted;
     private readonly CommunityOverlayEventManager _communityOverlay=new();
     public event Action<DuelStatus>? DuelStatusChanged;
 
@@ -335,6 +336,7 @@ public sealed partial class ChatMinigameService : IDisposable
         _points = points;
         _adventures = new AdventureGameService(points, config, TrySendChatAsync, broadcasterId: broadcasterId);
         _adventures.DataChanged += () => DataChanged?.Invoke();
+        _adventures.OverlayEventStarted += (type,id)=>OverlayEventStarted?.Invoke(type,id);
         _commandsConfig = commandsConfig ?? new CommandsConfig();
         _commandRegistry = commandRegistry ?? new CommandRegistry();
         if (heistConfig is not null)
@@ -342,6 +344,10 @@ public sealed partial class ChatMinigameService : IDisposable
             _communityOverlay.Configure(heistConfig.Overlay);
             _heist = new HeistService(broadcasterId, chatUserId, heistConfig, config, twitch, points);
             _heist.EventChanged += _communityOverlay.Update;
+            _heist.EventChanged += snapshot=>
+            {
+                if(snapshot.State==HeistState.Joining)OverlayEventStarted?.Invoke(CommunityEventType.Heist,snapshot.EventId);
+            };
             _heist.StatusChanged += status => HeistStatusChanged?.Invoke(status);
         }
         if (duelConfig is not null)
