@@ -168,7 +168,7 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
             page, "Noch nichts ausgerüstet. Nutze !inv und !equip <Nummer>.", "!gear");
         if (command == "!perks") return ListPage(user.UserName, "⭐ Perks", config.Perks.Select(p =>
             RpgChatPresentation.PerkName(p) + $" ({p.Id}) {profile.Perks.GetValueOrDefault(p.Id)}/{p.MaximumLevel}: " +
-            RpgChatPresentation.Bonuses(RpgChatPresentation.Snapshot(p.BonusPerLevel, profile.Perks.GetValueOrDefault(p.Id))) +
+            (RpgPerkCatalog.Find(p.Id) is {Value:>0} entry ? $"{entry.Value*Math.Clamp(profile.Perks.GetValueOrDefault(p.Id),0,5)} {entry.Label}" : RpgChatPresentation.Bonuses(RpgChatPresentation.Snapshot(p.BonusPerLevel, Math.Clamp(profile.Perks.GetValueOrDefault(p.Id),0,5)))) +
             (profile.Perks.GetValueOrDefault(p.Id) >= p.MaximumLevel ? " MAX" : " → " + RpgChatPresentation.Number(p.Cost(profile.Perks.GetValueOrDefault(p.Id))) + " Perlen")),
             page, "Keine Perks konfiguriert.", "!perks");
         if (command == "!sushi")

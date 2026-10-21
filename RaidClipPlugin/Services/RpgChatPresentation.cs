@@ -29,7 +29,7 @@ public static class RpgChatPresentation
     };
     public static string KindName(RpgItem item) => item.Slot.HasValue ? "Ausrüstung" :
         item.Kind == RpgItemKind.Consumable ? "Verbrauchsgegenstand" : "Schatz";
-    public static RpgAttributes Snapshot(RpgAttributes a, int levels = 1) => new()
+    public static RpgAttributes Snapshot(RpgAttributes a, decimal levels = 1) => new()
     { BossDamageReduction=a.BossDamageReduction*levels,BossDodgeChance=a.BossDodgeChance*levels,CriticalHealing=a.CriticalHealing*levels,RareEquipmentLuck=a.RareEquipmentLuck*levels,
         Power=a.Power*levels,Stamina=a.Stamina*levels,MaximumHp=a.MaximumHp*levels, Damage = a.Damage * levels, CritChance = a.CritChance * levels, CritDamage = a.CritDamage * levels, Luck = a.Luck * levels,
         BossDamage = a.BossDamage * levels, PearlBonus = a.PearlBonus * levels, FishingLuck = a.FishingLuck * levels, DiveLuck = a.DiveLuck * levels,
@@ -60,7 +60,7 @@ public static class RpgChatPresentation
             RpgActionKind.Craft => $"🍣 {user} hat {name} hergestellt! Verbraucht: {(details.IngredientsDescription.Length>0?details.IngredientsDescription:$"{Number(details.FishQuantity)}× {Label(details.FishName)}")} + {Number(details.Cost)} Perlen. Erhalten: {Number(details.Quantity)}× {name}. " +
                 $"Buff nach Aktivierung: {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))}, {Number(details.RemainingUses)} {(details.EncounterBased?"Bosskampfteilnahmen":"gültige "+Activity(details.Activity??RpgActivity.Dive))} (noch nicht aktiviert).",
             RpgActionKind.ActivateSushi => $"🍣✨ {user} aktiviert {name}! {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))} für die nächsten {Number(details.RemainingUses)} {(details.EncounterBased?"Bosskampfteilnahmen":"gültigen "+Activity(details.Activity??RpgActivity.Dive))}.",
-            RpgActionKind.BuyPerk => $"⭐ {user} verbessert {name} auf Level {Number(details.Level)}! {Bonuses(details.Bonuses)} insgesamt aus diesem Perk. Kosten: {Number(details.Cost)} Perlen." +
+            RpgActionKind.BuyPerk => $"⭐ {user} verbessert {name} auf Level {Number(details.Level)}! {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))} insgesamt aus diesem Perk. Kosten: {Number(details.Cost)} Perlen." +
                 (balance.HasValue ? $" Stand: {Number(balance.Value)} Perlen." : "") +
                 (details.NextCost.HasValue ? $" Nächstes Upgrade: {Number(details.NextCost.Value)} Perlen." : details.MaximumLevel > 0 && details.Level >= details.MaximumLevel ? " Maximallevel erreicht." : ""),
             RpgActionKind.Equip => $"{ItemIcon(details.Slot)} {user} rüstet {name} aus ({SlotName(details.Slot ?? EquipmentSlot.Weapon)})! {Bonuses(details.Bonuses)}." +

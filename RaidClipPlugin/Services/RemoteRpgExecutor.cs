@@ -103,6 +103,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
         if(e.Intent.Kind=="eat")mutation=await progression.ActivateSushiAsync(e.UserId,account.DisplayName,request,Arg("recipeId"),ct);
         if(e.Intent.Kind is "dive" or "fish"){
             var adventure=await new RpgAdventureService(points,config).ExecuteAsync(e.UserId,account.DisplayName,request,e.Intent.Kind=="fish"?RpgActivity.Fishing:RpgActivity.Dive,long.Parse(Arg("stake"),System.Globalization.CultureInfo.InvariantCulture),ct);
+            if(adventure.BossDiscovered && minigames is not null)await minigames.StartDiscoveredBossAsync(account.DisplayName,ct);
             return new(adventure.Success,adventure.Success?"applied":"rule_rejected",adventure.Error,JsonSerializer.Serialize(adventure));
         }
         if(e.Intent.Kind is "buyPerk" or "learnTalent" && mutation?.Success==true){
@@ -121,7 +122,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
         var config=configuration();var rpg=config.Adventures.Rpg;
         return JsonSerializer.Serialize(new{supported=RpgIntents.Supported.Where(kind=>kind!="openShells"),
             talentCatalogVersion=TalentRules.CatalogVersion,talents=TalentRules.Catalog,
-            perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
+            perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Presentation=RpgPerkCatalog.Find(p.Id),Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
             recipes=rpg.Recipes.Select(r=>new{r.Id,Name=RpgChatPresentation.RecipeName(r),r.PearlCost,r.Category,r.Activity,BossUses=RpgSushiService.Uses(r,rpg),r.Attributes,r.PassiveHealing,r.ChatHealing,r.BossDamageReduction,r.BossLifeleech,Ingredients=RpgSushiService.Ingredients(r),Effects=RpgSushiService.Effects(r)}),
             fish=rpg.FishSpecies.Select(f=>new{f.Id,f.Name,f.Rarity}),sets=rpg.Sets,blocked=new[]{"bossStart","heistStart","moderatorCommands","give","reset"}});
     }

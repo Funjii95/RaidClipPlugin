@@ -7,7 +7,7 @@ namespace RaidClipPlugin.Services;
 public static class RpgHealthService
 {
     private static int BaseMaximum(RpgProfile p,RpgHealthConfig c) => checked(c.BaseHp + (Math.Clamp(p.PlayerLevel,1,c.MaximumLevel)-1)*c.HpPerLevel);
-    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked((int)decimal.Floor(BaseMaximum(p,c)*(1+RpgTalentService.Bonus(p,"health")/100))+(int)decimal.Floor(Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina,c.EquipmentSets),0,c.EquipmentHpCap)));
+    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked((int)decimal.Floor(BaseMaximum(p,c)*(1+RpgPerkCatalog.Combined(p,"health")/100))+(int)decimal.Floor(Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina,c.EquipmentSets),0,c.EquipmentHpCap)));
     public static void Refresh(RpgProfile p, RpgHealthConfig c, DateTimeOffset now)
     {
         c.Validate(); p.Health ??= new();
@@ -38,7 +38,7 @@ public static class RpgHealthService
             if(c.PassiveHealing)
             {
                 var accrued=extra+Math.Clamp(h.SushiRegenRemainder,0,0.9999999999999999999999999999m);
-                h.CurrentHp=(int)Math.Min(max,h.CurrentHp.Value+Math.Min(credited,max)*c.PassiveHp+decimal.Floor(accrued));
+                h.CurrentHp=(int)Math.Min(max,h.CurrentHp.Value+Math.Min(credited,max)*(c.PassiveHp+RpgPerkCatalog.Bonus(p,"regen"))+decimal.Floor(accrued));
                 h.SushiRegenRemainder=h.CurrentHp>=max?0:accrued-decimal.Floor(accrued);
             }
             h.LastPassiveRegen=h.LastPassiveRegen.Value.AddSeconds(intervals*c.PassiveSeconds);
@@ -72,7 +72,7 @@ public static class RpgHealthService
     }
     public static string Status(RpgProfile p,RpgHealthConfig c) =>
         $"❤️ HP: {p.Health.CurrentHp}/{Maximum(p,c)} | Level {p.PlayerLevel} ({p.Experience} EXP) | " +
-        $"Passiv: +{(c.PassiveHealing?c.PassiveHp+RpgSushiService.PassiveBonus(p,DateTimeOffset.UtcNow)*c.PassiveSeconds/60:0)} HP/{c.PassiveSeconds}s | Chat: +{(c.ChatHealing?c.ChatHp+RpgSushiService.ChatBonus(p,DateTimeOffset.UtcNow):0)} HP/{c.ChatCooldownSeconds}s." +
+        $"Passiv: +{(c.PassiveHealing?c.PassiveHp+RpgPerkCatalog.Bonus(p,"regen")+RpgSushiService.PassiveBonus(p,DateTimeOffset.UtcNow)*c.PassiveSeconds/60:0)} HP/{c.PassiveSeconds}s | Chat: +{(c.ChatHealing?c.ChatHp+RpgSushiService.ChatBonus(p,DateTimeOffset.UtcNow):0)} HP/{c.ChatCooldownSeconds}s." +
         (p.Health.Defeated ? " Für den zuletzt angegriffenen Boss besiegt; Heilung hebt diese Sperre nicht auf." : "");
     public static async Task HealChatAsync(ViewerPointStore points,RpgConfig config,ChatMessage message,DateTimeOffset now,CancellationToken token)
     {

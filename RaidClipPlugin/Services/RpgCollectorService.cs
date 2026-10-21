@@ -19,8 +19,8 @@ public static class RpgCollectorService
         result.DivePearls=Math.Min(result.DivePearls,config.CollectorPearlCap);
         result.BossPearls=Math.Min(result.BossPearls,config.CollectorPearlCap);
         result.BossExperience=Math.Min(result.BossExperience,config.CollectorExperienceCap);
-        result.TreasureChance=Math.Min(result.TreasureChance+RpgTalentService.Bonus(profile,"treasure"),config.CollectorChanceCap);
-        result.RareTreasureChance=Math.Min(result.RareTreasureChance,config.CollectorChanceCap);
+        result.TreasureChance=Math.Min(result.TreasureChance+RpgPerkCatalog.Combined(profile,"treasure"),config.CollectorChanceCap);
+        result.RareTreasureChance=Math.Min(result.RareTreasureChance+RpgPerkCatalog.Bonus(profile,"rareTreasure"),config.CollectorChanceCap);
         return result;
     }
     public static long Reward(long amount, decimal percent) => amount <= 0 ? amount : checked(amount+(long)decimal.Floor(amount*Math.Clamp(percent,0,100)/100));

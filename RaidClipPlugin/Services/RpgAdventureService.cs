@@ -9,6 +9,7 @@ public sealed record RpgAdventureResult(bool Success, string PlayerId, long Stak
     public IReadOnlyList<RpgItem> AdditionalItems { get; init; } = Array.Empty<RpgItem>();
     public RpgEnemyResult? Enemy { get; init; }
     public int ShellsAwarded { get; init; }
+    public bool BossDiscovered { get; init; }
 }
 
 public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig config,
@@ -44,6 +45,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
         RpgFishDefinition? caughtFish=null;
         var additional = new List<RpgItem>();
         var remaining = 0;
+        var bossDiscovered=false;
         var applied = Array.Empty<string>();
         var clock = _now();
         var result = await points.ApplyCasinoAsync(userId, name, fishing ? "Fischen" : "Schatzsuche", stake, payout,
@@ -70,7 +72,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                 {
                     var sources = CharacterStatService.DiveLuckSources(account.Rpg, rpg);
                     var collectors=RpgCollectorService.Calculate(account.Rpg,rpg.DiveLoot);
-                    loot = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime),collectors,stats.RareEquipmentLuck,RpgTalentService.Bonus(account.Rpg,"loot")).Item;
+                    loot = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime),collectors,stats.RareEquipmentLuck,RpgPerkCatalog.Combined(account.Rpg,"loot")).Item;
                     void StoreLoot(RpgItem found)
                     {
                         if (found.Kind == RpgItemKind.Consumable)
@@ -83,7 +85,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                     if (loot is not null) StoreLoot(loot);
                     if (RpgPassiveService.TryProc(account.Rpg, rpg, activity, RpgEffectTrigger.ExtraLoot, _random, clock, stake) > 0)
                     {
-                        var extra = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime),collectors,stats.RareEquipmentLuck,RpgTalentService.Bonus(account.Rpg,"loot")).Item;
+                        var extra = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime),collectors,stats.RareEquipmentLuck,RpgPerkCatalog.Combined(account.Rpg,"loot")).Item;
                         if (extra is not null) { StoreLoot(extra); additional.Add(extra); }
                     }
                     enemy=new RpgEnemyService(_random).Encounter(account.Rpg,rpg,stake,clock,points.HotTime.DropBonus(rpg.HotTime));
@@ -96,8 +98,8 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                     var id = species.Id;
                     if (!account.Rpg.Fish.TryGetValue(id, out var fish)) account.Rpg.Fish[id] = fish = new() { FishId = id, FirstCaughtAt = clock };
                     var quantity=1;
-                    if(RpgTalentService.Proc(account.Rpg,"doubleFish",_random))quantity++;
-                    if(rpg.Recipes.Any(r=>RpgSushiService.Ingredients(r).ContainsKey(id)) && RpgTalentService.Proc(account.Rpg,"ingredient",_random))quantity++;
+                    if(RpgPerkCatalog.Proc(account.Rpg,"doubleFish",_random))quantity++;
+                    if(rpg.Recipes.Any(r=>RpgSushiService.Ingredients(r).ContainsKey(id)) && RpgPerkCatalog.Proc(account.Rpg,"ingredient",_random))quantity++;
                     fish.Quantity = checked(fish.Quantity + quantity); fish.LastCaughtAt = clock;
                     loot = new() { ItemId = id, DisplayName = species.Name, Rarity = species.Rarity, IconId = species.IconId, FoundAt = clock };
                     var equipment = new RpgLootService(_random).RollReward(rpg.DiveLoot, clock, RpgActivity.Fishing, rpg.FishingEquipmentChance, ItemRarity.Epic,points.HotTime.DropBonus(rpg.HotTime)).Item;
@@ -109,14 +111,15 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                     outcome="Eine Muschel gefunden!";
                 }
                 RpgPassiveService.ConsumeBuffs(account.Rpg, activity, rpg, _random, clock, stake);
-                account.Rpg.Cooldowns[command] = clock.AddSeconds(fishing?Math.Clamp(game.CooldownSeconds,1,86400):RpgTalentService.Cooldown(account.Rpg,game.CooldownSeconds,"diveCooldown"));
+                account.Rpg.Cooldowns[command] = clock.AddSeconds(RpgPerkCatalog.Cooldown(account.Rpg,game.CooldownSeconds,fishing?"fishCooldown":"diveCooldown"));
                 if (string.IsNullOrWhiteSpace(requestId) || requestId.Length > 200) throw new ArgumentException("Ungültige Aktions-ID.");
+                bossDiscovered=!fishing && rpg.Health.Enabled && config.Adventures.Boss.Enabled && RpgPerkCatalog.DiscoverMimic(account.Rpg,rpg,_random);
                 account.Rpg.CompletedActions.Add(requestId);
                 return new(true);
             }, (account, basePayout) =>
             {
                 var stats = CharacterStatService.Calculate(account.Rpg, rpg, activity);
-                if(fishing && tier==0 && outcomeRoll>Math.Max(0,game.LossChance-RpgTalentService.Bonus(account.Rpg,"catch")))
+                if(fishing && tier==0 && outcomeRoll>Math.Max(0,game.LossChance-RpgPerkCatalog.Combined(account.Rpg,"catch")))
                 {
                     tier=1;fishName="Rotfeder";outcome="Ein kleiner Fisch dank Ruhige Hand!";
                     basePayout=checked((long)decimal.Floor(stake*game.SmallMultiplier));
@@ -128,7 +131,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                     else if(stake==0)basePayout=rpg.FreeFishingReward;
                 }
                 payout = RpgPassiveService.RewardPayout(basePayout, stake, stats.PearlBonus);
-                payout=RpgCollectorService.Reward(Math.Max(0,payout-stake),RpgTalentService.Bonus(account.Rpg,fishing?"fishPearls":"divePearls"))+Math.Min(payout,stake);
+                payout=RpgCollectorService.Reward(Math.Max(0,payout-stake),RpgPerkCatalog.Combined(account.Rpg,fishing?"fishPearls":"divePearls"))+Math.Min(payout,stake);
                 var net=Math.Max(0,payout-stake);
                 var collectors=RpgCollectorService.Calculate(account.Rpg,rpg.DiveLoot);
                 var collectorPercent=fishing && fishName is not null ? collectors.FishingPearls : !fishing?collectors.DivePearls:0;
@@ -139,6 +142,6 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
             },RpgRewardSource.AlreadyBoosted,rpgFishName:()=>caughtFish?.PearlReward.HasValue==true?caughtFish.Name:fishName);
         return new(result.Success, userId, stake, payout, result.Balance, result.Error, outcome,
             result.Success ? loot : null, remaining, result.Success ? applied : Array.Empty<string>())
-            { AdditionalItems = result.Success ? additional : Array.Empty<RpgItem>(),Enemy=result.Success?enemy:null,ShellsAwarded=result.Success && fishing && tier==0?1:0 };
+            { BossDiscovered=result.Success && bossDiscovered, AdditionalItems = result.Success ? additional : Array.Empty<RpgItem>(),Enemy=result.Success?enemy:null,ShellsAwarded=result.Success && fishing && tier==0?1:0 };
     }
 }

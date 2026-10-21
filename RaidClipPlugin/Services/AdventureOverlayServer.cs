@@ -7,7 +7,7 @@ namespace RaidClipPlugin.Services;
 public sealed record AdventureStatus(bool BossActive = false, int BossHp = 0, int BossMaxHp = 0,
     int BossPlayers = 0, DateTimeOffset? BossEndsAt = null, bool RaceActive = false,
     int RacePlayers = 0, long RaceStake = 0, DateTimeOffset? RaceEndsAt = null,
-    string BossEventId="",DateTimeOffset? BossStartedAt=null,string RaceEventId="",DateTimeOffset? RaceStartedAt=null);
+    string BossEventId="",DateTimeOffset? BossStartedAt=null,string RaceEventId="",DateTimeOffset? RaceStartedAt=null,string BossName="Perlenwächter",bool BossIsMimic=false,decimal BossLegendaryChance=5);
 
 public sealed class AdventureOverlayServer
 {

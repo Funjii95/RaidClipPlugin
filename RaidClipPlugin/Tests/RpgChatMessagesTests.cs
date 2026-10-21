@@ -65,7 +65,7 @@ public sealed class RpgChatMessagesTests : IDisposable
         var perk = _config.Perks.Single(p => p.Id == "crit"); perk.BaseCost = 700; perk.BonusPerLevel.CritChance = 1.5m;
         await Seed(a => { a.Points = 10000; a.Rpg.Perks["crit"] = 1; });
         var response = await Chat("!perk crit");
-        Assert.Contains("Kritische Treffer auf Level 2", response); Assert.Contains("+3 % Kritische Trefferchance", response);
+        Assert.Contains("Kritische Welle auf Level 2", response); Assert.Contains("+3 % Kritische Trefferchance", response);
         Assert.Contains("Kosten: 1.400 Perlen", response);
         Assert.Equal(8600, await _points.GetPointsAsync("42", Token));
     }

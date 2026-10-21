@@ -20,7 +20,7 @@ public static class RpgSushiService
     {
         var h=profile.Health;
         if(damage<=0 || remainingBossHp<=0 || h.CurrentHp is null or <=0 || h.Defeated && h.BossId==bossId)return 0;
-        var percent=Math.Clamp(Defensive(profile,now).Select(b=>b.BossLifeleech).DefaultIfEmpty().Max(),0,100)+Math.Clamp(criticalHealing,0,100)+RpgTalentService.Bonus(profile,"lifeleech");
+        var percent=Math.Clamp(Defensive(profile,now).Select(b=>b.BossLifeleech).DefaultIfEmpty().Max(),0,100)+Math.Clamp(criticalHealing,0,100)+RpgPerkCatalog.Combined(profile,"lifeleech");
         var actualDamage=Math.Min(damage,remainingBossHp);
         var healing=decimal.Floor(actualDamage*percent/100);
         var granted=(int)Math.Min(Math.Max(0,RpgHealthService.Maximum(profile,health)-h.CurrentHp.Value),healing);

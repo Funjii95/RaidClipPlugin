@@ -145,6 +145,8 @@ export interface CombatExchange {
     outcome: 'hit' | 'victory' | 'defeat';
 }
 export interface BossState {
+    isMimic?:boolean;
+    legendaryChance?:number;
     id: string;
     name: string;
     hp: number;
@@ -165,6 +167,7 @@ export interface HotTimeState {
     active: boolean;
 }
 export interface Perk {
+    presentation?: {category:string;symbol:string;value:number;label:string};
     id: string;
     name: string;
     level: number;

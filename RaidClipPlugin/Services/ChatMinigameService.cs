@@ -381,6 +381,7 @@ public sealed partial class ChatMinigameService : IDisposable
         !GameplayAllowed ? Task.CompletedTask : _heist?.RunTestAsync(cancellationToken) ?? Task.CompletedTask;
 
     public AdventureStatus AdventureStatus => _adventures.Status;
+    internal Task<bool> StartDiscoveredBossAsync(string finder,CancellationToken token)=>!GameplayAllowed?Task.FromResult(false):_adventures.StartDiscoveredBossAsync(finder,token);
     public Task ControlAdventureAsync(string action, long stake, CancellationToken token, TwitchUser? broadcaster = null) =>
         _adventures.ControlAsync(action, stake, token, broadcaster);
 

@@ -438,13 +438,13 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
             {tab === "Perks" && <PerkPanel perks={state.perks} price={perkPrice} affordable={affordable} canBuy={allowed("perk")} busy={busy} demo={isDemo} pearls={isDemo?format(state.player.pearls):state.remote?.pointsExact?BigInt(state.remote.pointsExact).toLocaleString('de-DE'):'–'} onBuy={id=>void run({type:"perk",id})}/>}
             {tab === "Boss" && (<article className="boss">
                 <div className="boss-art">
-                  <img src="./boss-kraken.png" alt="Kraken in versunkenen Ruinen" width="1254" height="1254" loading="lazy"/>
+                  <img src={state.boss.isMimic?"./boss-mimic.png":"./boss-kraken.png"} alt={state.boss.isMimic?"Mimic – lebendige Schatztruhe":"Kraken in versunkenen Ruinen"} width="1254" height="1254" loading="lazy"/>
                 </div>
-                <small>BOSS DER TIEFSEE</small>
+                <small>{state.boss.isMimic?"MIMIC · LEBENDE SCHATZTRUHE":"BOSS DER TIEFSEE"}</small>
                 <h3>{state.boss.name}</h3>
                 <p>
                   {!isDemo&&!state.remote?.bossKnown?"Aktueller Bossstatus nicht übermittelt. Bossangriffe sind noch nicht freigegeben.":state.boss.status === "active"
-                    ? "Der Kraken wartet auf dich!"
+                    ? state.boss.isMimic?`Die Mimic schnappt nach dir! Legendary-Chance nach Sieg: ${state.boss.legendaryChance??50} % je berechtigtem Überlebenden.`:`Der Boss wartet auf dich!${state.boss.legendaryChance!==undefined?` Legendary-Chance nach Sieg: ${state.boss.legendaryChance} % je berechtigtem Überlebenden.`:""}`
                     : !isDemo?"Aktuell ist kein Boss aktiv. Start durch Mods/Broadcaster oder den Plugin-Autostart.":"Besiegt · Nächster Boss in " +
                         time(remaining(state.boss.nextAt, now))}
                 </p>

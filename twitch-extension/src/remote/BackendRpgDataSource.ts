@@ -286,7 +286,7 @@ export class BackendRpgDataSource implements RpgDataSource {
   const status=data?.status;if(!status||typeof field(status,'BossActive')!=='boolean')throw Error('Bossstatus fehlt.');
   const active=field(status,'BossActive'),hp=field(status,'BossHp'),max=field(status,'BossMaxHp');
   if(!Number.isSafeInteger(hp)||hp<0||!Number.isSafeInteger(max)||max<0)throw Error('Bossstatus ungültig.');
-  this.state.boss={id:field(status,'BossEventId')||'',name:'Boss der Tiefsee',hp,maxHp:max,status:active?'active':'waiting',damage:typeof data.damage==='number'?data.damage:0,nextAt:0,endsAt:field(status,'BossEndsAt')?Date.parse(field(status,'BossEndsAt')):0};
+  this.state.boss={id:field(status,'BossEventId')||'',name:field(status,'BossName')||'Boss der Tiefsee',isMimic:field(status,'BossIsMimic')===true,legendaryChance:typeof field(status,'BossLegendaryChance')==='number'?field(status,'BossLegendaryChance'):undefined,hp,maxHp:max,status:active?'active':'waiting',damage:typeof data.damage==='number'?data.damage:0,nextAt:0,endsAt:field(status,'BossEndsAt')?Date.parse(field(status,'BossEndsAt')):0};
   this.state.remote!.bossKnown=true;
   if(data.hotTime&&typeof data.hotTime.active==='boolean'&&Number.isFinite(data.hotTime.endsAt)){
    this.state.hotTime=data.hotTime;this.state.remote!.hotKnown=true;

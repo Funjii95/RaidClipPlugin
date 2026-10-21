@@ -19,7 +19,7 @@ public static class RpgPassiveService
         {
             RpgEffectTrigger.DoubleAttack => (stats.DoubleAttackChance, Math.Min(100,Math.Clamp(config.DoubleAttackChanceCap, 0, 20)+RpgTalentService.Bonus(profile,"doubleAttack"))),
             RpgEffectTrigger.TripleAttack => (stats.TripleAttackChance, Math.Clamp(config.TripleAttackChanceCap, 0, 5)),
-            RpgEffectTrigger.ExtraLoot => (stats.ExtraLootChance, Math.Clamp(config.ExtraLootChanceCap, 0, 10)),
+            RpgEffectTrigger.ExtraLoot => (stats.ExtraLootChance, Math.Min(100,Math.Clamp(config.ExtraLootChanceCap, 0, 10)+RpgPerkCatalog.Bonus(profile,"extraLoot"))),
             _ => (stats.SushiPreservationChance, Math.Clamp(config.SushiPreservationChanceCap, 0, 20))
         };
         var candidates = new List<Candidate>();

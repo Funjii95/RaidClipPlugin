@@ -29,8 +29,8 @@ public sealed class RpgEnemyService(IDuelRandom random)
             var actual=Math.Min(hp,Math.Max(1,hit));
             hp=Math.Max(0,hp-actual);
             // Healing is based on real damage and never revives a defeated character.
-            remainingHp+=(int)Math.Min(RpgHealthService.Maximum(profile,config.Health)-remainingHp,decimal.Floor(actual*RpgTalentService.Bonus(profile,"lifeleech")/100));
-            if(hp>0 && !RpgTalentService.Proc(profile,"underwaterDodge",random)){var received=Math.Min(remainingHp,random.NextInclusive(enemy.MinimumDamage,enemy.MaximumDamage));taken=checked(taken+received);remainingHp-=received;}
+            remainingHp+=(int)Math.Min(RpgHealthService.Maximum(profile,config.Health)-remainingHp,decimal.Floor(actual*RpgPerkCatalog.Combined(profile,"lifeleech")/100));
+            if(hp>0 && !RpgPerkCatalog.Proc(profile,"underwaterDodge",random)){var received=Math.Min(remainingHp,random.NextInclusive(enemy.MinimumDamage,enemy.MaximumDamage));taken=checked(taken+received);remainingHp-=received;}
         }
         profile.Health.CurrentHp=Math.Max(initialHp,remainingHp);
         var victory=hp==0;
@@ -38,9 +38,10 @@ public sealed class RpgEnemyService(IDuelRandom random)
         RpgItem? loot=null,extraLoot=null;
         if(victory)
         {
+            RpgPerkCatalog.Victory(profile,now);
             var sources=CharacterStatService.DiveLuckSources(profile,config);
-            loot=new RpgLootService(random).RollEnemy(paidStake,sources.Perks,config.DiveLoot,now,sources.Sushi,sources.Equipment,hotTimePercent,RpgCollectorService.Calculate(profile,config.DiveLoot),stats.RareEquipmentLuck,RpgTalentService.Bonus(profile,"loot")).Item;
-            if(RpgTalentService.Proc(profile,"enemyLoot",random))extraLoot=new RpgLootService(random).RollEnemy(paidStake,sources.Perks,config.DiveLoot,now,sources.Sushi,sources.Equipment,hotTimePercent,RpgCollectorService.Calculate(profile,config.DiveLoot),stats.RareEquipmentLuck,RpgTalentService.Bonus(profile,"loot")).Item;
+            loot=new RpgLootService(random).RollEnemy(paidStake,sources.Perks,config.DiveLoot,now,sources.Sushi,sources.Equipment,hotTimePercent,RpgCollectorService.Calculate(profile,config.DiveLoot),stats.RareEquipmentLuck,RpgPerkCatalog.Combined(profile,"loot")).Item;
+            if(RpgPerkCatalog.Proc(profile,"enemyLoot",random))extraLoot=new RpgLootService(random).RollEnemy(paidStake,sources.Perks,config.DiveLoot,now,sources.Sushi,sources.Equipment,hotTimePercent,RpgCollectorService.Calculate(profile,config.DiveLoot),stats.RareEquipmentLuck,RpgPerkCatalog.Combined(profile,"loot")).Item;
         }
         return new(enemy.Name,victory,rounds,taken,profile.Health.CurrentHp!.Value,RpgHealthService.Maximum(profile,config.Health),victory?enemy.Experience:0,loot){ExtraLoot=extraLoot};
     }
