@@ -5,7 +5,7 @@ namespace RaidClipPlugin.Config;
 public sealed class RpgEnemyConfig
 {
     [DisplayName("Unterwassergegner aktiv")] public bool Enabled { get; set; } = true;
-    [DisplayName("Begegnungschance (%) – 10 bis 20")] public decimal EncounterChance { get; set; } = 15;
+    [DisplayName("Begegnungschance (%) – 0 bis 100")] public decimal EncounterChance { get; set; } = 15;
     [DisplayName("Maximale Kampfrunden")] public int MaximumRounds { get; set; } = 6;
     public List<RpgEnemyTier> Tiers { get; set; } = new()
     {
@@ -19,7 +19,7 @@ public sealed class RpgEnemyConfig
     {
         [System.Diagnostics.CodeAnalysis.DoesNotReturn]
         void Fail(string detail)=>throw new InvalidOperationException("Unterwassergegner: "+detail+" Einstellungen unter RPG → Unterwassergegner korrigieren oder dort den zuletzt geladenen Stand wiederherstellen.");
-        if(EncounterChance is <10 or >20)Fail($"Begegnungschance {EncounterChance} % ist ungültig; erlaubt sind 10–20 %.");
+        if(EncounterChance is <0 or >100)Fail($"Begegnungschance {EncounterChance} % ist ungültig; erlaubt sind 0–100 %.");
         if(MaximumRounds is <1 or >20)Fail($"Maximale Kampfrunden {MaximumRounds} sind ungültig; erlaubt sind 1–20.");
         if(Tiers is null || Tiers.Count is <1 or >30)Fail("Es sind 1–30 Gegnerstufen erforderlich.");
         if(Tiers!.Any(t=>t is null))Fail("Eine Gegnerstufe fehlt.");

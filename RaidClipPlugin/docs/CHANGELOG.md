@@ -1,3 +1,8 @@
+## 2.1.34 – Unterwassergegner: 0–100 %
+
+- Begegnungschance unter RPG → Unterwassergegner von 0 bis 100 % einstellbar, einschließlich Nachkommastellen. 0 % bedeutet keine Begegnung; 100 % bedeutet eine Begegnung bei jedem gültigen Tauchgang, sofern Gegner- und HP-System aktiv sind.
+- Oberfläche, Laden und Validierung verwenden denselben Bereich. Bisherige Einstellungen und Standardwert 15 % bleiben erhalten; Gegnerwerte und Loot unverändert.
+
 # Patchnotes
 
 ## 2.1.33 – OBS-Eventquellen automatisch aktualisieren

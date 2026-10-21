@@ -4911,6 +4911,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.34 – Unterwassergegner: 0–100 %
+
+- Begegnungschance unter RPG → Unterwassergegner von 0 bis 100 % einstellbar, mit Nachkommastellen. 0 %: keine Begegnung; 100 %: bei jedem gültigen Tauchgang, sofern Gegner- und HP-System aktiv sind.
+- Bisherige Einstellungen und Standardwert 15 % bleiben erhalten. Gegnerwerte, Loot und Cloud-Datenformat unverändert. Ältere Plugin-Versionen akzeptieren nur 10–20 %; vor einem Downgrade entsprechend zurückstellen.
+
 2.1.33 – OBS-Eventquellen automatisch neu laden
 
 - Boss, Heist und Rennen laden die passende OBS-Browserquelle beim Start einmal einschließlich Cache neu. OBS-Fehler stoppen weder Spiel noch Auszahlung. Alle Änderungen aus 2.1.32 bleiben erhalten.
