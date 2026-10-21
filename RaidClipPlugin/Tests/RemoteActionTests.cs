@@ -16,6 +16,7 @@ using Xunit;
 using Xunit.Abstractions;
 namespace RaidClipPlugin.Tests;
 
+[Collection("Cloud pump integration")]
 public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
 {
     private readonly string root=Path.Combine(Path.GetTempPath(),"otter-actions-",Guid.NewGuid().ToString("N"));
@@ -37,7 +38,8 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     [Fact]public async Task Talent_intents_are_authoritative_idempotent_and_return_committed_ranks()
     {
         var executor=await SeedAsync(2000,30);
-        using var catalog=JsonDocument.Parse(executor.CatalogJson());
+        var catalogJson=executor.CatalogJson();Assert.InRange(catalogJson.Length,1,48000);
+        using var catalog=JsonDocument.Parse(catalogJson);
         Assert.Equal(21,catalog.RootElement.GetProperty("talents").GetArrayLength());
         var intent=new RpgIntent(Guid.NewGuid(),"learnTalent",JsonSerializer.SerializeToElement(new{talentId="combat-power",expectedRank="0",catalogVersion="1"}));
         var envelope=Envelope(intent);var first=await executor.ExecuteAsync(envelope,default);
