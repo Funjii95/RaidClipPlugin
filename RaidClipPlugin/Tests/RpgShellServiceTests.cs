@@ -133,5 +133,21 @@ public sealed class RpgShellServiceTests : IDisposable
         await Assert.ThrowsAnyAsync<Exception>(()=>Store().GetProfileAsync("1001",default));
         Assert.Equal(before,await File.ReadAllBytesAsync(path));
     }
+    [Fact]
+    public async Task Chat_alias_consumes_stock_once_and_disabled_rpg_and_denied_users_cannot_open()
+    {
+        var store=await Seed(10);var config=Config();var chat=new RpgChatCommand(store,config);
+        var user=new ChatMessage{Id="synthetic-chat-message",UserId="1001",UserName="SYNTHETIC"};
+        Assert.Contains("Muscheln: 10",await chat.ExecuteAsync(user,"!muscheln",["!muscheln"],default));
+        Assert.Contains("10 Muscheln geöffnet",await chat.ExecuteAsync(user,"!shells",["!shells","10"],default));
+        var before=await store.ReadCommittedFileAsync(default);
+        await chat.ExecuteAsync(user,"!muscheln",["!muscheln","10"],default);
+        Assert.Equal(before,await store.ReadCommittedFileAsync(default));
+        config.Enabled=false;
+        Assert.Contains("deaktiviert",await chat.ExecuteAsync(user,"!muscheln",["!muscheln","1"],default));
+        config.Enabled=true;user.CommandAuthorization=CommandAuthorization.Denied;
+        Assert.Contains("nicht erlaubt",await chat.ExecuteAsync(user,"!muscheln",["!muscheln","1"],default));
+        Assert.Equal(before,await store.ReadCommittedFileAsync(default));
+    }
     public void Dispose(){if(Directory.Exists(root))Directory.Delete(root,true);}
 }

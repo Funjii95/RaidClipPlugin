@@ -61,3 +61,6 @@ Speicherung: RpgProfile.Materials mit fünf nichtnegativen Zählern. Alte Profil
 Kompatibilität: Snapshot-Projektion 3 erforderlich. Der derzeitige Publisher unterstützt Version 2; neue Plugin-Snapshots scheitern dort sicher. Vor realem Test passenden privaten Publisher und Backend sowie isolierte Plugin-Testversion bereitstellen. Alte Plugin-Versionen können unbekannte Materialfelder beim Speichern verlieren; nach Einführung nicht ohne geplante Wiederherstellung auf 2.1.29 zurückwechseln. Keine produktiven Spielstände dafür verwenden.
 
 Das hochgeladene Frontend bleibt am bisherigen Backend angeschlossen. Ohne Materialdaten und openShells-Freigabe ist die neue Aktion gesperrt. Ausrüstungs-Upgrades bleiben reine Regelvorbereitung, noch kein Kaufweg.
+
+## Chat-Freigabe 2.1.35
+Am 21.10.2026 für bestehende Serverstruktur freigegeben. Muscheln ausschließlich per Chat; Backend und RemoteRpgExecutor lehnen openShells mit chat_only ab, Plugin-Katalog bewirbt diese Aktion nicht. Publisher unterstützt Projektion 2 und 3; ältere Plugins bleiben bis zum Update kompatibel. Neue Plugins prüfen explizit Projektion 3, bevor sie Materialdaten senden. Ausrüstungs-Upgrades bleiben gesperrt. Twitch-Version 0.0.2 bleibt in Prüfung, 0.0.3 privater Hosted Test.

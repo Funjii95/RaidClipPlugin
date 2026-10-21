@@ -1,9 +1,20 @@
+using System.Net.Http.Json;
 using System.Text.Json;
 using Backend;
 using SnapshotProtocol;
 namespace Backend.Tests;
 public sealed class ShellContractTests
 {
+    [Fact]
+    public async Task Shell_action_is_denied_even_with_valid_identity_and_ready_plugin()
+    {
+        await using var f=new ActionApiFixture();var session=await f.ReadyAsync();
+        var response=await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",ActionApiFixture.Intent("openShells","{\"count\":\"10\"}"));
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden,response.StatusCode);
+        Assert.Contains("chat_only",await response.Content.ReadAsStringAsync());
+        Assert.Equal(System.Net.HttpStatusCode.NoContent,(await f.Plugin.PostAsync("/api/v1/plugin/actions/claim/"+session,null)).StatusCode);
+    }
+
     [Theory]
     [InlineData("1")]
     [InlineData("10")]

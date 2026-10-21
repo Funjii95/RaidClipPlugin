@@ -9,7 +9,7 @@ public sealed class RemoteShellTests : IDisposable
 {
     private readonly string root=Path.Combine(Path.GetTempPath(),"otter-remote-shell-"+Guid.NewGuid().ToString("N"));
     [Fact]
-    public async Task Shell_action_uses_owners_profile_and_durable_receipt_and_blocks_disconnected_plugin()
+    public async Task Shell_action_is_chat_only_and_never_advertised_or_executed_remotely()
     {
         var points=new ViewerPointStore(root);
         var config=new MinigameConfig{Enabled=true,PointsEnabled=true};config.Adventures.Rpg.Enabled=true;
@@ -19,15 +19,12 @@ public sealed class RemoteShellTests : IDisposable
         var intent=new RpgIntent(Guid.NewGuid(),"openShells",JsonSerializer.SerializeToElement(new{count="10"}));
         var envelope=new ActionEnvelope("42","1001",Guid.NewGuid(),"",DateTimeOffset.UtcNow.AddSeconds(8),intent,RpgIntents.Hash(intent));
         var result=await Executor().ExecuteAsync(envelope,default);
-        Assert.True(result.Success);
+        Assert.False(result.Success);
+        Assert.Equal("chat_only",result.Code);
         Assert.Equal(result,await Executor().ExecuteAsync(envelope,default));
-        var account=(await points.GetProfileAsync("1001",default)).Entry;
-        Assert.Equal(0,account.Rpg.Materials.Shells);
-        var stock=account.Rpg.Materials;
-        var pearls=(account.Points-100);
-        Assert.InRange(pearls,0,500);
-        using var body=JsonDocument.Parse(result.DataJson!);
-        Assert.Equal(0,body.RootElement.GetProperty("profile").GetProperty("Rpg").GetProperty("Materials").GetProperty("Shells").GetInt32());
+        Assert.Equal(10,(await points.GetProfileAsync("1001",default)).Entry.Rpg.Materials.Shells);
+        using var catalog=JsonDocument.Parse(Executor().CatalogJson());
+        Assert.DoesNotContain(catalog.RootElement.GetProperty("supported").EnumerateArray(),item=>item.GetString()=="openShells");
         var other=intent with{ActionId=Guid.NewGuid()};
         var attempt=envelope with{Intent=other,IntentHash=RpgIntents.Hash(other),UserId="1002"};
         Assert.False((await Executor().ExecuteAsync(attempt,default)).Success);

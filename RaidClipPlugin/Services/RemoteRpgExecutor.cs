@@ -15,6 +15,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     internal async Task<ActionOutcome> ExecuteAsync(ActionEnvelope envelope,CancellationToken ct,TimeSpan? remainingWindow=null)
     {
         var hash=RpgIntents.Hash(envelope.Intent);
+        if(envelope.Intent.Kind=="openShells")return new(false,"chat_only","Muscheln sind derzeit ausschließlich im Chat verfügbar: !muscheln [1–100].");
         if(envelope.ChannelId!=channel || !(users.Contains(envelope.UserId)||enrolled?.Invoke(envelope.UserId)==true) || envelope.IntentHash!=hash || envelope.SessionId==Guid.Empty)
             return new(false,"scope_denied","Aktionszuordnung ungültig.");
         await gate.WaitAsync(ct);
@@ -96,14 +97,6 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             if(!Enum.TryParse<EquipmentSlot>(Arg("slot"),false,out var slot) || !Enum.IsDefined(slot))return new(false,"invalid_slot","Ungültiger Slot.");
             mutation=await progression.UnequipAsync(e.UserId,account.DisplayName,request,slot,ct);
         }
-        if(e.Intent.Kind=="openShells"){
-            var opened=await new RpgShellService(points,rpg,maximumBalance:config.MaximumAccountEnabled?config.MaximumAccountPoints:long.MaxValue)
-                .OpenAsync(e.UserId,account.DisplayName,request,int.Parse(Arg("count"),System.Globalization.CultureInfo.InvariantCulture),ct);
-            if(!opened.Success)return new(false,opened.Duplicate?"already_committed":"rule_rejected",opened.Message);
-            var committed=(await points.GetProfileAsync(e.UserId,ct)).Entry;
-            var projected=SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(committed)),channel).AccountJson!;
-            return new(true,"applied",opened.Message,JsonSerializer.Serialize(new{profile=JsonDocument.Parse(projected).RootElement.Clone()}));
-        }
         if(e.Intent.Kind=="buyPerk")mutation=await progression.BuyPerkAsync(e.UserId,account.DisplayName,request,Arg("perkId"),ct);
         if(e.Intent.Kind=="craft")mutation=await progression.CraftAsync(e.UserId,account.DisplayName,request,Arg("recipeId"),ct);
         if(e.Intent.Kind=="eat")mutation=await progression.ActivateSushiAsync(e.UserId,account.DisplayName,request,Arg("recipeId"),ct);
@@ -125,7 +118,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     internal string CatalogJson()
     {
         var config=configuration();var rpg=config.Adventures.Rpg;
-        return JsonSerializer.Serialize(new{supported=RpgIntents.Supported,
+        return JsonSerializer.Serialize(new{supported=RpgIntents.Supported.Where(kind=>kind!="openShells"),
             perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
             recipes=rpg.Recipes.Select(r=>new{r.Id,Name=RpgChatPresentation.RecipeName(r),r.PearlCost,r.Category,r.Activity,BossUses=RpgSushiService.Uses(r,rpg),r.Attributes,r.PassiveHealing,r.ChatHealing,r.BossDamageReduction,r.BossLifeleech,Ingredients=RpgSushiService.Ingredients(r),Effects=RpgSushiService.Effects(r)}),
             fish=rpg.FishSpecies.Select(f=>new{f.Id,f.Name,f.Rarity}),sets=rpg.Sets,blocked=new[]{"bossStart","heistStart","moderatorCommands","give","reset"}});
