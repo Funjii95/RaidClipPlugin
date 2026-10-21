@@ -1,6 +1,7 @@
 import type {Activity,CharacterStats,CollectorStats,DemoState,InventoryItem,ItemSet,Perk,Rarity,Slot,SushiCategory,SushiRecipe} from '../types';
 export type RecipeView=Omit<SushiRecipe,'activity'|'category'|'bossUses'|'attributes'|'passiveHealing'|'chatHealing'|'bossDamageReduction'|'bossLifeleech'> & Partial<Pick<SushiRecipe,'activity'|'category'|'bossUses'|'attributes'|'passiveHealing'|'chatHealing'|'bossDamageReduction'|'bossLifeleech'>> & {effectsText?:string};
 export interface RemoteView {
+ talentCatalogVersion?:number;talentCatalog?:import("../talents").Talent[];
  loaded:boolean; connection:'loading'|'unauthorized'|'offline'|'disconnected'|'ready'|'readonly'|'error'; message:string;
  updatedAt?:string; pointsText:string; pointsExact:string; experienceText?:string; sets:ItemSet[]; recipes:RecipeView[];
  stats?:CharacterStats; collectors?:CollectorStats; perkPrices:Record<string,number>;selfDeletionEnabled?:boolean;
@@ -47,6 +48,13 @@ export function mapProfile(raw:any,catalog:any={}):DemoState {
  const points=field(raw,'Points');if(!/^(0|[1-9]\d*)$/.test(String(points))||BigInt(points)>9223372036854775807n || typeof points==='number'&&!Number.isSafeInteger(points))throw Error('Ungültiger Perlenstand.');
  const rpg=object(field(raw,'Rpg'),'RPG-Profil');if(field(rpg,'SchemaVersion')!==1)throw Error('Unbekannte RPG-Datenversion.');
  const state=emptyRemoteState(),view=catalogView(catalog),health=field(rpg,'Health');
+ const ranks=field(rpg,'TalentRanks');
+ if(ranks!=null)state.talents=counts(ranks,'Talente');
+ if(catalog.talentCatalogVersion===1&&Array.isArray(catalog.talents)){
+  state.remote!.talentCatalogVersion=1;
+  state.remote!.talentCatalog=catalog.talents.map((t:any)=>({id:string(field(t,'Id'),'Talent-ID'),name:string(field(t,'Name'),'Talentname'),branch:enumValue<Activity>(field(t,'Branch'),activities,'Talentbereich'),max:number(field(t,'Max'),'Talentränge'),value:number(field(t,'Value'),'Talentbonus'),effect:string(field(t,'Effect'),'Talenteffekt'),description:string(field(t,'Description'),'Talentbeschreibung'),requires:field(t,'Requires'),bonus:{}}));
+  if(state.remote!.talentCatalog!.length!==21||state.remote!.talentCatalog!.some(t=>!Array.isArray(t.requires)||t.requires.some(id=>typeof id!=='string')))throw Error('Ungültiger Talentkatalog.');
+ }
  const items=field(rpg,'Inventory');if(!Array.isArray(items))throw Error('Inventar fehlt.');state.inventory=items.map(inventoryItem);
  if(new Set(state.inventory.map(i=>i.instanceId)).size!==state.inventory.length)throw Error('Doppelte Item-Instanz.');
  for(const [slot,id]of Object.entries(object(field(rpg,'Equipment'),'Ausrüstung'))){const target=enumValue<Slot>(/^\d+$/.test(slot)?Number(slot):slot,slots,'Ausrüstungsslot');if(typeof id!=='string'||!state.inventory.some(i=>i.instanceId===id))throw Error('Ausrüstung verweist auf ein fehlendes Item.');state.equipment[target]=id;}

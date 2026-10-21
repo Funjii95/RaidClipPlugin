@@ -7,7 +7,7 @@ namespace RaidClipPlugin.Services;
 public static class RpgHealthService
 {
     private static int BaseMaximum(RpgProfile p,RpgHealthConfig c) => checked(c.BaseHp + (Math.Clamp(p.PlayerLevel,1,c.MaximumLevel)-1)*c.HpPerLevel);
-    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked(BaseMaximum(p,c)+(int)decimal.Floor(Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina,c.EquipmentSets),0,c.EquipmentHpCap)));
+    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked((int)decimal.Floor(BaseMaximum(p,c)*(1+RpgTalentService.Bonus(p,"health")/100))+(int)decimal.Floor(Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina,c.EquipmentSets),0,c.EquipmentHpCap)));
     public static void Refresh(RpgProfile p, RpgHealthConfig c, DateTimeOffset now)
     {
         c.Validate(); p.Health ??= new();

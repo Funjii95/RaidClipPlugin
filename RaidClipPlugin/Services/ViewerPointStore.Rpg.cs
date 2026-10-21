@@ -24,6 +24,8 @@ public sealed partial class ViewerPointStore
     }
     private void EnsureItemSystemBackup()
     {
+        if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-talents-v1.bak"))
+            File.Copy(_filePath,_filePath+".pre-talents-v1.bak",overwrite:false);
         if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-materials-v1.bak"))
             File.Copy(_filePath,_filePath+".pre-materials-v1.bak",overwrite:false);
         if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-sushi-2.bak"))
@@ -47,6 +49,8 @@ public sealed partial class ViewerPointStore
         {
             // Accounts predating RPG may legitimately have no RPG property.
             if (!Property(account.Value, "Rpg", out var rpg)) continue;
+            if (Property(rpg,"TalentRanks",out var talentRanks) && talentRanks.ValueKind!=JsonValueKind.Object)
+                throw new InvalidDataException("Gespeicherte Talente sind ungültig.");
             if (Property(rpg, "Materials", out var materials))
             {
                 string[] keys = ["Shells","WhitePearls","BluePearls","RedPearls","StoneChips"];
@@ -69,6 +73,7 @@ public sealed partial class ViewerPointStore
     {
         account.Rpg ??= new();
         if (account.Rpg.SchemaVersion != 1) throw new InvalidOperationException("Unbekannte RPG-Datenversion.");
+        SnapshotProtocol.TalentRules.Validate(account.Rpg.PlayerLevel,account.Rpg.TalentRanks);
         account.Rpg.Materials ??= new();
         account.Rpg.Materials.Validate();
         RpgCoreStatService.Upgrade(account.Rpg);

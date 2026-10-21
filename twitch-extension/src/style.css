@@ -1045,3 +1045,60 @@ nav button:last-child:nth-child(9) { grid-column: 1 / -1; flex-direction: row; j
  body { background-image: linear-gradient(180deg, #030b1ce8, #060e25ee), url("/luminous-depths-compact.webp"); }
  .hero { background-image: linear-gradient(0deg, #03091cf5 0%, #06112d88 45%, #06112d00), url("/luminous-depths-compact.webp"); }
 }
+
+.talent-tree { grid-column:1 / -1; min-width:0; }
+.talent-tabs { display:flex; flex-wrap:wrap; gap:8px; }
+.talent-tabs [aria-pressed=true] { border-color:var(--cyan); background:#17405c; }
+.talent-node { position:relative; margin:26px 0 12px; border:1px solid var(--line); border-radius:12px; padding:16px; background:#0c1b35; }
+.talent-node.learned { border-color:var(--cyan); }
+.talent-node h3 { display:flex; justify-content:space-between; gap:12px; }
+.talent-link { position:absolute; top:-25px; left:50%; color:var(--cyan); }
+.talent-node button { max-width:100%; white-space:normal; }
+
+.talent-points { display:flex; align-items:center; gap:8px; width:fit-content; max-width:100%; padding:8px 12px; margin:12px 0 6px; border:1px solid var(--cyan); border-radius:10px; background:#102a43; color:#e9f0ff; font-size:12px; }
+.talent-points > span:first-child { color:var(--cyan); }
+.talent-points strong { min-width:24px; text-align:center; color:var(--cyan); font-size:18px; font-variant-numeric:tabular-nums; }
+.talent-points-detail { margin:0 0 12px; color:var(--muted); font-size:12px; }
+/* Three painted scenes from the approved otter talent illustration. */
+.talent-toolbar { margin-bottom:12px; }
+.talent-tabs { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:12px; }
+.talent-tabs button { padding:10px 4px;border:1px solid #987344;border-radius:8px;color:#f4dca8;background:linear-gradient(#202b3c,#081321);font-size:13px; }
+.talent-tabs [aria-pressed=true] { border-color:#f4cf7c;background:linear-gradient(#7c5626,#34220e);box-shadow:0 0 12px #f4b64935; }
+.talent-board { position:relative;isolation:isolate;overflow:hidden;border:2px solid #a77a35;border-radius:14px;padding:118px 12px 14px;background:#061525; }
+.talent-board::before { content:'';position:absolute;inset:0;z-index:-2;background-image:url('/talent-scenes.png');background-size:300% 100%;background-repeat:no-repeat; }
+.talent-board::after { content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(transparent 4%,#03101c15 15%,#020a1645 85%,#020a16c4);pointer-events:none; }
+.talent-board-Boss::before { background-position:0% 0; }
+.talent-board-Fishing::before { background-position:50% 0; }
+.talent-board-Dive::before { background-position:100% 0; }
+.talent-board-heading { display:block;text-align:center;margin:0 auto 28px;padding:12px 8px;color:#ffe4a3;border:1px solid #c39750;background:linear-gradient(100deg,#071322e8,#142a34ed,#071322e8);border-radius:6px; }
+.talent-board-heading h3 { margin:4px 0;font:700 30px Georgia,serif;color:#ffe4a3;text-shadow:0 2px 3px #000; }
+.talent-board-heading small { text-transform:uppercase;letter-spacing:2px;color:#f5d8a1;font-size:9px; }
+.talent-board-heading > span { font-size:11px; }
+.talent-nodes { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 12px; }
+.talent-board .talent-node { position:relative;display:flex;flex-direction:column;align-items:center;margin:0;padding:0;border:0;border-radius:0;background:none;min-width:0;text-align:center; }
+.talent-board .talent-node.has-parent::before { content:'';position:absolute;z-index:-1;left:50%;height:30px;top:-29px;width:2px;background:linear-gradient(#ffde8b,#a57729);box-shadow:0 0 5px #f5b347; }
+.talent-board .talent-node:last-child { grid-column:1/-1;width:calc(50% - 6px);justify-self:center; }
+.talent-medallion { display:grid;place-items:center;width:68px;height:68px;flex-shrink:0;border:3px solid #e6bb66;border-radius:50%;background:radial-gradient(circle at 35% 30%,#254e68,#06101e 70%);box-shadow:inset 0 0 0 3px #6b481e,0 2px 10px #000b;font-size:32px;color:#84dfff;text-shadow:0 0 14px #239dff; }
+.talent-board-Boss .talent-medallion { background:radial-gradient(circle at 35% 30%,#742e1b,#1b0a0b 70%);color:#ffbe73;text-shadow:0 0 14px #ff5619; }
+.talent-board-Fishing .talent-medallion { background:radial-gradient(circle at 35% 30%,#146a64,#031c27 70%);color:#8bf2d1; }
+.talent-node.available .talent-medallion,.talent-node.learned .talent-medallion { box-shadow:inset 0 0 0 3px #6b481e,0 0 14px #ffcc6b9c; }
+.talent-node.complete .talent-medallion { border-color:#fff0ba; }
+.talent-rank { position:relative;margin-top:-5px;padding:2px 12px;border:1px solid #c39750;border-radius:4px;background:#071321;color:#ffe7ae;font-size:11px; }
+.talent-caption { width:100%;margin-top:4px;padding:8px 6px;background:#03101de6;border:1px solid #a77a35;border-radius:6px;min-height:112px; }
+.talent-caption h4 { margin:0 0 6px;color:#fff0cd;font:700 14px Georgia,serif;overflow-wrap:anywhere; }
+.talent-caption p { margin:0;font-size:11px;line-height:1.45;color:#edf3f7; }
+.talent-board .talent-requirement { width:100%;margin:6px 0;font-size:9px;line-height:1.4;color:#fff0cd;text-shadow:0 1px 3px #000;background:#04111bba;padding:3px;border-radius:3px; }
+.talent-board .talent-learn { margin-top:auto;padding:6px 3px;width:100%;font-size:10px;border:1px solid #d1a85d;background:linear-gradient(#715029,#35210d);color:#ffedbf; }
+.talent-board .talent-learn:disabled { opacity:1;background:#091728d9;color:#a5b3bf;border-color:#6e685b;cursor:default; }
+.talent-branch-total { margin:24px auto 0;text-align:center;width:fit-content;padding:8px 24px;border:1px solid #c39750;background:#051423e8;border-radius:7px;color:#ffe4a3;font:700 22px Georgia,serif; }
+.talent-branch-total span { display:block;margin-top:4px;font:10px 'Segoe UI',sans-serif; }
+.talent-footnote { color:var(--muted);font-size:11px;line-height:1.5; }
+@media(min-width:600px) { .talent-board { max-width:620px;margin:0 auto;padding:145px 26px 24px; }.talent-caption {min-height:94px;}.talent-caption h4 {font-size:17px;}.talent-caption p {font-size:12px;}.talent-medallion {width:84px;height:84px;font-size:40px;} }
+
+.talent-caption { min-height:100px; }
+.talent-caption h4 {font-size:12px;overflow-wrap:normal;hyphens:auto;}
+.talent-caption small {display:block;margin-top:5px;color:#f3ce8a;font-size:9px;}
+.talent-details {width:100%;margin-top:4px;border-radius:3px;background:#04111bda;color:#d0e0e9;font-size:10px;}
+.talent-details summary {cursor:pointer;padding:4px;}
+.talent-details p {font-size:10px;line-height:1.5;margin:0;padding:5px;}
+@media(min-width:600px){.talent-caption h4{font-size:16px;}}

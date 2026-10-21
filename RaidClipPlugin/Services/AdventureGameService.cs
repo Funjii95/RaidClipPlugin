@@ -386,7 +386,7 @@ public sealed partial class AdventureGameService
     {
         if (_boss is null) return new(false, user.UserId, 0, false, 0, false, 0, "Kein Boss aktiv.");
         var cooldownKey = "!boss:" + user.UserId;
-        if (Cooling(cooldownKey, _boss.Config.AttackCooldownSeconds))
+        if (!_config.Adventures.Rpg.Enabled && Cooling(cooldownKey, _boss.Config.AttackCooldownSeconds))
         {
             var remaining = Math.Max(1, (int)Math.Ceiling((_cooldowns[cooldownKey] - _now()).TotalSeconds));
             await Say(Format(_boss.Config.AttackCooldownMessage, ("user", user.UserName), ("remaining", remaining)), token);
@@ -436,7 +436,7 @@ public sealed partial class AdventureGameService
                     damage=Math.Min(damage,_boss.Hp);
                     RpgPassiveService.ConsumeBuffs(account.Rpg, RpgActivity.Boss, _config.Adventures.Rpg, _random, clock);
                     RpgSushiService.Participate(account.Rpg,_boss.Id,_boss.End,clock);
-                    account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(Math.Clamp(_boss.Config.AttackCooldownSeconds, 1, 86400));
+                    account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(RpgTalentService.Cooldown(account.Rpg,_boss.Config.AttackCooldownSeconds,"attackCooldown"));
                     return new(true);
                 }, token);
             if(mutation.Duplicate)return new(false,user.UserId,0,false,_boss.Hp,false,0,"Angriff bereits verarbeitet.");

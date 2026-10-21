@@ -1157,6 +1157,7 @@ public sealed partial class ViewerPointStore
             var entries = document.RootElement.Deserialize<Dictionary<string, ViewerPointEntry>>(JsonOptions);
             if (entries is null || entries.Any(p => p.Value is null || p.Value.Rpg is { SchemaVersion: not 1 }))
                 throw new InvalidDataException("Die Punktedatei enthält keine gültigen Konten.");
+            foreach(var entry in entries.Values)if(entry.Rpg is not null)SnapshotProtocol.TalentRules.Validate(entry.Rpg.PlayerLevel,entry.Rpg.TalentRanks);
             _entries = new Dictionary<string, ViewerPointEntry>(entries, StringComparer.Ordinal);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)

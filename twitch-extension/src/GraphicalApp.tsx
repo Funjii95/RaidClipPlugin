@@ -1,3 +1,4 @@
+import {TalentTree} from './TalentTree';
 import { useEffect, useState, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { labels, statsText, numberStat, recipeEffects, collectorText } from "./presentation";
@@ -23,6 +24,7 @@ const tabs = [
     "Inventar",
     "Ausrüstung",
     "Itemsets",
+    "Talente",
     "Perks",
     "Boss",
     "Kochen",
@@ -34,6 +36,7 @@ const symbols = [
     "bag",
     "swords",
     "sets",
+    "perk",
     "perk",
     "boss",
     "cook",
@@ -430,6 +433,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                       </p>))}
                   </article>))}
               </>)}
+            {tab === "Talente" && <TalentTree state={state} demo={isDemo} busy={busy} canLearn={allowed("learnTalent")} onLearn={id=>void run({type:"learnTalent",id})}/>}
             {tab === "Perks" &&
                 state.perks.map((p) => (<article key={p.id}>
                   <div className="item-top">

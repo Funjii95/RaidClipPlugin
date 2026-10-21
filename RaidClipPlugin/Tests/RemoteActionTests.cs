@@ -22,11 +22,11 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     private readonly StreamAdmission gate=new();private Guid epoch;
     private readonly MinigameConfig config=new(){Enabled=true,PointsEnabled=true};
     private ViewerPointStore? points;
-    private async Task<RemoteRpgExecutor> SeedAsync(long pearls=2000)
+    private async Task<RemoteRpgExecutor> SeedAsync(long pearls=2000,int level=1)
     {
         points=new(Path.Combine(root,"players"));config.Adventures.Rpg.Enabled=true;
         await points.ApplyRpgAsync("1001","SYNTHETIC","seed",a=>{
-            a.Points=pearls;a.Rpg.Inventory.Add(new(){InstanceId="ring-owned",ItemId="test-ring",Slot=EquipmentSlot.Ring1});
+            a.Points=pearls;a.Rpg.PlayerLevel=level;a.Rpg.Inventory.Add(new(){InstanceId="ring-owned",ItemId="test-ring",Slot=EquipmentSlot.Ring1});
             a.Rpg.Fish["sardine"]=new(){FishId="sardine",Quantity=2};return new(true);
         },default);
         epoch=gate.Begin(()=>true);points.Admission=gate;
@@ -34,6 +34,20 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     }
     private RemoteRpgExecutor Executor()=>new(points!,()=>config,gate,epoch,"42",new HashSet<string>{"1001"},Path.Combine(root,"receipts"),(_,_)=>true);
     private ActionEnvelope Envelope(RpgIntent intent)=>new("42","1001",Guid.NewGuid(),"synthetic-stream",DateTimeOffset.UtcNow.AddSeconds(8),intent,RpgIntents.Hash(intent));
+    [Fact]public async Task Talent_intents_are_authoritative_idempotent_and_return_committed_ranks()
+    {
+        var executor=await SeedAsync(2000,30);
+        using var catalog=JsonDocument.Parse(executor.CatalogJson());
+        Assert.Equal(21,catalog.RootElement.GetProperty("talents").GetArrayLength());
+        var intent=new RpgIntent(Guid.NewGuid(),"learnTalent",JsonSerializer.SerializeToElement(new{talentId="combat-power",expectedRank="0",catalogVersion="1"}));
+        var envelope=Envelope(intent);var first=await executor.ExecuteAsync(envelope,default);
+        Assert.True(first.Success);Assert.Equal(first,await Executor().ExecuteAsync(envelope,default));
+        using var receipt=JsonDocument.Parse(first.DataJson!);
+        Assert.Equal(1,receipt.RootElement.GetProperty("profile").GetProperty("Rpg").GetProperty("TalentRanks").GetProperty("combat-power").GetInt32());
+        var stale=await executor.ExecuteAsync(Envelope(intent with{ActionId=Guid.NewGuid()}),default);Assert.False(stale.Success);
+        var saved=(await new ViewerPointStore(Path.Combine(root,"players")).GetProfileAsync("1001",default)).Entry;
+        Assert.Equal(1,saved.Rpg.TalentRanks["combat-power"]);Assert.Equal(28,TalentRules.Available(saved.Rpg.PlayerLevel,saved.Rpg.TalentRanks));Assert.Equal(2000,saved.Points);
+    }
     [Fact]public async Task Offline_Twitch_does_not_block_actual_perk_and_duplicates_after_restart()
     {
         var executor=await SeedAsync();var e=Envelope(ActionApiFixture.Intent()) with {StreamId=""};

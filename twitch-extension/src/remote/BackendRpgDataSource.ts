@@ -5,7 +5,7 @@ import {attributes,emptyRemoteState,field,inventoryItem,mapProfile} from './mode
 import {RemoteMinigameClient} from '../minigames/remote-client';
 export type TwitchHelper={onAuthorized:(callback:(auth:Authorization)=>void)=>void;actions?:{requestIdShare:()=>void}};
 import {PluginRuleError} from './errors';
-const actionKinds:Partial<Record<Action['type'],string>>={openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
+const actionKinds:Partial<Record<Action['type'],string>>={learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
 const canonical=(v:any):any=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k[0].toLowerCase()+k.slice(1),canonical(v)])):v;
 const signature=(v:any)=>JSON.stringify(canonical([field(v,'UserId'),field(v,'Points'),field(v,'Rpg')]));
 // Pearls, fishing stocks and regenerating HP can change while the read-only status
@@ -18,7 +18,7 @@ const statsSignature=(profile:any)=>{
  const rpg=field(profile,'Rpg');
  const cooldowns=Object.fromEntries(Object.entries(field(rpg,'Cooldowns')??{}).map(([key,value])=>
   [key,typeof value==='string'&&Number.isFinite(Date.parse(value))?new Date(value).toISOString():value]));
- return JSON.stringify(canonical([field(profile,'UserId'),...['Inventory','Equipment','Perks','Buffs'].map(key=>statTimes(field(rpg,key))),cooldowns]));
+ return JSON.stringify(canonical([field(profile,'UserId'),...['Inventory','Equipment','Perks','Buffs','TalentRanks','PlayerLevel'].map(key=>statTimes(field(rpg,key))),cooldowns]));
 };
 export class BackendRpgDataSource implements RpgDataSource {
  readonly minigames=new RemoteMinigameClient(this);
@@ -55,7 +55,7 @@ export class BackendRpgDataSource implements RpgDataSource {
   if(type==='refresh'||type==='cancelSalvage')return true;
   const kind=actionKinds[type];return !this.deleting && !!kind && !!this.authorization && this.state.remote!.loaded && this.state.remote!.connection==='ready' &&
    performance.now()-this.availabilityAt<=7000 && this.availability?.available===true && this.state.remote!.supported.includes(kind) &&
-   (type!=='openShells'||this.state.materials!==undefined) && !this.mutating && !this.state.remote!.pending && (type!=='boss'||this.state.remote!.bossKnown&&this.state.boss.status==='active');
+   (type!=='learnTalent'||this.state.talents!==undefined&&this.state.remote!.talentCatalogVersion===1) && (type!=='openShells'||this.state.materials!==undefined) && !this.mutating && !this.state.remote!.pending && (type!=='boss'||this.state.remote!.bossKnown&&this.state.boss.status==='active');
  }
  private markPending(){try{this.state.remote!.pending=!!this.client.current();}catch{this.state.remote!.pending=true;this.state.remote!.message='Der Browser kann den sicheren Aktionsbeleg nicht speichern. Spielaktionen bleiben gesperrt.';}}
  async selfDeletionStatus(){const generation=this.generation;const status=await this.client.selfDeletion();if(generation!==this.generation)throw Error('Twitch-Identität gewechselt.');if(status.request){this.deleting=true;this.state.remote!.connection='readonly';if(status.request.completed){this.deletionCompleted=true;this.client.clearAfterConfirmedDeletion();this.profile=undefined;this.confirmedProfile=undefined;this.state=emptyRemoteState();this.state.remote!.selfDeletionEnabled=true;this.state.remote!.message='RPG-Spielstand gelöscht.';}this.emit();}return status;}
@@ -126,6 +126,7 @@ export class BackendRpgDataSource implements RpgDataSource {
    if(action.type==='openShells'){if(!Number.isSafeInteger(action.count)||action.count<1||action.count>100)throw Error('Bitte 1 bis 100 Muscheln auswählen.');args={count:String(action.count)};}
    if(action.type==='equip')args={instanceId:action.id,slot:action.slot};
    if(action.type==='unequip')args={slot:action.slot};
+   if(action.type==='learnTalent')args={talentId:action.id,expectedRank:String(this.state.talents?.[action.id]??0),catalogVersion:String(this.state.remote?.talentCatalogVersion??0)};
    if(action.type==='perk')args={perkId:action.id};
    if(action.type==='cook'||action.type==='activateSushi')args={recipeId:action.recipeId};
    if(action.type==='favorite'||action.type==='lock'){

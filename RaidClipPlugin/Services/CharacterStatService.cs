@@ -13,7 +13,7 @@ public static class CharacterStatService
     public static (decimal Perks, decimal Equipment, decimal Sushi) DiveLuckSources(RpgProfile profile, RpgConfig config)
     {
         static decimal Luck(RpgAttributes stats) => stats.Luck + stats.DiveLuck;
-        var perks = Luck(Calculate(new() { Perks = profile.Perks }, config, RpgActivity.Dive));
+        var perks = Luck(Calculate(new() { Perks = profile.Perks, TalentRanks=profile.TalentRanks }, config, RpgActivity.Dive));
         var equipment = Luck(Calculate(new() { Inventory = profile.Inventory, Equipment = profile.Equipment }, config, RpgActivity.Dive));
         var sushi = Luck(Calculate(new() { Buffs = profile.Buffs }, config, RpgActivity.Dive));
         var total = Luck(Calculate(profile, config, RpgActivity.Dive));
@@ -72,6 +72,11 @@ public static class CharacterStatService
         result.CriticalHealing=Math.Clamp(result.CriticalHealing,0,100);
         result.RareEquipmentLuck=Math.Clamp(result.RareEquipmentLuck,0,100);
         result.MaximumHp = Math.Clamp(EquipmentMaximumHp(profile,config.Health.HpPerStamina,config.Sets),0,config.Health.EquipmentHpCap);
+        // Permanent talents are applied after equipment caps; probabilities remain bounded.
+        result.Damage+=RpgTalentService.Bonus(profile,"damage");
+        if(activity==RpgActivity.Boss)result.DoubleAttackChance=Math.Min(100,result.DoubleAttackChance+RpgTalentService.Bonus(profile,"doubleAttack"));
+        result.CritChance=Math.Min(100,result.CritChance+RpgTalentService.Bonus(profile,"crit"));
+        if(activity==RpgActivity.Boss)result.BossDamage+=RpgTalentService.Bonus(profile,"boss");
         return result;
     }
 
