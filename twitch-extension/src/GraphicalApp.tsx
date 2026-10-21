@@ -1,3 +1,4 @@
+import {PerkPanel} from './PerkPanel';
 import {TalentTree} from './TalentTree';
 import { useEffect, useState, useRef } from "react";
 import { createRoot } from "react-dom/client";
@@ -434,24 +435,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                   </article>))}
               </>)}
             {tab === "Talente" && <TalentTree state={state} demo={isDemo} busy={busy} canLearn={allowed("learnTalent")} onLearn={id=>void run({type:"learnTalent",id})}/>}
-            {tab === "Perks" &&
-                state.perks.map((p) => (<article key={p.id}>
-                  <div className="item-top">
-                    <h3>✧ {p.name}</h3>
-                    <span>
-                      {format(p.level)}/{format(p.maxLevel)}
-                    </span>
-                  </div>
-                  <p>Pro Level: {statsText(p.bonus).join(", ")||"Bonusdaten nicht übermittelt"}</p>
-                  <progress value={p.level} max={Number.isFinite(p.maxLevel)?p.maxLevel:undefined}/>
-                  <button disabled={!allowed("perk") || busy || (busy ||
-                        p.level >= p.maxLevel ||
-                        Number.isFinite(perkPrice(p))&&!affordable(perkPrice(p)))} onClick={() => void run({ type: "perk", id: p.id })}>
-                    {p.level >= p.maxLevel
-                        ? "Maximallevel"
-                        : Number.isFinite(perkPrice(p))?`Kaufen · ${format(perkPrice(p))} ${isDemo?"Demo-Perlen":"Perlen"}`:"Kaufen · Preisprüfung im Spiel"}
-                  </button>
-                </article>))}
+            {tab === "Perks" && <PerkPanel perks={state.perks} price={perkPrice} affordable={affordable} canBuy={allowed("perk")} busy={busy} demo={isDemo} pearls={isDemo?format(state.player.pearls):state.remote?.pointsExact?BigInt(state.remote.pointsExact).toLocaleString('de-DE'):'–'} onBuy={id=>void run({type:"perk",id})}/>}
             {tab === "Boss" && (<article className="boss">
                 <div className="boss-art">
                   <img src="./boss-kraken.png" alt="Kraken in versunkenen Ruinen" width="1254" height="1254" loading="lazy"/>
