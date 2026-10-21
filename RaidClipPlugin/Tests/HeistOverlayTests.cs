@@ -10,6 +10,18 @@ namespace RaidClipPlugin.Tests;
 
 public sealed class HeistOverlayTests : IDisposable
 {
+    [Fact]
+    public void OriginalArtworkUsesThreeUndistortedViewportsAndNoExternalImages()
+    {
+        var html=HeistOverlayPage.Html;
+        Assert.Contains("viewBox=\"0 0 762 509\"",html);
+        Assert.Contains("viewBox=\"773 0 763 509\"",html);
+        Assert.Contains("viewBox=\"263 519 1010 504\"",html);
+        Assert.Contains("preserveAspectRatio=\"xMidYMid meet\"",html);
+        Assert.DoesNotContain("otter-pirate",html);
+        Assert.DoesNotContain("https://",html);
+        Assert.Contains("prefers-reduced-motion",html);
+    }
     private readonly string _dir=Path.Combine(Path.GetTempPath(),"RaidClipHeistOverlay-"+Guid.NewGuid().ToString("N"));
     private readonly DateTimeOffset _now=DateTimeOffset.UtcNow;
     public void Dispose(){if(Directory.Exists(_dir))Directory.Delete(_dir,true);}
@@ -125,7 +137,16 @@ public sealed class HeistOverlayTests : IDisposable
             var a=JsonSerializer.Deserialize<CommunityOverlayState>(await http.GetStringAsync("community"))!;
             var b=JsonSerializer.Deserialize<CommunityOverlayState>(await http.GetStringAsync("community"))!;
             Assert.Equal(a.Heist!.PresentationStartedAt,b.Heist!.PresentationStartedAt);Assert.DoesNotContain("private-id",JsonSerializer.Serialize(a));
-            var html=await http.GetStringAsync("preview");Assert.Contains("LOKALE VORSCHAU",html);Assert.Contains("otter-pirate",html);Assert.Contains("background:transparent",html);
+            var html=await http.GetStringAsync("preview");Assert.Contains("LOKALE VORSCHAU",html);Assert.Contains("/assets/otter-events.png",html);Assert.Contains("background:transparent",html);
+            using var artwork=await http.GetAsync("assets/otter-events.png");
+            Assert.Equal("image/png",artwork.Content.Headers.ContentType!.MediaType);
+            var image=await artwork.Content.ReadAsByteArrayAsync();
+            Assert.Equal(new byte[]{137,80,78,71,13,10,26,10},image.Take(8).ToArray());
+            Assert.True(image.Length>100000);
+            using var assetPost=await http.PostAsync("assets/otter-events.png",null);
+            Assert.Equal(HttpStatusCode.NotFound,assetPost.StatusCode);
+            using var unknownAsset=await http.GetAsync("assets/private.png");
+            Assert.Equal(HttpStatusCode.NotFound,unknownAsset.StatusCode);
             using var post=await http.PostAsync("community",null);Assert.Equal(HttpStatusCode.NotFound,post.StatusCode);
             Assert.Contains("!attack",await http.GetStringAsync(""));
         }

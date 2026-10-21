@@ -1,3 +1,9 @@
+## 2.1.37 – Original-Ottergrafiken für OBS
+
+- Gelieferte Otter-Collage unverändert eingebettet; getrennte Bildausschnitte für Rennen, Bosskampf und Heist ohne weiße Trennflächen oder Verzerrung.
+- Responsive Statusflächen neben bzw. unter den Motiven, echte Spielstände und Auszahlungen, transparente Ausgabe ohne Event. Keine Änderungen an Spielregeln oder Backend.
+- Lokale Bildroute mit festem Ressourcennamen statt externer Bildserver oder Benutzerdateipfade; automatisierte Größen-, Zustands- und HTTP-Prüfungen ergänzt.
+
 ## 2.1.36 – Cloud-Verbindung trotz offenem Löschauftrag
 
 - Ein fehlgeschlagener Cloud-Löschabschluss blockiert nur das betroffene, lokal gesperrte Konto. Andere vollständig synchronisierte Konten bleiben über die Extension spielbereit.
@@ -737,4 +743,7 @@ Für bestehende Installationen das Update-ZIP bzw. den integrierten Auto-Updater
 - Sicherer Einrichtungsassistent für Twitch-Zugangsdaten
 - OBS-Browserquelle auf Knopfdruck erstellen
 - GitHub-Auto-Update mit SHA256-Prüfung
+
+
+
 

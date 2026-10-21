@@ -23,8 +23,11 @@ public sealed class ReleaseUpgradeTests
     [Fact] public void Regular_release_retains_updater_executable_contract()
     {
         Assert.Equal("RaidClipPlugin", typeof(UpdateService).Assembly.GetName().Name);
-        Assert.Equal(new Version(2,1,36,0), typeof(UpdateService).Assembly.GetName().Version);
+        Assert.Equal(new Version(2,1,37,0), typeof(UpdateService).Assembly.GetName().Version);
         Assert.False(UpdateApplier.TryRun(Array.Empty<string>()));
     }
 }
+
+
+
 
