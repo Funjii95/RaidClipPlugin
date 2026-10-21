@@ -1,6 +1,6 @@
 #define MyAppName "Raid Clip Plugin"
 #ifndef MyAppVersion
-#define MyAppVersion "2.1.32"
+#define MyAppVersion "2.1.33"
 #endif
 #define MyAppPublisher "RaidClipPlugin"
 #define MyAppExeName "RaidClipPlugin.exe"
@@ -42,3 +42,4 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
