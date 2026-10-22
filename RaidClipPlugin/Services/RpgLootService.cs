@@ -35,9 +35,10 @@ public sealed class RpgLootService(IDuelRandom? random = null)
             sushiPoints * factor, equipmentPoints * factor);
     }
 
-    public RpgLootResult Roll(long paidStake, decimal effectiveLuck, RpgLootConfig config, DateTimeOffset now, decimal sushiLuck = 0, decimal equipmentLuck = 0, decimal hotTimePercent = 0, RpgCollectorBonuses? collectors=null, decimal rareEquipmentLuck=0)
+    public RpgLootResult Roll(long paidStake, decimal effectiveLuck, RpgLootConfig config, DateTimeOffset now, decimal sushiLuck = 0, decimal equipmentLuck = 0, decimal hotTimePercent = 0, RpgCollectorBonuses? collectors=null, decimal rareEquipmentLuck=0,decimal talentDropBonus=0)
     {
         var chances = Chances(paidStake, effectiveLuck, config, sushiLuck, equipmentLuck,hotTimePercent);
+        chances=chances with {Total=Math.Min(Math.Min(100,config.MaximumDropChance),chances.Total+Math.Clamp(talentDropBonus,0,20))};
         return Select(config, now, chances, RpgActivity.Dive, collectors,rareEquipmentLuck);
     }
     public RpgLootResult RollReward(RpgLootConfig config, DateTimeOffset now, RpgActivity activity, decimal chance, ItemRarity maximum, decimal hotTimePercent=0)
@@ -47,11 +48,11 @@ public sealed class RpgLootService(IDuelRandom? random = null)
         var total=Math.Min(Math.Min(100,config.MaximumDropChance),chance*(1+Math.Clamp(hotTimePercent,0,200)/100));
         return Select(config, now, new(chance, 0, 0, total-chance, total, maximum), activity);
     }
-    public RpgLootResult RollEnemy(long paidStake,decimal luck,RpgLootConfig config,DateTimeOffset now,decimal sushi=0,decimal equipment=0,decimal hotTimePercent=0,RpgCollectorBonuses? collectors=null,decimal rareEquipmentLuck=0)
+    public RpgLootResult RollEnemy(long paidStake,decimal luck,RpgLootConfig config,DateTimeOffset now,decimal sushi=0,decimal equipment=0,decimal hotTimePercent=0,RpgCollectorBonuses? collectors=null,decimal rareEquipmentLuck=0,decimal talentDropBonus=0)
     {
         // Best of two, but only one reward. Same stake gates, pool and item generation.
-        var first=Roll(paidStake,luck,config,now,sushi,equipment,hotTimePercent,collectors,rareEquipmentLuck);
-        var second=Roll(paidStake,luck,config,now,sushi,equipment,hotTimePercent,collectors,rareEquipmentLuck);
+        var first=Roll(paidStake,luck,config,now,sushi,equipment,hotTimePercent,collectors,rareEquipmentLuck,talentDropBonus);
+        var second=Roll(paidStake,luck,config,now,sushi,equipment,hotTimePercent,collectors,rareEquipmentLuck,talentDropBonus);
         return first.Item is null || second.Item is not null && second.Item.Rarity>first.Item.Rarity ? second : first;
     }
     private RpgLootResult Select(RpgLootConfig config, DateTimeOffset now, LootChanceBreakdown chances, RpgActivity activity, RpgCollectorBonuses? collectors=null,decimal rareEquipmentLuck=0)

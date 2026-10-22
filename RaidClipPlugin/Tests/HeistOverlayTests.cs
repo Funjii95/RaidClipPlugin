@@ -143,6 +143,14 @@ public sealed class HeistOverlayTests : IDisposable
             var image=await artwork.Content.ReadAsByteArrayAsync();
             Assert.Equal(new byte[]{137,80,78,71,13,10,26,10},image.Take(8).ToArray());
             Assert.True(image.Length>100000);
+            using var mimic=await http.GetAsync("assets/mimic.png");
+            Assert.Equal("image/png",mimic.Content.Headers.ContentType!.MediaType);
+            var mimicBytes=await mimic.Content.ReadAsByteArrayAsync();
+            Assert.Equal(new byte[]{137,80,78,71,13,10,26,10},mimicBytes.Take(8).ToArray());
+            Assert.True(mimicBytes.Length>100000);
+            Assert.Contains("mimicOnly=location.pathname==='/mimic'",await http.GetStringAsync("mimic"));
+            using var mimicPost=await http.PostAsync("assets/mimic.png",null);
+            Assert.Equal(HttpStatusCode.NotFound,mimicPost.StatusCode);
             using var assetPost=await http.PostAsync("assets/otter-events.png",null);
             Assert.Equal(HttpStatusCode.NotFound,assetPost.StatusCode);
             using var unknownAsset=await http.GetAsync("assets/private.png");

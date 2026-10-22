@@ -100,6 +100,7 @@ public sealed class RpgBuff
 
 public sealed class RpgProfile
 {
+    public Dictionary<string, int> TalentRanks { get; set; } = new();
     public int SushiVersion { get; set; }
     public int PlayerLevel { get; set; } = 1;
     public long Experience { get; set; }

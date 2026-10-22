@@ -15,6 +15,7 @@ public sealed class RpgView
     public JsonElement[] Inventory { get; init; } = [];
     public Dictionary<string, string> Equipment { get; init; } = [];
     public Dictionary<string, int> Perks { get; init; } = [];
+    public Dictionary<string, int> TalentRanks { get; init; } = [];
     public Dictionary<string, JsonElement> Fish { get; init; } = [];
     public Dictionary<string, int> Sushi { get; init; } = [];
     public JsonElement[] Buffs { get; init; } = [];

@@ -27,7 +27,7 @@ public sealed class RpgCommandRoutingTests : IDisposable
     {
         await _points.AddPointsAsync("42", "Otter", 10000, 0, default);
         var first = await Chat(text, "purchase1");
-        Assert.Contains("Schaden auf Level 1", first); Assert.Contains("+2 % Schaden", first);
+        Assert.Contains("Scharfe Krallen auf Level 1", first); Assert.Contains("+2 % Schaden", first);
         Assert.Contains("Kosten: 500 Perlen", first); Assert.Contains("Stand: 9.500 Perlen", first);
         Assert.Contains("Nächstes Upgrade: 1.000 Perlen", first);
         var second = await Chat("!perk damage", "purchase2");
@@ -130,7 +130,7 @@ public sealed class RpgCommandRoutingTests : IDisposable
         var messages = new List<string>();
         var service = new AdventureGameService(_points, _config, (message, _) => { messages.Add(message); return Task.CompletedTask; });
         await service.HandleAsync(new() { UserId = "42", UserName = "Otter", Id = "buy" }, "!buyperk", new[] { "!buyperk", "damage" }, default);
-        Assert.Contains("Schaden auf Level 1", Assert.Single(messages));
+        Assert.Contains("Scharfe Krallen auf Level 1", Assert.Single(messages));
         await service.HandleAsync(new() { UserId = "42", UserName = "Otter", Id = "second" }, "!perk", new[] { "!perk", "damage" }, default);
         Assert.Equal(2, messages.Count); Assert.Contains("warten", messages[^1]);
         Assert.Equal(500, await _points.GetPointsAsync("42", default));

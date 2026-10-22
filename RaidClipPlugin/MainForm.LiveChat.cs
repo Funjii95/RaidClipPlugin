@@ -7,6 +7,8 @@ namespace RaidClipPlugin;
 
 public sealed partial class MainForm
 {
+    private readonly CancellationTokenSource _chatOverlayStop=new();
+    private Task? _chatOverlayTask;
     private LiveChatService? _liveChat;
     private EmoteCatalogService? _emoteCatalog;
     private EmoteCacheService? _emoteCache;
@@ -60,6 +62,12 @@ public sealed partial class MainForm
         top.Controls.AddRange(new Control[] { _liveChatEnabledCheck, _liveChatAutoScrollCheck,
             _liveChatPauseButton, _liveChatClearButton, _liveChatSearchBox,
             CreateSettingEditor("Max. Nachrichten", _liveChatMaxControl), _liveChatSaveButton });
+        var copyOverlay=NewHeistActionButton("OBS-Chat-URL kopieren",190);
+        copyOverlay.Click+=(_,_)=>Clipboard.SetText(ChatOverlayServer.Url);
+        var previewOverlay=NewHeistActionButton("OBS-Chat-Vorschau",180);
+        previewOverlay.Click+=(_,_)=>System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(ChatOverlayServer.Url+"preview"){UseShellExecute=true});
+        top.Controls.Add(copyOverlay);top.Controls.Add(previewOverlay);
+        top.Controls.Add(new Label{AutoSize=true,ForeColor=MutedTextColor,Text="OBS-Browserquelle: 500 × 700 · transparent · Nachrichten 60 Sekunden sichtbar"});
         var filters = new FlowLayoutPanel { Name = "LiveChatFilterToolbar", Dock = DockStyle.Top,
             AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, AutoScroll = true,
             WrapContents = true, Padding = new Padding(2), MinimumSize = new Size(0, 44) };
@@ -84,6 +92,17 @@ public sealed partial class MainForm
     private void InitializeLiveChatEvents()
     {
         InitializeOfficialLiveChatEvents();
+        Shown+=(_,_)=>{
+            if(!_administrationTestOnly)_chatOverlayTask=new ChatOverlayServer(()=>
+                _chatModeration?.Diagnostics.WebSocketConnected==true
+                    ?_liveChat?.GetOverlaySnapshot(_emoteCatalog?.Emotes)??ChatOverlayState.Empty():ChatOverlayState.Empty()).RunAsync(_chatOverlayStop.Token);
+        };
+        FormClosed+=async(_,_)=>{
+            _chatOverlayStop.Cancel();
+            if(_chatOverlayTask is not null)try{await _chatOverlayTask.WaitAsync(TimeSpan.FromSeconds(2));}catch(Exception error) when(error is OperationCanceledException or TimeoutException){}
+            _chatOverlayStop.Dispose();
+        };
+
         _liveChatTimer.Tick += (_, _) => FlushLiveChatQueue();
         _liveChatTimer.Start();
         _liveChatPauseButton.Click += (_, _) =>

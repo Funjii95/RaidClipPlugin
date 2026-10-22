@@ -29,9 +29,10 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             if (account.Points < cost) return new(false, $"Nicht genügend Perlen. Kosten: {RpgChatPresentation.Number(cost)}, vorhanden: {RpgChatPresentation.Number(account.Points)} Perlen.");
             account.Points -= cost;
             account.Rpg.Perks[perkId] = level + 1;
+            if(config.Health.Enabled)RpgHealthService.Refresh(account.Rpg,config.Health,clock?.Invoke()??DateTimeOffset.UtcNow);
             return new(true, Details: new(RpgActionKind.BuyPerk, RpgChatPresentation.PerkName(perk), Cost: cost,
                 Level: level + 1, Bonuses: RpgChatPresentation.Snapshot(perk.BonusPerLevel, level + 1),
-                NextCost: level + 1 < perk.MaximumLevel ? perk.Cost(level + 1) : null, MaximumLevel: perk.MaximumLevel));
+                NextCost: level + 1 < perk.MaximumLevel ? perk.Cost(level + 1) : null, MaximumLevel: perk.MaximumLevel,EffectDescription:RpgPerkCatalog.Find(perkId) is {Value:>0} entry?$"{entry.Value*(level+1)} {entry.Label}":""));
         }, token);
 
     public Task<RpgTransactionResult> EquipAsync(string userId, string name, string requestId, string instanceId, EquipmentSlot slot, CancellationToken token) =>
@@ -111,6 +112,10 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
                 RemainingUses = RpgSushiService.Uses(recipe,config), Attributes = JsonSerializer.Deserialize<RpgAttributes>(JsonSerializer.Serialize(recipe.Attributes))!,
                 Category=recipe.Category,EncounterBased=true,ActivatedAt=now,PassiveHealing=recipe.PassiveHealing,ChatHealing=recipe.ChatHealing,BossDamageReduction=recipe.BossDamageReduction,BossLifeleech=recipe.BossLifeleech });
             var buff = account.Rpg.Buffs[^1];
+            var factor=1+RpgPerkCatalog.Bonus(account.Rpg,"sushiPower")/100;
+            buff.Attributes=RpgChatPresentation.Snapshot(buff.Attributes,factor);
+            buff.PassiveHealing*=factor;buff.ChatHealing=(int)decimal.Floor(buff.ChatHealing*factor);
+            buff.BossDamageReduction=Math.Min(80,buff.BossDamageReduction*factor);buff.BossLifeleech=Math.Min(100,buff.BossLifeleech*factor);
             return new(true, Details: new(RpgActionKind.ActivateSushi, RpgChatPresentation.RecipeName(recipe),
                 Bonuses: RpgChatPresentation.Snapshot(buff.Attributes), Activity: buff.Activity, RemainingUses: buff.RemainingUses,EffectDescription:RpgSushiService.Effects(recipe),EncounterBased:true));
         }, token);

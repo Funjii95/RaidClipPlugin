@@ -6,7 +6,7 @@ export default defineConfig(({mode})=>({
     minify: false,
     sourcemap: false,
     rollupOptions: {
-      input: (mode==='desktop-release'||mode==='hosted-test') ? ["panel.html", "config.html"] : ["panel.html", "mobile.html", "config.html"],
+      input: mode==='desktop-release' ? ["panel.html", "config.html"] : ["panel.html", "mobile.html", "config.html"],
       output: {manualChunks: id => id.includes('node_modules') ? 'vendor-react' : undefined},
     },
   },

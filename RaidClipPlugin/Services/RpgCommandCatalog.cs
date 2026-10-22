@@ -17,6 +17,8 @@ public static class RpgCommandCatalog
         new("!salvage", Array.Empty<string>(), "<Nummer|duplicates|all common> [confirm]"),
         new("!itemlock", Array.Empty<string>(), "<Nummer> [on|off]"),
         new("!favorite", Array.Empty<string>(), "<Nummer> [on|off]"),
+        new("!talente",new[]{"!talents"},"[kämpfen|angeln|tauchen]"),
+        new("!talent",Array.Empty<string>(),"<ID>"),
         new("!perks", Array.Empty<string>(), "[Seite]"),
         new("!perk", new[] { "!buyperk" }, "<ID>"),
         new("!sushi", new[]{"!eat"}, "[Rezept|status [Seite]|recipes [Seite]]"),

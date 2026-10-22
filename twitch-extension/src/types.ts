@@ -145,6 +145,8 @@ export interface CombatExchange {
     outcome: 'hit' | 'victory' | 'defeat';
 }
 export interface BossState {
+    isMimic?:boolean;
+    legendaryChance?:number;
     id: string;
     name: string;
     hp: number;
@@ -165,6 +167,7 @@ export interface HotTimeState {
     active: boolean;
 }
 export interface Perk {
+    presentation?: {category:string;symbol:string;value:number;label:string};
     id: string;
     name: string;
     level: number;
@@ -203,6 +206,7 @@ export interface SalvageQuote {
 }
 export interface MaterialStock { shells:number; whitePearls:number; bluePearls:number; redPearls:number; stoneChips:number; }
 export interface DemoState {
+    talents?: import("./talents").TalentRanks;
     materials?: MaterialStock;
     remote?: import("./remote/model").RemoteView;
     player: PlayerProfile;
@@ -223,7 +227,7 @@ export interface DemoState {
     salvageQuote?: SalvageQuote;
     effectCooldowns: Record<string, number>;
 }
-export type Action = {type:'openShells';count:number;} | {
+export type Action = {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
     type: 'dive';
     stake: number;
 } | {

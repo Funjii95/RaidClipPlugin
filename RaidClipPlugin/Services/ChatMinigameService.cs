@@ -310,6 +310,7 @@ public sealed partial class ChatMinigameService : IDisposable
         return true;
     }
 
+    private readonly Func<CancellationToken,Task<string?>>? _dailyFlavor;
     public event Action<int, long>? PointsAwarded;
     public event Action? DataChanged;
     public event Action<HeistStatus>? HeistStatusChanged;
@@ -326,13 +327,15 @@ public sealed partial class ChatMinigameService : IDisposable
         HeistConfig? heistConfig = null,
         DuelConfig? duelConfig = null,
         CommandsConfig? commandsConfig = null,
-        CommandRegistry? commandRegistry = null,Func<string,CancellationToken,Task>? responseSender=null)
+        CommandRegistry? commandRegistry = null,Func<string,CancellationToken,Task>? responseSender=null,
+        Func<CancellationToken,Task<string?>>? dailyFlavor=null)
     {
         _broadcasterId = broadcasterId;
         _chatUserId = chatUserId;
         _config = config;
         _twitch = twitch;
         _responseSender=responseSender;
+        _dailyFlavor=dailyFlavor;
         _points = points;
         _adventures = new AdventureGameService(points, config, TrySendChatAsync, broadcasterId: broadcasterId);
         _adventures.DataChanged += () => DataChanged?.Invoke();
@@ -381,6 +384,7 @@ public sealed partial class ChatMinigameService : IDisposable
         !GameplayAllowed ? Task.CompletedTask : _heist?.RunTestAsync(cancellationToken) ?? Task.CompletedTask;
 
     public AdventureStatus AdventureStatus => _adventures.Status;
+    internal Task<bool> StartDiscoveredBossAsync(string finder,CancellationToken token)=>!GameplayAllowed?Task.FromResult(false):_adventures.StartDiscoveredBossAsync(finder,token);
     public Task ControlAdventureAsync(string action, long stake, CancellationToken token, TwitchUser? broadcaster = null) =>
         _adventures.ControlAsync(action, stake, token, broadcaster);
 
@@ -657,13 +661,13 @@ public sealed partial class ChatMinigameService : IDisposable
                 var translated = EventStartCommand.Translate(parts);
                 if (translated is null)
                 {
-                    await TrySendChatAsync("Nutzung: !start boss | !start race <Betrag|all> | !start heist.", cancellationToken);
+                    await TrySendChatAsync("Nutzung: !start boss | !start mimic (Broadcaster) | !start race <Betrag|all> | !start heist.", cancellationToken);
                     return;
                 }
                 parts = translated;
                 command = parts[0];
                 // Preserve per-command disable switches; the shortcut must not bypass them.
-                var targetId = command == "!start boss" ? "event.start.boss" : command == "!startrace" ? "adventure.race" : "heist.start";
+                var targetId = command == "!start boss" ? "event.start.boss" : command == "!start mimic" ? "event.start.mimic" : command == "!startrace" ? "adventure.race" : "heist.start";
                 var target = _commandRegistry.Commands.FirstOrDefault(c => c.CommandId == targetId);
                 if (target is null || !target.Enabled)
                 {
@@ -752,8 +756,13 @@ public sealed partial class ChatMinigameService : IDisposable
                         daily.ActualAward??_config.DailyBonusPoints, daily.Balance, TimeSpan.Zero)
                     : FormatDailyTemplate(_config.DailyCooldownMessage, message,
                         _config.DailyBonusPoints, daily.Balance, daily.Remaining);
-                await TrySendChatAsync(text, cancellationToken);
                 if (daily.Success) DataChanged?.Invoke();
+                if (daily.Success && _dailyFlavor is not null)
+                {
+                    try { text=GroqDailyService.Compose(text,await _dailyFlavor(cancellationToken)); }
+                    catch (Exception) { /* AI errors never change or repeat the daily reward. */ }
+                }
+                await TrySendChatAsync(text, cancellationToken);
                 return;
             }
 

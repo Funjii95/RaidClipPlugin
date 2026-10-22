@@ -1,3 +1,5 @@
+import {PerkPanel} from './PerkPanel';
+import {TalentTree} from './TalentTree';
 import { useEffect, useState, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { labels, statsText, numberStat, recipeEffects, collectorText } from "./presentation";
@@ -23,6 +25,7 @@ const tabs = [
     "Inventar",
     "Ausrüstung",
     "Itemsets",
+    "Talente",
     "Perks",
     "Boss",
     "Kochen",
@@ -34,6 +37,7 @@ const symbols = [
     "bag",
     "swords",
     "sets",
+    "perk",
     "perk",
     "boss",
     "cook",
@@ -430,33 +434,17 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                       </p>))}
                   </article>))}
               </>)}
-            {tab === "Perks" &&
-                state.perks.map((p) => (<article key={p.id}>
-                  <div className="item-top">
-                    <h3>✧ {p.name}</h3>
-                    <span>
-                      {format(p.level)}/{format(p.maxLevel)}
-                    </span>
-                  </div>
-                  <p>Pro Level: {statsText(p.bonus).join(", ")||"Bonusdaten nicht übermittelt"}</p>
-                  <progress value={p.level} max={Number.isFinite(p.maxLevel)?p.maxLevel:undefined}/>
-                  <button disabled={!allowed("perk") || busy || (busy ||
-                        p.level >= p.maxLevel ||
-                        Number.isFinite(perkPrice(p))&&!affordable(perkPrice(p)))} onClick={() => void run({ type: "perk", id: p.id })}>
-                    {p.level >= p.maxLevel
-                        ? "Maximallevel"
-                        : Number.isFinite(perkPrice(p))?`Kaufen · ${format(perkPrice(p))} ${isDemo?"Demo-Perlen":"Perlen"}`:"Kaufen · Preisprüfung im Spiel"}
-                  </button>
-                </article>))}
+            {tab === "Talente" && <TalentTree state={state} demo={isDemo} busy={busy} canLearn={allowed("learnTalent")} onLearn={id=>void run({type:"learnTalent",id})}/>}
+            {tab === "Perks" && <PerkPanel perks={state.perks} price={perkPrice} affordable={affordable} canBuy={allowed("perk")} busy={busy} demo={isDemo} pearls={isDemo?format(state.player.pearls):state.remote?.pointsExact?BigInt(state.remote.pointsExact).toLocaleString('de-DE'):'–'} onBuy={id=>void run({type:"perk",id})}/>}
             {tab === "Boss" && (<article className="boss">
                 <div className="boss-art">
-                  <img src="./boss-kraken.png" alt="Kraken in versunkenen Ruinen" width="1254" height="1254" loading="lazy"/>
+                  <img src={state.boss.isMimic?"./boss-mimic.png":"./boss-kraken.png"} alt={state.boss.isMimic?"Mimic – lebendige Schatztruhe":"Kraken in versunkenen Ruinen"} width="1254" height="1254" loading="lazy"/>
                 </div>
-                <small>BOSS DER TIEFSEE</small>
+                <small>{state.boss.isMimic?"MIMIC · LEBENDE SCHATZTRUHE":"BOSS DER TIEFSEE"}</small>
                 <h3>{state.boss.name}</h3>
                 <p>
                   {!isDemo&&!state.remote?.bossKnown?"Aktueller Bossstatus nicht übermittelt. Bossangriffe sind noch nicht freigegeben.":state.boss.status === "active"
-                    ? "Der Kraken wartet auf dich!"
+                    ? state.boss.isMimic?`Die Mimic schnappt nach dir! Legendary-Chance nach Sieg: ${state.boss.legendaryChance??50} % je berechtigtem Überlebenden.`:`Der Boss wartet auf dich!${state.boss.legendaryChance!==undefined?` Legendary-Chance nach Sieg: ${state.boss.legendaryChance} % je berechtigtem Überlebenden.`:""}`
                     : !isDemo?"Aktuell ist kein Boss aktiv. Start durch Mods/Broadcaster oder den Plugin-Autostart.":"Besiegt · Nächster Boss in " +
                         time(remaining(state.boss.nextAt, now))}
                 </p>

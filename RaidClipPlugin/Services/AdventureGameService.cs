@@ -48,7 +48,7 @@ public sealed partial class AdventureGameService
         var current=new AdventureStatus(
         _boss is not null, _boss?.Hp ?? 0, _boss?.MaximumHp ?? 0,
         _boss?.Players.Count ?? 0, _boss?.End, _race is not null, _race?.Players.Count ?? 0, _race?.Stake ?? 0, _race?.End,
-        _boss?.Id??"",_boss?.End.AddSeconds(-Math.Clamp(_boss.Config.DurationSeconds,10,1800)),_race?.Id??"",_race?.End.AddSeconds(-Math.Clamp(_race.Config.Adventures.Race.JoinSeconds,5,600)));
+        _boss?.Id??"",_boss?.End.AddSeconds(-Math.Clamp(_boss.Config.DurationSeconds,10,1800)),_race?.Id??"",_race?.End.AddSeconds(-Math.Clamp(_race.Config.Adventures.Race.JoinSeconds,5,600)),_boss?.Config.DisplayName??"Perlenwächter",_boss?.Config.IsMimic??false,_boss?.Config.IsMimic==true?_config.Adventures.Rpg.Mimic.LegendaryChance:_config.Adventures.Rpg.Mimic.NormalBossLegendaryChance);
         Volatile.Write(ref _status,current);
         if(current.BossActive && current.BossEventId!=previous.BossEventId)NotifyOverlayStart(CommunityEventType.Boss,current.BossEventId);
         if(current.RaceActive && current.RaceEventId!=previous.RaceEventId)NotifyOverlayStart(CommunityEventType.Race,current.RaceEventId);
@@ -93,7 +93,7 @@ public sealed partial class AdventureGameService
 
     public void UpdateConfig(MinigameConfig config) { _config = config; _points.ConfigureHotTime(config.Adventures.Rpg); ScheduleAutoBoss(); }
     private void ScheduleAutoBoss() => _nextAutoBoss = _now().AddMinutes(Math.Clamp(_config.Adventures.Boss.AutoStartMinutes, 1, 1440));
-    public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!heal" or "!kill" or "!boss" or "!start boss" or "!attack" or "!joinboss";
+    public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!heal" or "!kill" or "!sim" or "!boss" or "!start boss" or "!start mimic" or "!attack" or "!joinboss";
     public async Task RunAsync(CancellationToken token)
     {
         var overlay = new AdventureOverlayServer(() => Status,community:()=>CommunityOverlay?.Invoke()??new CommunityOverlayEventManager().Read(Status,_now())).RunAsync(token);
@@ -179,6 +179,7 @@ public sealed partial class AdventureGameService
         try
         {
             if(expectedRace is not null && (_race?.Id??"-")!=expectedRace)return;
+            if (command == "!sim") { await SimulateBossAsync(message,parts,token); return; }
             await TickCoreAsync(token);
             if (command == "!joinboss") command = "!attack";
             var settings = _config.Adventures;
@@ -210,6 +211,7 @@ public sealed partial class AdventureGameService
                 var rpgResult = await new RpgAdventureService(_points, _config, _random, _now).ExecuteAsync(
                     message.UserId, message.UserName, actionId, command == "!fish" ? RpgActivity.Fishing : RpgActivity.Dive, rpgStake, token);
                 if (rpgResult.Success) DataChanged?.Invoke();
+                if(rpgResult.BossDiscovered)await StartDiscoveredBossCoreAsync(message.UserName,token);
                 await Say(rpgResult.Success ? Format(gameConfig.ResultMessage, ("user", message.UserName),
                     ("outcome", RpgChatPresentation.AdventureOutcome(rpgResult, command == "!fish" ? RpgActivity.Fishing : RpgActivity.Dive)), ("stake", rpgStake), ("payout", rpgResult.Payout),
                     ("currency", Currency), ("balance", rpgResult.Balance)) : $"@{message.UserName}, {rpgResult.Error}", token);
@@ -231,6 +233,17 @@ public sealed partial class AdventureGameService
                 var fish = profile.Entry.FishCollection ?? new();
                 await Say($"@{message.UserName}, Fischsammlung: " + (fish.Count == 0 ? "Noch keine Fänge. Nutze !fish <Einsatz>." :
                     string.Join(", ", fish.OrderBy(p => p.Key).Select(p => $"{p.Key}: {p.Value}x")) + $" | Größter Fang: {profile.Entry.BiggestFishName} ({profile.Entry.BiggestFishGrams / 1000.0:0.00} kg)."), token);
+                return;
+            }
+            if (command == "!start mimic")
+            {
+                if (string.IsNullOrWhiteSpace(_broadcasterId) || message.UserId != _broadcasterId)
+                { await Say("Nur der Broadcaster darf !start mimic verwenden.", token); return; }
+                if (parts.Length != 1) { await Say("Nutzung: !start mimic.", token); return; }
+                if (!settings.Boss.Enabled || !settings.Rpg.Enabled || !settings.Rpg.Mimic.Enabled)
+                { await Say("Mimic oder RPG-Bosskämpfe sind deaktiviert.", token); return; }
+                if (_boss is not null) { await Say("Es läuft bereits ein Bosskampf. Mit !attack teilnehmen!", token); return; }
+                await SpawnBossAsync(token, mimic:true);
                 return;
             }
             if (command is "!boss" or "!start boss" or "!attack")
@@ -342,18 +355,39 @@ public sealed partial class AdventureGameService
         if(remote && _points.Admission is {} admission)admission.Commit(AddParticipant);else AddParticipant();
         await Say(Format(_race.Config.Adventures.Race.JoinMessage, ("user", user.UserName), ("count", _race.Players.Count), ("stake", stake), ("currency", Currency)), token);
     }
-    private async Task SpawnBossAsync(CancellationToken token)
+    private async Task SpawnBossAsync(CancellationToken token,bool mimic=false)
     {
         if (_boss is null)
         {
             if (_now() < _nextBoss) { await Say("Der nächste Boss erscheint nach der Rundenpause.", token); return; }
             var c = System.Text.Json.JsonSerializer.Deserialize<BossAdventureConfig>(System.Text.Json.JsonSerializer.Serialize(_config.Adventures.Boss))!;
+            c.IsMimic=mimic;
+            c.DisplayName=mimic?_config.Adventures.Rpg.Mimic.Name:"Perlenwächter";
+            if(mimic){var rules=_config.Adventures.Rpg.Mimic;c.HpMode=BossHpMode.Fixed;c.HitPoints=rules.HitPoints;c.DurationSeconds=rules.DurationSeconds;c.AttackCooldownSeconds=rules.AttackCooldownSeconds;c.RewardPool=rules.RewardPool;}
+            if(mimic)c.StartMessage="Eine Schatztruhe schnappt zu: MIMIC! {hp} LP, {seconds} Sekunden. Alle greifen mit !attack an! Legendary-Chance nach Sieg: "+_config.Adventures.Rpg.Mimic.LegendaryChance+" % je Überlebendem.";
             if(c.HpMode == BossHpMode.Dynamic)c.HitPoints=100;
             _boss = new() { Config = c, DynamicScaling=c.HpMode == BossHpMode.Dynamic, Hp = Math.Clamp(c.HitPoints, 10, 1000000), End = _now().AddSeconds(Math.Clamp(c.DurationSeconds, 10, 1800)) };
             SaveHealthBoss(_boss);
             ScheduleAutoBoss();
+            _points.PublishStory(new(mimic?GroqScene.Mimic:GroqScene.Boss,"boss-start:"+_boss.Id,"Kampf gestartet"));
             await Say(Format(c.StartMessage, ("hp", _boss.Hp), ("seconds", Math.Clamp(c.DurationSeconds, 10, 1800)), ("reward", Math.Clamp(c.RewardPool, 0, 1000000000)), ("currency", Currency)), token);
         }
+    }
+    private async Task<bool> StartDiscoveredBossCoreAsync(string finder,CancellationToken token)
+    {
+        if(GameplayAllowed?.Invoke()==false || !_config.Enabled || !_config.PointsEnabled || !_config.Adventures.Rpg.Enabled || !_config.Adventures.Rpg.Mimic.Enabled || !_config.Adventures.Boss.Enabled || _boss is not null || _now()<_nextBoss)return false;
+        await SpawnBossAsync(token,mimic:true);
+        PublishStatus();
+        if(_boss is null)return false;
+        DataChanged?.Invoke();
+        await Say($"@{finder} hat beim Tauchen eine Mimic entdeckt! Alle können mit !attack teilnehmen.",token);
+        return true;
+    }
+    public async Task<bool> StartDiscoveredBossAsync(string finder,CancellationToken token)
+    {
+        await _gate.WaitAsync(token);
+        try{return await StartDiscoveredBossCoreAsync(finder,token);}
+        finally{PublishStatus();_gate.Release();}
     }
     public async Task<BossAttackResult> ExecuteBossAttackAsync(string verifiedUserId, string displayName, string requestId, CancellationToken token, bool communityVictory=false)
     {
@@ -386,7 +420,7 @@ public sealed partial class AdventureGameService
     {
         if (_boss is null) return new(false, user.UserId, 0, false, 0, false, 0, "Kein Boss aktiv.");
         var cooldownKey = "!boss:" + user.UserId;
-        if (Cooling(cooldownKey, _boss.Config.AttackCooldownSeconds))
+        if (!_config.Adventures.Rpg.Enabled && Cooling(cooldownKey, _boss.Config.AttackCooldownSeconds))
         {
             var remaining = Math.Max(1, (int)Math.Ceiling((_cooldowns[cooldownKey] - _now()).TotalSeconds));
             await Say(Format(_boss.Config.AttackCooldownMessage, ("user", user.UserName), ("remaining", remaining)), token);
@@ -436,7 +470,7 @@ public sealed partial class AdventureGameService
                     damage=Math.Min(damage,_boss.Hp);
                     RpgPassiveService.ConsumeBuffs(account.Rpg, RpgActivity.Boss, _config.Adventures.Rpg, _random, clock);
                     RpgSushiService.Participate(account.Rpg,_boss.Id,_boss.End,clock);
-                    account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(Math.Clamp(_boss.Config.AttackCooldownSeconds, 1, 86400));
+                    account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(RpgPerkCatalog.Cooldown(account.Rpg,_boss.Config.AttackCooldownSeconds,"attackCooldown"));
                     return new(true);
                 }, token);
             if(mutation.Duplicate)return new(false,user.UserId,0,false,_boss.Hp,false,0,"Angriff bereits verarbeitet.");
@@ -469,6 +503,7 @@ public sealed partial class AdventureGameService
             _nextBoss=_now().AddSeconds(Math.Clamp(finished.Config.RoundCooldownSeconds,1,86400));
             await Say("🏆 Boss besiegt! Überlebende Teilnehmer erhalten Perlen und " + _config.Adventures.Rpg.Health.VictoryExperience + " EXP; besiegte Teilnehmer erhalten nichts."+
                 (lifeleechHealing>0?$" @{finisherName}: Lifeleech +{lifeleechHealing} HP.":""),token);
+            _points.PublishStory(new(finished.Config.IsMimic?GroqScene.Mimic:GroqScene.Boss,"boss-win:"+finished.Id,"Kampf gewonnen"));
             if(communityVictory) _points.HotTime.StartAfterBoss(finished.Id,_config.Adventures.Rpg.HotTime,true);
             foreach(var text in _points.HotTime.PollMessages(_config.Adventures.Rpg.HotTime)) await Say(text,token);
             DataChanged?.Invoke();
@@ -487,8 +522,9 @@ public sealed partial class AdventureGameService
                 var paid=await _points.ApplyRpgAsync(player.Key,player.Value,"bosscollect:"+finished.Id,a=>
                 {
                     var before=a.Points;
+                    RpgPerkCatalog.Victory(a.Rpg,_now());
                     var bonus=RpgCollectorService.Calculate(a.Rpg,_config.Adventures.Rpg.DiveLoot).BossPearls;
-                    a.Points=Math.Max(a.Points,(long)Math.Min((decimal)Maximum,(decimal)a.Points+RpgCollectorService.Reward(reward,bonus)));
+                    a.Points=Math.Max(a.Points,(long)Math.Min((decimal)Maximum,(decimal)a.Points+RpgCollectorService.Reward(reward,bonus+RpgPerkCatalog.Bonus(a.Rpg,"bossPearls"))));
                     credited=a.Points-before;
                     return new(true);
                 },token);
@@ -516,6 +552,7 @@ public sealed partial class AdventureGameService
         var winText = Format(finished.Config.WinMessage, ("count", finished.Players.Count), ("reward", reward), ("currency", Currency));
         if (_config.Adventures.Rpg.Enabled && !string.IsNullOrWhiteSpace(winText)) winText = "⚔️ " + winText;
         await Say(winText, token);
+        _points.PublishStory(new(finished.Config.IsMimic?GroqScene.Mimic:GroqScene.Boss,"boss-win:"+finished.Id,"Kampf gewonnen"));
         if(_config.Adventures.Rpg.Enabled && communityVictory)
         {
             _points.HotTime.StartAfterBoss(finished.Id,_config.Adventures.Rpg.HotTime,true);
@@ -546,13 +583,13 @@ public sealed partial class AdventureGameService
         var reward=survivors.Count==0 || !victory ? 0 : _points.RewardAmount(Math.Clamp(boss.Config.RewardPool,0,1000000000)/survivors.Count,RpgRewardSource.Boss);
         foreach(var player in survivors)
         {
-            RpgItem? found=null;long credited=0;
+            RpgItem? found=null,legendary=null;long credited=0;
             var result=await _points.ApplyRpgAsync(player.Id,player.Name,"bosssurvival:"+boss.Id,a=>
             {
                 if(!RpgHealthService.Eligible(a.Rpg,boss.Id)) return new(false,"Kein Belohnungsanspruch.");
                 var collectors=RpgCollectorService.Calculate(a.Rpg,rpg.DiveLoot);
                 var before=a.Points;
-                var personalReward=RpgCollectorService.Reward(reward,collectors.BossPearls);
+                var personalReward=RpgCollectorService.Reward(reward,collectors.BossPearls+RpgPerkCatalog.Bonus(a.Rpg,"bossPearls"));
                 a.Points=Math.Max(a.Points,(long)Math.Min((decimal)Maximum,(decimal)a.Points+personalReward));
                 credited=a.Points-before;
                 var experience=victory ? checked(rpg.Health.VictoryExperience+(player.Id==top?rpg.Health.TopExperience:0)) : rpg.Health.EscapeExperience;
@@ -560,12 +597,14 @@ public sealed partial class AdventureGameService
                 if(victory && rpg.BossLootChance>0)
                 {
                     found=new RpgLootService(_random).RollReward(rpg.DiveLoot,_now(),RpgActivity.Boss,rpg.BossLootChance,
-                        RpgBossLootService.MaximumRarity(rpg,boss.Config.HitPoints,boss.Players.Count),_points.HotTime.DropBonus(rpg.HotTime)).Item;
+                        ItemRarity.Epic,_points.HotTime.DropBonus(rpg.HotTime)).Item;
                     if(found is not null) a.Rpg.Inventory.Add(found);
                 }
+                if(victory){RpgPerkCatalog.Victory(a.Rpg,_now());legendary=RpgBossLootService.RollLegendary(rpg,_random,_now(),boss.Config.IsMimic);if(legendary is not null)a.Rpg.Inventory.Add(legendary);}
                 return new(true);
             },token);
             if(result.Success && victory)await AnnounceBossRewardAsync(player.Name,credited,token);
+            if(result.Success && legendary is not null)await Say($"LEGENDÄR! @{player.Name} findet {legendary.DisplayName} bei {boss.Config.DisplayName}! Details: !inv.",token);
             if(result.Success && found is not null) await Say($"⚔️ @{player.Name} findet {found.DisplayName} [{found.Rarity}]! Details: !inv.",token);
         }
     }
@@ -610,6 +649,7 @@ public sealed partial class AdventureGameService
             else await CloseBossSushiAsync(_boss,token);
             SaveHealthBoss(null);
             _nextBoss = _now().AddSeconds(Math.Clamp(_boss.Config.RoundCooldownSeconds, 1, 86400));
+            _points.PublishStory(new(_boss.Config.IsMimic?GroqScene.Mimic:GroqScene.Boss,"boss-escape:"+_boss.Id,"Boss entkommen"));
             var template = _boss.Config.TimeoutMessage;
             _boss = null;
             await Say(Format(template), token);

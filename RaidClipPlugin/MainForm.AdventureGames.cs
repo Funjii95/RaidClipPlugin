@@ -71,6 +71,7 @@ public sealed partial class MainForm
         AddMinigameTab(tabs, "Hot Time", BuildHotTimePanel());
         AddMinigameTab(tabs, "HP & Überleben", BuildRpgHealthPanel());
         AddMinigameTab(tabs, "Unterwassergegner", BuildRpgEnemyPanel());
+        AddMinigameTab(tabs, "Mimic & Bossbeute", BuildRpgMimicPanel());
         AddMinigameTab(tabs, "Fischfang & Sushi", BuildRpgSushiPanel());
         AddMinigameTab(tabs, "RPG Debug Center", BuildRpgDebugPanel());
         return tabs;
@@ -212,6 +213,7 @@ public sealed partial class MainForm
         _hotTimeSettings.SelectedObject = copy.Rpg.HotTime;
         _healthSettings.SelectedObject = copy.Rpg.Health;
         _enemySettings.SelectedObject = copy.Rpg.Enemies;
+        _mimicSettings.SelectedObject = copy.Rpg.Mimic;
         LoadRpgSushi(copy.Rpg);
         _rpgConfigJson.Text = JsonSerializer.Serialize(copy.Rpg, new JsonSerializerOptions { WriteIndented = true });
         _fishingSettings.SelectedObject = copy.Fishing;
@@ -227,6 +229,7 @@ public sealed partial class MainForm
         if(_hotTimeSettings.SelectedObject is RpgHotTimeConfig hotTime)rpg.HotTime=JsonSerializer.Deserialize<RpgHotTimeConfig>(JsonSerializer.Serialize(hotTime))!;
         if(_healthSettings.SelectedObject is RpgHealthConfig health)rpg.Health=JsonSerializer.Deserialize<RpgHealthConfig>(JsonSerializer.Serialize(health))!;
         if(_enemySettings.SelectedObject is RpgEnemyConfig)rpg.Enemies=ReadEnemyEditor();
+        if(_mimicSettings.SelectedObject is RpgMimicConfig mimic)rpg.Mimic=JsonSerializer.Deserialize<RpgMimicConfig>(JsonSerializer.Serialize(mimic))!;
         ReadRpgSushi(rpg);
         rpg.Validate();
         config.Adventures = JsonSerializer.Deserialize<AdventureGamesConfig>(JsonSerializer.Serialize(new AdventureGamesConfig {
