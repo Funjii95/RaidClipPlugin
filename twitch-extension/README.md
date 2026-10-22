@@ -26,3 +26,7 @@ Die öffentliche Backend-URL steht im bestehenden `src/live/client.ts`. Sie ist 
 Bei Plugin-Trennung bleiben Profile optional lesbar, Aktionen werden gesperrt. Eine unklare Aktion bleibt gesperrt und wird nur mit derselben ID geprüft. Die CSP des Testservers erlaubt ausschließlich die bestehende Backend-Domain als API-Ziel; der Twitch-Helper wird als erstes Skript geladen. Alle Spielbilder liegen im Paket.
 
 Vollständige Anleitung, Grenzen, aktuelle Cloud-Voraussetzungen und betroffene Dateien: `../GRAPHICAL_BACKEND_INTEGRATION.md`. Aktuelle Testergebnisse: `../TESTERGEBNISSE_GRAPHICAL.md`. Ältere Demo-/Minigame-Berichte beschreiben nur den getrennten Entwicklungsmodus.
+
+## Aktueller Twitch-Test 0.0.3
+
+Das Plugin verbindet sich mit **rc1**. Für diesen gehosteten Test ausschließlich `pnpm build:hosted-test` verwenden und den Inhalt von `dist-hosted-test` hochladen. Der Build prüft die Backend-Adresse und enthält Panel, Mobilansicht und Konfiguration. `dist` und `dist-desktop` verwenden den normalen Backend-Endpunkt und gehören nicht in diesen Test. Sonst fehlen der vollständige Perk-Katalog, Sushi-Rezepte und Itemsets trotz sichtbarem Spielstand.
