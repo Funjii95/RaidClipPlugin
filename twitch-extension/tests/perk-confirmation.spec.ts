@@ -14,8 +14,8 @@ test('panel: confirmed perk unlocks the next purchase while cloud GET is still p
  });
  await page.setViewportSize({width:320,height:500});await page.goto('/panel.html');
  await page.getByRole('button',{name:'Perks',exact:true}).click();
- await page.getByRole('button',{name:'Kaufen · 2.000 Perlen',exact:true}).click();
- const next=page.getByRole('button',{name:'Kaufen · 4.000 Perlen',exact:true});
+ await page.getByRole('button',{name:'Aufwerten · 2.000 Perlen',exact:true}).click();
+ const next=page.getByRole('button',{name:'Aufwerten · 4.000 Perlen',exact:true});
  await expect(next).toBeEnabled();expect(posts).toBe(1);
  await expect(page.locator('.statusbar')).toContainText('18.000');
  await next.scrollIntoViewIfNeeded();await page.screenshot({path:'test-results/perk-confirmation-panel.png'});
