@@ -2884,7 +2884,7 @@ private enum CloseChoice
                         config.Heist,
                         config.Duel,
                         config.Commands,
-                        _commandRegistry);
+                        _commandRegistry,dailyFlavor:ct=>_groqDaily.GenerateAsync(ct));
                     _minigame.BindStreamSession(_streamAdmission, _streamEpoch);
                     var overlayReload = new CommunityOverlayReloadService(() =>
                     {
@@ -4911,6 +4911,13 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.42 – Groq für Daily-Sprüche
+
+- Optionaler kurzer KI-Otter-Spruch nach erfolgreichem !daily.
+- Einrichtung unter Livechat → Groq · Daily: Modell, Persönlichkeit, Antwortpause und Verbindungstest.
+- API-Key mit Windows-Benutzerschutz; keine Spielernamen oder Kontostände an Groq.
+- Belohnung und Sperrzeit bleiben im Plugin. Ohne Groq bleibt die bisherige Daily-Antwort aktiv.
+
 2.1.41 – Transparenter OBS-Chat
 
 - Eigene OBS-Chatquelle: http://127.0.0.1:18770/ (500 × 700).
