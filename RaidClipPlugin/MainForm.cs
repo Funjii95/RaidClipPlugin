@@ -2801,6 +2801,7 @@ private enum CloseChoice
                     UpdateChatConnectionDiagnostics;
                 await StartLiveChatAsync(config, session.UserId, _broadcaster.Id, cancellationToken);
                 _chatModeration.MessageObserved += HandleLiveChatMessageAsync;
+                StartGroqRuntime(twitch,session,_broadcaster,cancellationToken);
                 _chatModeration.Activated += () =>
                     AppendLog("Chatbot verbunden: WebSocket und channel.chat.message aktiv.");
                 StartCustomCommandServices(config, twitch, session,
@@ -4617,6 +4618,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
     private async Task StopPluginAsync(bool keepErrorStatus = false)
     {
+        _groqRuntime?.Stop();
         _streamAdmission.End();
         var shutdown = _shutdown;
 
@@ -4911,6 +4913,13 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.44 – Groq für das Otter-RPG
+
+- KI-Kommentare für Tauchen, Angeln, Mimic, Bosskämpfe und Levelaufstiege.
+- Gespräche durch direkte @Bot-Erwähnung, mit kurzem Verlauf pro Zuschauer.
+- Alle Bereiche einzeln schaltbar unter Livechat → Groq · KI.
+- Gemeinsame Antwortpause und Stundenlimit; Spielaktionen warten nicht auf die KI.
+
 2.1.43 – Groq-Daily-Antworten korrigiert
 
 - GPT-OSS bekommt ausreichend Antwortbudget; keine leeren Sprüche durch vorzeitig verbrauchtes Limit.

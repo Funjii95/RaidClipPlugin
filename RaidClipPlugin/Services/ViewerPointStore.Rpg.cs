@@ -96,6 +96,7 @@ public sealed partial class ViewerPointStore
         using var operationAdmission = Admission?.EnterOperation();
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(actionId) || actionId.Length > 200)
             throw new ArgumentException("Twitch-ID und gültige Aktions-ID sind erforderlich.");
+        GroqStoryEvent? levelStory=null;
         await _lock.WaitAsync(token);
         try
         {
@@ -128,8 +129,10 @@ public sealed partial class ViewerPointStore
                 else _entries.Remove(userId);
                 throw;
             }
+            if(draft.Rpg.PlayerLevel>(original?.Rpg?.PlayerLevel??1))
+                levelStory=new(GroqScene.LevelUp,"level:"+userId+":"+actionId,"Neuer Level erreicht",displayName,draft.Rpg.PlayerLevel);
             return new(true, "", draft.Points, Details: result.Details);
         }
-        finally { _lock.Release(); }
+        finally { _lock.Release(); if(levelStory is not null)PublishStory(levelStory); }
     }
 }

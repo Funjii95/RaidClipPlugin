@@ -358,6 +358,7 @@ public sealed partial class AdventureGameService
             _boss = new() { Config = c, DynamicScaling=c.HpMode == BossHpMode.Dynamic, Hp = Math.Clamp(c.HitPoints, 10, 1000000), End = _now().AddSeconds(Math.Clamp(c.DurationSeconds, 10, 1800)) };
             SaveHealthBoss(_boss);
             ScheduleAutoBoss();
+            _points.PublishStory(new(mimic?GroqScene.Mimic:GroqScene.Boss,"boss-start:"+_boss.Id,"Kampf gestartet"));
             await Say(Format(c.StartMessage, ("hp", _boss.Hp), ("seconds", Math.Clamp(c.DurationSeconds, 10, 1800)), ("reward", Math.Clamp(c.RewardPool, 0, 1000000000)), ("currency", Currency)), token);
         }
     }
@@ -491,6 +492,7 @@ public sealed partial class AdventureGameService
             _nextBoss=_now().AddSeconds(Math.Clamp(finished.Config.RoundCooldownSeconds,1,86400));
             await Say("🏆 Boss besiegt! Überlebende Teilnehmer erhalten Perlen und " + _config.Adventures.Rpg.Health.VictoryExperience + " EXP; besiegte Teilnehmer erhalten nichts."+
                 (lifeleechHealing>0?$" @{finisherName}: Lifeleech +{lifeleechHealing} HP.":""),token);
+            _points.PublishStory(new(finished.Config.IsMimic?GroqScene.Mimic:GroqScene.Boss,"boss-win:"+finished.Id,"Kampf gewonnen"));
             if(communityVictory) _points.HotTime.StartAfterBoss(finished.Id,_config.Adventures.Rpg.HotTime,true);
             foreach(var text in _points.HotTime.PollMessages(_config.Adventures.Rpg.HotTime)) await Say(text,token);
             DataChanged?.Invoke();
@@ -539,6 +541,7 @@ public sealed partial class AdventureGameService
         var winText = Format(finished.Config.WinMessage, ("count", finished.Players.Count), ("reward", reward), ("currency", Currency));
         if (_config.Adventures.Rpg.Enabled && !string.IsNullOrWhiteSpace(winText)) winText = "⚔️ " + winText;
         await Say(winText, token);
+        _points.PublishStory(new(finished.Config.IsMimic?GroqScene.Mimic:GroqScene.Boss,"boss-win:"+finished.Id,"Kampf gewonnen"));
         if(_config.Adventures.Rpg.Enabled && communityVictory)
         {
             _points.HotTime.StartAfterBoss(finished.Id,_config.Adventures.Rpg.HotTime,true);
@@ -635,6 +638,7 @@ public sealed partial class AdventureGameService
             else await CloseBossSushiAsync(_boss,token);
             SaveHealthBoss(null);
             _nextBoss = _now().AddSeconds(Math.Clamp(_boss.Config.RoundCooldownSeconds, 1, 86400));
+            _points.PublishStory(new(_boss.Config.IsMimic?GroqScene.Mimic:GroqScene.Boss,"boss-escape:"+_boss.Id,"Boss entkommen"));
             var template = _boss.Config.TimeoutMessage;
             _boss = null;
             await Say(Format(template), token);

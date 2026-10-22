@@ -140,6 +140,11 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                 payout=checked(payout-net+points.RewardAmount(net,fishing?RpgRewardSource.Fishing:RpgRewardSource.DiveNetWin));
                 return payout;
             },RpgRewardSource.AlreadyBoosted,rpgFishName:()=>caughtFish?.PearlReward.HasValue==true?caughtFish.Name:fishName);
+        if(result.Success)points.PublishStory(new(fishing?GroqScene.Fishing:GroqScene.Dive,
+            "adventure:"+userId+":"+requestId,
+            fishing?(caughtFish is null?"Kein Fisch gefangen":$"Fisch gefangen, Seltenheit {caughtFish.Rarity}"):
+                enemy is not null?"Unterwassergegner getroffen":loot is not null?$"Gegenstand gefunden, Seltenheit {loot.Rarity}":tier==0?"Tauchgang ohne Schatz":"Schatzfund",
+            name));
         return new(result.Success, userId, stake, payout, result.Balance, result.Error, outcome,
             result.Success ? loot : null, remaining, result.Success ? applied : Array.Empty<string>())
             { BossDiscovered=result.Success && bossDiscovered, AdditionalItems = result.Success ? additional : Array.Empty<RpgItem>(),Enemy=result.Success?enemy:null,ShellsAwarded=result.Success && fishing && tier==0?1:0 };

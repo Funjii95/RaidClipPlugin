@@ -8,26 +8,33 @@ public sealed partial class MainForm
     private GroqDailyService _groqDaily=null!;
     private TabPage BuildGroqDailyTab()
     {
-        var page=new TabPage("Groq · Daily"){BackColor=SurfaceColor,ForeColor=TextColor,Padding=new Padding(12)};
+        var page=new TabPage("Groq · KI"){BackColor=SurfaceColor,ForeColor=TextColor,Padding=new Padding(12)};
         var root=new FlowLayoutPanel{Dock=DockStyle.Fill,AutoScroll=true,FlowDirection=FlowDirection.TopDown,WrapContents=false};
-        var enabled=NewCheck("Groq für erfolgreiche !daily-Antworten aktivieren",false);
+        var enabled=NewCheck("Groq aktivieren",false);
         var model=new ComboBox{Width=440,DropDownStyle=ComboBoxStyle.DropDown};model.Items.AddRange(new object[]{"openai/gpt-oss-20b","openai/gpt-oss-120b","llama-3.3-70b-versatile"});
         var personality=new TextBox{Width=600,Height=95,Multiline=true,MaxLength=1500};
         var key=new TextBox{Width=440,UseSystemPasswordChar=true,MaxLength=500,PlaceholderText="Neuer API-Key; leer lässt den gespeicherten Schlüssel unverändert"};
         var cooldown=NewNumber(10,10,600);
+        var hourly=NewNumber(120,1,500);
+        var daily=NewCheck("Daily-Sprüche",true);var dive=NewCheck("Tauchen",true);var fishing=NewCheck("Angeln",true);
+        var mimic=NewCheck("Mimic",true);var boss=NewCheck("Bosskämpfe (Start und Ergebnis)",true);
+        var level=NewCheck("Levelaufstiege",true);var chat=NewCheck("Direkte @Bot-Ansprache",true);
         var status=new Label{AutoSize=true,MaximumSize=new Size(650,0),ForeColor=MutedTextColor};
         try{_groqOptions=_groqStore.Load();_groqOptions.Validate();status.Text=string.IsNullOrWhiteSpace(_groqStore.Key())?"Noch kein API-Key gespeichert.":"API-Key geschützt gespeichert.";}
         catch{_groqOptions=new();status.Text="Groq-Konfiguration nicht lesbar. Bitte neu speichern.";}
         _groqDaily=new(_groqClient,()=>_groqOptions,()=>_groqStore.Key());
         _groqDaily.StatusChanged+=message=>{if(!IsDisposed&&IsHandleCreated)try{BeginInvoke(()=>{if(!status.IsDisposed)status.Text=message;});}catch(InvalidOperationException){}};
-        enabled.Checked=_groqOptions.Enabled;model.Text=_groqOptions.Model;personality.Text=_groqOptions.Personality;cooldown.Value=_groqOptions.CooldownSeconds;
-        GroqOptions Read()=>new(){Enabled=enabled.Checked,Model=model.Text.Trim(),Personality=personality.Text.Trim(),CooldownSeconds=(int)cooldown.Value};
-        root.Controls.Add(new Label{AutoSize=true,MaximumSize=new Size(650,0),Text="Abwechslung für !daily: Die echte Belohnung und der Kontostand bleiben im festen Plugin-Text. Groq ergänzt einen kurzen Otter-Spruch. Andere Befehle und Gespräche verwenden keine KI."});
-        root.Controls.Add(enabled);root.Controls.Add(CreateSettingEditor("Groq-Modell",model));root.Controls.Add(CreateSettingEditor("Otter-Persönlichkeit",personality));root.Controls.Add(CreateSettingEditor("API-Key (Windows-geschützt)",key));root.Controls.Add(CreateSettingEditor("Pause zwischen KI-Anfragen (Sekunden)",cooldown));
-        root.Controls.Add(new Label{AutoSize=true,MaximumSize=new Size(650,0),Text="Groq erhält nur einen allgemeinen Daily-Anlass und den letzten KI-Spruch, keine Chatnachrichten, Spielernamen oder Kontostände. API-Nutzung verbraucht dein Groq-Kontingent. Bei Fehlern, leerem Key oder während der Pause bleibt der normale Daily-Text erhalten."});
+        enabled.Checked=_groqOptions.Enabled;model.Text=_groqOptions.Model;personality.Text=_groqOptions.Personality;cooldown.Value=_groqOptions.CooldownSeconds;hourly.Value=_groqOptions.HourlyLimit;
+        daily.Checked=_groqOptions.Daily;dive.Checked=_groqOptions.Dive;fishing.Checked=_groqOptions.Fishing;mimic.Checked=_groqOptions.Mimic;boss.Checked=_groqOptions.Boss;level.Checked=_groqOptions.LevelUp;chat.Checked=_groqOptions.Conversations;
+        GroqOptions Read()=>new(){Enabled=enabled.Checked,Model=model.Text.Trim(),Personality=personality.Text.Trim(),CooldownSeconds=(int)cooldown.Value,HourlyLimit=(int)hourly.Value,Daily=daily.Checked,Dive=dive.Checked,Fishing=fishing.Checked,Mimic=mimic.Checked,Boss=boss.Checked,LevelUp=level.Checked,Conversations=chat.Checked};
+        root.Controls.Add(new Label{AutoSize=true,MaximumSize=new Size(650,0),Text="Otter-KI für Daily, Tauchen, Angeln, Mimic, Bosskämpfe, Levelaufstiege und direkte Bot-Ansprache. Echte Spielwerte und Belohnungen bleiben im Plugin."});
+        root.Controls.Add(enabled);
+        foreach(var check in new[]{daily,dive,fishing,mimic,boss,level,chat})root.Controls.Add(check);
+        root.Controls.Add(CreateSettingEditor("Groq-Modell",model));root.Controls.Add(CreateSettingEditor("Otter-Persönlichkeit",personality));root.Controls.Add(CreateSettingEditor("API-Key (Windows-geschützt)",key));root.Controls.Add(CreateSettingEditor("Pause zwischen KI-Anfragen (Sekunden)",cooldown));root.Controls.Add(CreateSettingEditor("Maximale KI-Anfragen pro Stunde",hourly));
+        root.Controls.Add(new Label{AutoSize=true,MaximumSize=new Size(650,0),Text="Groq erhält allgemeine RPG-Anlässe ohne Spielernamen oder Kontostände. Bei direkter @Bot-Ansprache wird der adressierte Nachrichtentext übertragen; das kurze Gespräch bleibt nur im Arbeitsspeicher. Keine anderen Chatnachrichten. Die KI kann keine Spielaktionen ausführen. API-Nutzung verbraucht dein Groq-Kontingent; Antwortpause und Stundenlimit gelten gemeinsam für alle Bereiche."});
         var buttons=new FlowLayoutPanel{AutoSize=true};var save=NewHeistActionButton("Groq speichern",150);var test=NewHeistActionButton("Verbindung testen",170);var remove=NewHeistActionButton("API-Key entfernen",170);
         save.Click+=(_,_)=>{
-            try{var options=Read();options.Validate();var newKey=key.Text.Trim();if(options.Enabled&&newKey.Length==0&&string.IsNullOrWhiteSpace(_groqStore.Key()))throw new InvalidOperationException("Bitte zuerst einen Groq-API-Key eingeben.");if(newKey.Length>0)_groqStore.SaveKey(newKey);_groqStore.Save(options);_groqOptions=options;key.Clear();status.Text=options.Enabled?"Groq ist für !daily aktiv. Einstellungen gelten sofort.":"Groq deaktiviert. Normale Daily-Antworten aktiv.";}
+            try{var options=Read();options.Validate();var newKey=key.Text.Trim();if(options.Enabled&&newKey.Length==0&&string.IsNullOrWhiteSpace(_groqStore.Key()))throw new InvalidOperationException("Bitte zuerst einen Groq-API-Key eingeben.");if(newKey.Length>0)_groqStore.SaveKey(newKey);_groqStore.Save(options);_groqOptions=options;key.Clear();status.Text=options.Enabled?"Groq ist für die ausgewählten Bereiche aktiv. Einstellungen gelten sofort.":"Groq deaktiviert. Normale Plugin-Texte aktiv.";}
             catch(InvalidOperationException error){status.Text=error.Message;}
             catch{status.Text="Einstellungen konnten nicht gespeichert werden.";}
         };
