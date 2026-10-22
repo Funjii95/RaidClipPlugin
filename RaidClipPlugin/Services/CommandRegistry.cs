@@ -64,6 +64,9 @@ public sealed class CommandRegistry
         Add("event.start.boss", "!start boss", null, "boss", "Bosskampf", "Boss-Event starten",
             "Startet den Bosskampf (Mods/Broadcaster).", "!start boss", "!start boss",
             m.Enabled && m.PointsEnabled && m.Adventures.Boss.Enabled, CommandRole.Moderator, order:52);
+        Add("event.start.mimic", "!start mimic", null, "boss", "Bosskampf", "Mimic starten",
+            "Startet eine Mimic mit den eingestellten Werten. Nur der Broadcaster.", "!start mimic", "!start mimic",
+            m.Enabled && m.PointsEnabled && m.Adventures.Boss.Enabled && m.Adventures.Rpg.Enabled && m.Adventures.Rpg.Mimic.Enabled, CommandRole.Broadcaster, order:52);
         Add("adventure.race", "!start race", null, "race", "Rennen", "Rennen starten",
             "Startet ein gemeinsames Rennen.", "!start race <Betrag|all>", "!start race 100",
             m.Enabled && m.PointsEnabled && m.Adventures.Race.Enabled, order:50);

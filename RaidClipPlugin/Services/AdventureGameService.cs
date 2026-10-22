@@ -93,7 +93,7 @@ public sealed partial class AdventureGameService
 
     public void UpdateConfig(MinigameConfig config) { _config = config; _points.ConfigureHotTime(config.Adventures.Rpg); ScheduleAutoBoss(); }
     private void ScheduleAutoBoss() => _nextAutoBoss = _now().AddMinutes(Math.Clamp(_config.Adventures.Boss.AutoStartMinutes, 1, 1440));
-    public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!heal" or "!kill" or "!sim" or "!boss" or "!start boss" or "!attack" or "!joinboss";
+    public static bool Recognizes(string command) => RpgChatCommand.Recognizes(command) || command is "!fish" or "!sammlung" or "!dive" or "!startrace" or "!joinrace" or "!heal" or "!kill" or "!sim" or "!boss" or "!start boss" or "!start mimic" or "!attack" or "!joinboss";
     public async Task RunAsync(CancellationToken token)
     {
         var overlay = new AdventureOverlayServer(() => Status,community:()=>CommunityOverlay?.Invoke()??new CommunityOverlayEventManager().Read(Status,_now())).RunAsync(token);
@@ -233,6 +233,17 @@ public sealed partial class AdventureGameService
                 var fish = profile.Entry.FishCollection ?? new();
                 await Say($"@{message.UserName}, Fischsammlung: " + (fish.Count == 0 ? "Noch keine Fänge. Nutze !fish <Einsatz>." :
                     string.Join(", ", fish.OrderBy(p => p.Key).Select(p => $"{p.Key}: {p.Value}x")) + $" | Größter Fang: {profile.Entry.BiggestFishName} ({profile.Entry.BiggestFishGrams / 1000.0:0.00} kg)."), token);
+                return;
+            }
+            if (command == "!start mimic")
+            {
+                if (string.IsNullOrWhiteSpace(_broadcasterId) || message.UserId != _broadcasterId)
+                { await Say("Nur der Broadcaster darf !start mimic verwenden.", token); return; }
+                if (parts.Length != 1) { await Say("Nutzung: !start mimic.", token); return; }
+                if (!settings.Boss.Enabled || !settings.Rpg.Enabled || !settings.Rpg.Mimic.Enabled)
+                { await Say("Mimic oder RPG-Bosskämpfe sind deaktiviert.", token); return; }
+                if (_boss is not null) { await Say("Es läuft bereits ein Bosskampf. Mit !attack teilnehmen!", token); return; }
+                await SpawnBossAsync(token, mimic:true);
                 return;
             }
             if (command is "!boss" or "!start boss" or "!attack")

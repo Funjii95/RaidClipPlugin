@@ -4913,6 +4913,11 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.45 – Mimic manuell starten
+
+- Neuer Broadcaster-Befehl !start mimic mit den gespeicherten Mimic-Werten.
+- Beachtet die Boss-Pause und ersetzt keinen laufenden Kampf.
+
 2.1.44 – Groq für das Otter-RPG
 
 - KI-Kommentare für Tauchen, Angeln, Mimic, Bosskämpfe und Levelaufstiege.

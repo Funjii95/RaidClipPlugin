@@ -223,6 +223,37 @@ public sealed class AdventureGameTests
         Assert.Contains(f.Messages,m=>m.Contains("Boss-Pause abgelaufen"));
         await f.Send("mod","!start boss",moderator:true);Assert.True(f.Service.Status.BossActive);
     }
+    [Fact]
+    public async Task ManualMimicIsBroadcasterOnlyAndCannotReplaceAnActiveBoss()
+    {
+        using var f = new Fixture(broadcasterId:"owner");
+        f.Config.Adventures.Rpg.Enabled=true;
+        f.Config.Adventures.Rpg.Mimic.Enabled=true;
+        f.Config.Adventures.Rpg.Mimic.HitPoints=777;
+        await f.Send("viewer", "!start mimic", CommandAuthorization.Allowed);
+        await f.Send("mod", "!start mimic", moderator:true);
+        Assert.False(f.Service.Status.BossActive);
+        await f.Send("owner", "!start mimic", CommandAuthorization.Denied);
+        Assert.False(f.Service.Status.BossActive);
+        await f.Send("owner", "!start mimic");
+        Assert.True(f.Service.Status.BossActive);
+        Assert.True(f.Service.Status.BossIsMimic);
+        Assert.Equal(777,f.Service.Status.BossHp);
+        var id=f.Service.Status.BossEventId;
+        await f.Send("owner", "!start mimic");
+        Assert.Equal(id,f.Service.Status.BossEventId);
+        Assert.Single(f.Messages.Where(m=>m.Contains("Eine Schatztruhe schnappt zu")));
+    }
+    [Fact]
+    public async Task ManualMimicHonorsDisabledSettings()
+    {
+        using var f = new Fixture(broadcasterId:"owner");
+        f.Config.Adventures.Rpg.Enabled=true;
+        f.Config.Adventures.Rpg.Mimic.Enabled=false;
+        await f.Send("owner","!start mimic");
+        Assert.False(f.Service.Status.BossActive);
+    }
+
     private sealed class FixedRandom(int value) : IDuelRandom
     { public int NextInclusive(int minimum, int maximum) => Math.Clamp(value, minimum, maximum); }
     private sealed class Fixture : IDisposable
@@ -233,13 +264,13 @@ public sealed class AdventureGameTests
         public List<string> Messages { get; } = new();
         public DateTimeOffset Now = DateTimeOffset.UtcNow;
         public AdventureGameService Service { get; }
-        public Fixture(int roll = 100)
+        public Fixture(int roll = 100, string broadcasterId = "")
         {
             Points = new(_directory);
             Config.Adventures.Race.JoinSeconds = 5;
             Config.Adventures.Boss.HitPoints = 60;
             Config.Adventures.Boss.RewardPool = 100;
-            Service = new(Points, Config, (text, _) => { Messages.Add(text); return Task.CompletedTask; }, new FixedRandom(roll), () => Now);
+            Service = new(Points, Config, (text, _) => { Messages.Add(text); return Task.CompletedTask; }, new FixedRandom(roll), () => Now, broadcasterId);
         }
         public Task Seed(string id, long amount = 1000) => Points.AddPointsAsync(id, id, amount, 0, default);
         public Task<long> Balance(string id) => Points.GetPointsAsync(id, default);

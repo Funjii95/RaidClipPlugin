@@ -661,13 +661,13 @@ public sealed partial class ChatMinigameService : IDisposable
                 var translated = EventStartCommand.Translate(parts);
                 if (translated is null)
                 {
-                    await TrySendChatAsync("Nutzung: !start boss | !start race <Betrag|all> | !start heist.", cancellationToken);
+                    await TrySendChatAsync("Nutzung: !start boss | !start mimic (Broadcaster) | !start race <Betrag|all> | !start heist.", cancellationToken);
                     return;
                 }
                 parts = translated;
                 command = parts[0];
                 // Preserve per-command disable switches; the shortcut must not bypass them.
-                var targetId = command == "!start boss" ? "event.start.boss" : command == "!startrace" ? "adventure.race" : "heist.start";
+                var targetId = command == "!start boss" ? "event.start.boss" : command == "!start mimic" ? "event.start.mimic" : command == "!startrace" ? "adventure.race" : "heist.start";
                 var target = _commandRegistry.Commands.FirstOrDefault(c => c.CommandId == targetId);
                 if (target is null || !target.Enabled)
                 {
