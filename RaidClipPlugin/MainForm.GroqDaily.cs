@@ -11,7 +11,7 @@ public sealed partial class MainForm
         var page=new TabPage("Groq · Daily"){BackColor=SurfaceColor,ForeColor=TextColor,Padding=new Padding(12)};
         var root=new FlowLayoutPanel{Dock=DockStyle.Fill,AutoScroll=true,FlowDirection=FlowDirection.TopDown,WrapContents=false};
         var enabled=NewCheck("Groq für erfolgreiche !daily-Antworten aktivieren",false);
-        var model=new ComboBox{Width=440,DropDownStyle=ComboBoxStyle.DropDown};model.Items.AddRange(new object[]{"llama-3.3-70b-versatile","llama-3.1-8b-instant","openai/gpt-oss-20b"});
+        var model=new ComboBox{Width=440,DropDownStyle=ComboBoxStyle.DropDown};model.Items.AddRange(new object[]{"openai/gpt-oss-20b","openai/gpt-oss-120b","llama-3.3-70b-versatile"});
         var personality=new TextBox{Width=600,Height=95,Multiline=true,MaxLength=1500};
         var key=new TextBox{Width=440,UseSystemPasswordChar=true,MaxLength=500,PlaceholderText="Neuer API-Key; leer lässt den gespeicherten Schlüssel unverändert"};
         var cooldown=NewNumber(10,10,600);
@@ -19,6 +19,7 @@ public sealed partial class MainForm
         try{_groqOptions=_groqStore.Load();_groqOptions.Validate();status.Text=string.IsNullOrWhiteSpace(_groqStore.Key())?"Noch kein API-Key gespeichert.":"API-Key geschützt gespeichert.";}
         catch{_groqOptions=new();status.Text="Groq-Konfiguration nicht lesbar. Bitte neu speichern.";}
         _groqDaily=new(_groqClient,()=>_groqOptions,()=>_groqStore.Key());
+        _groqDaily.StatusChanged+=message=>{if(!IsDisposed&&IsHandleCreated)try{BeginInvoke(()=>{if(!status.IsDisposed)status.Text=message;});}catch(InvalidOperationException){}};
         enabled.Checked=_groqOptions.Enabled;model.Text=_groqOptions.Model;personality.Text=_groqOptions.Personality;cooldown.Value=_groqOptions.CooldownSeconds;
         GroqOptions Read()=>new(){Enabled=enabled.Checked,Model=model.Text.Trim(),Personality=personality.Text.Trim(),CooldownSeconds=(int)cooldown.Value};
         root.Controls.Add(new Label{AutoSize=true,MaximumSize=new Size(650,0),Text="Abwechslung für !daily: Die echte Belohnung und der Kontostand bleiben im festen Plugin-Text. Groq ergänzt einen kurzen Otter-Spruch. Andere Befehle und Gespräche verwenden keine KI."});
@@ -32,7 +33,7 @@ public sealed partial class MainForm
         };
         test.Click+=async(_,_)=>{
             test.Enabled=false;status.Text="Groq-Verbindung wird geprüft; keine Chatnachricht wird gesendet …";
-            try{var options=Read();options.Validate();var apiKey=string.IsNullOrWhiteSpace(key.Text)?_groqStore.Key():key.Text.Trim();if(string.IsNullOrWhiteSpace(apiKey))throw new InvalidOperationException("Bitte einen Groq-API-Key eingeben.");var text=await _groqClient.CompleteAsync(options,apiKey,[new("system","Antworte mit einem kurzen freundlichen Otter-Spruch auf Deutsch, ohne Zahlen, Links oder Namen."),new("user","Ein Daily wurde abgeholt.")],CancellationToken.None);var cleaned=GroqDailyService.Clean(text);status.Text=cleaned.Length>0?"Verbindung erfolgreich · Vorschau: "+cleaned:"Verbindung erfolgreich; Antwort enthielt keinen passenden kurzen Spruch.";}
+            try{var options=Read();options.Validate();var apiKey=string.IsNullOrWhiteSpace(key.Text)?_groqStore.Key():key.Text.Trim();if(string.IsNullOrWhiteSpace(apiKey))throw new InvalidOperationException("Bitte einen Groq-API-Key eingeben.");var text=await _groqClient.CompleteAsync(options,apiKey,GroqDailyService.DailyPrompt(options),CancellationToken.None);var cleaned=GroqDailyService.Clean(text);status.Text=cleaned.Length>0?"Verbindung erfolgreich · Vorschau: "+cleaned:"Verbindung erfolgreich; Antwort enthielt keinen passenden kurzen Spruch.";}
             catch(InvalidOperationException error){status.Text=error.Message;}
             catch{status.Text="Groq nicht erreichbar. Verbindung, API-Key und Modell prüfen.";}
             finally{if(!test.IsDisposed)test.Enabled=true;}

@@ -9,16 +9,16 @@ public sealed class GroqDailyTests:IDisposable
 {
     private readonly string root=Path.Combine(Path.GetTempPath(),"otter-groq-tests",Guid.NewGuid().ToString("N"));
     private sealed class Clock:TimeProvider{public DateTimeOffset Now=DateTimeOffset.UtcNow;public override DateTimeOffset GetUtcNow()=>Now;}
-    private sealed class Handler(string reply="Die Otterpfoten haben heute wieder Glück.",HttpStatusCode status=HttpStatusCode.OK):HttpMessageHandler
+    private sealed class Handler(string reply="Die Otterpfoten haben heute wieder Glück.",HttpStatusCode status=HttpStatusCode.OK,string finish="stop"):HttpMessageHandler
     {
         public int Calls;public string Body="";
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken ct){Calls++;Assert.Equal("https://api.groq.com/openai/v1/chat/completions",request.RequestUri!.AbsoluteUri);Assert.Equal("Bearer",request.Headers.Authorization!.Scheme);Body=await request.Content!.ReadAsStringAsync(ct);return new(status){Content=new StringContent(JsonSerializer.Serialize(new{choices=new[]{new{message=new{content=reply}}}}))};}
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken ct){Calls++;Assert.Equal("https://api.groq.com/openai/v1/chat/completions",request.RequestUri!.AbsoluteUri);Assert.Equal("Bearer",request.Headers.Authorization!.Scheme);Body=await request.Content!.ReadAsStringAsync(ct);return new(status){Content=new StringContent(JsonSerializer.Serialize(new{choices=new[]{new{message=new{content=reply},finish_reason=finish}}}))};}
     }
     [Fact]public async Task Rate_limit_repeat_filter_and_bounded_prompt_work_without_player_data()
     {
         var clock=new Clock();var options=new GroqOptions{Enabled=true};var handler=new Handler();using var client=new GroqClient(handler);var service=new GroqDailyService(client,()=>options,()=>"synthetic-key",clock);
         Assert.Contains("🦦 KI:",(await service.GenerateAsync(default))!);Assert.Null(await service.GenerateAsync(default));Assert.Equal(1,handler.Calls);
-        using var body=JsonDocument.Parse(handler.Body);Assert.Equal(160,body.RootElement.GetProperty("max_completion_tokens").GetInt32());Assert.DoesNotContain("synthetic-key",handler.Body);Assert.DoesNotContain("UserId",handler.Body);
+        using var body=JsonDocument.Parse(handler.Body);Assert.Equal(1024,body.RootElement.GetProperty("max_completion_tokens").GetInt32());Assert.Equal("low",body.RootElement.GetProperty("reasoning_effort").GetString());Assert.False(body.RootElement.GetProperty("include_reasoning").GetBoolean());Assert.DoesNotContain("synthetic-key",handler.Body);Assert.DoesNotContain("UserId",handler.Body);
         clock.Now=clock.Now.AddSeconds(11);Assert.Null(await service.GenerateAsync(default));Assert.Equal(2,handler.Calls);Assert.Contains("Vermeide die Wiederholung",handler.Body);
     }
     [Fact]public async Task Disabled_missing_key_and_provider_failure_leave_standard_response()
@@ -35,6 +35,29 @@ public sealed class GroqDailyTests:IDisposable
     [InlineData("https://evil.invalid")]
     [InlineData("Du erhältst eine neue Chance")]
     public void Ai_cannot_append_commands_mentions_or_invented_game_values(string value)=>Assert.Equal("",GroqDailyService.Clean(value));
+    [Fact]public async Task Reasoning_only_response_reports_limit_instead_of_false_success()
+    {
+        using var client=new GroqClient(new Handler(reply:"",finish:"length"));
+        var error=await Assert.ThrowsAsync<InvalidOperationException>(()=>client.CompleteAsync(new(),"synthetic",[new("user","Daily")],default));
+        Assert.Contains("Antwortlimit",error.Message);
+    }
+    [Fact]public async Task Non_reasoning_models_keep_small_budget_and_no_reasoning_parameters()
+    {
+        var handler=new Handler();using var client=new GroqClient(handler);
+        await client.CompleteAsync(new(){Model="llama-3.3-70b-versatile"},"synthetic",[new("user","Daily")],default);
+        using var body=JsonDocument.Parse(handler.Body);Assert.Equal(160,body.RootElement.GetProperty("max_completion_tokens").GetInt32());Assert.False(body.RootElement.TryGetProperty("reasoning_effort",out _));
+    }
+    [Fact]public async Task Model_not_found_points_to_model_selection()
+    {
+        using var client=new GroqClient(new Handler(status:HttpStatusCode.NotFound));
+        var error=await Assert.ThrowsAsync<InvalidOperationException>(()=>client.CompleteAsync(new(),"synthetic",[new("user","Daily")],default));
+        Assert.Contains("Modell nicht verfügbar",error.Message);Assert.DoesNotContain("synthetic",error.Message);
+    }
+    [Fact]public void Ordinary_exclamation_marks_are_not_commands()
+    {
+        Assert.Equal("Die Otterpfoten glänzen!",GroqDailyService.Clean("Die Otterpfoten glänzen!"));
+        Assert.Equal("",GroqDailyService.Clean("Bitte !give verwenden"));
+    }
     [Fact]public void Original_reward_text_is_never_truncated_to_fit_flavor()
     {
         var text=new string('x',470);Assert.Equal(text,GroqDailyService.Compose(text,"Ein sehr langer Spruch."));Assert.Equal("Daily Ein Spruch.",GroqDailyService.Compose("Daily","Ein Spruch."));

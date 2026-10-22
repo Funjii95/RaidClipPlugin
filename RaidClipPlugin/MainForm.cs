@@ -4911,6 +4911,13 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.43 – Groq-Daily-Antworten korrigiert
+
+- GPT-OSS bekommt ausreichend Antwortbudget; keine leeren Sprüche durch vorzeitig verbrauchtes Limit.
+- Verbindungstest verwendet denselben Prompt wie der echte Daily-Aufruf.
+- Normale Ausrufezeichen erlaubt, Befehle weiterhin blockiert.
+- Standardmodell GPT-OSS 20B und genaue Groq-Laufzeitmeldungen.
+
 2.1.42 – Groq für Daily-Sprüche
 
 - Optionaler kurzer KI-Otter-Spruch nach erfolgreichem !daily.
