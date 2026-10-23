@@ -16,7 +16,7 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 3;
+    public const int RpgProjectionVersion = 5;
     public const int MaxMessageBytes = 256 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
@@ -81,13 +81,18 @@ public static class SnapshotValidation
             throw new InvalidDataException("Invalid account identity, balance, date or RPG object.");
         var rpg = Clean(JsonSerializer.SerializeToElement(root["Rpg"]),
             ["SchemaVersion", "LegacyFishImported", "Inventory", "Equipment", "Perks", "Fish", "Sushi", "Buffs", "Cooldowns",
-                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials"]);
+                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials", "TalentRanks"]);
         if (rpg["SchemaVersion"]?.GetValue<int>() != 1) throw new InvalidDataException("Unsupported RPG schema.");
         foreach (var key in new[] { "PlayerLevel", "Experience", "SushiVersion" })
             if (rpg.ContainsKey(key) && (rpg[key] is not JsonValue value ||
                 !value.TryGetValue<long>(out var count) || count < (key == "PlayerLevel" ? 1 : 0) ||
                 (key != "Experience" && count > int.MaxValue)))
                 throw new InvalidDataException("Invalid RPG progression value.");
+        if(rpg.ContainsKey("TalentRanks"))
+        {
+            var ranks=rpg["TalentRanks"]?.Deserialize<Dictionary<string,int>>() ?? throw new InvalidDataException("Invalid talents.");
+            TalentRules.Validate(rpg["PlayerLevel"]?.GetValue<int>()??1,ranks);
+        }
         if (rpg.ContainsKey("Materials"))
         {
             var materials = Clean(JsonSerializer.SerializeToElement(rpg["Materials"]),
@@ -101,14 +106,14 @@ public static class SnapshotValidation
         {
             var health = Clean(JsonSerializer.SerializeToElement(rpg["Health"]),
                 ["CurrentHp", "AppliedMaximumHp", "AppliedBaseMaximumHp", "LastPassiveRegen", "SushiRegenRemainder",
-                    "LastChatHeal", "BossId", "Defeated", "BossDamage", "BossRemainingHp"]);
+                    "LastChatHeal", "BossId", "Defeated", "BossDamage", "BossRemainingHp", "SetShieldHp", "SetShieldSource"]);
             foreach (var field in health)
             {
                 if (field.Value is null) continue;
                 if (field.Value is not JsonValue value || (field.Key switch
                 {
                     "LastPassiveRegen" or "LastChatHeal" => !value.TryGetValue<DateTimeOffset>(out _),
-                    "BossId" => !value.TryGetValue<string>(out _),
+                    "BossId" or "SetShieldSource" => !value.TryGetValue<string>(out _),
                     "Defeated" => !value.TryGetValue<bool>(out _),
                     "SushiRegenRemainder" => !value.TryGetValue<decimal>(out var remainder) || remainder < 0,
                     _ => !value.TryGetValue<long>(out var number) || number < 0
@@ -133,7 +138,8 @@ public static class SnapshotValidation
                     item["Attributes"] = Clean(JsonSerializer.SerializeToElement(item["Attributes"]),
                         ["Damage", "CritChance", "CritDamage", "Luck", "BossDamage", "PearlBonus", "FishingLuck", "DiveLuck",
                             "Power", "Stamina", "MaximumHp", "DoubleAttackChance", "TripleAttackChance", "ExtraLootChance",
-                            "SushiPreservationChance", "BossDamageReduction", "BossDodgeChance", "CriticalHealing", "RareEquipmentLuck"]);
+                            "SushiPreservationChance", "BossDamageReduction", "BossDodgeChance", "CriticalHealing", "RareEquipmentLuck",
+                            "Armor", "ArmorPercent", "MaximumHpPercent", "AttackSpeed", "HealingPower"]);
                     foreach (var attribute in (JsonObject)item["Attributes"]!)
                         if (attribute.Value is not JsonValue number || !number.TryGetValue<decimal>(out _))
                             throw new InvalidDataException("Invalid decimal RPG attribute.");

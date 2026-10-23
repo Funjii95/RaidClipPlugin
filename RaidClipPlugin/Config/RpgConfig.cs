@@ -5,15 +5,16 @@ namespace RaidClipPlugin.Config;
 
 public sealed class RpgConfig
 {
-    public RpgConfig() => RpgSushiService.AddMissing(this);
+    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); }
     public long FreeFishingReward { get; set; } = 40;
     public decimal PowerDamagePerPoint { get; set; } = 1;
     private RpgHealthConfig _health = new();
     public RpgHealthConfig Health { get { _health.EquipmentSets = Sets; return _health; } set => _health=value; }
+    public RpgMimicConfig Mimic {get;set;}=new();
     public RpgEnemyConfig Enemies { get; set; } = new();
     public RpgHotTimeConfig HotTime { get; set; } = new();
     public RpgSalvageConfig Salvage { get; set; } = new();
-    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).ToList();
+    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).Concat(RpgTidesExpansion.Sets()).ToList();
     public decimal BossLootChance { get; set; } = 2;
     public bool BossLegendaryEnabled { get; set; }
     public int BossLegendaryMinimumHp { get; set; } = 1000;
@@ -24,6 +25,7 @@ public sealed class RpgConfig
         if(PowerDamagePerPoint is <0 or >10)throw new InvalidOperationException("Kraft-Schadensbonus muss zwischen 0 und 10 Prozent je Punkt liegen.");
         Health.Validate();
         Enemies.Validate();
+        Mimic.Validate();
         RpgSushiService.Validate(this);
         DiveLoot.Validate();
         Salvage.Validate();
@@ -113,7 +115,8 @@ public sealed class RpgPerkDefinition
 {
     public string Id { get; set; } = "";
     public string DisplayName { get; set; } = "";
-    public int MaximumLevel { get; set; } = 5;
+    private int _maximumLevel = 5;
+    public int MaximumLevel { get => Math.Clamp(_maximumLevel,1,5); set => _maximumLevel=value; }
     public long BaseCost { get; set; } = 500;
     public decimal CostGrowth { get; set; } = 2;
     public RpgAttributes BonusPerLevel { get; set; } = new();

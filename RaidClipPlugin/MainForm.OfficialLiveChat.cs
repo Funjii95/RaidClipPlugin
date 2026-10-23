@@ -79,6 +79,7 @@ public sealed partial class MainForm
     {
         var tabs = new TabControl { Dock = DockStyle.Fill, Name = "LiveChatViews" };
         tabs.TabPages.Add(BuildLiveChatTab());
+        tabs.TabPages.Add(BuildGroqDailyTab());
         tabs.TabPages.Add(BuildOfficialTwitchChatTab());
         return tabs;
     }

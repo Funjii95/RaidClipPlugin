@@ -2,12 +2,15 @@ using System.Text.RegularExpressions;
 namespace Backend;
 public sealed class BackendSettings
 {
+    public DesktopSettings Desktop { get; set; } = new();
     public ActionSettings Actions {get;set;}=new();
     public TwitchSettings Twitch { get; set; } = new();
     public PluginSettings Plugin { get; set; } = new();
     public DataSettings Data { get; set; } = new();
     public void Validate()
     {
+        if(Desktop.Enabled && !Regex.IsMatch(Desktop.ClientId,"^[a-zA-Z0-9]{10,100}$"))
+            throw new InvalidOperationException("Desktop login requires its registered public Twitch ClientId.");
         if(Actions.Enabled && (Actions.Mode is not ("Firestore" or "Synthetic") || Actions.AllowedUserIds.Length is <1 or >100 || Actions.AllowedUserIds.Any(id=>!Ids.IsNumeric(id)) ||
             Actions.PluginKeyHash.Length!=64 || Actions.PluginKeyHash.Any(c=>!Uri.IsHexDigit(c)) ||
             !Regex.IsMatch(Actions.Collection,"^[a-zA-Z0-9_-]{1,64}$") || Actions.Collection==Data.Collection ||
@@ -30,6 +33,11 @@ public sealed class BackendSettings
             uri.Scheme != "https" || uri.GetLeftPart(UriPartial.Authority) != origin))
             throw new InvalidOperationException("CORS origins must be exact HTTPS origins without trailing slash.");
     }
+}
+public sealed class DesktopSettings
+{
+    public bool Enabled { get; set; }
+    public string ClientId { get; set; } = "";
 }
 public sealed class TwitchSettings
 {

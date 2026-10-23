@@ -35,7 +35,7 @@ public static class ActionEndpoints
         plugin.MapDelete("/session/{id:guid}",async(Guid id,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.CloseAsync(id,ct)));
         plugin.MapPost("/claim/{session:guid}",async(Guid session,ActionRelay relay,CancellationToken ct)=>
             await relay.ClaimAsync(session,ct) is {} value ? Results.Ok(value) : Results.NoContent());
-        plugin.MapPost("/complete",async(HttpRequest request,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.CompleteAsync(await Body<RelayComplete>(request,65536,ct),ct)));
+        plugin.MapPost("/complete",async(HttpRequest request,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.CompleteAsync(await Body<RelayComplete>(request,ActionResultLimits.MaximumCompletionBodyBytes,ct),ct)));
     }
     private static async Task<T> Body<T>(HttpRequest request,int limit,CancellationToken ct)
     {

@@ -4,6 +4,11 @@ export type Slot = typeof slots[number];
 export type Activity = 'Dive' | 'Fishing' | 'Boss';
 export type SushiCategory = 'Offensive' | 'Defensive';
 export interface CharacterStats {
+    armor?: number;
+    armorPercent?: number;
+    maximumHpPercent?: number;
+    attackSpeed?: number;
+    healingPower?: number;
     damage: number;
     critChance: number;
     critDamage: number;
@@ -44,6 +49,7 @@ export interface ItemEffect {
     activity?: Activity | null;
 }
 export interface InventoryItem {
+    upgradeLevel?: number;
     instanceId: string;
     itemId: string;
     name: string;
@@ -103,6 +109,7 @@ export interface PlayerProfile {
     regenRemainder: number;
     lastChatHeal: number;
     defeatedBossId?: string;
+    shieldHp?: number;
     baseStats: CharacterStats;
     buffs: ActiveBuff[];
 }
@@ -145,6 +152,8 @@ export interface CombatExchange {
     outcome: 'hit' | 'victory' | 'defeat';
 }
 export interface BossState {
+    isMimic?:boolean;
+    legendaryChance?:number;
     id: string;
     name: string;
     hp: number;
@@ -165,6 +174,7 @@ export interface HotTimeState {
     active: boolean;
 }
 export interface Perk {
+    presentation?: {category:string;symbol:string;value:number;label:string};
     id: string;
     name: string;
     level: number;
@@ -203,6 +213,7 @@ export interface SalvageQuote {
 }
 export interface MaterialStock { shells:number; whitePearls:number; bluePearls:number; redPearls:number; stoneChips:number; }
 export interface DemoState {
+    talents?: import("./talents").TalentRanks;
     materials?: MaterialStock;
     remote?: import("./remote/model").RemoteView;
     player: PlayerProfile;
@@ -223,7 +234,7 @@ export interface DemoState {
     salvageQuote?: SalvageQuote;
     effectCooldowns: Record<string, number>;
 }
-export type Action = {type:'openShells';count:number;} | {
+export type Action = {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
     type: 'dive';
     stake: number;
 } | {
@@ -256,6 +267,7 @@ export type Action = {type:'openShells';count:number;} | {
 } | {
     type: 'perk';
     id: string;
+    maximum?: boolean;
 } | {
     type: 'cook' | 'activateSushi';
     recipeId: string;

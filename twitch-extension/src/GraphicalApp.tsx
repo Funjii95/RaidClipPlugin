@@ -1,3 +1,5 @@
+import {PerkPanel} from './PerkPanel';
+import {TalentTree} from './TalentTree';
 import { useEffect, useState, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { labels, statsText, numberStat, recipeEffects, collectorText } from "./presentation";
@@ -23,6 +25,7 @@ const tabs = [
     "Inventar",
     "Ausrüstung",
     "Itemsets",
+    "Talente",
     "Perks",
     "Boss",
     "Kochen",
@@ -34,6 +37,7 @@ const symbols = [
     "bag",
     "swords",
     "sets",
+    "perk",
     "perk",
     "boss",
     "cook",
@@ -55,6 +59,12 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
     const dialog = useRef<HTMLDialogElement>(null);
     const upgradeDialog=useRef<HTMLDialogElement>(null);
     const [upgradeItem,setUpgradeItem]=useState<string|null>(null);
+    const upgrading=state.inventory.find(i=>i.instanceId===upgradeItem);
+    const upgradeRules=state.remote?.itemUpgrade;
+    const upgradeLevel=upgrading?.upgradeLevel??0;
+    const upgradeCost=upgradeRules?.costs[upgradeLevel];
+    const upgradeMaterial=upgradeLevel===6?"weiße":upgradeLevel===7?"blaue":upgradeLevel===8?"rote":null;
+    const materialAvailable=!upgradeMaterial||!!state.materials&&(upgradeLevel===6?state.materials.whitePearls:upgradeLevel===7?state.materials.bluePearls:state.materials.redPearls)>0;
     useEffect(()=>{if(upgradeItem){upgradeDialog.current?.showModal();upgradeDialog.current?.querySelector<HTMLElement>("h2")?.focus();}else upgradeDialog.current?.close();},[upgradeItem]);
     useEffect(() => { if (state.salvageQuote)
         dialog.current?.showModal();
@@ -127,7 +137,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
             {i.rarity} · {i.slot ?? "Fundstück"}
           </small>
         </div>
-        <h3>{i.name}</h3>
+        <h3>{i.name}{(i.upgradeLevel??0)>0?` +${i.upgradeLevel}`:""}</h3>
         <p>{i.description}</p>
         <ul className="attributes">
           {statsText(i.attributes).map((t) => (<li key={t}>{t}</li>))}
@@ -140,7 +150,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
         {i.setId && (<small>Set: {sets.find((s) => s.id === i.setId)?.name}</small>)}
         {i.collector && <p>{collectorText(i.collector).join(" · ")}</p>}
         <div className="actions">
-          {i.slot && <button onClick={()=>setUpgradeItem(i.name)} disabled={busy}>Aufwerten</button>}
+          {i.slot && <button onClick={()=>setUpgradeItem(i.instanceId)} disabled={busy}>Aufwerten</button>}
           <button aria-pressed={i.locked} onClick={() => void run({ type: "lock", id: i.instanceId })} disabled={!allowed("lock") || busy}>{i.locked ? "Entsperren" : "Sperren"}</button>
           {i.slot &&
                 (equipped(i) ? (<button onClick={() => {
@@ -216,6 +226,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
             </strong>
           </div>
           <progress aria-label="Otter HP" value={Number.isFinite(state.player.hp)?state.player.hp:undefined} max={Number.isFinite(state.player.maxHp)&&state.player.maxHp>0?state.player.maxHp:undefined}/>
+          {(state.player.shieldHp??0)>0 && <small aria-label="Aktiver Schild">🛡 {format(state.player.shieldHp!)} Schildpunkte</small>}
           {state.player.hp === 0 ? (<div className="defeat-notice">
               <p role="status">Dein Otter ist besiegt.</p>
               {isDemo&&(<button onClick={() => void run({ type: "healChat" })} disabled={!allowed("healChat") || busy}>
@@ -430,33 +441,17 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                       </p>))}
                   </article>))}
               </>)}
-            {tab === "Perks" &&
-                state.perks.map((p) => (<article key={p.id}>
-                  <div className="item-top">
-                    <h3>✧ {p.name}</h3>
-                    <span>
-                      {format(p.level)}/{format(p.maxLevel)}
-                    </span>
-                  </div>
-                  <p>Pro Level: {statsText(p.bonus).join(", ")||"Bonusdaten nicht übermittelt"}</p>
-                  <progress value={p.level} max={Number.isFinite(p.maxLevel)?p.maxLevel:undefined}/>
-                  <button disabled={!allowed("perk") || busy || (busy ||
-                        p.level >= p.maxLevel ||
-                        Number.isFinite(perkPrice(p))&&!affordable(perkPrice(p)))} onClick={() => void run({ type: "perk", id: p.id })}>
-                    {p.level >= p.maxLevel
-                        ? "Maximallevel"
-                        : Number.isFinite(perkPrice(p))?`Kaufen · ${format(perkPrice(p))} ${isDemo?"Demo-Perlen":"Perlen"}`:"Kaufen · Preisprüfung im Spiel"}
-                  </button>
-                </article>))}
+            {tab === "Talente" && <TalentTree state={state} demo={isDemo} busy={busy} canLearn={allowed("learnTalent")} onLearn={id=>void run({type:"learnTalent",id})}/>}
+            {tab === "Perks" && <PerkPanel perks={state.perks} price={perkPrice} affordable={affordable} canBuy={allowed("perk")} busy={busy} demo={isDemo} pearls={isDemo?format(state.player.pearls):state.remote?.pointsExact?BigInt(state.remote.pointsExact).toLocaleString('de-DE'):'–'} canBuyMax={!isDemo&&state.remote?.perkMaxPurchase===true} onBuy={(id,maximum)=>void run({type:"perk",id,maximum})}/>}
             {tab === "Boss" && (<article className="boss">
                 <div className="boss-art">
-                  <img src="./boss-kraken.png" alt="Kraken in versunkenen Ruinen" width="1254" height="1254" loading="lazy"/>
+                  <img src={state.boss.isMimic?"./boss-mimic.png":"./boss-kraken.png"} alt={state.boss.isMimic?"Mimic – lebendige Schatztruhe":"Kraken in versunkenen Ruinen"} width="1254" height="1254" loading="lazy"/>
                 </div>
-                <small>BOSS DER TIEFSEE</small>
+                <small>{state.boss.isMimic?"MIMIC · LEBENDE SCHATZTRUHE":"BOSS DER TIEFSEE"}</small>
                 <h3>{state.boss.name}</h3>
                 <p>
                   {!isDemo&&!state.remote?.bossKnown?"Aktueller Bossstatus nicht übermittelt. Bossangriffe sind noch nicht freigegeben.":state.boss.status === "active"
-                    ? "Der Kraken wartet auf dich!"
+                    ? state.boss.isMimic?`Die Mimic schnappt nach dir! Legendary-Chance nach Sieg: ${state.boss.legendaryChance??50} % je berechtigtem Überlebenden.`:`Der Boss wartet auf dich!${state.boss.legendaryChance!==undefined?` Legendary-Chance nach Sieg: ${state.boss.legendaryChance} % je berechtigtem Überlebenden.`:""}`
                     : !isDemo?"Aktuell ist kein Boss aktiv. Start durch Mods/Broadcaster oder den Plugin-Autostart.":"Besiegt · Nächster Boss in " +
                         time(remaining(state.boss.nextAt, now))}
                 </p>
@@ -583,12 +578,12 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
       </main>
       <dialog ref={upgradeDialog} aria-labelledby="upgrade-heading" onCancel={()=>setUpgradeItem(null)}>
         <h2 id="upgrade-heading" tabIndex={-1}>Ausrüstung aufwerten</h2>
-        <p>{upgradeItem}</p>
-        <p>Vorschau · Aufwertung noch nicht freigeschaltet.</p>
-        <p>Bis +9, je Stufe +2,5 % additiv auf die ursprünglichen Werte. Jedes Upgrade gelingt.</p>
-        <p>Perlenkosten pro Schritt:</p>
-        <ul>{[10000,25000,50000,100000,200000,350000,500000,750000,1000000].map((cost,index)=><li key={index}>+{index+1}: {format(cost)} Perlen{index===6?" + 1 weiße Perle":index===7?" + 1 blaue Perle":index===8?" + 1 rote Perle":""}</li>)}</ul>
-        <p>Es werden keine Perlen oder Materialien verbraucht. Die aktuelle Aufwertungsstufe wird noch nicht vom Plugin übermittelt.</p>
+        <p>{upgrading?.name} · Stufe +{upgradeLevel} / +9</p>
+        <p>Je Stufe +2,5 % additiv auf die ursprünglichen Attribute. Jedes Upgrade gelingt. Spezialeffekte bleiben unverändert.</p>
+        {upgradeRules&&upgradeCost?<><p>Nächste Stufe: +{upgradeLevel+1}</p><p>Kosten: {BigInt(upgradeCost).toLocaleString('de-DE')} Perlen{upgradeMaterial?` + 1 ${upgradeMaterial} Perle`:''}</p>
+        {!materialAvailable&&<p>Die benötigte farbige Perle fehlt.</p>}
+        <button disabled={!allowed('upgrade')||busy||!upgrading||!materialAvailable||!state.remote?.pointsExact||BigInt(state.remote.pointsExact)<BigInt(upgradeCost)} onClick={()=>upgrading&&void run({type:'upgrade',id:upgrading.instanceId,expectedLevel:upgradeLevel})}>{busy?'Wird aufgewertet …':`Jetzt auf +${upgradeLevel+1} aufwerten`}</button></>:<p>{upgradeLevel>=9?'Maximalstufe +9 erreicht.':'Aufwertung wird vom verbundenen Plugin noch nicht angeboten.'}</p>}
+        <p role="status">{message}</p>
         <button onClick={()=>setUpgradeItem(null)}>Schließen</button>
       </dialog>
       <dialog ref={dialog} onCancel={() => void run({ type: "cancelSalvage" })}><h2>Zerlegen bestätigen</h2>{state.salvageQuote && <><p>Gültig: {remaining(state.salvageQuote.expiresAt, now)} Sekunden</p><ul>{state.salvageQuote.items.map(i => <li key={i.id}>{i.name} · {i.value} Perlen {i.warning ? "· Set / Legendär" : ""}</li>)}</ul><strong>Gesamt: {state.salvageQuote.total} Perlen</strong><div className="actions"><button onClick={() => void run({ type: "confirmSalvage", token: state.salvageQuote!.token })} disabled={!allowed("confirmSalvage") || busy}>Jetzt zerlegen</button><button onClick={() => void run({ type: "cancelSalvage" })} disabled={!allowed("cancelSalvage") || busy}>Abbrechen</button></div></>}</dialog>

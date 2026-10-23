@@ -95,7 +95,7 @@ public sealed class RpgHealthTests : IDisposable
         await game.ExecuteBossAttackAsync("live","LIVE","last",default);
         var dead=(await s.GetProfileAsync("dead",default)).Entry;var live=(await s.GetProfileAsync("live",default)).Entry;
         Assert.Equal(0,dead.Points);Assert.Equal(0,dead.Rpg.Experience);Assert.Empty(dead.Rpg.Inventory);
-        Assert.Equal(100,live.Points);Assert.Equal(1200,live.Rpg.Experience);Assert.Single(live.Rpg.Inventory);
+        Assert.Equal(100,live.Points);Assert.Equal(1200,live.Rpg.Experience);Assert.Equal(2,live.Rpg.Inventory.Count);Assert.Single(live.Rpg.Inventory,i=>i.Rarity==ItemRarity.Legendary);
         // Last hit kills the boss: only one counterattack against the survivor.
         Assert.Equal(92,live.Rpg.Health.CurrentHp); // 90 HP +2 on level-up.
         game=Game(new(_dir),c);await game.TickAsync(default);

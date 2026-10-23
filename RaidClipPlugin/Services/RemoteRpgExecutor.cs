@@ -11,7 +11,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     Func<string,string,bool> permitted,ChatMinigameService? minigames=null,Func<string,bool>? enrolled=null)
 {
     private readonly SemaphoreSlim gate=new(1,1);
-    internal static string CommandFor(string kind)=>kind switch {"openShells"=>"!muscheln","status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
+    internal static string CommandFor(string kind)=>kind switch {"learnTalent"=>"!talent","openShells"=>"!muscheln","status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
     internal async Task<ActionOutcome> ExecuteAsync(ActionEnvelope envelope,CancellationToken ct,TimeSpan? remainingWindow=null)
     {
         var hash=RpgIntents.Hash(envelope.Intent);
@@ -39,7 +39,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             catch(GameplayUnavailableException){result=new(false,"not_ready","Speicherung wegen abgelaufener Plugin-Sitzung abgelehnt.");}
             catch{result=Unknown();}
             result=result with{Message=result.Message.Length>1000?result.Message[..1000]:result.Message};
-            if(JsonSerializer.SerializeToUtf8Bytes(result).Length>48000)result=result with{DataJson=null,Message="Ergebnis gespeichert. Vollständigen Snapshot aktualisieren."};
+            if(JsonSerializer.SerializeToUtf8Bytes(result).Length>ActionResultLimits.MaximumOutcomeBytes)result=result with{DataJson=null,Message="Ergebnis gespeichert. Vollständigen Snapshot aktualisieren."};
             await SaveAsync(file,new(hash,envelope.UserId,result));
             return result;
         } finally{gate.Release();}
@@ -55,6 +55,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     }
     private async Task<ActionOutcome> InvokeAsync(ActionEnvelope e,CancellationToken ct)
     {
+        if(RpgIntents.IsAdmin(e.Intent.Kind))return await InvokeAdminAsync(e,ct);
         var bytes=await points.ReadCommittedFileAsync(ct);
         if(bytes is null)return new(false,"profile_missing","Kein lokales Testprofil vorhanden.");
         using var source=JsonDocument.Parse(bytes);
@@ -97,14 +98,16 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             if(!Enum.TryParse<EquipmentSlot>(Arg("slot"),false,out var slot) || !Enum.IsDefined(slot))return new(false,"invalid_slot","Ungültiger Slot.");
             mutation=await progression.UnequipAsync(e.UserId,account.DisplayName,request,slot,ct);
         }
+        if(e.Intent.Kind=="learnTalent")mutation=await RpgTalentService.LearnAsync(points,rpg,e.UserId,account.DisplayName,request,Arg("talentId"),int.Parse(Arg("expectedRank")),int.Parse(Arg("catalogVersion")),ct);
         if(e.Intent.Kind=="buyPerk")mutation=await progression.BuyPerkAsync(e.UserId,account.DisplayName,request,Arg("perkId"),ct);
         if(e.Intent.Kind=="craft")mutation=await progression.CraftAsync(e.UserId,account.DisplayName,request,Arg("recipeId"),ct);
         if(e.Intent.Kind=="eat")mutation=await progression.ActivateSushiAsync(e.UserId,account.DisplayName,request,Arg("recipeId"),ct);
         if(e.Intent.Kind is "dive" or "fish"){
             var adventure=await new RpgAdventureService(points,config).ExecuteAsync(e.UserId,account.DisplayName,request,e.Intent.Kind=="fish"?RpgActivity.Fishing:RpgActivity.Dive,long.Parse(Arg("stake"),System.Globalization.CultureInfo.InvariantCulture),ct);
+            if(adventure.BossDiscovered && minigames is not null)await minigames.StartDiscoveredBossAsync(account.DisplayName,ct);
             return new(adventure.Success,adventure.Success?"applied":"rule_rejected",adventure.Error,JsonSerializer.Serialize(adventure));
         }
-        if(e.Intent.Kind=="buyPerk" && mutation?.Success==true){
+        if(e.Intent.Kind is "buyPerk" or "learnTalent" && mutation?.Success==true){
             // Read the committed authoritative state; the viewer need not wait for
             // the independent Firestore delivery before seeing the purchased level.
             var committed=(await points.GetProfileAsync(e.UserId,ct)).Entry;
@@ -118,9 +121,21 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     internal string CatalogJson()
     {
         var config=configuration();var rpg=config.Adventures.Rpg;
-        return JsonSerializer.Serialize(new{supported=RpgIntents.Supported.Where(kind=>kind!="openShells"),
-            perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
+        return JsonSerializer.Serialize(new{supported=RpgIntents.Supported.Where(kind=>kind!="openShells").Concat(new[]{"adminCatalog","adminStart","adminGrant"}),
+            talentCatalogVersion=TalentRules.CatalogVersion,talents=TalentRules.Catalog,
+            perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Presentation=RpgPerkCatalog.Find(p.Id),Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
             recipes=rpg.Recipes.Select(r=>new{r.Id,Name=RpgChatPresentation.RecipeName(r),r.PearlCost,r.Category,r.Activity,BossUses=RpgSushiService.Uses(r,rpg),r.Attributes,r.PassiveHealing,r.ChatHealing,r.BossDamageReduction,r.BossLifeleech,Ingredients=RpgSushiService.Ingredients(r),Effects=RpgSushiService.Effects(r)}),
-            fish=rpg.FishSpecies.Select(f=>new{f.Id,f.Name,f.Rarity}),sets=rpg.Sets,blocked=new[]{"bossStart","heistStart","moderatorCommands","give","reset"}});
+            fish=rpg.FishSpecies.Select(f=>new{f.Id,f.Name,f.Rarity}),sets=rpg.Sets,blocked=new[]{"bossStart","heistStart","moderatorCommands","give","reset"}},new JsonSerializerOptions{Converters={new CatalogAttributesConverter()}});
+    }
+    private sealed class CatalogAttributesConverter:System.Text.Json.Serialization.JsonConverter<RpgAttributes>
+    {
+        public override RpgAttributes Read(ref Utf8JsonReader reader,Type type,JsonSerializerOptions options)=>throw new NotSupportedException();
+        public override void Write(Utf8JsonWriter writer,RpgAttributes value,JsonSerializerOptions options)
+        {
+            writer.WriteStartObject();
+            foreach(var property in typeof(RpgAttributes).GetProperties())
+                if((decimal)property.GetValue(value)! is var number && number!=0)writer.WriteNumber(property.Name,number);
+            writer.WriteEndObject();
+        }
     }
 }

@@ -78,6 +78,8 @@ public sealed class BossHpModeConverter : EnumConverter
 
 public sealed class BossAdventureConfig
 {
+    [Browsable(false)] public bool IsMimic {get;set;}
+    [Browsable(false)] public string DisplayName {get;set;}="Perlenwächter";
     [DisplayName("Angriffs-Cooldown-Text"), Description("{user}, {remaining} (Sekunden)")]
     public string AttackCooldownMessage { get; set; } = "@{user}, du kannst in {remaining} Sekunden wieder mit !attack angreifen.";
     [DisplayName("Starttext")] public string StartMessage { get; set; } = "Ein Perlenwächter erscheint! {hp} LP, {seconds} Sekunden. Alle greifen mit !attack an! Belohnungstopf: {reward} {currency}.";

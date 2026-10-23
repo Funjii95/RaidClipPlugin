@@ -1,3 +1,4 @@
+import {learnTalent,talentBonus,underwaterDodgeChance,avoidsUnderwaterHit} from './talents';
 import { initialState, sets, recipes, rarities, fishSpecies, rules, reference, emptyStats, generateItem, newBoss } from './data';
 import type { Action, CharacterStats, CollectorStats, DemoState, InventoryItem, RpgDataSource, Activity, ActiveBuff, Rarity } from './types';
 export const remaining = (until: number, now: number) => Math.max(0, Math.ceil((until - now) / 1000));
@@ -8,6 +9,7 @@ const add = (a: CharacterStats, b: Partial<CharacterStats>) => { for (const k of
     a[k] += b[k] ?? 0; };
 export function characterStats(s: DemoState, activity: Activity = 'Boss', now = Date.now(), buffs = false, effects = true, stake = 0): CharacterStats {
     const stats = emptyStats();
+    add(stats, talentBonus(s.talents??{},activity));
     const gear = s.inventory.filter(i => Object.values(s.equipment).includes(i.instanceId));
     gear.forEach(i => add(stats, i.attributes));
     s.perks.forEach(p => add(stats, Object.fromEntries(Object.entries(p.bonus).map(([k, v]) => [k, v * p.level]))));
@@ -23,7 +25,7 @@ export function characterStats(s: DemoState, activity: Activity = 'Boss', now = 
     if (buffs && activity === 'Boss')
         stats.bossDamageReduction += s.player.buffs.filter(b => b.category === 'Defensive' && buffActive(b, now)).reduce((n, b) => Math.max(n, b.bossDamageReduction), 0);
     for (const [k, v] of Object.entries(caps))
-        stats[k as keyof CharacterStats] = Math.min(v, Math.max(0, stats[k as keyof CharacterStats]));
+        stats[k as keyof CharacterStats] = Math.min(v, Math.max(0, stats[k as keyof CharacterStats]??0));
     return stats;
 }
 export const activityStats = (s: DemoState, activity: Activity, now = Date.now()) => characterStats(s, activity, now, true);
@@ -43,7 +45,7 @@ export class MockRpgDataSource implements RpgDataSource {
     private state: DemoState;
     private serial = 0;
     private queue: Promise<unknown> = Promise.resolve();
-    constructor(private now = () => Date.now(), private random = () => Math.random(), seed?: DemoState) { this.state = structuredClone(seed ?? initialState(now())); }
+    constructor(private now = () => Date.now(), private random = () => Math.random(), seed?: DemoState) { this.state = structuredClone(seed ?? initialState(now())); this.serial=Math.max(0,...this.state.inventory.map(i=>Number(/^loot-(\d+)$/.exec(i.instanceId)?.[1]??0))); }
     private fixtureClaims=new Map<string,string>();
     // Only the local test transport can settle canned response fixtures. Not a live API intent.
     settleMinigameFixture(id:string,stake:number,payout:number):Promise<void> {
@@ -166,6 +168,10 @@ export class MockRpgDataSource implements RpgDataSource {
         const find = (id: string) => { const item = s.inventory.find(i => i.instanceId === id); if (!item)
             throw Error('Gegenstand nicht gefunden.'); return item; };
         switch (action.type) {
+            case 'learnTalent':
+                s.talents=learnTalent(action.id,s.player.level,s.talents??{});
+                this.refresh(s,now);
+                break;
             case 'refresh': break;
             case 'demoWound':
                 s.player.hp = Math.min(s.player.hp, Math.max(1, Math.floor(s.player.maxHp * .2)));
@@ -404,7 +410,7 @@ export class MockRpgDataSource implements RpgDataSource {
                         while (hp > 0 && s.player.hp > 0 && rounds < rules.enemies.maximumRounds) {
                             rounds++;
                             hp = Math.max(0, hp - Math.max(1, Math.floor(this.int(10, 30) * (1 + stats.damage / 100) * (1 + stats.bossDamage / 100) * (this.roll(stats.critChance) ? rules.baseCritMultiplier + stats.critDamage / 100 : 1))));
-                            if (hp > 0) {
+                            if (hp > 0 && !(underwaterDodgeChance(s.talents??{})>0 && avoidsUnderwaterHit(s.talents??{},this.random()*100))) {
                                 const hit = Math.min(s.player.hp, this.int(tier.minimumDamage, tier.maximumDamage));
                                 s.player.hp -= hit;
                                 taken += hit;

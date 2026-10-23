@@ -1,6 +1,8 @@
 import type {Activity,CharacterStats,CollectorStats,DemoState,InventoryItem,ItemSet,Perk,Rarity,Slot,SushiCategory,SushiRecipe} from '../types';
 export type RecipeView=Omit<SushiRecipe,'activity'|'category'|'bossUses'|'attributes'|'passiveHealing'|'chatHealing'|'bossDamageReduction'|'bossLifeleech'> & Partial<Pick<SushiRecipe,'activity'|'category'|'bossUses'|'attributes'|'passiveHealing'|'chatHealing'|'bossDamageReduction'|'bossLifeleech'>> & {effectsText?:string};
 export interface RemoteView {
+ perkMaxPurchase?:boolean;itemUpgrade?:{maximumLevel:number;percentPerLevel:number;costs:string[]};
+ talentCatalogVersion?:number;talentCatalog?:import("../talents").Talent[];
  loaded:boolean; connection:'loading'|'unauthorized'|'offline'|'disconnected'|'ready'|'readonly'|'error'; message:string;
  updatedAt?:string; pointsText:string; pointsExact:string; experienceText?:string; sets:ItemSet[]; recipes:RecipeView[];
  stats?:CharacterStats; collectors?:CollectorStats; perkPrices:Record<string,number>;selfDeletionEnabled?:boolean;
@@ -24,9 +26,10 @@ function counts(v:any,label:string){const result:Record<string,number>={};for(co
 export function inventoryItem(v:any):InventoryItem {
  object(v,'Gegenstand');const id=string(field(v,'InstanceId'),'Item-ID');
  const effects=field(v,'Effects');if(!Array.isArray(effects))throw Error('Itemeffekte fehlen.');
- return {instanceId:id,itemId:string(field(v,'ItemId'),'Itemkatalog-ID'),name:string(field(v,'DisplayName')||field(v,'ItemId'),'Itemname'),description:field(v,'Description')??'',icon:field(v,'IconId')??'✧',
+ const upgradeLevel=field(v,'UpgradeLevel')??0;if(!Number.isInteger(upgradeLevel)||upgradeLevel<0||upgradeLevel>9)throw Error('Ungültige Aufwertungsstufe.');
+ return {upgradeLevel,instanceId:id,itemId:string(field(v,'ItemId'),'Itemkatalog-ID'),name:string(field(v,'DisplayName')||field(v,'ItemId'),'Itemname'),description:field(v,'Description')??'',icon:field(v,'IconId')??'✧',
  rarity:enumValue<Rarity>(field(v,'Rarity'),rarities,'Seltenheit'),slot:field(v,'Slot')==null?undefined:enumValue<Slot>(field(v,'Slot'),slots,'Slot'),kind:enumValue(field(v,'Kind'),['Treasure','Equipment','Consumable'],'Itemart'),
- attributes:attributes(field(v,'Attributes')),effects:effects.map((e:any)=>({id:string(field(e,'Id'),'Effekt-ID'),description:field(e,'Description')??field(e,'Name')??field(e,'Id'),trigger:enumValue(field(e,'Trigger'),['DoubleAttack','TripleAttack','ExtraLoot','SushiPreservation'],'Effekt'),chance:number(field(e,'Chance'),'Chance'),strength:number(field(e,'Strength'),'Stärke'),requiresCritical:field(e,'RequiresCritical')===true,minimumStake:number(field(e,'MinimumStake'),'Mindesteinsatz'),cooldownSeconds:number(field(e,'CooldownSeconds'),'Cooldown'),activity:field(e,'Activity')==null?undefined:enumValue<Activity>(field(e,'Activity'),activities,'Aktivität')})),
+ attributes:Object.fromEntries(Object.entries(attributes(field(v,'Attributes'))).map(([k,value])=>[k,Number(value)*(1+upgradeLevel*0.025)])),effects:effects.map((e:any)=>({id:string(field(e,'Id'),'Effekt-ID'),description:field(e,'Description')??field(e,'Name')??field(e,'Id'),trigger:enumValue(field(e,'Trigger'),['DoubleAttack','TripleAttack','ExtraLoot','SushiPreservation'],'Effekt'),chance:number(field(e,'Chance'),'Chance'),strength:number(field(e,'Strength'),'Stärke'),requiresCritical:field(e,'RequiresCritical')===true,minimumStake:number(field(e,'MinimumStake'),'Mindesteinsatz'),cooldownSeconds:number(field(e,'CooldownSeconds'),'Cooldown'),activity:field(e,'Activity')==null?undefined:enumValue<Activity>(field(e,'Activity'),activities,'Aktivität')})),
  favorite:field(v,'IsFavorite')===true,locked:field(v,'IsLocked')===true,salvageValue:optionalNumber(field(v,'SalvageValue')),setId:field(v,'SetId')||undefined,
  collector:field(v,'Collector')==null?undefined:attributes(field(v,'Collector')) as Partial<CollectorStats> as CollectorStats,
  dropWeight:optionalNumber(field(v,'DropWeight')),activities:Array.isArray(field(v,'DropActivities'))?field(v,'DropActivities').map((a:any)=>enumValue<Activity>(a,activities,'Aktivität')):[]};
@@ -47,10 +50,19 @@ export function mapProfile(raw:any,catalog:any={}):DemoState {
  const points=field(raw,'Points');if(!/^(0|[1-9]\d*)$/.test(String(points))||BigInt(points)>9223372036854775807n || typeof points==='number'&&!Number.isSafeInteger(points))throw Error('Ungültiger Perlenstand.');
  const rpg=object(field(raw,'Rpg'),'RPG-Profil');if(field(rpg,'SchemaVersion')!==1)throw Error('Unbekannte RPG-Datenversion.');
  const state=emptyRemoteState(),view=catalogView(catalog),health=field(rpg,'Health');
+ const ranks=field(rpg,'TalentRanks');
+ if(ranks!=null)state.talents=counts(ranks,'Talente');
+ if(catalog.talentCatalogVersion===1&&Array.isArray(catalog.talents)){
+  state.remote!.talentCatalogVersion=1;
+  state.remote!.talentCatalog=catalog.talents.map((t:any)=>({id:string(field(t,'Id'),'Talent-ID'),name:string(field(t,'Name'),'Talentname'),branch:enumValue<Activity>(field(t,'Branch'),activities,'Talentbereich'),max:number(field(t,'Max'),'Talentränge'),value:number(field(t,'Value'),'Talentbonus'),effect:string(field(t,'Effect'),'Talenteffekt'),description:string(field(t,'Description'),'Talentbeschreibung'),requires:field(t,'Requires'),bonus:{}}));
+  if(state.remote!.talentCatalog!.length!==21||state.remote!.talentCatalog!.some(t=>!Array.isArray(t.requires)||t.requires.some(id=>typeof id!=='string')))throw Error('Ungültiger Talentkatalog.');
+ }
  const items=field(rpg,'Inventory');if(!Array.isArray(items))throw Error('Inventar fehlt.');state.inventory=items.map(inventoryItem);
  if(new Set(state.inventory.map(i=>i.instanceId)).size!==state.inventory.length)throw Error('Doppelte Item-Instanz.');
  for(const [slot,id]of Object.entries(object(field(rpg,'Equipment'),'Ausrüstung'))){const target=enumValue<Slot>(/^\d+$/.test(slot)?Number(slot):slot,slots,'Ausrüstungsslot');if(typeof id!=='string'||!state.inventory.some(i=>i.instanceId===id))throw Error('Ausrüstung verweist auf ein fehlendes Item.');state.equipment[target]=id;}
- const perkLevels=counts(field(rpg,'Perks'),'Perks');state.perks=Array.from(new Set([...Object.keys(view.perks),...Object.keys(perkLevels)])).map(id=>({id,name:field(view.perks[id],'Name')??id,level:perkLevels[id]??0,maxLevel:optionalNumber(field(view.perks[id],'MaximumLevel')),bonus:field(view.perks[id],'BonusPerLevel')?attributes(field(view.perks[id],'BonusPerLevel')):{}} as Perk));
+ const perkLevels=counts(field(rpg,'Perks'),'Perks');state.perks=Array.from(new Set([...Object.keys(view.perks),...Object.keys(perkLevels)])).map(id=>({id,name:field(view.perks[id],'Name')??id,level:Math.min(5,perkLevels[id]??0),maxLevel:Math.min(5,optionalNumber(field(view.perks[id],'MaximumLevel'))),presentation:field(view.perks[id],'Presentation')?{category:field(field(view.perks[id],'Presentation'),'Category'),symbol:field(field(view.perks[id],'Presentation'),'Symbol'),value:field(field(view.perks[id],'Presentation'),'Value'),label:field(field(view.perks[id],'Presentation'),'Label')}:undefined,bonus:field(view.perks[id],'BonusPerLevel')?attributes(field(view.perks[id],'BonusPerLevel')):{}} as Perk));
+ state.remote!.perkMaxPurchase=catalog?.perkMaxPurchase===true;
+ const upgrade=catalog?.itemUpgrade;if(upgrade&&upgrade.maximumLevel===9&&upgrade.percentPerLevel===2.5&&Array.isArray(upgrade.costs)&&upgrade.costs.length===9&&upgrade.costs.every((v:unknown)=>typeof v==='string'&&/^[1-9]\d*$/.test(v)))state.remote!.itemUpgrade=upgrade;
  for(const perk of state.perks){const cost=field(view.perks[perk.id],'Costs')?.[perk.level];if(/^[1-9]\d*$/.test(String(cost))&&Number.isSafeInteger(Number(cost)))state.remote!.perkPrices[perk.id]=Number(cost);}
  for(const [id,stock]of Object.entries(object(field(rpg,'Fish'),'Fische'))){state.fish[id]=number(field(stock,'Quantity'),'Fischanzahl');if(!Number.isSafeInteger(state.fish[id])||state.fish[id]<0)throw Error('Ungültiger Fischvorrat.');}
  state.sushi=counts(field(rpg,'Sushi'),'Sushi');
@@ -65,6 +77,7 @@ export function mapProfile(raw:any,catalog:any={}):DemoState {
  const cooldowns=object(field(rpg,'Cooldowns'),'Cooldowns');for(const [target,key]of [['dive','!dive'],['fishing','!fish'],['boss','!attack']] as const){state.cooldowns[target]=own(cooldowns,key)?time(cooldowns[own(cooldowns,key)!]):0;if(!Number.isFinite(state.cooldowns[target]))throw Error('Ungültiger Cooldown.');}
  Object.assign(state.player,{id:user,username:string(field(raw,'DisplayName'),'Spielername'),pearls:Number.isSafeInteger(Number(points))?Number(points):unknown(),hp:optionalNumber(field(health,'CurrentHp')),maxHp:optionalNumber(field(health,'AppliedMaximumHp')),level:optionalNumber(field(rpg,'PlayerLevel')),experience:optionalNumber(field(rpg,'Experience')),lastPassiveRegen:time(field(health,'LastPassiveRegen')),regenRemainder:optionalNumber(field(health,'SushiRegenRemainder')),lastChatHeal:time(field(health,'LastChatHeal')),defeatedBossId:field(health,'Defeated')?field(health,'BossId'):undefined});
  state.boss.damage=optionalNumber(field(health,'BossDamage'));
+ state.player.shieldHp=field(health,'SetShieldHp')==null?0:number(field(health,'SetShieldHp'),'Schild');
  Object.assign(state.remote!,{loaded:true,pointsText:BigInt(points).toLocaleString('de-DE'),pointsExact:String(points),experienceText:/^\d+$/.test(String(field(rpg,'Experience')))?BigInt(field(rpg,'Experience')).toLocaleString('de-DE'):undefined,updatedAt:string(field(raw,'UpdatedAt'),'Speicherzeit'),sets:view.sets,recipes:view.recipes});
  return state;
 }

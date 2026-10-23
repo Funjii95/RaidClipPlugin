@@ -16,9 +16,9 @@ internal sealed partial class RemoteRpgExecutor
         var maximum=activity=="fish"?ItemRarity.Epic:breakdown.MaximumRarity;
         var kind=activity=="fish"?RpgActivity.Fishing:RpgActivity.Dive;
         var hasPool=rpg.DiveLoot.Items.Any(i=>i.DropActivities.Contains(kind) && i.Rarity<=maximum && rpg.DiveLoot.RarityWeights.GetValueOrDefault(i.Rarity)>0 && (i.Collector is null || rpg.DiveLoot.CollectorPoolChance>0));
-        var chance=breakdown.Total;
+        var chance=Math.Min(Math.Min(100,rpg.DiveLoot.MaximumDropChance),breakdown.Total+RpgPerkCatalog.Combined(account.Rpg,"loot"));
         if(activity=="fish"){
-            var caught=Enumerable.Range(1,100).Count(roll=>AdventureGameService.SoloOutcome("!fish",roll,config.Adventures.Fishing).Item3>0);
+            var caught=100-Math.Max(0,config.Adventures.Fishing.LossChance-RpgPerkCatalog.Combined(account.Rpg,"catch"));
             chance=caught/100m*Math.Min(Math.Min(100,rpg.DiveLoot.MaximumDropChance),rpg.FishingEquipmentChance*(1+Math.Clamp(hot,0,200)/100));
         }
         return new{stake=stake.ToString(CultureInfo.InvariantCulture),chance=hasPool?chance:0,rarities=Enum.GetValues<ItemRarity>().Where(r=>r<=maximum).Select(r=>r.ToString()),primaryEquipmentOnly=true,hotTimeIncluded=hot>0};

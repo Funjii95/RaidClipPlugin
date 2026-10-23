@@ -15,6 +15,7 @@ public static class EventStartCommand
         return parts[1].ToLowerInvariant() switch
         {
             "boss" when parts.Length == 2 => new[] { "!start boss" },
+            "mimic" when parts.Length == 2 => new[] { "!start mimic" },
             "race" when parts.Length == 3 => new[] { "!startrace", parts[2] },
             "heist" when parts.Length == 2 => new[] { "!heist" },
             _ => null

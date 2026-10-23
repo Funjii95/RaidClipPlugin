@@ -10,6 +10,7 @@ public sealed class RpgItemSet
 }
 public sealed class RpgSetBonus
 {
+    public string Description { get; set; } = "";
     public int RequiredPieces { get; set; }
     public RpgAttributes Attributes { get; set; } = new();
 }

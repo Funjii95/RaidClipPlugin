@@ -2801,6 +2801,7 @@ private enum CloseChoice
                     UpdateChatConnectionDiagnostics;
                 await StartLiveChatAsync(config, session.UserId, _broadcaster.Id, cancellationToken);
                 _chatModeration.MessageObserved += HandleLiveChatMessageAsync;
+                StartGroqRuntime(twitch,session,_broadcaster,cancellationToken);
                 _chatModeration.Activated += () =>
                     AppendLog("Chatbot verbunden: WebSocket und channel.chat.message aktiv.");
                 StartCustomCommandServices(config, twitch, session,
@@ -2884,7 +2885,7 @@ private enum CloseChoice
                         config.Heist,
                         config.Duel,
                         config.Commands,
-                        _commandRegistry);
+                        _commandRegistry,dailyFlavor:ct=>_groqDaily.GenerateAsync(ct));
                     _minigame.BindStreamSession(_streamAdmission, _streamEpoch);
                     var overlayReload = new CommunityOverlayReloadService(() =>
                     {
@@ -4617,6 +4618,7 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
 
     private async Task StopPluginAsync(bool keepErrorStatus = false)
     {
+        _groqRuntime?.Stop();
         _streamAdmission.End();
         var shutdown = _shutdown;
 
@@ -4911,6 +4913,59 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
             new[]
             {
                 """
+2.1.45 – Mimic manuell starten
+
+- Neuer Broadcaster-Befehl !start mimic mit den gespeicherten Mimic-Werten.
+- Beachtet die Boss-Pause und ersetzt keinen laufenden Kampf.
+
+2.1.44 – Groq für das Otter-RPG
+
+- KI-Kommentare für Tauchen, Angeln, Mimic, Bosskämpfe und Levelaufstiege.
+- Gespräche durch direkte @Bot-Erwähnung, mit kurzem Verlauf pro Zuschauer.
+- Alle Bereiche einzeln schaltbar unter Livechat → Groq · KI.
+- Gemeinsame Antwortpause und Stundenlimit; Spielaktionen warten nicht auf die KI.
+
+2.1.43 – Groq-Daily-Antworten korrigiert
+
+- GPT-OSS bekommt ausreichend Antwortbudget; keine leeren Sprüche durch vorzeitig verbrauchtes Limit.
+- Verbindungstest verwendet denselben Prompt wie der echte Daily-Aufruf.
+- Normale Ausrufezeichen erlaubt, Befehle weiterhin blockiert.
+- Standardmodell GPT-OSS 20B und genaue Groq-Laufzeitmeldungen.
+
+2.1.42 – Groq für Daily-Sprüche
+
+- Optionaler kurzer KI-Otter-Spruch nach erfolgreichem !daily.
+- Einrichtung unter Livechat → Groq · Daily: Modell, Persönlichkeit, Antwortpause und Verbindungstest.
+- API-Key mit Windows-Benutzerschutz; keine Spielernamen oder Kontostände an Groq.
+- Belohnung und Sperrzeit bleiben im Plugin. Ohne Groq bleibt die bisherige Daily-Antwort aktiv.
+
+2.1.41 – Transparenter OBS-Chat
+
+- Eigene OBS-Chatquelle: http://127.0.0.1:18770/ (500 × 700).
+- Benutzerfarben, Rollen-Symbole und Twitch-/aktivierte BTTV-/7TV-Emotes.
+- Nachrichten von unten nach oben, vorhandene Livechat-Filter und automatisches Ausblenden nach 60 Sekunden.
+- URL kopieren und Testvorschau direkt im Livechat-Reiter.
+
+2.1.40 – Bosskampf im Chat simulieren
+
+- Neuer Broadcaster-Befehl !sim: kompletter Testkampf mit fünf simulierten Ottern und deinen Charakterwerten.
+- Beschleunigte Runden, Schaden, kritische Treffer und Ergebnis im Chat.
+- Keine echten Belohnungen, keine Hot Time und keine Änderungen an laufenden Bossrunden.
+
+2.1.39 – Mimic-Overlay für OBS
+
+- Eigenes Mimic-Motiv mit Boss-HP, Countdown, Teilnehmern und !attack.
+- Separate transparente OBS-Browserquelle: http://127.0.0.1:18769/mimic (900 × 600).
+- Das gemeinsame Event-Overlay erkennt Mimics ebenfalls automatisch.
+
+2.1.38 – Perks, Talente und Mimic
+
+- 31 Perks mit maximal 5/5, eigener Übersicht und echten Perlenkäufen. Talentpunkte bleiben separat.
+- Mimic als gemeinsamer Tauchboss: 0,5 % Grundchance, mit Abgrundsinn 5/5 insgesamt 1 %.
+- Neuer Reiter RPG → Mimic & Bossbeute für Fundchance, Bosswerte und Legendary-Chancen.
+- Separater Legendary-Wurf je berechtigtem Überlebenden: normaler Boss 5 %, Mimic 50 %.
+- Neue Extension-Oberfläche mit Mimic-Bild. Für die neuen Regeln Plugin und Module neu starten.
+
 2.1.37 – Originalgrafiken für OBS-Events
 
 - Eigene Rennen-, Bosskampf- und Heist-Motive aus der gelieferten Otter-Grafik: ohne weiße Trennflächen, ohne Verzerrung und ohne externe Bildserver.

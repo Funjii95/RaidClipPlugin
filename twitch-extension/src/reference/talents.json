@@ -1,0 +1,245 @@
+[
+  {
+    "id": "combat-power",
+    "name": "Kräftiger Schlag",
+    "branch": "Boss",
+    "max": 5,
+    "value": 3,
+    "effect": "damage",
+    "description": "+3 % Schaden pro Punkt.",
+    "requires": []
+  },
+  {
+    "id": "combat-health",
+    "name": "Eiserne Haut",
+    "branch": "Boss",
+    "max": 5,
+    "value": 4,
+    "effect": "health",
+    "description": "+4 % maximale Lebenspunkte pro Punkt.",
+    "requires": []
+  },
+  {
+    "id": "combat-crit",
+    "name": "Präzision",
+    "branch": "Boss",
+    "max": 5,
+    "value": 2,
+    "effect": "crit",
+    "description": "+2 Prozentpunkte kritische Trefferchance pro Punkt.",
+    "requires": [
+      "combat-power"
+    ]
+  },
+  {
+    "id": "combat-boss",
+    "name": "Bossjäger",
+    "branch": "Boss",
+    "max": 5,
+    "value": 5,
+    "effect": "boss",
+    "description": "+5 % Schaden ausschließlich gegen Bosse pro Punkt.",
+    "requires": [
+      "combat-health"
+    ]
+  },
+  {
+    "id": "combat-speed",
+    "name": "Kampfrausch",
+    "branch": "Boss",
+    "max": 5,
+    "value": 3,
+    "effect": "attackCooldown",
+    "description": "3 % kürzerer Boss-Angriffscooldown pro Punkt.",
+    "requires": [
+      "combat-crit"
+    ]
+  },
+  {
+    "id": "combat-leech",
+    "name": "Lebensraub",
+    "branch": "Boss",
+    "max": 5,
+    "value": 1,
+    "effect": "lifeleech",
+    "description": "1 % Heilung aus tatsächlich verursachtem Kampfschaden pro Punkt. Kein Overkill.",
+    "requires": [
+      "combat-boss"
+    ]
+  },
+  {
+    "id": "combat-master",
+    "name": "Klingensturm",
+    "branch": "Boss",
+    "max": 3,
+    "value": 10,
+    "effect": "doubleAttack",
+    "description": "+10 Prozentpunkte Chance auf einen Zusatztreffer mit 50 % Schaden pro Punkt.",
+    "requires": [
+      "combat-speed",
+      "combat-leech"
+    ]
+  },
+  {
+    "id": "fishing-catch",
+    "name": "Ruhige Hand",
+    "branch": "Fishing",
+    "max": 5,
+    "value": 4,
+    "effect": "catch",
+    "description": "4 Prozentpunkte weniger Fehlfangchance pro Punkt.",
+    "requires": []
+  },
+  {
+    "id": "fishing-luck",
+    "name": "Köderkunde",
+    "branch": "Fishing",
+    "max": 5,
+    "value": 5,
+    "effect": "rareFish",
+    "description": "+5 % relatives Fanggewicht seltener Fische ab Rare pro Punkt.",
+    "requires": []
+  },
+  {
+    "id": "fishing-double",
+    "name": "Doppelfang",
+    "branch": "Fishing",
+    "max": 5,
+    "value": 3,
+    "effect": "doubleFish",
+    "description": "3 % Chance auf einen zusätzlichen Fisch derselben Art pro Punkt.",
+    "requires": [
+      "fishing-catch"
+    ]
+  },
+  {
+    "id": "fishing-quality",
+    "name": "Tiefseehaken",
+    "branch": "Fishing",
+    "max": 5,
+    "value": 4,
+    "effect": "qualityFish",
+    "description": "+4 % relatives Fanggewicht hochwertiger Fische ab Epic pro Punkt.",
+    "requires": [
+      "fishing-luck"
+    ]
+  },
+  {
+    "id": "fishing-food",
+    "name": "Frische Beute",
+    "branch": "Fishing",
+    "max": 5,
+    "value": 5,
+    "effect": "ingredient",
+    "description": "5 % Chance auf einen zusätzlichen Zutatenfisch pro Punkt, wenn der Fang in einem Rezept verwendet wird.",
+    "requires": [
+      "fishing-double"
+    ]
+  },
+  {
+    "id": "fishing-pearls",
+    "name": "Perlenschuppen",
+    "branch": "Fishing",
+    "max": 5,
+    "value": 3,
+    "effect": "fishPearls",
+    "description": "+3 % positive Netto-Perlen aus Fischfang pro Punkt.",
+    "requires": [
+      "fishing-quality"
+    ]
+  },
+  {
+    "id": "fishing-master",
+    "name": "Legendärer Fang",
+    "branch": "Fishing",
+    "max": 3,
+    "value": 2,
+    "effect": "legendaryFish",
+    "description": "+2 % relatives Fanggewicht legendärer Fische pro Punkt. Einsatzgrenzen bleiben gültig.",
+    "requires": [
+      "fishing-food",
+      "fishing-pearls"
+    ]
+  },
+  {
+    "id": "dive-enemy",
+    "name": "Unterwasserjäger",
+    "branch": "Dive",
+    "max": 5,
+    "value": 5,
+    "effect": "underwaterDamage",
+    "description": "+5 % Schaden gegen normale Unterwassergegner pro Punkt. Gilt nicht gegen Bosse.",
+    "requires": []
+  },
+  {
+    "id": "dive-pearls",
+    "name": "Schatzsucher",
+    "branch": "Dive",
+    "max": 5,
+    "value": 4,
+    "effect": "divePearls",
+    "description": "+4 % positive Netto-Perlen beim Tauchen pro Punkt.",
+    "requires": []
+  },
+  {
+    "id": "dive-loot",
+    "name": "Bergungsprofi",
+    "branch": "Dive",
+    "max": 5,
+    "value": 4,
+    "effect": "loot",
+    "description": "+4 Prozentpunkte Item-Dropchance pro Punkt, innerhalb des vorhandenen Dropcaps.",
+    "requires": [
+      "dive-enemy"
+    ]
+  },
+  {
+    "id": "dive-treasure",
+    "name": "Tiefeninstinkt",
+    "branch": "Dive",
+    "max": 5,
+    "value": 5,
+    "effect": "treasure",
+    "description": "+5 % relative Chance auf Sammlerschätze im vorhandenen Beutepool pro Punkt.",
+    "requires": [
+      "dive-pearls"
+    ]
+  },
+  {
+    "id": "dive-speed",
+    "name": "Flinke Flossen",
+    "branch": "Dive",
+    "max": 5,
+    "value": 3,
+    "effect": "diveCooldown",
+    "description": "3 % kürzerer Tauchcooldown pro Punkt.",
+    "requires": [
+      "dive-loot"
+    ]
+  },
+  {
+    "id": "dive-dodge",
+    "name": "Unterwasser-Ausweichen",
+    "branch": "Dive",
+    "max": 5,
+    "value": 4,
+    "effect": "underwaterDodge",
+    "description": "4 % Chance pro Punkt, einen Treffer normaler Unterwassergegner vollständig zu vermeiden. Maximal 20 %. Gilt nicht gegen Bosse; kein Schutz des Perleneinsatzes, keine Beutegarantie.",
+    "requires": [
+      "dive-treasure"
+    ]
+  },
+  {
+    "id": "dive-master",
+    "name": "Abgrundsinn",
+    "branch": "Dive",
+    "max": 3,
+    "value": 3,
+    "effect": "enemyLoot",
+    "description": "3 % Chance auf einen zusätzlichen Gegner-Beutewurf pro Punkt; keine zusätzliche Bossfundchance. Einsatzgrenzen bleiben gültig.",
+    "requires": [
+      "dive-speed",
+      "dive-dodge"
+    ]
+  }
+]

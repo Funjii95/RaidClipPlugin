@@ -55,8 +55,11 @@ public static class RpgItemGenerationService
         foreach (var item in config.Items.Where(i => i.Generation is not null))
         {
             var rules = item.Generation!; var counts = Counts(item.Rarity);
-            if (!item.Slot.HasValue || item.Kind == RpgItemKind.Consumable || rules.DoubleAttackMinimumChance < 0 || rules.DoubleAttackMaximumChance > 20 || rules.DoubleAttackMaximumChance < rules.DoubleAttackMinimumChance ||
-                rules.AttributeCount is < 1 or > 5 || rules.Attributes.Count < (rules.AttributeCount ?? counts.Max) || rules.Attributes.Select(a => a.Attribute).Distinct().Count() != rules.Attributes.Count ||
+            if (rules.MinimumAttributes.HasValue!=rules.MaximumAttributes.HasValue || rules.MinimumAttributes is {} lo && (lo<1 || lo>5) || rules.MaximumAttributes is {} hi && (hi<(rules.MinimumAttributes??1) || hi>5) ||
+                rules.BaseAttributes.Any(a=>!Attributes.ContainsKey(a.Attribute)||a.Minimum<1||a.Maximum<a.Minimum||a.Maximum>1000) ||
+                rules.BaseAttributes.Select(a=>a.Attribute).Distinct().Count()!=rules.BaseAttributes.Count ||
+                !item.Slot.HasValue || item.Kind == RpgItemKind.Consumable || rules.DoubleAttackMinimumChance < 0 || rules.DoubleAttackMaximumChance > 20 || rules.DoubleAttackMaximumChance < rules.DoubleAttackMinimumChance ||
+                rules.AttributeCount is < 1 or > 5 || rules.Attributes.Count < (rules.AttributeCount ?? rules.MaximumAttributes ?? counts.Max) || rules.Attributes.Select(a => a.Attribute).Distinct().Count() != rules.Attributes.Count ||
                 rules.Attributes.Any(a => !Attributes.ContainsKey(a.Attribute) || a.Minimum < 1 || a.Maximum < a.Minimum || a.Maximum > 1000) ||
                 rules.Attributes.Any(a => a.Attribute == nameof(RpgAttributes.TripleAttackChance) && (item.Rarity != ItemRarity.Legendary || a.Maximum > 3)) ||
                 rules.EffectIds.Any(id => !config.Effects.Any(e => e.Id == id)) || rules.GenerateEffect && counts.EffectsMin > 0 && rules.EffectIds.Count == 0 ||
@@ -74,8 +77,9 @@ public static class RpgItemGenerationService
         }
         var count = Counts(item.Rarity);
         if(requiredEffectId is not null&&(!rules.GenerateEffect||count.EffectsMax==0||!rules.EffectIds.Contains(requiredEffectId)))throw new InvalidOperationException("Der gewählte Effekt ist für diese Itemdefinition/Seltenheit nicht erlaubt.");
-        var candidates = rules.Attributes.ToList(); item.Attributes = new(); item.CoreStatsVersion=0;
-        var selected = rules.AttributeCount ?? random.NextInclusive(count.Min, count.Max);
+        var candidates = rules.Attributes.ToList(); item.Attributes = new(); item.CoreStatsVersion=rules.BaseAttributes.Count>0?1:0;
+        foreach(var range in rules.BaseAttributes) Attributes[range.Attribute].SetValue(item.Attributes,(decimal)random.NextInclusive(range.Minimum,range.Maximum));
+        var selected = rules.AttributeCount ?? random.NextInclusive(rules.MinimumAttributes??count.Min, rules.MaximumAttributes??count.Max);
         for (var i = 0; i < selected; i++)
         {
             var index = random.NextInclusive(0, candidates.Count - 1); var range = candidates[index]; candidates.RemoveAt(index);

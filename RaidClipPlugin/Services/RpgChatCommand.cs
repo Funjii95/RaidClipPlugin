@@ -38,6 +38,18 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         if (!config.Enabled) return "🦦 RPG ist aktuell deaktiviert.";
         var progression = new RpgProgressionService(points, config);
         var id = string.IsNullOrWhiteSpace(user.Id) ? Guid.NewGuid().ToString("N") : user.Id;
+        if(command is "!talent" or "!talente")
+        {
+            var p=(await points.GetProfileAsync(user.UserId,token)).Entry.Rpg;
+            if(command=="!talent"){
+                var result=await RpgTalentService.LearnAsync(points,config,user.UserId,user.UserName,id,parts[1],p.TalentRanks.GetValueOrDefault(parts[1]),SnapshotProtocol.TalentRules.CatalogVersion,token);
+                if(!result.Success)return result.Error;
+                p=(await points.GetProfileAsync(user.UserId,token)).Entry.Rpg;
+                return $"Talent gelernt. Verbleibende Talentpunkte: {SnapshotProtocol.TalentRules.Available(p.PlayerLevel,p.TalentRanks)}.";
+            }
+            var branch=parts.Length==1?null:parts[1].ToLowerInvariant() switch {"kämpfen"=>"Boss","angeln"=>"Fishing",_=>"Dive"};
+            return $"Talentpunkte: {SnapshotProtocol.TalentRules.Available(p.PlayerLevel,p.TalentRanks)} verbleibend / {SnapshotProtocol.TalentRules.Earned(p.PlayerLevel)} verdient. Lernen: !talent <ID>. "+string.Join(" | ",SnapshotProtocol.TalentRules.Catalog.Where(t=>branch==null||t.Branch==branch).Select(t=>$"{t.Name} ({t.Id}) {p.TalentRanks.GetValueOrDefault(t.Id)}/{t.Max}"));
+        }
         if (command == "!muscheln")
         {
             if(parts.Length==1){
@@ -97,7 +109,7 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
                 $"🦦 @{user.UserName}, " + (action.Success ? "Aktion gespeichert, aber Ergebnisdetails fehlen. Bitte Status/Protokoll prüfen; nicht erneut kaufen." : action.Error);
         if (command == "!rpg")
             return "🦦 " + (parts.Length > 1 && parts[1] is not ("hilfe" or "help") ? "Unbekannter RPG-Unterbefehl. " : "RPG-Hilfe: ") +
-                "Perk kaufen: !perk <ID> (Alias !buyperk). IDs/Kosten: !perks. Inventar: !inv [Seite]. Details: !item <Nummer>. Ausrüsten: !equip <Nummer> [ring1|ring2]. Ablegen: !unequip <Slot>. Ausrüstung: !gear. Sets: !sets. Sushi: !craft <Rezept>, !sushi <Rezept>. Werte: !stats.";
+                "Talente: !talente [kämpfen|angeln|tauchen], lernen: !talent <ID>. Perk kaufen: !perk <ID> (Alias !buyperk). IDs/Kosten: !perks. Inventar: !inv [Seite]. Details: !item <Nummer>. Ausrüsten: !equip <Nummer> [ring1|ring2]. Ablegen: !unequip <Slot>. Ausrüstung: !gear. Sets: !sets. Sushi: !craft <Rezept>, !sushi <Rezept>. Werte: !stats.";
         ViewerPointEntry account;
         try { account = (await points.GetProfileAsync(user.UserId, token)).Entry; }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
@@ -156,7 +168,7 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
             page, "Noch nichts ausgerüstet. Nutze !inv und !equip <Nummer>.", "!gear");
         if (command == "!perks") return ListPage(user.UserName, "⭐ Perks", config.Perks.Select(p =>
             RpgChatPresentation.PerkName(p) + $" ({p.Id}) {profile.Perks.GetValueOrDefault(p.Id)}/{p.MaximumLevel}: " +
-            RpgChatPresentation.Bonuses(RpgChatPresentation.Snapshot(p.BonusPerLevel, profile.Perks.GetValueOrDefault(p.Id))) +
+            (RpgPerkCatalog.Find(p.Id) is {Value:>0} entry ? $"{entry.Value*Math.Clamp(profile.Perks.GetValueOrDefault(p.Id),0,5)} {entry.Label}" : RpgChatPresentation.Bonuses(RpgChatPresentation.Snapshot(p.BonusPerLevel, Math.Clamp(profile.Perks.GetValueOrDefault(p.Id),0,5)))) +
             (profile.Perks.GetValueOrDefault(p.Id) >= p.MaximumLevel ? " MAX" : " → " + RpgChatPresentation.Number(p.Cost(profile.Perks.GetValueOrDefault(p.Id))) + " Perlen")),
             page, "Keine Perks konfiguriert.", "!perks");
         if (command == "!sushi")
@@ -175,7 +187,7 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         {
             if(config.Health.Enabled) profile = await RpgHealthService.ReadAsync(points,user.UserId,user.UserName,config.Health,DateTimeOffset.UtcNow,token);
             var stats = CharacterStatService.Calculate(profile, config, RpgActivity.Boss);
-            return (config.Health.Enabled ? RpgHealthService.Status(profile,config.Health)+" " : "") + "Sushi: " + RpgSushiService.Status(profile,DateTimeOffset.UtcNow) + " | " + $"🦦 @{user.UserName}, effektive Boss-Werte (mit Caps): {RpgChatPresentation.Bonuses(stats)}. " +
+            return $"Talentpunkte: {SnapshotProtocol.TalentRules.Available(profile.PlayerLevel,profile.TalentRanks)} verbleibend. " + (config.Health.Enabled ? RpgHealthService.Status(profile,config.Health)+" " : "") + "Sushi: " + RpgSushiService.Status(profile,DateTimeOffset.UtcNow) + " | " + $"🦦 @{user.UserName}, effektive Boss-Werte (mit Caps): {RpgChatPresentation.Bonuses(stats)}. " +
                 $"Krit-Multiplikator: {RpgChatPresentation.Number(config.BaseCritMultiplier + stats.CritDamage / 100)}× nur bei kritischem Treffer. " +
                 "Dive-/Angelwerte mit passenden Buffs: " +
                 $"Tauchglück {RpgChatPresentation.Number(CharacterStatService.Calculate(profile, config, RpgActivity.Dive).DiveLuck)}, " +
@@ -191,7 +203,8 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         static bool Page(string text) => int.TryParse(text, out var page) && page >= 1;
         return command switch
         {
-            "!perk" or "!craft" => parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[1]),
+            "!talente" => parts.Length==1 || parts.Length==2 && new[]{"kämpfen","angeln","tauchen"}.Contains(parts[1].ToLowerInvariant()),
+            "!talent" or "!perk" or "!craft" => parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[1]),
             "!equip" => parts.Length == 2 || parts.Length == 3 && Enum.TryParse<EquipmentSlot>(parts[2], true, out var slot) && Enum.IsDefined(slot),
             "!inventory" or "!equipment" or "!perks" or "!rpgtext" or "!sets" or "!treasures" or "!fishbag" => parts.Length == 1 || parts.Length == 2 && Page(parts[1]),
             "!unequip" => parts.Length == 2 && Enum.TryParse<EquipmentSlot>(parts[1], true, out var unequipSlot) && Enum.IsDefined(unequipSlot),

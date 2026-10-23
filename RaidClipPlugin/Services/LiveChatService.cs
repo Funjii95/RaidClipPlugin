@@ -110,6 +110,30 @@ public sealed class LiveChatService
         lock (_sync) return _history.Where(x => IsVisibleLocked(x, search)).ToArray();
     }
 
+    public ChatOverlayState GetOverlaySnapshot(IReadOnlyDictionary<string,ExternalEmote>? external=null)
+    {
+        lock(_sync)
+        {
+            if(!_config.Enabled)return ChatOverlayState.Empty();
+            var messages=_history.Where(m=>m.MessageType is LiveChatMessageType.Normal or LiveChatMessageType.Command)
+                .Where(m=>IsVisibleLocked(m,null)).TakeLast(30).Select(m=>
+                {
+                    var emotes=new Dictionary<string,ChatOverlayEmote>(StringComparer.Ordinal);
+                    if(_config.EnableTwitchEmotes)
+                        foreach(var e in m.Emotes.Where(e=>e.Provider=="Twitch" && System.Text.RegularExpressions.Regex.IsMatch(e.Id,@"\A[A-Za-z0-9_-]{1,100}\z")))
+                            emotes[e.Code]=new(e.Code,$"https://static-cdn.jtvnw.net/emoticons/v2/{e.Id}/{(_config.EnableAnimatedEmotes?"default":"static")}/dark/2.0");
+                    if(external is not null)
+                        foreach(var word in m.Message.Split((char[]?)null,StringSplitOptions.RemoveEmptyEntries).Distinct())
+                            if(external.TryGetValue(word,out var e) && (e.Provider=="BTTV" && _config.EnableBttvEmotes || e.Provider=="7TV" && _config.EnableSevenTvEmotes)){
+                                var url=_config.EnableAnimatedEmotes?e.Url:e.StaticUrl;
+                                if(Uri.TryCreate(url,UriKind.Absolute,out var uri) && uri.Scheme=="https" && uri.Host is "cdn.betterttv.net" or "cdn.7tv.app")emotes[word]=new(word,url);
+                            }
+                    return new ChatOverlayMessage(m.Id,m.Timestamp,m.DisplayName,m.Message,m.UserColor,m.IsBroadcaster,m.IsModerator,m.IsVip,m.IsSubscriber,emotes.Values.ToArray());
+                }).ToArray();
+            return new(DateTimeOffset.UtcNow,messages,_config.ShowTimestamps,_config.ShowBadges,_config.ShowUserColors,_config.EmoteSize);
+        }
+    }
+
     private bool IsVisibleLocked(LiveChatMessage message, string? search)
     {
         if (_config.HideCommands && message.IsCommand) return false;

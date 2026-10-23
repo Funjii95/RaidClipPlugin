@@ -11,6 +11,7 @@ public sealed class EventStartCommandTests
     [InlineData("!START race 100", "!startrace 100")]
     [InlineData("!start race all", "!startrace all")]
     [InlineData("!start heist", "!heist")]
+    [InlineData("!START mimic", "!start mimic")]
     public void StartRoutesAfterActualChatParser(string input, string expected)
     {
         var parsed = ChatMinigameService.ParseMinigameCommand(input);
@@ -29,6 +30,7 @@ public sealed class EventStartCommandTests
     [Theory]
     [InlineData("!start")]
     [InlineData("!start quiz")]
+    [InlineData("!start mimic extra")]
     [InlineData("!start boss extra")]
     [InlineData("!start rennen")]
     public void RejectsInvalidSyntax(string input) => Assert.Null(EventStartCommand.Translate(input.Split(' ')));

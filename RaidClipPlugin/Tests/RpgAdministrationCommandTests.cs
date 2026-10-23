@@ -132,6 +132,49 @@ public sealed class RpgAdministrationCommandTests : IDisposable
         await g.ControlAsync("boss",0,default);
         Assert.Equal(750,g.Status.BossMaxHp);
     }
+    [Theory]
+    [InlineData(10,true)]
+    [InlineData(1000000,false)]
+    public async Task Simulation_finishes_without_mutating_real_profiles_boss_or_hot_time(int hp,bool victory)
+    {
+        var store=Store();await Seed(store,"host","HOST",65);
+        config.Adventures.Boss.HpMode=BossHpMode.Fixed;config.Adventures.Boss.HitPoints=hp;config.Adventures.Boss.DurationSeconds=10;
+        var game=Game(store);await game.ControlAsync("boss",0,default);
+        var status=game.Status;
+        var before=File.ReadAllBytes(Path.Combine(root,"viewer-points.json"));
+        var boss=File.ReadAllBytes(Path.Combine(root,"rpg-boss-round.json"));
+        await game.HandleAsync(new(){UserId="host",UserName="HOST",Id="simulation"},"!sim",["!sim"],default);
+        Assert.Contains(messages,m=>m.StartsWith(victory?"[SIM] Sieg":"[SIM] Niederlage"));
+        Assert.Equal(before,File.ReadAllBytes(Path.Combine(root,"viewer-points.json")));
+        Assert.Equal(boss,File.ReadAllBytes(Path.Combine(root,"rpg-boss-round.json")));
+        Assert.Equal(status,game.Status);Assert.False(store.HotTime.Status.Active);
+        Assert.True(messages.Count(m=>m.StartsWith("[SIM]"))<=10);
+    }
+    [Fact]public async Task Simulation_rejects_moderators_viewers_and_spoofed_broadcaster_badge()
+    {
+        var game=Game(Store());
+        foreach(var actor in new[]{new ChatMessage{UserId="mod",IsModerator=true},new ChatMessage{UserId="viewer"},new ChatMessage{UserId="viewer",IsBroadcaster=true}})
+            await game.HandleAsync(actor,"!sim",["!sim"],default);
+        Assert.Equal(3,messages.Count);Assert.All(messages,m=>Assert.Contains("Nur der Broadcaster",m));
+        Assert.False(File.Exists(Path.Combine(root,"viewer-points.json")));
+    }
+    [Fact]public async Task Simulation_validates_syntax_and_limits_repeated_calls()
+    {
+        var game=Game(Store());config.Adventures.Boss.HitPoints=10;
+        var actor=new ChatMessage{UserId="host",UserName="HOST"};
+        await game.HandleAsync(actor,"!sim",["!sim","boss"],default);
+        Assert.Contains("Nutzung: !sim",messages.Last());
+        await game.HandleAsync(actor,"!sim",["!sim"],default);
+        await game.HandleAsync(actor,"!sim",["!sim"],default);
+        Assert.Contains("60 Sekunden",messages.Last());
+    }
+    [Fact]public void Simulation_registry_cannot_be_downgraded_even_to_moderator()
+    {
+        var app=new AppConfig{Minigame=config};app.Commands.CommandRoleOverrides["admin.boss.sim"]="Moderator";
+        var registry=new CommandRegistry();registry.Update(app);
+        Assert.Equal(CommandRole.Broadcaster,Assert.Single(registry.Commands,c=>c.CommandText=="!sim").RequiredRole);
+        Assert.True(AdventureGameService.Recognizes("!sim"));
+    }
     public void Dispose(){if(Directory.Exists(root))Directory.Delete(root,true);}
 }
 

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace RaidClipPlugin.Tests;
 
+[Collection("Cloud pump integration")]
 public sealed class RemoteExtendedTests : IDisposable
 {
     private readonly string root=Path.Combine(Path.GetTempPath(),"otter-extended",Guid.NewGuid().ToString("N"));

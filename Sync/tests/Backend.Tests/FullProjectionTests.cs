@@ -50,6 +50,18 @@ public sealed class FullProjectionTests
         using var reader=new HttpSnapshotHeadReader(new Uri("http://localhost/api/v1/snapshots"),Convert.ToBase64String(new byte[32]),"42",new VersionTwoOnly(),true);
         Assert.False((await Assert.ThrowsAsync<SnapshotHeadReadException>(()=>reader.RequireFullProjectionAsync(["1001"]))).Retryable);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Level_four_talent_entitlement_survives_backend_response(bool allocated)
+    {
+        var ranks=allocated ? "{\"combat-power\":1}" : "{}";
+        var json="{\"UserId\":\"1001\",\"DisplayName\":\"Otter\",\"Points\":0,\"UpdatedAt\":\"2026-10-21T00:00:00Z\",\"Rpg\":{\"SchemaVersion\":1,\"PlayerLevel\":4,\"TalentRanks\":"+ranks+"}}";
+        var player=Backend.SnapshotParser.Parse(json,"1001");
+        var response=System.Text.Json.JsonSerializer.SerializeToElement(player);
+        Assert.Equal(allocated?1:0,response.GetProperty("Rpg").GetProperty("TalentRanks").EnumerateObject().Count());
+        Assert.Equal(allocated?2:3,TalentRules.Available(player.Rpg.PlayerLevel!.Value,player.Rpg.TalentRanks));
+    }
     private sealed class VersionTwoOnly : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken ct)=>Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent("""{"rpgProjectionVersion":2,"channelId":"42","maxMessageBytes":262144,"allowedUserIds":["1001"]}""")});

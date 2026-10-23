@@ -15,6 +15,7 @@ public sealed class RpgView
     public JsonElement[] Inventory { get; init; } = [];
     public Dictionary<string, string> Equipment { get; init; } = [];
     public Dictionary<string, int> Perks { get; init; } = [];
+    public Dictionary<string, int> TalentRanks { get; init; } = [];
     public Dictionary<string, JsonElement> Fish { get; init; } = [];
     public Dictionary<string, int> Sushi { get; init; } = [];
     public JsonElement[] Buffs { get; init; } = [];
@@ -24,6 +25,8 @@ public sealed class RpgView
 public sealed record MaterialView(int Shells, int WhitePearls, int BluePearls, int RedPearls, int StoneChips);
 public sealed class HealthView
 {
+    public int? SetShieldHp { get; init; }
+    public string? SetShieldSource { get; init; }
     public long? CurrentHp { get; init; }
     public long? AppliedMaximumHp { get; init; }
     public long? AppliedBaseMaximumHp { get; init; }

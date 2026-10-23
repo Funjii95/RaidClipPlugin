@@ -9,7 +9,10 @@ public static class RpgBossDefenseService
     {
         if(raw<=0)return 0;
         var stats=CharacterStatService.Calculate(profile,config,RpgActivity.Boss,now:now);
-        if(stats.BossDodgeChance>0 && random.NextInclusive(0,9999)<stats.BossDodgeChance*100)return 0;
-        return (int)decimal.Ceiling(raw*(1-stats.BossDamageReduction/100));
+        RpgSetCombatService.Refresh(profile,config.Health,now);
+        var dodged=stats.BossDodgeChance>0 && random.NextInclusive(0,9999)<stats.BossDodgeChance*100;
+        var armor=Math.Clamp(stats.Armor*(1+stats.ArmorPercent/100),0,10000);
+        var reduced=dodged?0:(int)decimal.Ceiling(raw*(1-stats.BossDamageReduction/100)*100/(100+armor));
+        return RpgSetCombatService.Defense(reduced,profile,config,now,dodged);
     }
 }

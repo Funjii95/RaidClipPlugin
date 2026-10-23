@@ -29,8 +29,9 @@ public static class RpgChatPresentation
     };
     public static string KindName(RpgItem item) => item.Slot.HasValue ? "Ausrüstung" :
         item.Kind == RpgItemKind.Consumable ? "Verbrauchsgegenstand" : "Schatz";
-    public static RpgAttributes Snapshot(RpgAttributes a, int levels = 1) => new()
-    { BossDamageReduction=a.BossDamageReduction*levels,BossDodgeChance=a.BossDodgeChance*levels,CriticalHealing=a.CriticalHealing*levels,RareEquipmentLuck=a.RareEquipmentLuck*levels,
+    public static RpgAttributes Snapshot(RpgAttributes a, decimal levels = 1) => new()
+    { Armor=a.Armor*levels,ArmorPercent=a.ArmorPercent*levels,MaximumHpPercent=a.MaximumHpPercent*levels,AttackSpeed=a.AttackSpeed*levels,HealingPower=a.HealingPower*levels,
+        BossDamageReduction=a.BossDamageReduction*levels,BossDodgeChance=a.BossDodgeChance*levels,CriticalHealing=a.CriticalHealing*levels,RareEquipmentLuck=a.RareEquipmentLuck*levels,
         Power=a.Power*levels,Stamina=a.Stamina*levels,MaximumHp=a.MaximumHp*levels, Damage = a.Damage * levels, CritChance = a.CritChance * levels, CritDamage = a.CritDamage * levels, Luck = a.Luck * levels,
         BossDamage = a.BossDamage * levels, PearlBonus = a.PearlBonus * levels, FishingLuck = a.FishingLuck * levels, DiveLuck = a.DiveLuck * levels,
         DoubleAttackChance = a.DoubleAttackChance * levels, TripleAttackChance = a.TripleAttackChance * levels,
@@ -46,6 +47,8 @@ public static class RpgChatPresentation
         Add(a.CriticalHealing,"Heilung aus tatsächlichem kritischem Boss-Schaden",true);Add(a.RareEquipmentLuck,"relative seltene Ausrüstungs-Lootchance",true);
         Add(a.Luck, "Glück"); Add(a.BossDamage, "Boss-Schaden", true); Add(a.PearlBonus, "Perlenbonus", true);
         Add(a.MaximumHp,"maximale Lebenspunkte");
+        Add(a.Armor,"Rüstung");Add(a.ArmorPercent,"Rüstungsbonus",true);Add(a.MaximumHpPercent,"maximale Lebenspunkte",true);
+        Add(a.AttackSpeed,"Angriffstempo",true);Add(a.HealingPower,"Heilungswirkung",true);
         Add(a.Power,"Kraft");Add(a.Stamina,"Ausdauer");
         Add(a.FishingLuck, "Angelglück"); Add(a.DiveLuck, "Tauchglück");
         Add(a.DoubleAttackChance, "Doppelangriffschance", true); Add(a.TripleAttackChance, "Dreifachangriffschance", true);
@@ -60,7 +63,7 @@ public static class RpgChatPresentation
             RpgActionKind.Craft => $"🍣 {user} hat {name} hergestellt! Verbraucht: {(details.IngredientsDescription.Length>0?details.IngredientsDescription:$"{Number(details.FishQuantity)}× {Label(details.FishName)}")} + {Number(details.Cost)} Perlen. Erhalten: {Number(details.Quantity)}× {name}. " +
                 $"Buff nach Aktivierung: {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))}, {Number(details.RemainingUses)} {(details.EncounterBased?"Bosskampfteilnahmen":"gültige "+Activity(details.Activity??RpgActivity.Dive))} (noch nicht aktiviert).",
             RpgActionKind.ActivateSushi => $"🍣✨ {user} aktiviert {name}! {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))} für die nächsten {Number(details.RemainingUses)} {(details.EncounterBased?"Bosskampfteilnahmen":"gültigen "+Activity(details.Activity??RpgActivity.Dive))}.",
-            RpgActionKind.BuyPerk => $"⭐ {user} verbessert {name} auf Level {Number(details.Level)}! {Bonuses(details.Bonuses)} insgesamt aus diesem Perk. Kosten: {Number(details.Cost)} Perlen." +
+            RpgActionKind.BuyPerk => $"⭐ {user} verbessert {name} auf Level {Number(details.Level)}! {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))} insgesamt aus diesem Perk. Kosten: {Number(details.Cost)} Perlen." +
                 (balance.HasValue ? $" Stand: {Number(balance.Value)} Perlen." : "") +
                 (details.NextCost.HasValue ? $" Nächstes Upgrade: {Number(details.NextCost.Value)} Perlen." : details.MaximumLevel > 0 && details.Level >= details.MaximumLevel ? " Maximallevel erreicht." : ""),
             RpgActionKind.Equip => $"{ItemIcon(details.Slot)} {user} rüstet {name} aus ({SlotName(details.Slot ?? EquipmentSlot.Weapon)})! {Bonuses(details.Bonuses)}." +

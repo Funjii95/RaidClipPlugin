@@ -13,7 +13,7 @@ public static class CharacterStatService
     public static (decimal Perks, decimal Equipment, decimal Sushi) DiveLuckSources(RpgProfile profile, RpgConfig config)
     {
         static decimal Luck(RpgAttributes stats) => stats.Luck + stats.DiveLuck;
-        var perks = Luck(Calculate(new() { Perks = profile.Perks }, config, RpgActivity.Dive));
+        var perks = Luck(Calculate(new() { Perks = profile.Perks, TalentRanks=profile.TalentRanks }, config, RpgActivity.Dive));
         var equipment = Luck(Calculate(new() { Inventory = profile.Inventory, Equipment = profile.Equipment }, config, RpgActivity.Dive));
         var sushi = Luck(Calculate(new() { Buffs = profile.Buffs }, config, RpgActivity.Dive));
         var total = Luck(Calculate(profile, config, RpgActivity.Dive));
@@ -63,20 +63,30 @@ public static class CharacterStatService
         result.PearlBonus = Math.Clamp(result.PearlBonus, 0, Math.Clamp(config.PearlBonusCap, 0, 15));
         result.DoubleAttackChance = Math.Clamp(result.DoubleAttackChance, 0, Math.Clamp(config.DoubleAttackChanceCap, 0, 20));
         result.TripleAttackChance = Math.Clamp(result.TripleAttackChance, 0, Math.Clamp(config.TripleAttackChanceCap, 0, 5));
-        result.ExtraLootChance = Math.Clamp(result.ExtraLootChance, 0, Math.Clamp(config.ExtraLootChanceCap, 0, 10));
+        result.ExtraLootChance = Math.Clamp(result.ExtraLootChance+RpgPerkCatalog.Bonus(profile,"extraLoot"), 0, Math.Min(100,Math.Clamp(config.ExtraLootChanceCap, 0, 10)+RpgPerkCatalog.Bonus(profile,"extraLoot")));
         result.SushiPreservationChance = Math.Clamp(result.SushiPreservationChance, 0, Math.Clamp(config.SushiPreservationChanceCap, 0, 20));
         if(activity==RpgActivity.Boss)
             result.BossDamageReduction+=RpgSushiService.Defensive(profile,now??DateTimeOffset.UtcNow).Select(b=>b.BossDamageReduction).DefaultIfEmpty().Max();
-        result.BossDamageReduction=Math.Clamp(result.BossDamageReduction,0,80);
+        result.BossDamageReduction=Math.Clamp(result.BossDamageReduction+RpgPerkCatalog.Bonus(profile,"defense"),0,80);
         result.BossDodgeChance=Math.Clamp(result.BossDodgeChance,0,100);
         result.CriticalHealing=Math.Clamp(result.CriticalHealing,0,100);
         result.RareEquipmentLuck=Math.Clamp(result.RareEquipmentLuck,0,100);
         result.MaximumHp = Math.Clamp(EquipmentMaximumHp(profile,config.Health.HpPerStamina,config.Sets),0,config.Health.EquipmentHpCap);
+        // Permanent talents are applied after equipment caps; probabilities remain bounded.
+        result.Damage+=RpgTalentService.Bonus(profile,"damage");
+        if(profile.Cooldowns.TryGetValue("perk:otter-rage",out var rageUntil) && (now??DateTimeOffset.UtcNow)<rageUntil)result.Damage+=RpgPerkCatalog.Bonus(profile,"victoryDamage");
+        if(activity==RpgActivity.Boss)result.DoubleAttackChance=Math.Min(100,result.DoubleAttackChance+RpgTalentService.Bonus(profile,"doubleAttack"));
+        result.CritChance=Math.Min(100,result.CritChance+RpgTalentService.Bonus(profile,"crit"));
+        if(activity==RpgActivity.Boss)result.BossDamage+=RpgTalentService.Bonus(profile,"boss");
+        if(activity==RpgActivity.Boss && RpgSetCombatService.Active(profile,config.Sets,"abyss_hunter",6) && RpgSetCombatService.Until(profile,"hunter-haste",now??DateTimeOffset.UtcNow)) {result.BossDamage+=18;result.AttackSpeed+=28;}
+        if(activity==RpgActivity.Boss && RpgSetCombatService.Active(profile,config.Sets,"coral_oracle",6) && RpgSetCombatService.Until(profile,"coral-damage",now??DateTimeOffset.UtcNow))result.BossDamage+=20;
         return result;
     }
 
     private static void Add(RpgAttributes a, RpgAttributes b, int count = 1)
     {
+        a.Armor+=b.Armor*count;a.ArmorPercent+=b.ArmorPercent*count;a.MaximumHpPercent+=b.MaximumHpPercent*count;
+        a.AttackSpeed+=b.AttackSpeed*count;a.HealingPower+=b.HealingPower*count;
         a.BossDamageReduction+=b.BossDamageReduction*count; a.BossDodgeChance+=b.BossDodgeChance*count;
         a.CriticalHealing+=b.CriticalHealing*count; a.RareEquipmentLuck+=b.RareEquipmentLuck*count;
         a.Power+=b.Power*count;a.Stamina+=b.Stamina*count;

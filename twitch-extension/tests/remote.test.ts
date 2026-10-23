@@ -30,7 +30,7 @@ describe('authoritative UI mapping',()=>{
  it('maps actual profile, item rolls, numeric enums, equipment and all stored stocks without demo data',()=>{
   const view=mapProfile(profile(1234,true),catalog());expect(view.player.pearls).toBe(1234);expect(view.player.level).toBe(7);expect(view.player.hp).toBe(87);
   expect(view.equipment.Weapon).toBe('owned-trident');expect(view.inventory[0]).toMatchObject({rarity:'Epic',slot:'Weapon',favorite:true,locked:false,attributes:{damage:12.5,power:3,maximumHp:5}});
-  expect(view.perks[0]).toMatchObject({id:'damage',level:2,maxLevel:10});expect(view.player.buffs[0]).toMatchObject({activity:'Boss',category:'Offensive',remainingUses:2});
+  expect(view.perks[0]).toMatchObject({id:'damage',level:2,maxLevel:5});expect(view.player.buffs[0]).toMatchObject({activity:'Boss',category:'Offensive',remainingUses:2});
   expect(view.fish.sardine).toBe(4);expect(view.sushi.fishing).toBe(2);expect(view.remote!.perkPrices.damage).toBeUndefined();expect(view.remote!.stats).toBeUndefined();expect(view.remote!.bossKnown).toBe(false);
   expect(view.remote!.recipes[0].category).toBeUndefined();expect(view.remote!.recipes[0].effectsText).toBe('+10 Angelglück');
  });
