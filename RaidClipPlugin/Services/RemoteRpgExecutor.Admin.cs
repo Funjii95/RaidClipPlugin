@@ -22,7 +22,7 @@ internal sealed partial class RemoteRpgExecutor
         if(e.Intent.Kind is "adminMaterialGrant" or "adminBalance")return await InvokeMaterialAdminAsync(e,ct);
         if(e.Intent.Kind=="adminCatalog")return new(true,"read","Adminbereich bereit.",JsonSerializer.Serialize(new{
             settings=rpg.Upgrades, materials=RpgUpgradeCatalog.Materials,
-            items=rpg.DiveLoot.Items.Where(i=>i.Slot.HasValue&&i.Kind!=RpgItemKind.Consumable).Select(i=>new{id=i.ItemId,name=i.DisplayName,rarity=i.Rarity.ToString(),slot=i.Slot!.Value.ToString()}),
+            items=rpg.DiveLoot.Items.Where(i=>i.Slot.HasValue&&i.Kind!=RpgItemKind.Consumable).OrderByDescending(i=>i.Rarity).ThenBy(i=>i.DisplayName,StringComparer.Ordinal).Select(i=>new{id=i.ItemId,name=i.DisplayName,rarity=i.Rarity.ToString(),slot=i.Slot!.Value.ToString()}),
             attributes=typeof(RpgAttributes).GetProperties().Select(p=>p.Name),events=new[]{"boss","mimic","race","heist","hotTime"}}));
         if(e.Intent.Kind=="adminStart")
         {

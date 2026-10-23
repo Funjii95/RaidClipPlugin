@@ -462,6 +462,9 @@ public sealed class ConfigurationService
     {
         if(settings.Minigame is null||settings.Heist is null||settings.Duel is null||settings.Commands is null||settings.MusicRequests is null||settings.Moderation is null)
             throw new InvalidDataException("Wichtige Einstellungsbereiche fehlen.");
+        // Validate legitimate older snapshots after the same additive migration used on load.
+        // Missing original rarity entries and invalid existing values still fail validation.
+        RpgDepthsExpansion.AddMissing(settings.Minigame.Adventures.Rpg);
         ValidateMinigameSettings(settings.Minigame);settings.Minigame.Adventures.Rpg.Validate();
         ValidateMusicRequestSettings(settings.MusicRequests);ValidateDuelSettings(settings.Duel);
     }

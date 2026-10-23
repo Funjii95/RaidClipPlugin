@@ -26,6 +26,13 @@ public sealed class RpgDepthsExpansionTests:IDisposable
         var n=c.DiveLoot.Items.Count;RpgDepthsExpansion.AddMissing(c);Assert.Equal(n,c.DiveLoot.Items.Count);
         Assert.All(items.Where(i=>i.Rarity==ItemRarity.Abyss),i=>Assert.Equal(new[]{RpgActivity.Boss},i.DropActivities));
     }
+    [Fact] public void ExistingGeneratorEnableActionPreservesEveryFixedCurseAndJewelryDefinition()
+    {
+        var before=new RpgConfig();var enabled=RpgItemGenerationService.EnableForFutureDrops(before);
+        foreach(var original in RpgDepthsExpansion.Items().Where(i=>i.Generation is null)){
+            var current=enabled.DiveLoot.Items.Single(i=>i.ItemId==original.ItemId);Assert.Null(current.Generation);
+            Assert.Equal(JsonSerializer.Serialize(original.Attributes),JsonSerializer.Serialize(current.Attributes));}
+    }
     [Theory][InlineData("dive")][InlineData("fish")][InlineData("boss")][InlineData("enemy")][InlineData("chest")][InlineData("rareChest")][InlineData("legendaryChest")]
     public void EveryMaterialSourceUsesItsExactPoolAndConfiguredQuantities(string source)
     {

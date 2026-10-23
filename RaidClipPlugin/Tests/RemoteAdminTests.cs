@@ -80,6 +80,7 @@ public sealed class RemoteAdminTests:IDisposable
         var outcome=await Executor().ExecuteAsync(Envelope("adminCatalog",new{}),default);Assert.True(outcome.Success);
         using var data=JsonDocument.Parse(outcome.DataJson!);var items=data.RootElement.GetProperty("items").EnumerateArray().ToArray();
         Assert.All(RpgTidesExpansion.Items(),i=>Assert.Contains(items,x=>x.GetProperty("id").GetString()==i.ItemId));
+        Assert.All(RpgDepthsExpansion.Items(),i=>Assert.Contains(items,x=>x.GetProperty("id").GetString()==i.ItemId));
         Assert.DoesNotContain(items,x=>x.GetProperty("id").GetString()=="shell");
     }
     [Fact] public void AdministrativeHotTimePersistsWithoutPretendingABossVictory()
