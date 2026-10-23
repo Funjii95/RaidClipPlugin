@@ -11,7 +11,7 @@ type AdminCatalog={settings?:import("./MaterialDebug").MaterialSettings;material
 export const isDesktopAdmin=(identity?:Identity)=>!!identity?.connected&&!!identity.channelId&&identity.userId===identity.channelId;
 const eventNames:Record<string,string>={boss:'Boss',mimic:'Mimic-Boss',race:'Otter-Rennen',heist:'Heist',hotTime:'Hot-Time'};
 export function DesktopAdmin({source,identity}:{source:BackendRpgDataSource;identity?:Identity}){
- const [open,setOpen]=useState(false),[catalog,setCatalog]=useState<AdminCatalog>(),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[state,setState]=useState(()=>source.getSnapshot());
+ const [open,setOpen]=useState(true),[catalog,setCatalog]=useState<AdminCatalog>(),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[state,setState]=useState(()=>source.getSnapshot());
  const [itemId,setItem]=useState(''),[target,setTarget]=useState(identity?.userId??''),[count,setCount]=useState(1),[roll,setRoll]=useState('random'),[stats,setStats]=useState<Record<string,number>>({}),[stake,setStake]=useState('100');
  const [itemSearch,setItemSearch]=useState(''),[rarityFilter,setRarityFilter]=useState('');
  useEffect(()=>source.subscribe(()=>setState(source.getSnapshot())),[source]);

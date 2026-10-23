@@ -45,7 +45,7 @@ public sealed class RpgEnemyService(IDuelRandom random)
    materials=RpgZoneService.Materials(p,c,zone,source=="mimic"?"mimic":"enemy",random);
    loot=RpgZoneService.Equipment(p,c,zone,random,now);if(loot is not null)p.Inventory.Add(loot);
    eternal=RpgEternalLoot.Victory(p,c,zone.Id,zone.Level,source,true,random,now);
-   if(RpgEternalCombat.Has(p,c,"divine_infinity",3)&&loot is not null)for(int i=0;i<2;i++){var copy=System.Text.Json.JsonSerializer.Deserialize<RpgItem>(System.Text.Json.JsonSerializer.Serialize(loot))!;copy.InstanceId=Guid.NewGuid().ToString("N");p.Inventory.Add(copy);}
+   if(loot is not null)for(int i=1;i<RpgEternalCombat.NormalLootMultiplier(p,c);i++){var copy=System.Text.Json.JsonSerializer.Deserialize<RpgItem>(System.Text.Json.JsonSerializer.Serialize(loot))!;copy.InstanceId=Guid.NewGuid().ToString("N");p.Inventory.Add(copy);}
   }
   var name=source=="mimic"?"Mimic der "+zone.Name:zone.Enemies[enemyIndex]+(source=="elite"?" (Elite)":"");
   return new(name,victory,rounds,taken,p.Health.CurrentHp!.Value,RpgHealthService.Maximum(p,c.Health),victory?(int)(experience*(1+RpgSetCombatService.Bonus(p,c.Sets,"ExperienceBonus")/100)):0,loot){ExtraLoot=eternal,Level=zone.Level,ZoneId=zone.Id,Source=source,Materials=materials};

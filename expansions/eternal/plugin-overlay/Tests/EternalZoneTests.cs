@@ -26,11 +26,29 @@ public sealed class EternalZoneTests:IDisposable
   var victory=Equipped("divine_infinity");victory.SelectedDivingZone=id;var combat=new RpgEnemyService(new Low()).Fight(victory,c,z,"normal",1,Now);
   Assert.True(combat.Victory);Assert.Equal(level,combat.Level);Assert.Equal(id,combat.ZoneId);Assert.Equal(z.Enemies[1],combat.Name);Assert.True(victory.Experience>0);Assert.DoesNotContain(victory.Inventory,i=>i.Rarity==ItemRarity.Eternal&&id!="primordial_throne");
  }
- [Fact]public void CatalogHas24FixedUniqueItemsAndSixCumulativeBonusesPerSet()
+ [Theory][InlineData(6,3,0)][InlineData(7,3,500)][InlineData(8,6,500)]
+ public void DivineSevenAndEightRequireDistinctPiecesAndUseOneLootMultiplier(int count,int multiplier,int xp)
  {
-  var items=RpgEternalCatalog.Items();Assert.Equal(24,items.Count);Assert.Equal(18,items.Count(i=>i.Rarity==ItemRarity.Eternal));Assert.Equal(6,items.Count(i=>i.Rarity==ItemRarity.Divine));Assert.Equal(24,items.Select(i=>i.ItemId).Distinct().Count());
-  Assert.All(items,i=>{Assert.NotNull(i.Slot);Assert.NotEqual(EquipmentSlot.Weapon,i.Slot);Assert.Null(i.Generation);Assert.Empty(i.DropActivities);});
-  Assert.All(RpgEternalCatalog.Sets(),s=>{Assert.Equal(6,s.ItemIds.Count);Assert.Equal(new[]{1,2,3,4,5,6},s.Bonuses.Select(b=>b.RequiredPieces));});
+  var c=Config();var p=Equipped("divine_infinity",count);
+  Assert.Equal(multiplier,RpgEternalCombat.NormalLootMultiplier(p,c));
+  Assert.Equal(xp,RpgSetCombatService.Bonus(p,c.Sets,"ExperienceBonus"));
+  var material=RpgZoneService.Materials(p,c,c.Zones.Get("sunny_lagoon"),"chest",new Low());Assert.All(material.Values,v=>Assert.Equal(multiplier,v));
+  if(count==8){Assert.Equal(8,p.Equipment.Count);Assert.Equal(Enum.GetValues<EquipmentSlot>().Order(),p.Equipment.Keys.Order());
+   var ring=p.Inventory.First(i=>i.ItemId=="divine_infinity_ring");var copy=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(ring))!;copy.InstanceId="duplicate";p.Inventory.Add(copy);p.Equipment[EquipmentSlot.Ring2]=copy.InstanceId;
+   Assert.False(RpgEternalCombat.Has(p,c,"divine_infinity",8));Assert.Equal(3,RpgEternalCombat.NormalLootMultiplier(p,c));}
+ }
+ [Fact]public void EightPiecesMultiplyRegularEquipmentButNeverTheEternalDrop()
+ {
+  var c=Config();c.BossLootChance=100;c.DiveLoot.MaximumDropChance=100;c.Zones.EternalChances["normal"]=100;
+  var p=Equipped("divine_infinity",8);var r=new RpgEnemyService(new Low()).Fight(p,c,c.Zones.Get("primordial_throne"),"normal",0,Now);
+  Assert.True(r.Victory);Assert.Equal(6000,r.Experience);Assert.Single(p.Inventory.Where(i=>i.Rarity==ItemRarity.Eternal));
+  Assert.Equal(6,p.Inventory.Count(i=>i.Rarity<ItemRarity.Eternal));
+ }
+ [Fact]public void CatalogHas26FixedUniqueItemsAndEightDivineStages()
+ {
+  var items=RpgEternalCatalog.Items();Assert.Equal(26,items.Count);Assert.Equal(18,items.Count(i=>i.Rarity==ItemRarity.Eternal));Assert.Equal(8,items.Count(i=>i.Rarity==ItemRarity.Divine));Assert.Equal(26,items.Select(i=>i.ItemId).Distinct().Count());
+  Assert.All(items,i=>{Assert.NotNull(i.Slot);if(i.Rarity==ItemRarity.Eternal)Assert.NotEqual(EquipmentSlot.Weapon,i.Slot);Assert.Null(i.Generation);Assert.Empty(i.DropActivities);});
+  Assert.All(RpgEternalCatalog.Sets(),s=>{var n=s.Id=="divine_infinity"?8:6;Assert.Equal(n,s.ItemIds.Count);Assert.Equal(Enumerable.Range(1,n),s.Bonuses.Select(b=>b.RequiredPieces));});
   var c=Config();var original=JsonSerializer.Serialize(items.Select(i=>i.Attributes));c=RpgItemGenerationService.EnableForFutureDrops(c);Assert.All(c.DiveLoot.Items.Where(i=>items.Any(d=>d.ItemId==i.ItemId)),i=>Assert.Null(i.Generation));Assert.Equal(original,JsonSerializer.Serialize(RpgEternalCatalog.Items().Select(i=>i.Attributes)));
  }
  [Theory][InlineData("ocean",100,"normal",true)][InlineData("abyss",100,"normal",true)][InlineData("primordial_throne",99,"normal",true)][InlineData("primordial_throne",100,"fish",true)][InlineData("primordial_throne",100,"chest",true)][InlineData("primordial_throne",100,"normal",false)]

@@ -28,14 +28,18 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
    void PassiveRoll(){
     var pool=c.DiveLoot.Items.Where(i=>i.Slot is null&&i.Kind!=RpgItemKind.Consumable&&i.Rarity<=ItemRarity.Legendary).ToArray();if(pool.Length==0)return;
     var found=System.Text.Json.JsonSerializer.Deserialize<RpgItem>(System.Text.Json.JsonSerializer.Serialize(pool[rng.NextInclusive(0,pool.Length-1)]))!;
-    found.InstanceId=Guid.NewGuid().ToString("N");found.FoundAt=time;p.Inventory.Add(found);additional.Add(found);
+    found.FoundAt=time;
+    for(int copy=0;copy<RpgEternalCombat.NormalLootMultiplier(p,c);copy++){
+     var reward=System.Text.Json.JsonSerializer.Deserialize<RpgItem>(System.Text.Json.JsonSerializer.Serialize(found))!;
+     reward.InstanceId=Guid.NewGuid().ToString("N");p.Inventory.Add(reward);additional.Add(reward);
+    }
    }
    if(fishing){
     eventType="fish";
     if(rng.NextInclusive(0,9999)<Math.Clamp(100-game.LossChance+RpgPerkCatalog.Combined(p,"catch"),0,100)*100){
      var fish=RpgFishingService.Select(c,stats,0,rng,p);var quantity=1+RpgEternalLoot.FishRolls(p,c,rng)+(RpgPerkCatalog.Proc(p,"doubleFish",rng)?1:0)+(RpgPerkCatalog.Proc(p,"reserveFish",rng)?1:0);
      if(RpgDepthsCombatService.Has(p,c,"true_eternal_reef",4)&&rng.NextInclusive(0,9999)<1500)quantity++;
-     if(RpgEternalCombat.Has(p,c,"divine_infinity",3))quantity*=3;
+     quantity=checked(quantity*RpgEternalCombat.NormalLootMultiplier(p,c));
      if(!p.Fish.TryGetValue(fish.Id,out var stack))p.Fish[fish.Id]=stack=new(){FishId=fish.Id,FirstCaughtAt=time};stack.Quantity=checked(stack.Quantity+quantity);stack.LastCaughtAt=time;
      a.FishCollection[fish.Name]=checked(a.FishCollection.GetValueOrDefault(fish.Name)+quantity);
      item=new(){ItemId=fish.Id,DisplayName=fish.Name,IconId=fish.IconId,Rarity=fish.Rarity,FoundAt=time};payout=Math.Max(0,fish.PearlReward??c.FreeFishingReward);outcome=$"{quantity} × {fish.Name}";Merge(RpgZoneService.Materials(p,c,zone,"fish",rng));
@@ -56,7 +60,7 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
     }
     if(RpgEternalCombat.Has(p,c,"eternal_star_hunter",6)&&rng.NextInclusive(0,9999)<3000&&(enemy is null||enemy.Victory))Merge(RpgZoneService.Materials(p,c,zone,"dive",rng));
    }
-   payout=RpgPassiveService.RewardPayout(payout,0,stats.PearlBonus);if(RpgEternalCombat.Has(p,c,"divine_infinity",3))payout=checked(payout*3);
+   payout=RpgPassiveService.RewardPayout(payout,0,stats.PearlBonus);payout=checked(payout*RpgEternalCombat.NormalLootMultiplier(p,c));
    var collector=RpgCollectorService.Calculate(p,c.DiveLoot);payout=RpgCollectorService.Reward(payout,fishing?collector.FishingPearls:collector.DivePearls);
    payout=points.RewardAmount(payout,fishing?RpgRewardSource.Fishing:RpgRewardSource.DiveNetWin);if(config.MaximumAccountEnabled)payout=Math.Min(payout,Math.Max(0,config.MaximumAccountPoints-a.Points));a.Points=checked(a.Points+payout);
    a.GamesPlayed=checked(a.GamesPlayed+1);

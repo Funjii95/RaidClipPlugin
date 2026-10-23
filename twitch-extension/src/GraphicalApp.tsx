@@ -4,7 +4,7 @@ import {ZonePanel} from './ZonePanel';
 import {MaterialInventory,EquipmentUpgrade,materialNames} from './UpgradePanel';
 import {PerkPanel} from './PerkPanel';
 import {TalentTree} from './TalentTree';
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { labels, statsText, numberStat, recipeEffects, collectorText } from "./presentation";
 import { slots } from "./types";
@@ -50,8 +50,8 @@ const symbols = [
     "bag",
 ] as const;
 const time = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
-export function App({source,demo,minigameClient,desktop=false}:{source:RpgDataSource;demo?:DemoPresentation;minigameClient?:MinigameClient;desktop?:boolean}) {
-    const desktopTabs=["Abenteuer","Charakter","Waffen","Ausrüstung","Inventar","Aufwertung","Materialien","Sammlungen","Itemsets","Boss"];
+export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{source:RpgDataSource;demo?:DemoPresentation;minigameClient?:MinigameClient;desktop?:boolean;desktopAdmin?:ReactNode}) {
+    const desktopTabs=["Abenteuer","Charakter","Waffen","Ausrüstung","Inventar","Aufwertung","Materialien","Sammlungen","Itemsets","Boss","Talente","Perks","Kochen","Perlen-Minispiele"];
     const isDemo=source.mode==="demo";
     const allowed=(type:Action["type"])=>isDemo || source.canDispatch?.(type)===true;
     const clickLock=useRef(false);
@@ -247,9 +247,10 @@ export function App({source,demo,minigameClient,desktop=false}:{source:RpgDataSo
                     setTab(name);
                     setMessage("");
                 }}>
-              <Icon name={desktop?(["compass","otter","swords","swords","bag","sets","pearl","bag","sets","boss"] as const)[n]:symbols[n]}/>
+              <Icon name={desktop?(["compass","otter","swords","swords","bag","sets","pearl","bag","sets","boss","perk","perk","cook","pearl"] as const)[n]:symbols[n]}/>
               {name}
             </button>))}
+          {desktop&&desktopAdmin&&<button onClick={()=>setTab("Admin")} aria-current={tab==="Admin"?"page":undefined}>♛ Admin</button>}
           {desktop&&<button onClick={()=>setTab("Einstellungen")} aria-current={tab==="Einstellungen"?"page":undefined}>⚙ Einstellungen</button>}
         </nav>)}
       {focusedItem&&<div className="codex-item-dialog" role="dialog" aria-label="Itemdetails"><button onClick={()=>setFocusedItem(undefined)}>Itemdetails schließen</button>{state.inventory.filter(i=>i.instanceId===focusedItem).map(itemCard)}</div>}
@@ -416,6 +417,7 @@ export function App({source,demo,minigameClient,desktop=false}:{source:RpgDataSo
                       </>)}
                   </article>)}
               </>)}
+            {desktop&&tab==="Admin"&&desktopAdmin}
             {tab === "Einstellungen"&&<article><h3>Spiel &amp; Einstellungen</h3>{["Talente","Perks","Kochen","Perlen-Minispiele"].map(name=><button key={name} onClick={()=>setTab(name)}>{name}</button>)}<p>Animationen können am unteren Fensterrand ausgeschaltet werden. Anmeldung und Updates findest du im Windows-Fenster.</p></article>}
             {tab==="Sammlungen"&&<><h3>Schatzsammlung</h3><div className="cards">{(state.remote?.collectorItems??[]).map(def=>{const quantity=Math.min(5,state.inventory.filter(i=>i.itemId===def.Id).length);return <article key={def.Id}><ItemArtwork id={def.Id} name={def.Name}/><h3>{def.Name}</h3><p>{quantity}/5</p><progress value={quantity} max={5}/><p>Fundort: Gebietstruhen und berechtigte Kämpfe</p></article>;})}</div><p>{(state.remote?.collectorItems??[]).reduce((n,d)=>n+Math.min(5,state.inventory.filter(i=>i.itemId===d.Id).length),0)} / {(state.remote?.collectorItems?.length??0)*5} gesammelt</p></>}
             {tab==="Waffen"&&<><h3>Waffenverwaltung</h3><label>Waffen suchen<input value={search} onChange={e=>setSearch(e.target.value)}/></label><div className="cards">{state.inventory.filter(i=>i.slot==="Weapon"&&(i.name+" "+i.rarity).toLowerCase().includes(search.toLowerCase())).map(itemCard)}</div>{!state.inventory.some(i=>i.slot==="Weapon")&&<p>Noch keine Waffe im Inventar.</p>}</>}

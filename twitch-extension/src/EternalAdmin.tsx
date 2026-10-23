@@ -4,8 +4,8 @@ export function EternalAdmin({source,target,disabled}:{source:BackendRpgDataSour
  const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),[zone,setZone]=useState('sunny_lagoon'),[enemy,setEnemy]=useState('0'),[value,setValue]=useState('0.03'),[items,setItems]=useState<{InstanceId:string;DisplayName:string;equipped:boolean}[]>([]);
  const zones=source.getSnapshot().remote?.zones??[];
  async function run(kind:string,args:Record<string,string>){setBusy(true);try{const result=await source.readPlugin(kind,args);setMessage(result.message??'Bestätigt.');if(result.items)setItems(result.items);if(result.result)setMessage(JSON.stringify(result.result));}catch(e){setMessage(e instanceof Error?e.message:String(e));}finally{setBusy(false);}}
- return <section aria-label="Eternal und Divine Verwaltung"><h2>Eternal &amp; Divine</h2><p>Divine-Vergabe nur an die authentifizierte Kanalinhaber-ID. Einzelstücke stehen im Itemkatalog.</p>
- <button disabled={disabled||busy} onClick={()=>void run('adminDivine',{operation:'grantSet',targetUserId:target})}>Göttliches Set vollständig vergeben</button>
+ return <section aria-label="Eternal und Divine Verwaltung"><h2>Eternal &amp; Divine</h2><p>Divine-Vergabe nur an die authentifizierte Kanalinhaber-ID. Einzelstücke stehen im Itemkatalog. Beim Vervollständigen bleiben vorhandene Teile erhalten; nur fehlende Teile werden ergänzt.</p>
+ <button disabled={disabled||busy} onClick={()=>void run('adminDivine',{operation:'grantSet',targetUserId:target})}>Göttliches Set vervollständigen · 8 Teile</button>
  <button disabled={disabled||busy} onClick={()=>void run('adminDivine',{operation:'list',targetUserId:target})}>Göttliche Items anzeigen</button>
  <button disabled={disabled||busy} onClick={()=>void run('adminDivine',{operation:'remove',targetUserId:target})}>Alle göttlichen Items entfernen</button>
  <ul>{items.map(i=><li key={i.InstanceId}>{i.DisplayName}{i.equipped?' · ausgerüstet':''}</li>)}</ul>

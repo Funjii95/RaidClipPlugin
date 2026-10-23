@@ -43,6 +43,7 @@ internal sealed partial class RemoteRpgExecutor
   var applied=await points.ApplyRpgAsync(target,account.DisplayName,"admin:"+e.Intent.ActionId.ToString("N"),a=>{
    if(op=="grantSet"){
     foreach(var definition in RpgEternalCatalog.Items().Where(i=>i.Rarity==ItemRarity.Divine)){
+     if(a.Rpg.Inventory.Any(i=>i.ItemId==definition.ItemId))continue;
      var item=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(definition))!;item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=DateTimeOffset.UtcNow;a.Rpg.Inventory.Add(item);
     }
    }else if(op=="remove"){

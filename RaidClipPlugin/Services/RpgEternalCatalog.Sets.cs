@@ -49,7 +49,9 @@ public static partial class RpgEternalCatalog
             B(3,"Schöpfung ohne Grenzen: garantierte normale Materialbelohnung, dreifache normale Lootmengen; +500 % relative Materialchance",new(){MaterialFind=500}),
             B(4,"Unberührbarkeit: 100 % Ausweichen, Immunität gegen gewöhnlichen Kampfschaden",new(){BossDodgeChance=100}),
             B(5,"Unsterblichkeit: nach jedem eigenen erfolgreichen Angriff vollständig heilen; tödlichen Kampfschaden verhindern; +500 % Boss-Schaden",new(){BossDamage=500}),
-            B(6,"Urteil der Götter: garantierter Sofortsieg gegen normale Gegner, Eliten, Mimics und Bosse mit regulären Belohnungen; +10.000 % göttlicher Anzeigeschaden",new(){DivineDamage=10000}));
+            B(6,"Urteil der Götter: garantierter Sofortsieg gegen normale Gegner, Eliten, Mimics und Bosse mit regulären Belohnungen; +10.000 % göttlicher Anzeigeschaden",new(){DivineDamage=10000}),
+            B(7,"Herrscher aller Gezeiten: +500 % Erfahrung, +100 % Bewegungstempo (verkürzt auch Angel- und Tauchpausen)",new(){ExperienceBonus=500,MovementSpeed=100}),
+            B(8,"Vollendung der Schöpfung: sechsfache reguläre Gebietsbeute statt dreifacher Menge – Fische, Perlen, normale Materialien und Ausrüstung; Eternal-Drops und Mimic-Materialsonderwürfe bleiben unverändert"));
         return result;
     }
 }

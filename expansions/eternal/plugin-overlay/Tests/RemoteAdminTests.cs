@@ -88,8 +88,13 @@ public sealed class RemoteAdminTests:IDisposable
         await points.SetPointsAsync("42","SYNTHETIC OWNER",1000,0,default);await points.SetPointsAsync("1001","SYNTHETIC VIEWER",1000,0,default);
         Assert.Equal("admin_required",(await Executor().ExecuteAsync(Envelope("adminDivine",new{operation="grantSet",targetUserId="42"},"1001"),default)).Code);
         Assert.False((await Executor().ExecuteAsync(Envelope("adminDivine",new{operation="grantSet",targetUserId="1001"}),default)).Success);
+        var original=RpgEternalCatalog.Items().Where(i=>i.Rarity==RaidClipPlugin.Models.ItemRarity.Divine).Take(6).ToArray();
+        await points.ApplyRpgAsync("42","SYNTHETIC OWNER","seed-six",a=>{a.Rpg.Inventory.AddRange(original);return new(true);},default);
         var request=Envelope("adminDivine",new{operation="grantSet",targetUserId="42"});var first=await Executor().ExecuteAsync(request,default);Assert.True(first.Success,first.Message);Assert.Equal(first,await Executor().ExecuteAsync(request,default));
-        var owner=(await new ViewerPointStore(root).GetProfileAsync("42",default)).Entry;Assert.Equal(6,owner.Rpg.Inventory.Count);Assert.Equal(1000,owner.Points);Assert.All(owner.Rpg.Inventory,i=>Assert.Equal(RaidClipPlugin.Models.ItemRarity.Divine,i.Rarity));
+        var owner=(await new ViewerPointStore(root).GetProfileAsync("42",default)).Entry;Assert.Equal(8,owner.Rpg.Inventory.Count);Assert.Equal(1000,owner.Points);Assert.All(owner.Rpg.Inventory,i=>Assert.Equal(RaidClipPlugin.Models.ItemRarity.Divine,i.Rarity));
+        Assert.All(original,i=>Assert.Contains(owner.Rpg.Inventory,saved=>saved.InstanceId==i.InstanceId));
+        Assert.True((await Executor().ExecuteAsync(Envelope("adminDivine",new{operation="grantSet",targetUserId="42"}),default)).Success);
+        Assert.Equal(8,(await points.GetProfileAsync("42",default)).Entry.Rpg.Inventory.Count);
         var cheat=Envelope("adminGrant",new{itemId="divine_infinity_helmet",targetUserId="42",count="1",roll="custom",stats="{\"Power\":1}"});Assert.False((await Executor().ExecuteAsync(cheat,default)).Success);
         Assert.True((await Executor().ExecuteAsync(Envelope("adminDivine",new{operation="list",targetUserId="42"}),default)).Success);
         Assert.True((await Executor().ExecuteAsync(Envelope("adminDivine",new{operation="remove",targetUserId="42"}),default)).Success);Assert.Empty((await new ViewerPointStore(root).GetProfileAsync("42",default)).Entry.Rpg.Inventory);

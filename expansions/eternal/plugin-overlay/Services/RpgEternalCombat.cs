@@ -7,6 +7,7 @@ public static class RpgEternalCombat
     public static bool Has(RpgProfile p,IReadOnlyList<RpgItemSet> sets,string id,int n)=>RpgSetCombatService.Active(p,sets,id,n);
     public static bool Has(RpgProfile p,RpgConfig c,string id,int n)=>Has(p,c.Sets,id,n);
     public static bool Enhanced(RpgProfile p)=>p.Inventory.Any(i=>p.Equipment.Values.Contains(i.InstanceId)&&i.Rarity>=ItemRarity.Eternal);
+    public static int NormalLootMultiplier(RpgProfile p,RpgConfig c)=>Has(p,c,"divine_infinity",8)?6:Has(p,c,"divine_infinity",3)?3:1;
     public static bool Judgment(RpgProfile p,RpgConfig c)=>Has(p,c,"divine_infinity",6);
     private static bool Ready(RpgProfile p,string key,DateTimeOffset now)=>!p.Cooldowns.TryGetValue(Prefix+key,out var end)||end<=now;
     private static void Set(RpgProfile p,string key,DateTimeOffset now,int seconds)=>p.Cooldowns[Prefix+key]=now.AddSeconds(seconds);

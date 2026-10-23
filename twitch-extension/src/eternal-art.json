@@ -334,5 +334,21 @@
       1505,
       515
     ]
+  },
+  "divine_infinity_weapon": {
+    "src": "./items/eternal/divine_infinity_weapon.webp",
+    "name": "Dreizack der Ursch\u00F6pfung",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "0a4bacf6625b47ef99034a8f0c37ceb8ba89cc8bb9e5d29ee950e9b923d20453",
+    "assetSha256": "b73482af5fb50f0bb9f4e968dd3d213de262a5b00547e39c065d27a1c18de1dd"
+  },
+  "divine_infinity_ring2": {
+    "src": "./items/eternal/divine_infinity_ring2.webp",
+    "name": "Siegelring der Grenzenlosigkeit",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "2524e47cf8079758167359984f1ee94e634d8ca0cdf0fce20adfc57ef811f75c",
+    "assetSha256": "4dd5b08f24e930e36aaf489ee198f0e31f19a5c3cf3a57029d2dd2eefd6bd0c3"
   }
 }

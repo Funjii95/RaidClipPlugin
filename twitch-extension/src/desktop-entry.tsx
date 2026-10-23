@@ -1,6 +1,6 @@
 import {createRoot} from 'react-dom/client';
 import {App} from './GraphicalApp';
-import {DesktopAdmin} from './DesktopAdmin';
+import {DesktopAdmin,isDesktopAdmin} from './DesktopAdmin';
 import {BackendRpgDataSource} from './remote/BackendRpgDataSource';
 import {desktopTransport,type NativeBridge} from './desktop-transport';
 import './desktop.css';
@@ -22,5 +22,5 @@ try{
  }});
  source.start();window.otterFlush=()=>{};window.otterCanRestart=()=>source.getSnapshot().remote?.pending!==true;
  window.addEventListener('pagehide',()=>source.dispose());
- createRoot(document.getElementById('root')!).render(<><DesktopAdmin source={source} identity={identity}/><App desktop source={source} minigameClient={source.minigames}/></>);
+ createRoot(document.getElementById('root')!).render(<App desktop source={source} minigameClient={source.minigames} desktopAdmin={isDesktopAdmin(identity)?<DesktopAdmin source={source} identity={identity}/>:undefined}/>);
 }catch(error){notice.textContent=error instanceof Error?error.message:'Backend-Verbindung konnte nicht gestartet werden.';notice.setAttribute('role','alert');}

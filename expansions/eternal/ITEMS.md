@@ -1,4 +1,4 @@
-# eternal – 24 Gegenstände
+# eternal – 26 Gegenstände
 
 Einzelbilder sind im Ressourcenmanifest registriert. Bestehende Illustrationen werden beim Build niemals durch Platzhalter ersetzt.
 
@@ -28,3 +28,5 @@ Einzelbilder sind im Ressourcenmanifest registriert. Bestehende Illustrationen w
 | `divine_infinity_boots` | Stiefel der Transzendenz | Divine | Boots | divine_infinity |
 | `divine_infinity_ring` | Ring der ewigen Welten | Divine | Ring1 | divine_infinity |
 | `divine_infinity_amulet` | Amulett der Ursprungsquelle | Divine | Amulet | divine_infinity |
+| `divine_infinity_ring2` | Siegelring der Grenzenlosigkeit | Divine | Ring2 | divine_infinity |
+| `divine_infinity_weapon` | Dreizack der Urschöpfung | Divine | Weapon | divine_infinity |
