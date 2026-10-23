@@ -1,12 +1,12 @@
 # Gezeiten-Erweiterung: Windows 0.2.0 / Plugin 2.2.0
 
-Lokaler Updatekandidat. Kein automatisches Deployment, keine GitHub-Veröffentlichung, keine Änderung der laufenden Installation.
+Auf Nutzerauftrag veröffentlicht und installiert. Den tatsächlichen Freigabe- und Installationsstand dokumentiert [RELEASE-0.2.0.md](RELEASE-0.2.0.md).
 
 ## Vor der Installation
 
-Plugin 2.2.0 benötigt einen Snapshot-Publisher, der RPG-Projektion **5** bestätigt. Projektion 5 erhält die fünf neuen Attributfelder und die Schildwerte. Der alte Publisher unterstützt nur bis Version 4; mit ihm stoppt das neue Plugin den Cloud-Sender absichtlich, damit keine Werte verloren gehen. Das bestehende Plugin 2.1.47 bleibt installiert und verbunden.
+Plugin 2.2.0 benötigt einen Snapshot-Publisher, der RPG-Projektion **5** bestätigt. Projektion 5 erhält die fünf neuen Attributfelder und die Schildwerte. Der alte Publisher unterstützt nur bis Version 4; mit ihm stoppt das neue Plugin den Cloud-Sender absichtlich, damit keine Werte verloren gehen. Die frühere Version 2.1.47 wurde vor dem Update gesichert.
 
-Die lokale Ausgabe `artifacts/tides-update/Cloud` enthält passende Linux-Builds für Backend und Publisher. Erst diese Cloud-Versionen prüfen und gemeinsam freigeben, dann Plugin und Windows-App verteilen. Vor dem Ersetzen des Plugins regulär beenden und die übliche Sicherung der lokalen Daten erstellen. Die Pakete dieses Kandidaten wurden noch nicht gegen den laufenden Cloud-Dienst installiert oder mit einem echten Spieler verwendet.
+Die lokale Ausgabe `artifacts/tides-update/Cloud` enthält passende Linux-Builds für Backend und Publisher. Erst diese Cloud-Versionen prüfen und gemeinsam freigeben, dann Plugin und Windows-App verteilen. Vor dem Ersetzen des Plugins regulär beenden und die übliche Sicherung der lokalen Daten erstellen. Die abgestimmte Installation und die Anmeldung des Kanalinhabers wurden nach der Freigabe geprüft.
 
 ## Inhalte und Daten
 
@@ -38,7 +38,7 @@ Erlaubte Adminaufträge: `adminCatalog` (Ausrüstungsliste), `adminStart` (aussc
 
 Items können zufällig, mit Minimal- oder Maximalwürfen oder mit eigenen Attributen erzeugt werden. Eigene Werte ersetzen die Attribute der neuen Instanz; nicht gesetzte Werte sind 0. Setzuordnung und Slot stammen weiterhin aus der gewählten Definition. Pro Auftrag sind 1–20 neue Instanzen erlaubt, Empfänger ist eine Twitch-ID mit bereits vorhandenem lokalem Spielstand. Perlen werden nicht verändert. Zahlenbereiche werden im Plugin geprüft; die bestehenden Kampf-Caps bleiben wirksam.
 
-Adminmutationen verwenden denselben dauerhaften Aktionsbeleg wie andere Spielaktionen. Aktions-ID, ausführende Twitch-ID, Empfänger und erzeugte Instanz-IDs bleiben im lokalen Beleg. Verbindungsabbrüche führen zu einer Prüfung derselben Aktions-ID; ein unklarer Ausgang wird nicht blind als neuer Auftrag ausgeführt. Der Admin-Katalog ist ein reiner Leseauftrag. Keine Adminaktionen wurden auf dem laufenden Kanal ausgeführt.
+Adminmutationen verwenden denselben dauerhaften Aktionsbeleg wie andere Spielaktionen. Aktions-ID, ausführende Twitch-ID, Empfänger und erzeugte Instanz-IDs bleiben im lokalen Beleg. Verbindungsabbrüche führen zu einer Prüfung derselben Aktions-ID; ein unklarer Ausgang wird nicht blind als neuer Auftrag ausgeführt. Der Admin-Katalog ist ein reiner Leseauftrag. Zur Prüfung wurden keine Adminmutationen auf dem laufenden Kanal ausgelöst.
 
 ## Build und Quellcode
 
