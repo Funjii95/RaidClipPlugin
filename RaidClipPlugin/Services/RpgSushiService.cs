@@ -23,8 +23,7 @@ public static class RpgSushiService
         var percent=Math.Clamp(Defensive(profile,now).Select(b=>b.BossLifeleech).DefaultIfEmpty().Max(),0,100)+Math.Clamp(criticalHealing,0,100)+RpgPerkCatalog.Combined(profile,"lifeleech");
         var actualDamage=Math.Min(damage,remainingBossHp);
         var healing=decimal.Floor(actualDamage*percent/100);
-        var granted=(int)Math.Min(Math.Max(0,RpgHealthService.Maximum(profile,health)-h.CurrentHp.Value),healing);
-        h.CurrentHp+=granted;return granted;
+        return RpgSetCombatService.Heal(profile,health,(int)Math.Min(int.MaxValue,healing),now);
     }
     public static IReadOnlyDictionary<string,int> Ingredients(RpgRecipe recipe) => recipe.Ingredients.Count>0 ? recipe.Ingredients : new Dictionary<string,int>{{recipe.FishId,recipe.FishQuantity}};
     public static string IngredientsText(RpgRecipe recipe,RpgConfig config) => string.Join(" + ",Ingredients(recipe).Select(p=>$"{p.Value}× {config.FishSpecies.FirstOrDefault(f=>f.Id==p.Key)?.Name??p.Key}"));

@@ -15,6 +15,11 @@ public static class RarityPresentation
 
 public sealed class RpgAttributes
 {
+    public decimal Armor { get; set; }
+    public decimal ArmorPercent { get; set; }
+    public decimal MaximumHpPercent { get; set; }
+    public decimal AttackSpeed { get; set; }
+    public decimal HealingPower { get; set; }
     public decimal BossDamageReduction { get; set; }
     public decimal BossDodgeChance { get; set; }
     public decimal CriticalHealing { get; set; }
@@ -121,6 +126,8 @@ public sealed class RpgProfile
 
 public sealed class RpgHealthState
 {
+    public int SetShieldHp { get; set; }
+    public string SetShieldSource { get; set; } = "";
     // Nullable distinguishes legacy profiles from an injured player at zero HP.
     public int? CurrentHp { get; set; }
     public int AppliedMaximumHp { get; set; }

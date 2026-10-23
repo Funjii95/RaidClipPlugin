@@ -4,6 +4,11 @@ export type Slot = typeof slots[number];
 export type Activity = 'Dive' | 'Fishing' | 'Boss';
 export type SushiCategory = 'Offensive' | 'Defensive';
 export interface CharacterStats {
+    armor?: number;
+    armorPercent?: number;
+    maximumHpPercent?: number;
+    attackSpeed?: number;
+    healingPower?: number;
     damage: number;
     critChance: number;
     critDamage: number;
@@ -44,6 +49,7 @@ export interface ItemEffect {
     activity?: Activity | null;
 }
 export interface InventoryItem {
+    upgradeLevel?: number;
     instanceId: string;
     itemId: string;
     name: string;
@@ -103,6 +109,7 @@ export interface PlayerProfile {
     regenRemainder: number;
     lastChatHeal: number;
     defeatedBossId?: string;
+    shieldHp?: number;
     baseStats: CharacterStats;
     buffs: ActiveBuff[];
 }
@@ -227,7 +234,7 @@ export interface DemoState {
     salvageQuote?: SalvageQuote;
     effectCooldowns: Record<string, number>;
 }
-export type Action = {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
+export type Action = {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
     type: 'dive';
     stake: number;
 } | {
@@ -260,6 +267,7 @@ export type Action = {type:'learnTalent';id:string;} | {type:'openShells';count:
 } | {
     type: 'perk';
     id: string;
+    maximum?: boolean;
 } | {
     type: 'cook' | 'activateSushi';
     recipeId: string;

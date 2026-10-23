@@ -5,7 +5,7 @@ import {attributes,emptyRemoteState,field,inventoryItem,mapProfile} from './mode
 import {RemoteMinigameClient} from '../minigames/remote-client';
 export type TwitchHelper={onAuthorized:(callback:(auth:Authorization)=>void)=>void;actions?:{requestIdShare:()=>void}};
 import {PluginRuleError} from './errors';
-const actionKinds:Partial<Record<Action['type'],string>>={learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
+const actionKinds:Partial<Record<Action['type'],string>>={upgrade:'upgradeItem',learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
 const canonical=(v:any):any=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k[0].toLowerCase()+k.slice(1),canonical(v)])):v;
 const signature=(v:any)=>JSON.stringify(canonical([field(v,'UserId'),field(v,'Points'),field(v,'Rpg')]));
 // Pearls, fishing stocks and regenerating HP can change while the read-only status
@@ -127,7 +127,8 @@ export class BackendRpgDataSource implements RpgDataSource {
    if(action.type==='equip')args={instanceId:action.id,slot:action.slot};
    if(action.type==='unequip')args={slot:action.slot};
    if(action.type==='learnTalent')args={talentId:action.id,expectedRank:String(this.state.talents?.[action.id]??0),catalogVersion:String(this.state.remote?.talentCatalogVersion??0)};
-   if(action.type==='perk')args={perkId:action.id};
+   if(action.type==='perk')args={perkId:action.id,...(action.maximum?{mode:'max'}:{})};
+   if(action.type==='upgrade')args={instanceId:action.id,expectedLevel:String(action.expectedLevel)};
    if(action.type==='cook'||action.type==='activateSushi')args={recipeId:action.recipeId};
    if(action.type==='favorite'||action.type==='lock'){
     const item=this.state.inventory.find(i=>i.instanceId===action.id);if(!item)throw Error('Gegenstand nicht mehr vorhanden.');

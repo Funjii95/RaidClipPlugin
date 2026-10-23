@@ -50,7 +50,8 @@ public static class RpgPassiveService
         var strength = TryProc(profile, config, RpgActivity.Boss, RpgEffectTrigger.TripleAttack, random, now, critical: critical);
         var hits = strength > 0 ? 2 : 0;
         if (hits == 0) { strength = TryProc(profile, config, RpgActivity.Boss, RpgEffectTrigger.DoubleAttack, random, now, critical: critical); if (strength > 0) hits = 1; }
-        return new(checked(regular + hits * (int)decimal.Floor(regular * strength)), critical, hits);
+        var attack=checked((int)decimal.Floor(baseDamage*(1+stats.Damage/100)*(1+stats.BossDamage/100)));
+        return new(checked(regular + hits * (int)decimal.Floor(regular * strength)+RpgSetCombatService.ProcDamage(attack,critical,hits,profile,config,now)), critical, hits);
     }
 
     public static long RewardPayout(long payout, long stake, decimal bonus)

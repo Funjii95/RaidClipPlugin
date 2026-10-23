@@ -19,7 +19,7 @@ public static class RpgSetService
     {
         yield return $"Set: {progress.Set.Name} – {progress.Equipped}/{progress.Set.ItemIds.Count} ausgerüstet, {progress.OwnedItemIds.Count} verschiedene Teile vorhanden. {progress.Set.Description}";
         foreach (var bonus in progress.Set.Bonuses.OrderBy(b => b.RequiredPieces))
-            yield return $"({bonus.RequiredPieces} Teile) {RpgChatPresentation.Bonuses(bonus.Attributes)} – " +
+            yield return $"({bonus.RequiredPieces} Teile) {(bonus.Description.Length>0?bonus.Description:RpgChatPresentation.Bonuses(bonus.Attributes))} – " +
                 (progress.Equipped >= bonus.RequiredPieces ? "Aktiv" : "Noch nicht freigeschaltet");
     }
 }

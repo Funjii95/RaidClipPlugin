@@ -24,6 +24,9 @@ public sealed class RpgAttributeRange
 
 public sealed class RpgItemGeneration
 {
+    public List<RpgAttributeRange> BaseAttributes { get; set; } = new();
+    public int? MinimumAttributes { get; set; }
+    public int? MaximumAttributes { get; set; }
     public int? AttributeCount { get; set; }
     public bool GenerateEffect { get; set; } = true;
     public int DoubleAttackMinimumChance { get; set; } = 2;

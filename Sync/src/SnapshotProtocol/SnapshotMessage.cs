@@ -16,7 +16,7 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 4;
+    public const int RpgProjectionVersion = 5;
     public const int MaxMessageBytes = 256 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
@@ -106,14 +106,14 @@ public static class SnapshotValidation
         {
             var health = Clean(JsonSerializer.SerializeToElement(rpg["Health"]),
                 ["CurrentHp", "AppliedMaximumHp", "AppliedBaseMaximumHp", "LastPassiveRegen", "SushiRegenRemainder",
-                    "LastChatHeal", "BossId", "Defeated", "BossDamage", "BossRemainingHp"]);
+                    "LastChatHeal", "BossId", "Defeated", "BossDamage", "BossRemainingHp", "SetShieldHp", "SetShieldSource"]);
             foreach (var field in health)
             {
                 if (field.Value is null) continue;
                 if (field.Value is not JsonValue value || (field.Key switch
                 {
                     "LastPassiveRegen" or "LastChatHeal" => !value.TryGetValue<DateTimeOffset>(out _),
-                    "BossId" => !value.TryGetValue<string>(out _),
+                    "BossId" or "SetShieldSource" => !value.TryGetValue<string>(out _),
                     "Defeated" => !value.TryGetValue<bool>(out _),
                     "SushiRegenRemainder" => !value.TryGetValue<decimal>(out var remainder) || remainder < 0,
                     _ => !value.TryGetValue<long>(out var number) || number < 0
@@ -138,7 +138,8 @@ public static class SnapshotValidation
                     item["Attributes"] = Clean(JsonSerializer.SerializeToElement(item["Attributes"]),
                         ["Damage", "CritChance", "CritDamage", "Luck", "BossDamage", "PearlBonus", "FishingLuck", "DiveLuck",
                             "Power", "Stamina", "MaximumHp", "DoubleAttackChance", "TripleAttackChance", "ExtraLootChance",
-                            "SushiPreservationChance", "BossDamageReduction", "BossDodgeChance", "CriticalHealing", "RareEquipmentLuck"]);
+                            "SushiPreservationChance", "BossDamageReduction", "BossDodgeChance", "CriticalHealing", "RareEquipmentLuck",
+                            "Armor", "ArmorPercent", "MaximumHpPercent", "AttackSpeed", "HealingPower"]);
                     foreach (var attribute in (JsonObject)item["Attributes"]!)
                         if (attribute.Value is not JsonValue number || !number.TryGetValue<decimal>(out _))
                             throw new InvalidDataException("Invalid decimal RPG attribute.");

@@ -103,6 +103,7 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     public async Task<ActionReceipt> EnqueueAsync(string user,RpgIntent intent,Guid expectedSession,CancellationToken ct)
     {
         Scope(user);
+        if(RpgIntents.IsAdmin(intent.Kind)&&user!=settings.Twitch.ChannelId)throw new RelayDenied(403,"admin_required");
         // This feature is intentionally chat-only; never queue browser requests.
         if(intent.Kind=="openShells")throw new RelayDenied(403,"chat_only");
         if(settings.Actions.AutomaticPlayerEnrollment && (players is null || await players.GetAsync(user,ct) is null))throw new RelayDenied(403,"profile_not_enrolled");
@@ -153,7 +154,7 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     }
     public Task<ActionReceipt> CompleteAsync(RelayComplete done,CancellationToken ct)
     {
-        if(done.Outcome.Message.Length>1500 || done.Outcome.Code.Length>80 || done.Outcome.DataJson?.Length>48000 ||
+        if(done.Outcome.Message.Length>1500 || done.Outcome.Code.Length>80 || JsonSerializer.SerializeToUtf8Bytes(done.Outcome).Length>ActionResultLimits.MaximumOutcomeBytes ||
             done.Outcome.Success is null && done.Outcome.Code!="outcome_unknown")throw new RelayDenied(400,"result_invalid");
         return store.TransactionAsync<ActionReceipt>(done.ActionId,false,(s,a)=>{
             if(a is not null && s.PrivacyBlockedUsers.Contains(a.Envelope.UserId))throw new RelayDenied(410,"privacy_erased");

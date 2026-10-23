@@ -12,6 +12,7 @@ public sealed class RpgLootConfig
         Items.AddRange(RpgEquipmentCatalog.Items());
         RpgHealthEquipmentCatalog.AddMissing(this);
         RpgLootExpansionCatalog.AddMissing(this);
+        RpgTidesExpansion.AddMissing(this);
     }
     public List<RpgItemEffect> Effects { get; set; } = new()
     {

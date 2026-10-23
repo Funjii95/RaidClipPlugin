@@ -470,7 +470,7 @@ public sealed partial class AdventureGameService
                     damage=Math.Min(damage,_boss.Hp);
                     RpgPassiveService.ConsumeBuffs(account.Rpg, RpgActivity.Boss, _config.Adventures.Rpg, _random, clock);
                     RpgSushiService.Participate(account.Rpg,_boss.Id,_boss.End,clock);
-                    account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(RpgPerkCatalog.Cooldown(account.Rpg,_boss.Config.AttackCooldownSeconds,"attackCooldown"));
+                    account.Rpg.Cooldowns["!attack"] = clock.AddSeconds(RpgSetCombatService.AttackSeconds(account.Rpg,_config.Adventures.Rpg,RpgPerkCatalog.Cooldown(account.Rpg,_boss.Config.AttackCooldownSeconds,"attackCooldown"),clock));
                     return new(true);
                 }, token);
             if(mutation.Duplicate)return new(false,user.UserId,0,false,_boss.Hp,false,0,"Angriff bereits verarbeitet.");
@@ -619,6 +619,7 @@ public sealed partial class AdventureGameService
     }
     private async Task TickCoreAsync(CancellationToken token)
     {
+        if(_config.Enabled&&_config.PointsEnabled)await _points.TickSetHealthAsync(_config.Adventures.Rpg,_now(),token);
         if(_recoverHealthBoss && _boss is not null)
         {
             var participants=await _points.BossParticipantsAsync(_boss.Id,token);

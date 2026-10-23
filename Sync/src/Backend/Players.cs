@@ -25,6 +25,8 @@ public sealed class RpgView
 public sealed record MaterialView(int Shells, int WhitePearls, int BluePearls, int RedPearls, int StoneChips);
 public sealed class HealthView
 {
+    public int? SetShieldHp { get; init; }
+    public string? SetShieldSource { get; init; }
     public long? CurrentHp { get; init; }
     public long? AppliedMaximumHp { get; init; }
     public long? AppliedBaseMaximumHp { get; init; }

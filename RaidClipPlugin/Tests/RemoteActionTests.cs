@@ -35,6 +35,25 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     }
     private RemoteRpgExecutor Executor()=>new(points!,()=>config,gate,epoch,"42",new HashSet<string>{"1001"},Path.Combine(root,"receipts"),(_,_)=>true);
     private ActionEnvelope Envelope(RpgIntent intent)=>new("42","1001",Guid.NewGuid(),"synthetic-stream",DateTimeOffset.UtcNow.AddSeconds(8),intent,RpgIntents.Hash(intent));
+    [Fact]public void Tides_requires_publisher_support_for_extended_stats_and_shields()
+    {
+        Assert.Equal(5,SnapshotValidation.RpgProjectionVersion);
+    }
+    [Fact]public async Task Large_inventory_status_keeps_authoritative_stats_and_profile()
+    {
+        var executor=await SeedAsync();
+        await points!.ApplyRpgAsync("1001","SYNTHETIC","large-inventory",account=>{
+            for(var i=0;i<80;i++)account.Rpg.Inventory.Add(new(){InstanceId="owned-large-"+i,ItemId="test-large",DisplayName="Synthetischer Gegenstand "+i,Description=new string('x',100),Kind=RpgItemKind.Equipment,Slot=EquipmentSlot.Weapon,Attributes=new(){Damage=12}});
+            return new(true);
+        },default);
+        var result=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("status","{}")),default);
+        Assert.True(result.Success);Assert.NotNull(result.DataJson);
+        var bytes=JsonSerializer.SerializeToUtf8Bytes(result).Length;
+        Assert.True(bytes>48000);Assert.True(bytes<=ActionResultLimits.MaximumOutcomeBytes);
+        using var json=JsonDocument.Parse(result.DataJson!);
+        Assert.Equal(81,json.RootElement.GetProperty("profile").GetProperty("Rpg").GetProperty("Inventory").GetArrayLength());
+        Assert.True(json.RootElement.TryGetProperty("stats",out _));
+    }
     [Fact]public async Task Talent_intents_are_authoritative_idempotent_and_return_committed_ranks()
     {
         var executor=await SeedAsync(2000,30);

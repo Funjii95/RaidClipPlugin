@@ -1,4 +1,4 @@
-import catalog from '../../Sync/src/SnapshotProtocol/talents.json';
+import catalog from './reference/talents.json';
 import type {Activity,CharacterStats} from './types';
 export type TalentRanks=Record<string,number>;
 export interface Talent {id:string;name:string;branch:Activity;max:number;value:number;effect:string;description:string;requires:string[];bonus:Partial<CharacterStats>;}

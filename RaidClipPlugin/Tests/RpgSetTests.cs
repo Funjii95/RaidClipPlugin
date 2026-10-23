@@ -36,7 +36,8 @@ public sealed class RpgSetTests
         foreach (var item in ocean.Inventory.Skip(2)) { p.Inventory.Add(item); p.Equipment[item.Slot!.Value] = item.InstanceId; }
         var s = CharacterStatService.Calculate(p,c,RpgActivity.Dive);
         Assert.Equal(5,s.BossDamage); Assert.Equal(5,s.DiveLuck);
-        Assert.Equal(new[] {2,2,0,0},RpgSetService.Progress(p,c).Select(x=>x.Equipped));
+        Assert.Equal(new[] {2,2,0,0},RpgSetService.Progress(p,c).Take(4).Select(x=>x.Equipped));
+        Assert.All(RpgSetService.Progress(p,c).Skip(4),x=>Assert.Equal(0,x.Equipped));
     }
     [Fact]
     public void TreasurePearlsAndDoubleAttacksShareExistingCaps()

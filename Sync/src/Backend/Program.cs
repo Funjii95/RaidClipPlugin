@@ -10,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 var settings = new BackendSettings();
 builder.WebHost.UseUrls($"http://0.0.0.0:{Environment.GetEnvironmentVariable("PORT") ?? "8080"}");
 builder.Services.AddSingleton(settings);
+builder.Services.AddHttpClient("TwitchDesktop", client => { client.Timeout = TimeSpan.FromSeconds(8); client.MaxResponseContentBufferSize = 16384; })
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+builder.Services.AddSingleton<ITwitchDesktopVerifier,TwitchDesktopVerifier>();
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IRelayStore>(services=>{
@@ -42,10 +45,11 @@ builder.Services.AddAuthentication("Bearer").AddJwtBearer(o =>
         return Task.CompletedTask;
     }};
 }).AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, PluginAuthentication>("Plugin", _ => { })
-.AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, ActionPluginAuthentication>("ActionPlugin", _=>{});
+.AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, ActionPluginAuthentication>("ActionPlugin", _=>{})
+.AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, DesktopAuthentication>("Desktop", _=>{});
 builder.Services.AddAuthorization(o =>
 {
-    o.AddPolicy("Viewer", p => p.AddAuthenticationSchemes("Bearer").RequireAuthenticatedUser()
+    o.AddPolicy("Viewer", p => p.AddAuthenticationSchemes("Bearer","Desktop").RequireAuthenticatedUser()
         .RequireAssertion(c => Ids.IsNumeric(c.User.FindFirstValue("user_id")) &&
             c.User.FindFirstValue("opaque_user_id")?.StartsWith('U') == true &&
             c.User.FindFirstValue("is_unlinked") != "true"));
@@ -82,6 +86,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.MapGet("/health/live", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/api/v1/desktop/config", () => Results.Ok(new {
+    enabled=settings.Desktop.Enabled, clientId=settings.Desktop.Enabled?settings.Desktop.ClientId:null,
+    channelId=settings.Twitch.ChannelId, protocolVersion=1
+})).RequireRateLimiting("reads");
 app.MapGet("/health/ready", async (IPlayerReader reader, CancellationToken ct) =>
 {
     try { await reader.CheckAsync(ct); return Results.Ok(new { status = "ready", mode = settings.Data.Mode }); }

@@ -1,0 +1,530 @@
+{
+  "tide_king_helmet": {
+    "src": "./items/tides/tide_king_helmet.svg",
+    "name": "Krone des Gezeitenk\u00F6nigs",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "277562aeaf0f729e5c191cd3b1d8cc96960dd350427e8e7062ed6fe8b04f86a9"
+  },
+  "tide_king_chest": {
+    "src": "./items/tides/tide_king_chest.svg",
+    "name": "Brustpanzer der K\u00F6nigsflut",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "849efa2dba4a54676eec0c0f3df2c7f9ad92bd4a1a8d294914d2f923df374e07"
+  },
+  "tide_king_gloves": {
+    "src": "./items/tides/tide_king_gloves.svg",
+    "name": "Krallen der Sturmflut",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "7276622c8ceed792977c133ca2f88142e48d5c56c49dcf227278b3d48915e6b2"
+  },
+  "tide_king_boots": {
+    "src": "./items/tides/tide_king_boots.svg",
+    "name": "Stiefel des Tiefenstroms",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "490529fec2cc1ca0f2fbb933848040462ac3678d68b2cbe7174e1178b2712fc4"
+  },
+  "tide_king_ring": {
+    "src": "./items/tides/tide_king_ring.svg",
+    "name": "Siegel des Gezeitenk\u00F6nigs",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "b21df272a245d6c32b96287a723c9e427807fc0e297c61e41d81f53a4b0923bd"
+  },
+  "tide_king_amulet": {
+    "src": "./items/tides/tide_king_amulet.svg",
+    "name": "Herz der K\u00F6nigsflut",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "c8a0876818581b1fadde80ba95ece013cc4f55811c77a1c3def1e7a7c8718a31"
+  },
+  "abyss_hunter_helmet": {
+    "src": "./items/tides/abyss_hunter_helmet.svg",
+    "name": "Maske des Abgrundj\u00E4gers",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "34f65293c48f22fac9710d99cd5219dadccd5a21d9eb162310959d7545d2bec5"
+  },
+  "abyss_hunter_chest": {
+    "src": "./items/tides/abyss_hunter_chest.svg",
+    "name": "Panzer der Leere",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "a69387e3af78f5f381cd0e7fdc6005ca469be6dfe46242c7ccd3c962cb0dcc48"
+  },
+  "abyss_hunter_gloves": {
+    "src": "./items/tides/abyss_hunter_gloves.svg",
+    "name": "Griffe der Finsternis",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "cfbcc33219e0d72bf0f70ea14a3bbd55422824f60fd92e3d5bd0591cacd44324"
+  },
+  "abyss_hunter_boots": {
+    "src": "./items/tides/abyss_hunter_boots.svg",
+    "name": "Schritte des Niemals",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "d5367ba8b9915c3034529c563f2662625818e16571047db91edb1a1176669941"
+  },
+  "abyss_hunter_ring": {
+    "src": "./items/tides/abyss_hunter_ring.svg",
+    "name": "Siegel der Finsternis",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "7e457ba2e94d1f178f1990993d18bb15f8b1373ed93caaec78a921d51a94a1d5"
+  },
+  "abyss_hunter_amulet": {
+    "src": "./items/tides/abyss_hunter_amulet.svg",
+    "name": "Auge des Abgrunds",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "2ca97fa0a73f442201af3bf0ee9e6ea303250c89b52075c89419317ce71227fe"
+  },
+  "coral_oracle_helmet": {
+    "src": "./items/tides/coral_oracle_helmet.svg",
+    "name": "Diadem des Orakels",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "05b931fcd8c81690e3d9506832ca24f8a5ace4ff8c41490828cccdf7f6cd020b"
+  },
+  "coral_oracle_chest": {
+    "src": "./items/tides/coral_oracle_chest.svg",
+    "name": "Gewand der lebenden Riffe",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "5ec3dd587a2567205d3e3e674c262a27c1e4fef2e959bd64ea6c218370a05bc0"
+  },
+  "coral_oracle_gloves": {
+    "src": "./items/tides/coral_oracle_gloves.svg",
+    "name": "H\u00E4nde des Orakels",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "7331879cae9f4c916c037032c30ddedee9ecec93e5d5105126071b2326f6a722"
+  },
+  "coral_oracle_boots": {
+    "src": "./items/tides/coral_oracle_boots.svg",
+    "name": "Stiefel der Korallenw\u00E4chter",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "daf985f5d75bf269075f18370dbcb5e69bd8073e0d7691e60103efc00a2ca177"
+  },
+  "coral_oracle_ring": {
+    "src": "./items/tides/coral_oracle_ring.svg",
+    "name": "Ring des Orakels",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "84e89e79dcf8714c9a674b793d048cb54f7115c24149d560989f65ebee3647e2"
+  },
+  "coral_oracle_amulet": {
+    "src": "./items/tides/coral_oracle_amulet.svg",
+    "name": "Amulett der Gezeitenweisheit",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "ba440bffe57fd459e5f40ada4175bf3b32fee7c425722b920b61462773b085a0"
+  },
+  "current_twin_ring_a": {
+    "src": "./items/tides/current_twin_ring_a.svg",
+    "name": "Ring der ersten Str\u00F6mung",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "a96c83dc02a038a610395625f24541cfdf76b0f98ef1fa8a3504acfe467a5483"
+  },
+  "current_twin_ring_b": {
+    "src": "./items/tides/current_twin_ring_b.svg",
+    "name": "Ring der zweiten Str\u00F6mung",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "168187ff1976805b5998c3dfd275207bb9aadf33b08950ff9fa83389f28205c6"
+  },
+  "dark_pearl_ring_a": {
+    "src": "./items/tides/dark_pearl_ring_a.svg",
+    "name": "Ring der dunklen Perle",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "711d56be67e11cbae96915992e2841697a30b2564eb0ce5ed1ba89645b371387"
+  },
+  "dark_pearl_ring_b": {
+    "src": "./items/tides/dark_pearl_ring_b.svg",
+    "name": "Ring der schwarzen Str\u00F6mung",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "fa6a4a175933577397a9c8d9692f93870be8ab1aa348a81ebdf5d0b7828db7cb"
+  },
+  "moon_tide_ring": {
+    "src": "./items/tides/moon_tide_ring.svg",
+    "name": "Mondflut-Band",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "f16d57006ec92ebfd6044839dd8aeedf43d12e2863cfce087575728aff91b5b5"
+  },
+  "moon_tide_amulet": {
+    "src": "./items/tides/moon_tide_amulet.svg",
+    "name": "Tiefsee-Amulett",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "3bfb29daf9e314c8df7c791a6ad8d5c715ca4b9602ac1747d613beef9e8bd3ee"
+  },
+  "reef_guardian_helmet": {
+    "src": "./items/tides/reef_guardian_helmet.svg",
+    "name": "Riffw\u00E4chter-Helm",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "e8ec5164e2a7b982e08121e49f47f6e285806a9672c86994a6539874940b0254"
+  },
+  "reef_guardian_chest": {
+    "src": "./items/tides/reef_guardian_chest.svg",
+    "name": "Riffw\u00E4chter-Panzer",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "b06491dda3797b06cda0a7938ca399c088d9f025973d2ab27a074cb12d15fdc6"
+  },
+  "reef_guardian_gloves": {
+    "src": "./items/tides/reef_guardian_gloves.svg",
+    "name": "Riffw\u00E4chter-Krallen",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "111595697918953c4e67bd2ff27eb7168e280434f44c45728f044ef1e97ee63f"
+  },
+  "reef_guardian_boots": {
+    "src": "./items/tides/reef_guardian_boots.svg",
+    "name": "Riffw\u00E4chter-Stiefel",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "f0b96c5bfed6ab044eb7797538b8f1b6afbf7d89de5378741ae29a54f962082c"
+  },
+  "reef_guardian_ring": {
+    "src": "./items/tides/reef_guardian_ring.svg",
+    "name": "Riffw\u00E4chter-Ring",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "0d2fdbaf7a1d1df97e133f3ebe1aee431c0cebe2fbb932b536e32468414b98ab"
+  },
+  "reef_guardian_amulet": {
+    "src": "./items/tides/reef_guardian_amulet.svg",
+    "name": "Riffw\u00E4chter-Amulett",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "fe3077408e064bc9d134c61147a945489f07998a6ed75d62e55f9af39628fab6"
+  },
+  "lagoon_runner_helmet": {
+    "src": "./items/tides/lagoon_runner_helmet.svg",
+    "name": "Lagunenl\u00E4ufer-Helm",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "7e2c68b87d2597298fbfa33af1337cf49c5ac2e213f116bbffbfe495533d25c8"
+  },
+  "lagoon_runner_chest": {
+    "src": "./items/tides/lagoon_runner_chest.svg",
+    "name": "Lagunenl\u00E4ufer-Wams",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "d49e7dcbdaaa3b95ca494242bbcf80fb9eeffbd8c36d52e528115c2c1ef89139"
+  },
+  "lagoon_runner_gloves": {
+    "src": "./items/tides/lagoon_runner_gloves.svg",
+    "name": "Lagunenl\u00E4ufer-Handschuhe",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "83a705af518fa70f6167beae2b644a52b03df6b79e8d468224b205cfdff8b944"
+  },
+  "lagoon_runner_boots": {
+    "src": "./items/tides/lagoon_runner_boots.svg",
+    "name": "Lagunenl\u00E4ufer-Stiefel",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "58608574fb4eeaecfb2c7d46c61056f294d592b6064d077bfba639af397fa1b2"
+  },
+  "lagoon_runner_ring": {
+    "src": "./items/tides/lagoon_runner_ring.svg",
+    "name": "Lagunenl\u00E4ufer-Ring",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "b0833d6926feac5277aa62edede86634d57fd9d474e8eaeac77f5e9495f43aaa"
+  },
+  "lagoon_runner_amulet": {
+    "src": "./items/tides/lagoon_runner_amulet.svg",
+    "name": "Lagunenl\u00E4ufer-Amulett",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "802634be676db889739075b4cb04a8836f3e644db4be2c04d54aacbd7e20dd2a"
+  },
+  "shell_speaker_helmet": {
+    "src": "./items/tides/shell_speaker_helmet.svg",
+    "name": "Muschelsprecher-Krone",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "96ac6e6914ee9b6c7c0cb55f792f1af238080b916e61c61062a0d819953bb609"
+  },
+  "shell_speaker_chest": {
+    "src": "./items/tides/shell_speaker_chest.svg",
+    "name": "Muschelsprecher-Gewand",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "3ddfaa5b686e83dc84ed64cce4594587355695adf2af233ebf0dd3f96caa6f81"
+  },
+  "shell_speaker_gloves": {
+    "src": "./items/tides/shell_speaker_gloves.svg",
+    "name": "Muschelsprecher-Handschuhe",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "ee35330973be3f8b108d95accfda891f25697557cef5cbf11591240836d0eaac"
+  },
+  "shell_speaker_boots": {
+    "src": "./items/tides/shell_speaker_boots.svg",
+    "name": "Muschelsprecher-Stiefel",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "e809d692b1a94e784229726f01ed83eba954e977817bb6e76fadacb4e48cbe60"
+  },
+  "shell_speaker_ring": {
+    "src": "./items/tides/shell_speaker_ring.svg",
+    "name": "Muschelsprecher-Ring",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "0d50c5cab385f03dca78c010efa07fce174994f370c574f9522aa36a02f03ff3"
+  },
+  "shell_speaker_amulet": {
+    "src": "./items/tides/shell_speaker_amulet.svg",
+    "name": "Muschelsprecher-Amulett",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "5216644f5e4b83b1a8a267c7f55bea8b41c7632a04382634ab9d3c94aec90e86"
+  },
+  "kelp_collector_helmet": {
+    "src": "./items/tides/kelp_collector_helmet.svg",
+    "name": "Tangsammler-Helm",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "e374e9a95360948230ecdc5561d2ce0993f3a40cd3fe23357b65467a719b2396"
+  },
+  "kelp_collector_chest": {
+    "src": "./items/tides/kelp_collector_chest.svg",
+    "name": "Tangsammler-Weste",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "7e6f52aec089f8830749076aaf690859be7184d0101c0c8ef171b62a3d7252e4"
+  },
+  "kelp_collector_gloves": {
+    "src": "./items/tides/kelp_collector_gloves.svg",
+    "name": "Tangsammler-Handschuhe",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "a98f710fbf495f5b7a88f6334bc7e32c9df417e95e4cc872e7f929cc118fdc10"
+  },
+  "kelp_collector_boots": {
+    "src": "./items/tides/kelp_collector_boots.svg",
+    "name": "Tangsammler-Stiefel",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "1bc4397c587274cc8c4a8ec368cdeb4800a8ef075b7f3e25f1ee9e87bfd68dd1"
+  },
+  "kelp_collector_ring": {
+    "src": "./items/tides/kelp_collector_ring.svg",
+    "name": "Tangsammler-Ring",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "967fbb49015f9da3c093dab646d5b06769e1026fe6cbae2de604e9d044a99414"
+  },
+  "kelp_collector_amulet": {
+    "src": "./items/tides/kelp_collector_amulet.svg",
+    "name": "Tangsammler-Amulett",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "ae3507328dc3e48c0049c6d558f821d4eb96a8170731b79e11856c4e83c628eb"
+  },
+  "coast_runner_helmet": {
+    "src": "./items/tides/coast_runner_helmet.svg",
+    "name": "K\u00FCstenl\u00E4ufer-Kapuze",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "914facf656dac6a92302174506f468c07ee9a9814da47c10377ae9354580c203"
+  },
+  "coast_runner_chest": {
+    "src": "./items/tides/coast_runner_chest.svg",
+    "name": "K\u00FCstenl\u00E4ufer-Wams",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "2e09ad152861c104bf2b2d985dbeca91494bd4bdd5c5bdd02005fc3c2e1cf034"
+  },
+  "coast_runner_gloves": {
+    "src": "./items/tides/coast_runner_gloves.svg",
+    "name": "K\u00FCstenl\u00E4ufer-Handschuhe",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "b01dbf2d7c9a4298abca32f16c8f8837551b963aef911354822d6b44ab3bef7d"
+  },
+  "coast_runner_boots": {
+    "src": "./items/tides/coast_runner_boots.svg",
+    "name": "K\u00FCstenl\u00E4ufer-Stiefel",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "29e4a3398e2082ddb17b99fe55a82e192c9b117524812fc1e5d1a65ea49fcf56"
+  },
+  "coast_runner_ring": {
+    "src": "./items/tides/coast_runner_ring.svg",
+    "name": "K\u00FCstenl\u00E4ufer-Ring",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "72827a4795c23d368310437b415867ad483ed586ae5fa88e3a756869f09aaf67"
+  },
+  "coast_runner_amulet": {
+    "src": "./items/tides/coast_runner_amulet.svg",
+    "name": "K\u00FCstenl\u00E4ufer-Amulett",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "b70b7cbb516550ccca14aacfa19a1eb9358658c0879db2c8eaaa08cab3cc1c35"
+  },
+  "pearl_digger_helmet": {
+    "src": "./items/tides/pearl_digger_helmet.svg",
+    "name": "Perlenbuddler-Helm",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "90956f78ec9ea0f5274382d9f428b5ea4193a3b625da7d7cea6d900fb32af84a"
+  },
+  "pearl_digger_chest": {
+    "src": "./items/tides/pearl_digger_chest.svg",
+    "name": "Perlenbuddler-Panzer",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "dad58c8965797cb2a825e7dee9a2777c30c68614712ef3e2d8371695d707e9f2"
+  },
+  "pearl_digger_gloves": {
+    "src": "./items/tides/pearl_digger_gloves.svg",
+    "name": "Perlenbuddler-Handschuhe",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "73761fa4a456170f975dfb9f79978f2d6835771739dfae28134a6de6ec9156a6"
+  },
+  "pearl_digger_boots": {
+    "src": "./items/tides/pearl_digger_boots.svg",
+    "name": "Perlenbuddler-Stiefel",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "3c84183ee3fceef22ad1f9d58472dd7dec3b30aa2b010cd71aff75f98aac21d6"
+  },
+  "pearl_digger_ring": {
+    "src": "./items/tides/pearl_digger_ring.svg",
+    "name": "Perlenbuddler-Ring",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "73730f06f33bf7a068f2349854ac4e074211803242fc9b6b30e17110d2598e58"
+  },
+  "pearl_digger_amulet": {
+    "src": "./items/tides/pearl_digger_amulet.svg",
+    "name": "Perlenbuddler-Amulett",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "429e6dda0a71ca74c5ee7d8ee300a396ff4f500d1f10a200e0a99ad1fa9cddb7"
+  },
+  "otter_captain_hood": {
+    "src": "./items/tides/otter_captain_hood.svg",
+    "name": "Otterkapit\u00E4ns-Haube",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "05d51ae2724337df177a79a37dfea668e169fc12cd6f9902bdcb573e32eed279"
+  },
+  "coral_keeper_vest": {
+    "src": "./items/tides/coral_keeper_vest.svg",
+    "name": "Korallenh\u00FCter-Wams",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "ce604c1ececdb16ca48c293bfeaa5b39110d6ba66ee714a5d2cf8918e43a44b5"
+  },
+  "pearl_diver_claws": {
+    "src": "./items/tides/pearl_diver_claws.svg",
+    "name": "Perlentaucher-Krallen",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "496cf2e8400c40ee8fbe5237afff3b2acde97a1c86dac6c256a3a70d283fc5e1"
+  },
+  "tide_runner_boots": {
+    "src": "./items/tides/tide_runner_boots.svg",
+    "name": "Gezeitenl\u00E4ufer-Stiefel",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "72f0a10281f0ea1a40a1977f7135c05c95b89082f51665dc3cb57dffe81b284d"
+  },
+  "still_lagoon_ring": {
+    "src": "./items/tides/still_lagoon_ring.svg",
+    "name": "Ring der stillen Lagune",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "42a0b2a0e7fc6b8c37dbe9d54532e035f80c899a3299ca25e914b1e3211cb8fe"
+  },
+  "abyss_moon_amulet": {
+    "src": "./items/tides/abyss_moon_amulet.svg",
+    "name": "Abyssischer Mondanh\u00E4nger",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "",
+    "assetSha256": "0ecd8c66fbd9245f04822dbab3907c7006f306a93b00cd07fd854e5dbe86659b"
+  }
+}

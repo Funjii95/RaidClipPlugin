@@ -29,8 +29,15 @@ public sealed class RpgEnemyService(IDuelRandom random)
             var actual=Math.Min(hp,Math.Max(1,hit));
             hp=Math.Max(0,hp-actual);
             // Healing is based on real damage and never revives a defeated character.
-            remainingHp+=(int)Math.Min(RpgHealthService.Maximum(profile,config.Health)-remainingHp,decimal.Floor(actual*RpgPerkCatalog.Combined(profile,"lifeleech")/100));
-            if(hp>0 && !RpgPerkCatalog.Proc(profile,"underwaterDodge",random)){var received=Math.Min(remainingHp,random.NextInclusive(enemy.MinimumDamage,enemy.MaximumDamage));taken=checked(taken+received);remainingHp-=received;}
+            profile.Health.CurrentHp=remainingHp;
+            remainingHp+=RpgSetCombatService.Heal(profile,config.Health,(int)decimal.Floor(actual*RpgPerkCatalog.Combined(profile,"lifeleech")/100),now);
+            if(hp>0 && !RpgPerkCatalog.Proc(profile,"underwaterDodge",random))
+            {
+                var armor=Math.Clamp(stats.Armor*(1+stats.ArmorPercent/100),0,10000);
+                var raw=(int)decimal.Ceiling(random.NextInclusive(enemy.MinimumDamage,enemy.MaximumDamage)*100/(100+armor));
+                var absorbed=Math.Min(profile.Health.SetShieldHp,raw);profile.Health.SetShieldHp-=absorbed;
+                var received=Math.Min(remainingHp,raw-absorbed);taken=checked(taken+received);remainingHp-=received;
+            }
         }
         profile.Health.CurrentHp=Math.Max(initialHp,remainingHp);
         var victory=hp==0;

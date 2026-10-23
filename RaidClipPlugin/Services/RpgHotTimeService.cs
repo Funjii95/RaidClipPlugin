@@ -44,6 +44,17 @@ public sealed class RpgHotTimeService
     {
         lock(_gate) { if(_state is not {Active:true})return;var state=_state with { Active=false };RpgAtomicFile.Save(_path,state,Validate);_state=state; }
     }
+    internal bool StartAdministrative(string requestId,RpgHotTimeConfig config)
+    {
+        config.Validate();
+        lock(_gate)
+        {
+            if(!config.Enabled||Status.Active||_state?.BossId==requestId)return false;
+            if(_error.Length>0)throw new InvalidDataException(_error);
+            var now=_now();var state=new RpgHotTimeState(Guid.NewGuid().ToString("N"),requestId,now,now.AddMinutes(config.DurationMinutes),true);
+            RpgAtomicFile.Save(_path,state,Validate);_state=state;return true;
+        }
+    }
     // Durable at-most-once message claim; no offline replay after an expired restart.
     public IReadOnlyList<string> PollMessages(RpgHotTimeConfig config)
     {
@@ -54,7 +65,8 @@ public sealed class RpgHotTimeService
             if(state.Active&&(!config.Enabled||state.End<=_now()))state=state with {Active=false};
             if(state.Active&&!state.StartAnnounced)
             {
-                messages.Add(config.StartMessage.Replace("{minutes}",RpgChatPresentation.Number(decimal.Round((decimal)(state.End-state.Start).TotalMinutes,2))).Replace("{drop}",RpgChatPresentation.Number(config.DropBonusPercent)).Replace("{pearls}",RpgChatPresentation.Number(config.PearlBonusPercent)).Replace("{reward}",config.PearlBonusPercent==100?"doppelte Perlenbelohnungen":"+"+RpgChatPresentation.Number(config.PearlBonusPercent)+"% Perlenbelohnungen"));
+                var template=state.BossId.StartsWith("admin:",StringComparison.Ordinal)?"🔥 HOT TIME! Vom Kanalinhaber gestartet: {minutes} Minuten +{drop}% Item-Dropchance und {reward}!":config.StartMessage;
+                messages.Add(template.Replace("{minutes}",RpgChatPresentation.Number(decimal.Round((decimal)(state.End-state.Start).TotalMinutes,2))).Replace("{drop}",RpgChatPresentation.Number(config.DropBonusPercent)).Replace("{pearls}",RpgChatPresentation.Number(config.PearlBonusPercent)).Replace("{reward}",config.PearlBonusPercent==100?"doppelte Perlenbelohnungen":"+"+RpgChatPresentation.Number(config.PearlBonusPercent)+"% Perlenbelohnungen"));
                 state=state with {StartAnnounced=true};
             }
             if(!state.Active&&!state.EndAnnounced) { if(state.StartAnnounced)messages.Add(config.EndMessage);state=state with {EndAnnounced=true,StartAnnounced=true}; }

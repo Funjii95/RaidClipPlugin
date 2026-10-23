@@ -78,11 +78,15 @@ public static class CharacterStatService
         if(activity==RpgActivity.Boss)result.DoubleAttackChance=Math.Min(100,result.DoubleAttackChance+RpgTalentService.Bonus(profile,"doubleAttack"));
         result.CritChance=Math.Min(100,result.CritChance+RpgTalentService.Bonus(profile,"crit"));
         if(activity==RpgActivity.Boss)result.BossDamage+=RpgTalentService.Bonus(profile,"boss");
+        if(activity==RpgActivity.Boss && RpgSetCombatService.Active(profile,config.Sets,"abyss_hunter",6) && RpgSetCombatService.Until(profile,"hunter-haste",now??DateTimeOffset.UtcNow)) {result.BossDamage+=18;result.AttackSpeed+=28;}
+        if(activity==RpgActivity.Boss && RpgSetCombatService.Active(profile,config.Sets,"coral_oracle",6) && RpgSetCombatService.Until(profile,"coral-damage",now??DateTimeOffset.UtcNow))result.BossDamage+=20;
         return result;
     }
 
     private static void Add(RpgAttributes a, RpgAttributes b, int count = 1)
     {
+        a.Armor+=b.Armor*count;a.ArmorPercent+=b.ArmorPercent*count;a.MaximumHpPercent+=b.MaximumHpPercent*count;
+        a.AttackSpeed+=b.AttackSpeed*count;a.HealingPower+=b.HealingPower*count;
         a.BossDamageReduction+=b.BossDamageReduction*count; a.BossDodgeChance+=b.BossDodgeChance*count;
         a.CriticalHealing+=b.CriticalHealing*count; a.RareEquipmentLuck+=b.RareEquipmentLuck*count;
         a.Power+=b.Power*count;a.Stamina+=b.Stamina*count;

@@ -25,7 +25,7 @@ export function characterStats(s: DemoState, activity: Activity = 'Boss', now = 
     if (buffs && activity === 'Boss')
         stats.bossDamageReduction += s.player.buffs.filter(b => b.category === 'Defensive' && buffActive(b, now)).reduce((n, b) => Math.max(n, b.bossDamageReduction), 0);
     for (const [k, v] of Object.entries(caps))
-        stats[k as keyof CharacterStats] = Math.min(v, Math.max(0, stats[k as keyof CharacterStats]));
+        stats[k as keyof CharacterStats] = Math.min(v, Math.max(0, stats[k as keyof CharacterStats]??0));
     return stats;
 }
 export const activityStats = (s: DemoState, activity: Activity, now = Date.now()) => characterStats(s, activity, now, true);
@@ -45,7 +45,7 @@ export class MockRpgDataSource implements RpgDataSource {
     private state: DemoState;
     private serial = 0;
     private queue: Promise<unknown> = Promise.resolve();
-    constructor(private now = () => Date.now(), private random = () => Math.random(), seed?: DemoState) { this.state = structuredClone(seed ?? initialState(now())); }
+    constructor(private now = () => Date.now(), private random = () => Math.random(), seed?: DemoState) { this.state = structuredClone(seed ?? initialState(now())); this.serial=Math.max(0,...this.state.inventory.map(i=>Number(/^loot-(\d+)$/.exec(i.instanceId)?.[1]??0))); }
     private fixtureClaims=new Map<string,string>();
     // Only the local test transport can settle canned response fixtures. Not a live API intent.
     settleMinigameFixture(id:string,stake:number,payout:number):Promise<void> {

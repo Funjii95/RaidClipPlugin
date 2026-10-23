@@ -944,6 +944,7 @@ public sealed class ConfigurationService
         config.Commands.Command = NormalizeCommand(config.Commands.Command);
         RpgHealthEquipmentCatalog.AddMissing(config.Minigame.Adventures.Rpg.DiveLoot);
         RpgLootExpansionCatalog.AddMissing(config.Minigame.Adventures.Rpg.DiveLoot);
+        RpgTidesExpansion.AddMissing(config.Minigame.Adventures.Rpg);
         foreach(var set in RpgLootExpansionCatalog.Sets())
             if(!config.Minigame.Adventures.Rpg.Sets.Any(s=>s.Id==set.Id))config.Minigame.Adventures.Rpg.Sets.Add(set);
         RpgSushiService.AddMissing(config.Minigame.Adventures.Rpg);

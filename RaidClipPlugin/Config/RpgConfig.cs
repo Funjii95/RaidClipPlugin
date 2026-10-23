@@ -14,7 +14,7 @@ public sealed class RpgConfig
     public RpgEnemyConfig Enemies { get; set; } = new();
     public RpgHotTimeConfig HotTime { get; set; } = new();
     public RpgSalvageConfig Salvage { get; set; } = new();
-    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).ToList();
+    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).Concat(RpgTidesExpansion.Sets()).ToList();
     public decimal BossLootChance { get; set; } = 2;
     public bool BossLegendaryEnabled { get; set; }
     public int BossLegendaryMinimumHp { get; set; } = 1000;
