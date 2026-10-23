@@ -44,7 +44,8 @@ public sealed class RemoteDepthsTests:IDisposable
     }
     [Fact] public void FullExpandedHeartbeatStaysWithinTheActualWireBudget()
     {
-        var heartbeat=new RelayHeartbeat(Guid.NewGuid(),1,DateTimeOffset.UtcNow,true,Executor().CatalogJson());var bytes=JsonSerializer.SerializeToUtf8Bytes(heartbeat).Length;
+        Assert.True(Executor().CatalogJson().Length<=48000,$"Catalog uses {Executor().CatalogJson().Length} characters.");
+        var heartbeat=new RelayHeartbeat(Guid.NewGuid(),1,DateTimeOffset.UtcNow,true,Executor().CatalogJson());var bytes=JsonSerializer.SerializeToUtf8Bytes(heartbeat,CloudActionClient.Json).Length;
         Assert.True(bytes<=64*1024,$"Heartbeat uses {bytes} bytes.");
     }
     [Fact] public async Task HealAllIsOwnerOnlyPersistentAndCannotReplayOrEraseBossDefeat()

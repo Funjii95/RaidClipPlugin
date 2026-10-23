@@ -1,0 +1,52 @@
+{
+  "abyss": {
+    "src": "./zones/abyss.webp",
+    "sourceSha256": "b513c800201d7090230431ee856696576c377080eb5e5ccae8b7edbf1d4563f6",
+    "assetSha256": "d842e501926012f79a65b6dd5a64ca396529ef84599cd18090fedb92b3543ec9"
+  },
+  "sunken_temples": {
+    "src": "./zones/sunken_temples.webp",
+    "sourceSha256": "24bac0a3d49a5b57475ea857935a7fa9b7b49563e9de500ca585f02cd2edd25e",
+    "assetSha256": "84890a18538e6ecf372681727360e2b3a45efd9a3c37b7ac302035c980d94376"
+  },
+  "crystal_grotto": {
+    "src": "./zones/crystal_grotto.webp",
+    "sourceSha256": "186a8685b3ca4ff9b63cd0735a45b1d71af07f0496164ff2551ec8f6ce16f2af",
+    "assetSha256": "c4367513df32e9667bbf0fb71acaab7add770479850dba666dca4f2fc32542c2"
+  },
+  "cursed_depths": {
+    "src": "./zones/cursed_depths.webp",
+    "sourceSha256": "1bb76fee6c3a014eef887f41c4d80193525a7ce9132dd037110b76477cbacaba",
+    "assetSha256": "05d2870cebed073f1e9cb02fce8f44074ae18ef153061b2ef61b856c8e7cd87b"
+  },
+  "sunny_lagoon": {
+    "src": "./zones/sunny_lagoon.webp",
+    "sourceSha256": "21c2e8ab6d971efca1d35f097387860d58cf563b07d4630d491dc37d2f628d53",
+    "assetSha256": "69387562632f3bbc969764f4cf1bd6b9c178bfb4f419bbcd6db22822a8342793"
+  },
+  "true_abyss": {
+    "src": "./zones/true_abyss.webp",
+    "sourceSha256": "97cb033333234be8a49983e91f695e338234464c7bfe932bca3056989c3c0599",
+    "assetSha256": "9f3a7007f4d868256759883e4bd33d653f93a464f3ad51813b2fc7e85cdfb69a"
+  },
+  "shipwreck_graveyard": {
+    "src": "./zones/shipwreck_graveyard.webp",
+    "sourceSha256": "d4b052626f58c9ac53d792f668a72c4d338410399ccc897172953ace03bfe09f",
+    "assetSha256": "e7e57c3abafbb0f52f32a246ad32b08cb1c7a7d07edafcf6bd08c693c1369a5e"
+  },
+  "tidal_maelstrom": {
+    "src": "./zones/tidal_maelstrom.webp",
+    "sourceSha256": "2f45cce5f5f0d9c06e25c11021d912a4174d7e847efc18d9ad0b7f8dc294522c",
+    "assetSha256": "6c15b99ac68cb8109fc68cadc3b053ac267c801a263f0b8960e187cbc4076812"
+  },
+  "glowing_coral_forest": {
+    "src": "./zones/glowing_coral_forest.webp",
+    "sourceSha256": "ec7b1a79cd7e3c2ec9bd9eee409b9c682a126ce04568afe79ecaaee8563d6248",
+    "assetSha256": "d2f7a79cfa53080ebcd085292831ce7fb13ea89457e88bd6628befc76016a659"
+  },
+  "primordial_throne": {
+    "src": "./zones/primordial_throne.webp",
+    "sourceSha256": "cf4c12b42e417fa6aa29766edd59e3a27d1da07b2542edac491537c34f81880d",
+    "assetSha256": "0dd981d2cd417c69ca0d9790feab32a664ac4259e6629756fded5cfa1a8b3851"
+  }
+}

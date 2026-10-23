@@ -1,0 +1,282 @@
+{
+  "sushi-sunfin_sushi": {
+    "src": "./items/cuisine/sushi-sunfin_sushi.webp",
+    "name": "sushi-sunfin_sushi",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "0898393f0ab8c37c8529f05829c437965413211a640a815c6439937a8a910b6b",
+    "crop": [
+      22,
+      310,
+      220,
+      492
+    ]
+  },
+  "fish-sunfin": {
+    "src": "./items/cuisine/fish-sunfin.webp",
+    "name": "fish-sunfin",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "6dffa6b11861d6ee5a0c7f46860226543f08ac3748eba8ab1a6ee83470ba1770",
+    "crop": [
+      22,
+      540,
+      220,
+      616
+    ]
+  },
+  "sushi-rune_ray_maki": {
+    "src": "./items/cuisine/sushi-rune_ray_maki.webp",
+    "name": "sushi-rune_ray_maki",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "77a7f22095edd6c396962c79e1b93790a4daaba904a989741e31302ad876c0f5",
+    "crop": [
+      242,
+      310,
+      440,
+      492
+    ]
+  },
+  "fish-rune_ray": {
+    "src": "./items/cuisine/fish-rune_ray.webp",
+    "name": "fish-rune_ray",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "4c5d3619d8c648746d9ef1320f92ad13fca93dcf119024cefc290053fc0faf68",
+    "crop": [
+      242,
+      540,
+      440,
+      616
+    ]
+  },
+  "sushi-cursefin_nigiri": {
+    "src": "./items/cuisine/sushi-cursefin_nigiri.webp",
+    "name": "sushi-cursefin_nigiri",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "dbe97cc7894574a8593c2bac1cc5b677c640afb0b284c9955e2dfdc69f8e84e8",
+    "crop": [
+      462,
+      310,
+      660,
+      492
+    ]
+  },
+  "fish-cursefin": {
+    "src": "./items/cuisine/fish-cursefin.webp",
+    "name": "fish-cursefin",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "7848db24448e631d59ad695d34f6a37e93b89341e00483ee604d691035ac006f",
+    "crop": [
+      462,
+      540,
+      660,
+      616
+    ]
+  },
+  "sushi-rainbow_kappa_roll": {
+    "src": "./items/cuisine/sushi-rainbow_kappa_roll.webp",
+    "name": "sushi-rainbow_kappa_roll",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "116010152308d85c1734e64e7bcbb3fb658717a4246012de561de3a872906b8a",
+    "crop": [
+      682,
+      310,
+      880,
+      492
+    ]
+  },
+  "fish-rainbow_kappa": {
+    "src": "./items/cuisine/fish-rainbow_kappa.webp",
+    "name": "fish-rainbow_kappa",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "6d0eeb7ea6a2057dd48ec43d9f8d433567d8420736153df120211265a1e2b552",
+    "crop": [
+      682,
+      540,
+      880,
+      616
+    ]
+  },
+  "sushi-tide_shark_sashimi": {
+    "src": "./items/cuisine/sushi-tide_shark_sashimi.webp",
+    "name": "sushi-tide_shark_sashimi",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "1a89a36e4eb7d3f9dd5d0de65cf883a2fe666d902df31856a6a0667e3910bc9f",
+    "crop": [
+      902,
+      310,
+      1100,
+      492
+    ]
+  },
+  "fish-tide_shark": {
+    "src": "./items/cuisine/fish-tide_shark.webp",
+    "name": "fish-tide_shark",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "ef10683658a5a41ba3695964595d8214facb93590e65ddd45df762d4d59c54ee",
+    "crop": [
+      902,
+      540,
+      1100,
+      616
+    ]
+  },
+  "sushi-prismatic_eel_sushi": {
+    "src": "./items/cuisine/sushi-prismatic_eel_sushi.webp",
+    "name": "sushi-prismatic_eel_sushi",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "d94264d41ee7aa7c878763787d0f3a8d057a7d045b4f6aae8d7dc5ff400a75e8",
+    "crop": [
+      22,
+      815,
+      220,
+      997
+    ]
+  },
+  "fish-prismatic_eel": {
+    "src": "./items/cuisine/fish-prismatic_eel.webp",
+    "name": "fish-prismatic_eel",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "8f5a0d7faab292a0da34719b2cbdd5f181c445a59a08ab455953ee7c53e74ef1",
+    "crop": [
+      22,
+      1045,
+      220,
+      1121
+    ]
+  },
+  "sushi-bloodfin_nigiri": {
+    "src": "./items/cuisine/sushi-bloodfin_nigiri.webp",
+    "name": "sushi-bloodfin_nigiri",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "ac0931ac4f79b70dcf85421d25a66da714d67898c9fb916adc3a16fef33ecc17",
+    "crop": [
+      242,
+      815,
+      440,
+      997
+    ]
+  },
+  "fish-bloodfin": {
+    "src": "./items/cuisine/fish-bloodfin.webp",
+    "name": "fish-bloodfin",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "72afb0e55b584c4dfda8850a1b0a4771bec52d2a796aedeb5ecab2f1f84e6c43",
+    "crop": [
+      242,
+      1045,
+      440,
+      1121
+    ]
+  },
+  "sushi-eternal_kappa_deluxe": {
+    "src": "./items/cuisine/sushi-eternal_kappa_deluxe.webp",
+    "name": "sushi-eternal_kappa_deluxe",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "a8e971b6b9057bfbe4fd7cf8a7c82f0ce6e2b9b02d09b8522c3081b88ca8bfa6",
+    "crop": [
+      462,
+      815,
+      660,
+      997
+    ]
+  },
+  "fish-eternal_kappa": {
+    "src": "./items/cuisine/fish-eternal_kappa.webp",
+    "name": "fish-eternal_kappa",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "064ad5eb580eff541ed3901ce3a8a226d1aec8615547e0001fea9d08b8addfd5",
+    "crop": [
+      462,
+      1045,
+      660,
+      1121
+    ]
+  },
+  "sushi-devourer_sushi": {
+    "src": "./items/cuisine/sushi-devourer_sushi.webp",
+    "name": "sushi-devourer_sushi",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "2ab65e3840ed84f78740a367eaf38782fff02cddfc0e7437a547ac1cdbb98ebf",
+    "crop": [
+      682,
+      815,
+      880,
+      997
+    ]
+  },
+  "fish-devourer_fish": {
+    "src": "./items/cuisine/fish-devourer_fish.webp",
+    "name": "fish-devourer_fish",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "c40ea4c296d5be256b72b89829e9171f5dfed7a8992e160b0ac12e99306e61fe",
+    "crop": [
+      682,
+      1045,
+      880,
+      1121
+    ]
+  },
+  "sushi-primordial_kingfish_platter": {
+    "src": "./items/cuisine/sushi-primordial_kingfish_platter.webp",
+    "name": "sushi-primordial_kingfish_platter",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "ac794dc7223a016042317b8695f8e885fc9c8a87ca0e36392ce16acb67fba5d5",
+    "crop": [
+      902,
+      815,
+      1100,
+      997
+    ]
+  },
+  "fish-primordial_kingfish": {
+    "src": "./items/cuisine/fish-primordial_kingfish.webp",
+    "name": "fish-primordial_kingfish",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "1ae2a5062c511a35de00077b54aa358954b692c137c94ace4a86dfa78dce16ad",
+    "assetSha256": "7d954e46545fd595e9b3992851f903b9f3219e03073def91eaf1b4bc0346333a",
+    "crop": [
+      902,
+      1045,
+      1100,
+      1121
+    ]
+  }
+}

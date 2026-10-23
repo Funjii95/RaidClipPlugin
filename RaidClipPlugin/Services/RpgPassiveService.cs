@@ -17,7 +17,7 @@ public static class RpgPassiveService
         var stats = CharacterStatService.Calculate(profile, config, activity, includeEffects: false,now:now);
         var (chance, cap) = trigger switch
         {
-            RpgEffectTrigger.DoubleAttack => (stats.DoubleAttackChance, Math.Min(100,Math.Clamp(config.DoubleAttackChanceCap, 0, 20)+RpgTalentService.Bonus(profile,"doubleAttack"))),
+            RpgEffectTrigger.DoubleAttack => (stats.DoubleAttackChance, Math.Min(100,(RpgEternalCombat.Enhanced(profile)?100:Math.Clamp(config.DoubleAttackChanceCap, 0, 20))+RpgTalentService.Bonus(profile,"doubleAttack"))),
             RpgEffectTrigger.TripleAttack => (stats.TripleAttackChance, Math.Clamp(config.TripleAttackChanceCap, 0, 5)),
             RpgEffectTrigger.ExtraLoot => (stats.ExtraLootChance, Math.Min(100,Math.Clamp(config.ExtraLootChanceCap, 0, 10)+RpgPerkCatalog.Bonus(profile,"extraLoot"))),
             _ => (stats.SushiPreservationChance, Math.Clamp(config.SushiPreservationChanceCap, 0, 20))
@@ -50,9 +50,9 @@ public static class RpgPassiveService
         var strength = TryProc(profile, config, RpgActivity.Boss, RpgEffectTrigger.TripleAttack, random, now, critical: critical);
         var hits = strength > 0 ? 2 : 0;
         if (hits == 0) { strength = TryProc(profile, config, RpgActivity.Boss, RpgEffectTrigger.DoubleAttack, random, now, critical: critical); if (strength > 0) hits = 1; }
-        var attack=checked((int)decimal.Floor(baseDamage*(1+stats.Damage/100)*(1+stats.BossDamage/100)));
+        var attack=checked((int)decimal.Floor(baseDamage*(1+stats.AttackPercent/100)*(1+stats.Damage/100)*(1+stats.BossDamage/100)));
         var direct=checked(regular+hits*(int)decimal.Floor(regular*strength));
-        return new(checked(direct+RpgSetCombatService.ProcDamage(attack,critical,hits,profile,config,now)+RpgDepthsCombatService.AttackProc(attack,critical,hits,profile,config,random,now)),critical,hits){DirectDamage=direct};
+        return new(checked(direct+RpgSetCombatService.ProcDamage(attack,critical,hits,profile,config,now)+RpgDepthsCombatService.AttackProc(attack,critical,hits,profile,config,random,now)+RpgEternalCombat.Proc(attack,critical,hits,profile,config,now)),critical,hits){DirectDamage=direct};
     }
 
     public static long RewardPayout(long payout, long stake, decimal bonus)
@@ -63,7 +63,7 @@ public static class RpgPassiveService
 
     public static void ConsumeBuffs(RpgProfile profile, RpgActivity activity, RpgConfig config, IDuelRandom random, DateTimeOffset now, long stake = 0)
     {
-        foreach (var buff in profile.Buffs.Where(b => !b.EncounterBased && b.Activity == activity && b.RemainingUses > 0).ToArray())
+        foreach (var buff in profile.Buffs.Where(b => !b.EncounterBased && b.ExpiresAt is null && b.Activity == activity && b.RemainingUses > 0).ToArray())
         {
             // At most one consecutive save per buff: finite life even with adversarial RNG.
             var key = "sushi-save:" + buff.RecipeId;
@@ -72,7 +72,7 @@ public static class RpgPassiveService
                 profile.Cooldowns[key] = now;
             else { buff.RemainingUses--; profile.Cooldowns.Remove(key); }
         }
-        profile.Buffs.RemoveAll(b => !b.EncounterBased && b.RemainingUses <= 0);
+        profile.Buffs.RemoveAll(b => b.ExpiresAt is {} end?now>=end:!b.EncounterBased && b.RemainingUses <= 0);
     }
 
     public static string Describe(RpgItemEffect effect) =>

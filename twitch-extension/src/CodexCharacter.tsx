@@ -1,0 +1,11 @@
+import type {DemoState,CharacterStats,InventoryItem} from './types';
+import {slots} from './types';
+import {ItemArtwork} from './item-art';
+import {labels,numberStat} from './presentation';
+const names={Weapon:'Waffe',Helmet:'Helm',Chest:'Brust',Gloves:'Handschuhe',Boots:'Stiefel',Ring1:'Ring links',Ring2:'Ring rechts',Amulet:'Amulett'};
+export function CodexCharacter({state,stats,onItem}:{state:DemoState;stats:CharacterStats;onItem:(i:InventoryItem)=>void}){
+ return <section className="codex-character-workspace"><article className="codex-paperdoll"><h3>Charakter &amp; Ausrüstung</h3><div className="paperdoll-stage"><img className="paperdoll-otter" src={state.player.avatarUrl} alt="Dein Otter in der Tiefe"/>
+ {slots.map((slot,n)=>{const item=state.inventory.find(i=>i.instanceId===state.equipment[slot]);return <button key={slot} className={`paper-slot paper-slot-${n} ${item?.rarity??''}`} aria-label={names[slot]} onClick={()=>item&&onItem(item)}><small>{names[slot]}</small>{item?<><ItemArtwork id={item.itemId} name={item.name} small/><span>+{item.upgradeLevel??0}</span></>:<span>✧</span>}</button>;})}</div><p>{state.player.username} · Level {state.player.level}</p></article>
+ <article className="codex-values"><h3>Werte</h3><p>♥ {Number.isFinite(state.player.hp)?state.player.hp:'–'} / {Number.isFinite(state.player.maxHp)?state.player.maxHp:'–'} Leben</p>{Object.entries(stats).map(([key,value])=><div className="codex-stat" key={key}><span>{labels[key as keyof CharacterStats]??key}</span><strong>{numberStat(key,value)}</strong></div>)}</article>
+ <article className="codex-bag-preview"><h3>Inventar</h3><p>{state.inventory.length} gespeicherte Gegenstände</p><div>{state.inventory.slice(0,24).map(i=><button key={i.instanceId} className={i.rarity} onClick={()=>onItem(i)} title={i.name}><ItemArtwork id={i.itemId} name={i.name} small/><small>{i.upgradeLevel?`+${i.upgradeLevel}`:''}</small></button>)}</div>{!state.inventory.length&&<p>Dein Inventar ist noch leer.</p>}</article></section>;
+}

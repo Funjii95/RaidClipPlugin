@@ -18,7 +18,7 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             if(config.Health.Enabled) RpgHealthService.Refresh(account.Rpg,config.Health,DateTimeOffset.UtcNow);
             return new(true);
         }, token);
-    public Task<RpgTransactionResult> BuyPerkAsync(string userId, string name, string requestId, string perkId, CancellationToken token) =>
+    public Task<RpgTransactionResult> BuyPerkAsync(string userId, string name, string requestId, string perkId, CancellationToken token, bool maximum = false) =>
         points.ApplyRpgAsync(userId, name, requestId, account =>
         {
             if (!config.Enabled) return new(false, "RPG ist deaktiviert.");
@@ -26,14 +26,16 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             if (perk is null) return new(false, "Unbekannter Perk. Verfügbare IDs: " + string.Join(", ", config.Perks.Select(p => p.Id)) + ". Kauf: !perk <ID> (Alias !buyperk).");
             var level = account.Rpg.Perks.GetValueOrDefault(perkId);
             if (level >= perk.MaximumLevel) return new(false, "Maximallevel erreicht.");
-            var cost = perk.Cost(level);
+            var nextLevel=level; long cost=0;
+            do { var nextCost=perk.Cost(nextLevel); if(nextCost>account.Points-cost)break; cost=checked(cost+nextCost); nextLevel++; } while(maximum && nextLevel<perk.MaximumLevel);
+            if(nextLevel==level) return new(false, $"Nicht genügend Perlen. Kosten: {RpgChatPresentation.Number(perk.Cost(level))}, vorhanden: {RpgChatPresentation.Number(account.Points)} Perlen.");
             if (account.Points < cost) return new(false, $"Nicht genügend Perlen. Kosten: {RpgChatPresentation.Number(cost)}, vorhanden: {RpgChatPresentation.Number(account.Points)} Perlen.");
             account.Points -= cost;
-            account.Rpg.Perks[perkId] = level + 1;
+            account.Rpg.Perks[perkId] = nextLevel;
             if(config.Health.Enabled)RpgHealthService.Refresh(account.Rpg,config.Health,clock?.Invoke()??DateTimeOffset.UtcNow);
             return new(true, Details: new(RpgActionKind.BuyPerk, RpgChatPresentation.PerkName(perk), Cost: cost,
-                Level: level + 1, Bonuses: RpgChatPresentation.Snapshot(perk.BonusPerLevel, level + 1),
-                NextCost: level + 1 < perk.MaximumLevel ? perk.Cost(level + 1) : null, MaximumLevel: perk.MaximumLevel,EffectDescription:RpgPerkCatalog.Find(perkId) is {Value:>0} entry?$"{entry.Value*(level+1)} {entry.Label}":""));
+                Level: nextLevel, Bonuses: RpgChatPresentation.Snapshot(perk.BonusPerLevel, nextLevel),
+                NextCost: nextLevel < perk.MaximumLevel ? perk.Cost(nextLevel) : null, MaximumLevel: perk.MaximumLevel,EffectDescription:RpgPerkCatalog.Find(perkId) is {Value:>0} entry?$"{entry.Value*nextLevel} {entry.Label}":""));
         }, token);
 
     public Task<RpgTransactionResult> EquipAsync(string userId, string name, string requestId, string instanceId, EquipmentSlot slot, CancellationToken token) =>
@@ -96,7 +98,7 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             return new(true, Details: new(RpgActionKind.Craft, RpgChatPresentation.RecipeName(recipe), Cost: recipe.PearlCost,
                 FishName: config.FishSpecies.SingleOrDefault(f => f.Id == recipe.FishId)?.Name is { Length: > 0 } fishName && !string.IsNullOrWhiteSpace(fishName) ? fishName : recipe.FishId,
                 FishQuantity: recipe.FishQuantity, Quantity: 1, Bonuses: RpgChatPresentation.Snapshot(recipe.Attributes),
-                Activity: recipe.Activity, RemainingUses: RpgSushiService.Uses(recipe,config),IngredientsDescription:RpgSushiService.IngredientsText(recipe,config),EffectDescription:RpgSushiService.Effects(recipe),EncounterBased:true));
+                Activity: recipe.Activity, RemainingUses: RpgSushiService.Uses(recipe,config),IngredientsDescription:RpgSushiService.IngredientsText(recipe,config),EffectDescription:RpgSushiService.Effects(recipe),EncounterBased:false,DurationSeconds:RpgSushiService.DurationSeconds));
         }, token);
 
     public Task<RpgTransactionResult> ActivateSushiAsync(string userId, string name, string requestId, string recipeId, CancellationToken token) =>
@@ -112,20 +114,20 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             account.Rpg.Sushi[recipeId]--;
             account.Rpg.Buffs.Add(new() { RecipeId = recipeId, Activity = recipe.Activity,
                 RemainingUses = RpgSushiService.Uses(recipe,config), Attributes = JsonSerializer.Deserialize<RpgAttributes>(JsonSerializer.Serialize(recipe.Attributes))!,
-                Category=recipe.Category,EncounterBased=true,ActivatedAt=now,PassiveHealing=recipe.PassiveHealing,ChatHealing=recipe.ChatHealing,BossDamageReduction=recipe.BossDamageReduction,BossLifeleech=recipe.BossLifeleech });
+                Category=recipe.Category,AllActivities=recipe.AllActivities,EncounterBased=false,ActivatedAt=now,ExpiresAt=now.AddHours(1),PassiveHealing=recipe.PassiveHealing,ChatHealing=recipe.ChatHealing,BossDamageReduction=recipe.BossDamageReduction,BossLifeleech=recipe.BossLifeleech });
             var buff = account.Rpg.Buffs[^1];
             var factor=1+RpgPerkCatalog.Bonus(account.Rpg,"sushiPower")/100;
             buff.Attributes=RpgChatPresentation.Snapshot(buff.Attributes,factor);
             buff.PassiveHealing*=factor;buff.ChatHealing=(int)decimal.Floor(buff.ChatHealing*factor);
             buff.BossDamageReduction=Math.Min(80,buff.BossDamageReduction*factor);buff.BossLifeleech=Math.Min(100,buff.BossLifeleech*factor);
             return new(true, Details: new(RpgActionKind.ActivateSushi, RpgChatPresentation.RecipeName(recipe),
-                Bonuses: RpgChatPresentation.Snapshot(buff.Attributes), Activity: buff.Activity, RemainingUses: buff.RemainingUses,EffectDescription:RpgSushiService.Effects(recipe),EncounterBased:true));
+                Bonuses: RpgChatPresentation.Snapshot(buff.Attributes), Activity: buff.Activity, RemainingUses: buff.RemainingUses,EffectDescription:RpgSushiService.Effects(recipe),EncounterBased:false,DurationSeconds:RpgSushiService.DurationSeconds));
         }, token);
 
     internal static void ConsumeBuffs(RpgProfile profile, RpgActivity activity)
     {
-        foreach (var buff in profile.Buffs.Where(b => b.Activity == activity && b.RemainingUses > 0)) buff.RemainingUses--;
-        profile.Buffs.RemoveAll(b => b.RemainingUses <= 0);
+        foreach (var buff in profile.Buffs.Where(b => b.ExpiresAt is null && b.Activity == activity && b.RemainingUses > 0)) buff.RemainingUses--;
+        profile.Buffs.RemoveAll(b => b.ExpiresAt is null && b.RemainingUses <= 0);
     }
 }
 

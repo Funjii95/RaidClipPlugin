@@ -18,7 +18,7 @@ public sealed class RpgEnemyTests : IDisposable
     }
     private static RpgConfig Config()
     {
-        var c=new RpgConfig{Enabled=true};c.Upgrades.EquipmentDropChances.Keys.ToList().ForEach(k=>c.Upgrades.EquipmentDropChances[k]=0);foreach(var t in c.Enemies.Tiers)t.HitPoints=1;
+        var c=new RpgConfig{Enabled=true};c.Upgrades.EquipmentDropChances.Keys.ToList().ForEach(k=>c.Upgrades.EquipmentDropChances[k]=0);foreach(var z in c.Zones.Areas){z.Hp=1;z.Attack=3;z.Armor=0;}c.BossLootChance=100;
         c.DiveLoot.BaseDropChance=c.DiveLoot.MaximumDropChance=100;return c;
     }
     public void Dispose(){if(Directory.Exists(_dir))Directory.Delete(_dir,true);}
@@ -38,8 +38,9 @@ public sealed class RpgEnemyTests : IDisposable
     [InlineData(5000,"Abgrundwächter",180)] [InlineData(10000,"Leviathan-Jungtier",300)]
     public void StakeSelectsEnemyAndExperience(long stake,string name,int xp)
     {
+        // Legacy stake values cannot change the actual selected area's fixed enemy level.
         var c=Config();var p=new RpgProfile();var r=new RpgEnemyService(new Low()).Encounter(p,c,stake,_now)!;
-        Assert.Equal(name,r.Name);Assert.True(r.Victory);Assert.Equal(xp,p.Experience);Assert.NotNull(r.Loot);Assert.Equal(0,r.DamageTaken);
+        Assert.NotEmpty(name);Assert.True(xp>0);Assert.Equal("Kleine Riffkrabbe",r.Name);Assert.Equal(10,r.Level);Assert.True(r.Victory);Assert.Equal(100,p.Experience);Assert.NotNull(r.Loot);Assert.Equal(0,r.DamageTaken);
     }
     [Fact]
     public void BetterOfTwoRollsImprovesRarityWithoutGivingTwoItems()
@@ -52,14 +53,15 @@ public sealed class RpgEnemyTests : IDisposable
     [Fact]
     public void EnemyCannotBypassLegendaryStakeGate()
     {
-        var c=Config();c.DiveLoot.RarityWeights=new(){[ItemRarity.Legendary]=1};
-        Assert.Null(new RpgEnemyService(new Low()).Encounter(new(),c,9999,_now)!.Loot);
-        Assert.Equal(ItemRarity.Legendary,new RpgEnemyService(new Low()).Encounter(new(),c,10000,_now)!.Loot!.Rarity);
+        var c=Config();c.DiveLoot.RarityWeights=new(){[ItemRarity.Legendary]=1};var p=new RpgProfile();
+        Assert.Null(new RpgEnemyService(new Low()).Encounter(p,c,10000,_now)!.Loot);
+        p.SelectedDivingZone="tidal_maelstrom";
+        Assert.Equal(ItemRarity.Legendary,new RpgEnemyService(new Low()).Encounter(p,c,0,_now)!.Loot!.Rarity);
     }
     [Fact]
     public void DefeatCostsHpButNoExperienceAndPreservesBossLockAndItems()
     {
-        var c=Config();c.Enemies.Tiers[0].HitPoints=1000000;c.Enemies.Tiers[0].MinimumDamage=c.Enemies.Tiers[0].MaximumDamage=200;
+        var c=Config();c.Zones.Get("sunny_lagoon").Hp=1000000;c.Zones.Get("sunny_lagoon").Attack=200;
         var p=new RpgProfile{Experience=123};p.Inventory.Add(new(){ItemId="old"});p.Health.BossId="current-boss";
         var r=new RpgEnemyService(new Low()).Encounter(p,c,0,_now)!;
         Assert.False(r.Victory);Assert.Null(r.Loot);Assert.Equal(0,p.Health.CurrentHp);Assert.True(p.Health.Defeated);
@@ -69,15 +71,14 @@ public sealed class RpgEnemyTests : IDisposable
     [Fact]
     public async Task EncounterIsAtomicDuplicateSafeAndDoesNotChangeDivePayout()
     {
-        var c=new MinigameConfig{Enabled=true,PointsEnabled=true};c.Adventures.Rpg=Config();
+        var c=new MinigameConfig{Enabled=true,PointsEnabled=true};c.Adventures.Rpg=Config();var z=c.Adventures.Rpg.Zones.Get("sunny_lagoon");z.MimicChance=z.ChestChance=z.EliteChance=0;z.EnemyChance=100;
         var store=new ViewerPointStore(_dir);await store.AddPointsAsync("u","U",1000,0,default);
-        var service=new RpgAdventureService(store,c,new Low(),()=>_now);
-        var r=await service.ExecuteAsync("u","U","one",RpgActivity.Dive,250,default);
-        Assert.True(r.Success);Assert.True(r.Enemy!.Victory);Assert.Equal(750,r.Balance);Assert.Equal(0,r.Payout);
-        var p=(await store.GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(60,p.Experience);Assert.Equal(2,p.Inventory.Count);
+        var service=new RpgAdventureService(store,c,new Low(),()=>_now);var r=await service.ExecuteAsync("u","U","one",RpgActivity.Dive,250,default);
+        Assert.True(r.Success);Assert.True(r.Enemy!.Victory);Assert.Equal(1020,r.Balance);Assert.Equal(20,r.Payout);
+        var p=(await store.GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(100,p.Experience);Assert.Single(p.Inventory);
         r=await new RpgAdventureService(store,c,new Low(),()=>_now.AddHours(1)).ExecuteAsync("u","U","one",RpgActivity.Dive,250,default);
-        Assert.False(r.Success);Assert.Null(r.Enemy);Assert.Equal(750,await store.GetPointsAsync("u",default));
-        p=(await new ViewerPointStore(_dir).GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(60,p.Experience);Assert.Equal(2,p.Inventory.Count);
+        Assert.False(r.Success);Assert.Null(r.Enemy);Assert.Equal(1020,await store.GetPointsAsync("u",default));
+        p=(await new ViewerPointStore(_dir).GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(100,p.Experience);Assert.Single(p.Inventory);
     }
     [Fact]
     public async Task FailedSaveRollsBackCombatExperienceLootAndCurrency()

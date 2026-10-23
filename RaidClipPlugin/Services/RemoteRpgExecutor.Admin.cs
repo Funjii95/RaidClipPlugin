@@ -18,6 +18,7 @@ internal sealed partial class RemoteRpgExecutor
             var healed=await points.HealAllAsync(channel,e.Intent.ActionId.ToString("N"),rpg.Health,DateTimeOffset.UtcNow,ct);
             return new(healed.Success,healed.Success?"applied":"rule_rejected",healed.Message,JsonSerializer.Serialize(new{message=healed.Message,healed=healed.Healed,players=healed.Players}));
         }
+        if(e.Intent.Kind is "adminDivine" or "adminZoneDebug")return await InvokeEternalAdminAsync(e,ct);
         string Arg(string key)=>e.Intent.Arguments.GetProperty(key).GetString()!;
         if(e.Intent.Kind is "adminMaterialGrant" or "adminBalance")return await InvokeMaterialAdminAsync(e,ct);
         if(e.Intent.Kind=="adminCatalog")return new(true,"read","Adminbereich bereit.",JsonSerializer.Serialize(new{
@@ -36,6 +37,7 @@ internal sealed partial class RemoteRpgExecutor
         var target=Arg("targetUserId");
         if(!players.RootElement.TryGetProperty(target,out _))return new(false,"profile_missing","Zielspieler muss bereits einen lokalen Spielstand besitzen.");
         var definition=rpg.DiveLoot.Items.SingleOrDefault(i=>i.ItemId==Arg("itemId")&&i.Slot.HasValue&&i.Kind!=RpgItemKind.Consumable);
+        if(definition?.Rarity==ItemRarity.Divine&&(target!=channel||Arg("roll")=="custom"))return new(false,"admin_required","Göttliche Items nur mit festen Werten an den Kanalinhaber vergeben.");
         if(definition is null)return new(false,"invalid_item","Unbekannte Ausrüstung.");
         var amount=int.Parse(Arg("count"));var roll=Arg("roll");
         using var chosen=JsonDocument.Parse(Arg("stats"));

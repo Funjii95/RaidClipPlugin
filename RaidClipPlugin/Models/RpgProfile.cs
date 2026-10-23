@@ -1,6 +1,6 @@
 namespace RaidClipPlugin.Models;
 
-public enum ItemRarity { Common, Uncommon, Rare, Epic, Legendary, True, Cursed, Abyss }
+public enum ItemRarity { Common, Uncommon, Rare, Epic, Legendary, True, Cursed, Abyss, Eternal, Divine }
 public enum EquipmentSlot { Weapon, Helmet, Chest, Gloves, Boots, Ring1, Ring2, Amulet }
 public enum RpgActivity { Dive, Fishing, Boss }
 public enum RpgItemKind { Treasure, Equipment, Consumable }
@@ -10,11 +10,16 @@ public static class RarityPresentation
 {
     public static string ColorHex(ItemRarity rarity) => rarity switch
     { ItemRarity.Common => "#9CA3AF", ItemRarity.Uncommon => "#22C55E", ItemRarity.Rare => "#3B82F6",
-        ItemRarity.Epic => "#A855F7", ItemRarity.Legendary => "#EAB308", ItemRarity.True => "#9BFF76", ItemRarity.Cursed => "#DC55FF", ItemRarity.Abyss => "#E51D48", _ => "#9CA3AF" };
+        ItemRarity.Epic => "#A855F7", ItemRarity.Legendary => "#EAB308", ItemRarity.True => "#9BFF76", ItemRarity.Cursed => "#DC55FF", ItemRarity.Abyss => "#E51D48", ItemRarity.Eternal => "#FFF2A8", ItemRarity.Divine => "#FFD700", _ => "#9CA3AF" };
 }
 
 public sealed class RpgAttributes
 {
+    public decimal EnemyEncounterChance {get;set;}
+    public decimal MaterialFind {get;set;}
+    public decimal AttackPercent {get;set;}
+    public decimal ExperienceBonus {get;set;}
+    public decimal DivineDamage {get;set;}
     public decimal MovementSpeed { get; set; }
     public decimal BossLifeleech { get; set; }
     public decimal Armor { get; set; }
@@ -92,6 +97,7 @@ public sealed class RpgFishStack
 
 public sealed class RpgBuff
 {
+    public bool AllActivities {get;set;}
     public SushiCategory Category { get; set; }
     public bool EncounterBased { get; set; }
     public DateTimeOffset ActivatedAt { get; set; }
@@ -109,6 +115,8 @@ public sealed class RpgBuff
 
 public sealed class RpgProfile
 {
+    public string SelectedDivingZone {get;set;}="sunny_lagoon";
+    public string SelectedFishingZone {get;set;}="sunny_lagoon";
     public Dictionary<string, int> TalentRanks { get; set; } = new();
     public int SushiVersion { get; set; }
     public int PlayerLevel { get; set; } = 1;

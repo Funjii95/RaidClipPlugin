@@ -21,11 +21,13 @@ internal static class RpgEquipmentUpgradeRules
     public static RpgUpgradeCost Cost(int level,ItemRarity rarity,RpgUpgradeConfig config)
     {
         if(level is <0 or >=9)throw new ArgumentOutOfRangeException(nameof(level));
+        if(rarity==ItemRarity.Divine)throw new InvalidOperationException("Nicht aufwertbar.");
         config.Validate();var target=level+1;var materials=new Dictionary<string,int>();
         if(config.CoreCosts[level]>0)materials["reinforcement_core"]=config.CoreCosts[level];
         if(target>=7){materials[new[]{"white_pearl","blue_pearl","red_pearl"}[target-7]]=config.ColoredPearlCosts[target-7];
-            var id=rarity switch{ItemRarity.Epic=>"luminous_scale",ItemRarity.Legendary=>"rune_shell",ItemRarity.True=>"true_coral_core",ItemRarity.Cursed=>"cursed_silk",ItemRarity.Abyss=>"abyss_shard",_=>"pearl_dust"};
-            materials[id]=config.RarityCosts[rarity.ToString()][target-7];}
+            var id=rarity switch{ItemRarity.Epic=>"luminous_scale",ItemRarity.Legendary=>"rune_shell",ItemRarity.True=>"true_coral_core",ItemRarity.Cursed=>"cursed_silk",ItemRarity.Abyss or ItemRarity.Eternal=>"abyss_shard",_=>"pearl_dust"};
+            materials[id]=config.RarityCosts[rarity.ToString()][target-7];
+            if(rarity==ItemRarity.Eternal){materials[id]=new[]{2,3,5}[target-7];materials["eternal_depth_core"]=new[]{1,2,3}[target-7];}}
         return new(target,config.PearlCosts[level],materials);
     }
     public static RpgAttributes Effective(RpgItem item)

@@ -16,6 +16,7 @@ public sealed class RpgAdventureIntegrationTests : IDisposable
         var config = new MinigameConfig { Enabled = true, PointsEnabled = true };
         config.Adventures.Rpg.Enabled = true;config.Adventures.Rpg.Upgrades.EquipmentDropChances.Keys.ToList().ForEach(k=>config.Adventures.Rpg.Upgrades.EquipmentDropChances[k]=0);
         config.Adventures.Treasure.MaximumBet = 10000;
+        var area=config.Adventures.Rpg.Zones.Get("sunny_lagoon");area.MimicChance=area.EnemyChance=0;area.ChestChance=100;
         return config;
     }
 
@@ -33,7 +34,7 @@ public sealed class RpgAdventureIntegrationTests : IDisposable
         }, Token);
         var service = new RpgAdventureService(store, config, new Lowest(), () => now);
         Assert.False((await service.ExecuteAsync("42", "Otter", "bad", RpgActivity.Dive, -1, Token)).Success);
-        Assert.False((await service.ExecuteAsync("42", "Otter", "expensive", RpgActivity.Dive, 2000, Token)).Success);
+        // Excursions have no affordability gate; legacy stake is ignored by the engine.
         Assert.True((await service.ExecuteAsync("42", "Otter", "first", RpgActivity.Dive, 100, Token)).Success);
         store = new ViewerPointStore(_directory);
         service = new(store, config, new Lowest(), () => now);
@@ -46,23 +47,16 @@ public sealed class RpgAdventureIntegrationTests : IDisposable
         now = now.AddSeconds(31);
         Assert.True((await service.ExecuteAsync("42", "Otter", "third", RpgActivity.Dive, 100, Token)).Success);
         Assert.Empty((await store.GetProfileAsync("42", Token)).Entry.Rpg.Buffs);
-        Assert.Equal(700, await store.GetPointsAsync("42", Token));
+        Assert.Equal(1030, await store.GetPointsAsync("42", Token));
     }
 
     [Fact]
     public async Task ParallelDivesCannotBypassCooldownAndLegendaryCannotBeRetried()
     {
-        var config = Configuration();
-        config.Adventures.Rpg.DiveLoot.BaseDropChance = config.Adventures.Rpg.DiveLoot.MaximumDropChance = 100;
-        config.Adventures.Rpg.DiveLoot.RarityWeights = new() { [ItemRarity.Legendary] = 1 };
-        var store = new ViewerPointStore(_directory);
-        await store.AddPointsAsync("42", "Otter", 20000, 0, Token);
-        var service = new RpgAdventureService(store, config, new Lowest());
-        var results = await Task.WhenAll(Enumerable.Range(0, 20).Select(i => service.ExecuteAsync("42", "Otter", "dive" + i, RpgActivity.Dive, 10000, Token)));
-        var success = Assert.Single(results.Where(r => r.Success));
-        Assert.Equal(ItemRarity.Legendary, success.Item!.Rarity);
-        Assert.Equal(10000, await store.GetPointsAsync("42", Token));
-        Assert.Single((await store.GetProfileAsync("42", Token)).Entry.Rpg.Inventory);
+        var config=Configuration();var store=new ViewerPointStore(_directory);await store.AddPointsAsync("42","Otter",20000,0,Token);
+        var service=new RpgAdventureService(store,config,new Lowest());var results=await Task.WhenAll(Enumerable.Range(0,20).Select(i=>service.ExecuteAsync("42","Otter","dive"+i,RpgActivity.Dive,10000,Token)));
+        var success=Assert.Single(results,r=>r.Success);Assert.Equal("chest",success.EventType);Assert.Null(success.Item);Assert.All(success.AdditionalItems,i=>Assert.Null(i.Slot));
+        Assert.Equal(20010,await store.GetPointsAsync("42",Token));Assert.DoesNotContain((await store.GetProfileAsync("42",Token)).Entry.Rpg.Inventory,i=>i.Slot.HasValue);
     }
 
     [Fact]
@@ -77,10 +71,10 @@ public sealed class RpgAdventureIntegrationTests : IDisposable
         await store.AddPointsAsync("42", "Otter", 1000, 0, Token);
         var result = await new RpgAdventureService(store, config, new Lowest()).ExecuteAsync("42", "Otter", "fish1", RpgActivity.Fishing, 100, Token);
         Assert.True(result.Success);
-        Assert.Equal(200, result.Payout);
+        Assert.Equal(40, result.Payout);
         var profile = (await store.GetProfileAsync("42", Token)).Entry;
-        Assert.Equal(1100, profile.Points);
-        Assert.Equal(1, profile.FishCollection["Rotfeder"]);
+        Assert.Equal(1040, profile.Points);
+        Assert.Equal(1, profile.FishCollection[config.Adventures.Rpg.FishSpecies.Single(f=>f.Id=="sardine").Name]);
         Assert.Equal(1, profile.Rpg.Fish["sardine"].Quantity);
     }
 
@@ -143,18 +137,12 @@ public sealed class RpgAdventureIntegrationTests : IDisposable
     [Fact]
     public async Task LegendaryAnnouncementIsNotRepeatedWhenSameMessageIsRetried()
     {
-        var config = Configuration();
-        config.Adventures.Rpg.DiveLoot.BaseDropChance = config.Adventures.Rpg.DiveLoot.MaximumDropChance = 100;
-        config.Adventures.Rpg.DiveLoot.RarityWeights = new() { [ItemRarity.Legendary] = 1 };
-        var store = new ViewerPointStore(_directory);
-        await store.AddPointsAsync("42", "Otter", 20000, 0, Token);
-        var messages = new List<string>();
-        var service = new AdventureGameService(store, config, (text, _) => { messages.Add(text); return Task.CompletedTask; }, new Lowest());
-        var message = new ChatMessage { Id = "same-dive", UserId = "42", UserName = "Otter" };
-        await service.HandleAsync(message, "!dive", new[] { "!dive", "10000" }, Token);
-        service = new AdventureGameService(new(_directory), config, (text, _) => { messages.Add(text); return Task.CompletedTask; }, new Lowest());
-        await service.HandleAsync(message, "!dive", new[] { "!dive", "10000" }, Token);
-        Assert.Single(messages.Where(m => m.Contains("LEGENDÄR!")));
+        var config=Configuration();var c=config.Adventures.Rpg;var area=c.Zones.Get("tidal_maelstrom");area.MimicChance=area.ChestChance=area.EliteChance=0;area.EnemyChance=100;area.Hp=1;area.Armor=0;c.BossLootChance=100;
+        c.DiveLoot.BaseDropChance=c.DiveLoot.MaximumDropChance=100;c.DiveLoot.RarityWeights=new(){[ItemRarity.Legendary]=1};
+        var store=new ViewerPointStore(_directory);await store.ApplyRpgAsync("42","Otter","seed",a=>{a.Points=20000;a.Rpg.SelectedDivingZone=area.Id;return new(true);},Token);
+        var messages=new List<string>();AdventureGameService Make(ViewerPointStore p)=>new(p,config,(text,_)=>{messages.Add(text);return Task.CompletedTask;},new Lowest());
+        var message=new ChatMessage{Id="same-dive",UserId="42",UserName="Otter"};await Make(store).HandleAsync(message,"!dive",new[]{"!dive"},Token);await Make(new(_directory)).HandleAsync(message,"!dive",new[]{"!dive"},Token);
+        Assert.Single(messages,m=>m.Contains("LEGENDÄR!"));
     }
 
     [Fact]

@@ -9,6 +9,7 @@ public static class RpgDepthsCombatService
     {
         var effective=Math.Clamp(reduction,0,100);
         if(critical&&Has(p,c,"abyss_devourer",6))effective*=.85m;
+        if(critical&&RpgEternalCombat.Has(p,c,"eternal_primordial_wrath",6))effective*=.7m;
         return checked((int)decimal.Floor(damage*(1-effective/100)));
     }
     public static bool Has(RpgProfile p,RpgConfig c,string id,int count)=>RpgSetCombatService.Active(p,c.Sets,id,count);

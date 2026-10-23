@@ -22,7 +22,7 @@ internal sealed class CloudActionClient : IDisposable
     private readonly RemoteRpgExecutor executor;
     private readonly Func<bool> ready;
     private readonly Action<string> log;
-    private static readonly JsonSerializerOptions Json=new(JsonSerializerDefaults.Web);
+    internal static readonly JsonSerializerOptions Json=new(JsonSerializerDefaults.Web){Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping};
     private Guid session;
     private long sequence;
     internal CloudActionClient(Uri backend,string key,RemoteRpgExecutor executor,Func<bool> ready,Action<string> log)
@@ -47,6 +47,7 @@ internal sealed class CloudActionClient : IDisposable
     internal async Task RunAsync(CancellationToken ct)
     {
         var nextBeat=DateTimeOffset.MinValue;
+        var failures=0;
         ActionEnvelope? pending=null;ActionOutcome? outcome=null;TimeSpan executionWindow=TimeSpan.Zero;
         try {
             while(!ct.IsCancellationRequested){
@@ -79,15 +80,17 @@ internal sealed class CloudActionClient : IDisposable
                         pending=null;outcome=null;
                     }
                     // Drain accepted work promptly; keep bounded polling when no work exists.
+                    failures=0;
                     await Task.Delay(handled?100:500,ct);
                 } catch(OperationCanceledException) when(ct.IsCancellationRequested){throw;}
                 catch(HttpRequestException error) when(error.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden){log("Aktionskanal gesperrt: geschützten Zugang prüfen.");return;}
-                catch {
+                catch(Exception error) {
                     // A pending outcome is already durable. Never invoke a second action to compensate.
-                    log("Aktionskanal unterbrochen; unklare Aktionen werden nicht erneut gebucht.");
+                    log("Aktionskanal unterbrochen ("+(error is HttpRequestException network?"HTTP "+(int?)network.StatusCode:error.GetType().Name)+"); unklare Aktionen werden nicht erneut gebucht.");
                     if(pending is not null && outcome is not null){try{await Request<ActionReceipt>(HttpMethod.Post,"/api/v1/plugin/actions/complete",new RelayComplete(session,pending.Intent.ActionId,outcome),ct);}catch{}}
                     session=Guid.Empty;pending=null;outcome=null;
-                    await Task.Delay(3000,ct);
+                    failures=Math.Min(failures+1,5);
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Min(60,3*Math.Pow(2,failures-1))),ct);
                 }
             }
         } catch(OperationCanceledException) when(ct.IsCancellationRequested){}

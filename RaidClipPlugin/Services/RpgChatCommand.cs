@@ -175,10 +175,10 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         {
             string Name(string recipeId) => config.Recipes.SingleOrDefault(r => r.Id == recipeId) is { } recipe ? RpgChatPresentation.RecipeName(recipe) : recipeId;
             var stock = profile.Sushi.Where(p => p.Value > 0).Select(p => $"Vorrat: {Name(p.Key)} [{p.Key}] {p.Value}×");
-            var buffs = profile.Buffs.Where(b => RpgSushiService.Active(b,DateTimeOffset.UtcNow)).Select(b => $"{b.Category}: {Name(b.RecipeId)}, {RpgChatPresentation.Bonuses(b.Attributes)}, noch {b.RemainingUses} " +
-                (b.EncounterBased?"Bosskampfteilnahmen":"gültige "+RpgChatPresentation.Activity(b.Activity)) + (b.RemainingUses==0?" – letzter Boss läuft":"")+
+            var buffs = profile.Buffs.Where(b => RpgSushiService.Active(b,DateTimeOffset.UtcNow)).Select(b => $"{b.Category}: {Name(b.RecipeId)}, {RpgChatPresentation.Bonuses(b.Attributes)}, noch {(b.ExpiresAt is {} expiry?Math.Max(0,(int)Math.Ceiling((expiry-DateTimeOffset.UtcNow).TotalMinutes)):b.RemainingUses)} " +
+                (b.ExpiresAt is not null?"Minuten":b.EncounterBased?"Bosskampfteilnahmen":"gültige "+RpgChatPresentation.Activity(b.Activity)) + (b.RemainingUses==0?" – letzter Boss läuft":"")+
                 (b.PassiveHealing>0?$", +{b.PassiveHealing} HP/Minute":"")+(b.ChatHealing>0?$", +{b.ChatHealing} Chat-HP":"")+(b.BossDamageReduction>0?$", -{b.BossDamageReduction} % Boss-Gegenschaden":"")+(b.BossLifeleech>0?$", {b.BossLifeleech} % Boss-Lifeleech":"")).DefaultIfEmpty("keine aktiven Buffs");
-            var recipes=config.Recipes.Select(r=>$"{RpgChatPresentation.RecipeName(r)} [{r.Id}, {r.Category}]: {RpgSushiService.IngredientsText(r,config)} + {r.PearlCost} Perlen; {RpgSushiService.Effects(r)} {RpgSushiService.Uses(r,config)} Boss-Teilnahmen. !cook {r.Id} / !eat {r.Id}");
+            var recipes=config.Recipes.Select(r=>$"{RpgChatPresentation.RecipeName(r)} [{r.Id}, {r.Category}]: {RpgSushiService.IngredientsText(r,config)} + {r.PearlCost} Perlen; {RpgSushiService.Effects(r)} 1 Stunde. !cook {r.Id} / !eat {r.Id}");
             var statusPage = parts.Length == 3 && parts[1] is "status" or "recipes" && int.TryParse(parts[2], out var selectedPage) ? Math.Max(1, selectedPage) : 1;
             return ListPage(user.UserName, "🍣 Sushi-Status", buffs.Concat(stock).Concat(parts.Length==1||parts[1]=="recipes"?recipes:Array.Empty<string>()), statusPage,
                 "Kein Sushi im Vorrat und keine aktiven Buffs. Herstellung: !craft <Rezept>.", parts.Length==1||parts[1]=="recipes"?"!sushi recipes":"!sushi status");

@@ -1,3 +1,6 @@
+import {CodexCharacter} from './CodexCharacter';
+import {ItemComparison} from './ItemComparison';
+import {ZonePanel} from './ZonePanel';
 import {MaterialInventory,EquipmentUpgrade,materialNames} from './UpgradePanel';
 import {PerkPanel} from './PerkPanel';
 import {TalentTree} from './TalentTree';
@@ -47,11 +50,13 @@ const symbols = [
     "bag",
 ] as const;
 const time = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
-export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:DemoPresentation;minigameClient?:MinigameClient}) {
+export function App({source,demo,minigameClient,desktop=false}:{source:RpgDataSource;demo?:DemoPresentation;minigameClient?:MinigameClient;desktop?:boolean}) {
+    const desktopTabs=["Abenteuer","Charakter","Waffen","Ausrüstung","Inventar","Aufwertung","Materialien","Sammlungen","Itemsets","Boss"];
     const isDemo=source.mode==="demo";
     const allowed=(type:Action["type"])=>isDemo || source.canDispatch?.(type)===true;
     const clickLock=useRef(false);
-    const [state, setState] = useState(source.getSnapshot()), [tab, setTab] = useState("Charakter"), [now, setNow] = useState(Date.now()), [motion, setMotion] = useState(true), [stake, setStake] = useState(250), [fishStake, setFishStake] = useState(0), [search, setSearch] = useState(""), [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [revealing, setRevealing] = useState(false), [helper, setHelper] = useState("Lokale Vorschau");
+    const [state, setState] = useState(source.getSnapshot()), [tab, setTab] = useState(desktop?"Abenteuer":"Charakter"), [now, setNow] = useState(Date.now()), [motion, setMotion] = useState(true), [stake, setStake] = useState(250), [fishStake, setFishStake] = useState(0), [search, setSearch] = useState(""), [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [revealing, setRevealing] = useState(false), [helper, setHelper] = useState("Lokale Vorschau");
+    const [focusedItem,setFocusedItem]=useState<string>();
     const sets=isDemo?demo!.sets:state.remote?.sets??[];
     const recipes:RecipeView[]=isDemo?demo!.recipes:state.remote?.recipes??[];
     const loaded=isDemo||state.remote?.loaded===true;
@@ -145,10 +150,10 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                 ? i.effects.map((e) => e.description).join(" ")
                 : "Kein zusätzlicher Spezialeffekt."}
         </p>
-        {i.setId && (<small>Set: {sets.find((s) => s.id === i.setId)?.name}</small>)}
+        <ItemComparison source={source} item={i}/>{i.setId && (<small>Set: {sets.find((s) => s.id === i.setId)?.name}</small>)}
         {i.collector && <p>{collectorText(i.collector).join(" · ")}</p>}
         <div className="actions">
-          {i.slot && <button onClick={()=>setUpgradeItem(i.instanceId)} disabled={busy}>Aufwerten</button>}
+          {i.slot && (i.rarity==="Divine"?<span>ADMIN ONLY · Nicht aufwertbar</span>:<button onClick={()=>setUpgradeItem(i.instanceId)} disabled={busy}>Aufwerten</button>)}
           <button aria-pressed={i.locked} onClick={() => void run({ type: "lock", id: i.instanceId })} disabled={!allowed("lock") || busy}>{i.locked ? "Entsperren" : "Sperren"}</button>
           {i.slot &&
                 (equipped(i) ? (<button onClick={() => {
@@ -172,7 +177,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
           <button aria-pressed={i.favorite} onClick={() => void run({ type: "favorite", id: i.instanceId })} disabled={!allowed("favorite") || busy}>
             {i.favorite ? "★ Favorisiert" : "☆ Favorisieren"}
           </button>
-          <button disabled={!allowed("dismantle") || busy || (i.favorite || i.locked || equipped(i))} onClick={() => void run({ type: "dismantle", id: i.instanceId })}>
+          <button disabled={i.rarity==="Divine" || !allowed("dismantle") || busy || (i.favorite || i.locked || equipped(i))} onClick={() => void run({ type: "dismantle", id: i.instanceId })}>
             Zerlegen prüfen
           </button>
         </div>
@@ -189,7 +194,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
         Beenden
       </button>
     </div>);
-    return (<div className={motion ? "app" : "app no-motion"}>
+    return (<div className={(motion ? "app" : "app no-motion")+(desktop?" codex-app":"")}>
       <div className={`hot-hud ${hot ? "burning" : ""} ${hot && seconds <= 30 ? "urgent" : ""}`} title={isDemo?"Hot Time: +50 % relative Itemchance, +100 % zulässige Perlenbelohnungen":"Nur bestätigte Spielwerte werden angezeigt"}>
         <progress aria-label="Hot-Time-Restzeit" max={300} value={hot ? Math.min(300, seconds) : 0} aria-valuetext={hot ? `${time(seconds)} verbleibend` : "Hot Time inaktiv"}/>
         <div className="hot-hud-label">
@@ -203,9 +208,9 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
         <div>
           <small>FUNJII · LEUCHTENDE TIEFE</small>
           <h1>
-            Otter RPG <span>{isDemo?"DEMO":"RPG"}</span>
+            {desktop?"Funjii Otter RPG – Deep Sea Codex":"Otter RPG"} <span>{isDemo?"DEMO":"RPG"}</span>
           </h1>
-          <p>Dein Abenteuer unter den Wellen.</p>
+          <p>{desktop?state.player.username+" · Level "+format(state.player.level):"Dein Abenteuer unter den Wellen."}</p>{desktop&&<small>{state.remote?.experienceText??format(state.player.experience)} EXP</small>}
         </div>
       </header>
       <div className="statusbar">
@@ -238,14 +243,16 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
             </small>) : null}
         </section>)}
       {!config && (<nav aria-label="Hauptnavigation">
-          {tabs.map((name, n) => (<button key={name} aria-current={tab === name ? "page" : undefined} onClick={() => {
+          {(desktop?desktopTabs:tabs).map((name, n) => (<button key={name} aria-current={tab === name ? "page" : undefined} onClick={() => {
                     setTab(name);
                     setMessage("");
                 }}>
-              <Icon name={symbols[n]}/>
+              <Icon name={desktop?(["compass","otter","swords","swords","bag","sets","pearl","bag","sets","boss"] as const)[n]:symbols[n]}/>
               {name}
             </button>))}
+          {desktop&&<button onClick={()=>setTab("Einstellungen")} aria-current={tab==="Einstellungen"?"page":undefined}>⚙ Einstellungen</button>}
         </nav>)}
+      {focusedItem&&<div className="codex-item-dialog" role="dialog" aria-label="Itemdetails"><button onClick={()=>setFocusedItem(undefined)}>Itemdetails schließen</button>{state.inventory.filter(i=>i.instanceId===focusedItem).map(itemCard)}</div>}
       <main>
         <div className="section-title">
           <div>
@@ -287,9 +294,10 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
               </article>
               {(isDemo?minigameClient:source.minigames)?<PearlMinigames client={(isDemo?minigameClient:source.minigames)!}/>:<article><h3>Die Perlen-Spielhalle</h3><p>Für diese Spiele ist noch kein sicherer Backend-Aufruf freigegeben. Dein gespeicherter Perlenstand bleibt unverändert.</p></article>}
             </>}
-            {tab === "Aufwertungs-Materialien" && <>{state.materialFinds&&<p role="status">Materialien erhalten: {Object.entries(state.materialFinds).map(([id,n])=>`${n} × ${materialNames[id]??id}`).join(', ')}</p>}<MaterialInventory stock={state.materials} catalog={state.remote?.materialCatalog}/><h3>Ausrüstung aufwerten</h3><div className="cards">{state.inventory.filter(i=>i.slot).map(itemCard)}</div></>}
+            {(tab === "Aufwertungs-Materialien"||tab==="Materialien"||tab==="Aufwertung") && <>{state.materialFinds&&<p role="status">Materialien erhalten: {Object.entries(state.materialFinds).map(([id,n])=>`${n} × ${materialNames[id]??id}`).join(', ')}</p>}{tab!=="Aufwertung"&&<MaterialInventory stock={state.materials} catalog={state.remote?.materialCatalog}/>}<h3>Ausrüstung aufwerten</h3><div className="cards">{state.inventory.filter(i=>i.slot).map(itemCard)}</div></>}
             {tab === "Charakter" && (<>
-                <article className="hero">
+                {desktop&&<CodexCharacter state={state} stats={stats} onItem={i=>setFocusedItem(i.instanceId)}/>}
+                <article className="hero" hidden={desktop}>
                   <img src={state.player.avatarUrl} alt="Otter-Magier als Spielillustration"/>
                   <div>
                     <small>HÜTER DER PERLE</small>
@@ -297,7 +305,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                     <p>Dein nächster Schatz wartet schon.</p>
                   </div>
                 </article>
-                <article><h3>Level {format(state.player.level)}</h3><p>{state.remote?.experienceText??format(state.player.experience)} EXP{isDemo?` · nächstes Level: ${1000 * state.player.level * (state.player.level + 1) / 2} EXP`:""}</p>{isDemo&&(<button onClick={() => void run({ type: "healChat" })} disabled={!allowed("healChat") || busy}>Chat-Heilung testen</button>)}{isDemo&&(<button onClick={() => void run({ type: "demoWound" })} disabled={!allowed("demoWound") || busy}>Verletzung simulieren</button>)}</article><div className="stat-grid">
+                <article hidden={desktop}><h3>Level {format(state.player.level)}</h3><p>{state.remote?.experienceText??format(state.player.experience)} EXP{isDemo?` · nächstes Level: ${1000 * state.player.level * (state.player.level + 1) / 2} EXP`:""}</p>{isDemo&&(<button onClick={() => void run({ type: "healChat" })} disabled={!allowed("healChat") || busy}>Chat-Heilung testen</button>)}{isDemo&&(<button onClick={() => void run({ type: "demoWound" })} disabled={!allowed("demoWound") || busy}>Verletzung simulieren</button>)}</article><div className="stat-grid" hidden={desktop}>
                   {Object.entries(stats).map(([key, value]) => (<div className="stat" key={key}>
                       <strong>
                         {numberStat(key, value)}
@@ -310,7 +318,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                   {state.player.buffs
                     .filter((b) => buffActive(b, now))
                     .map((b) => (<p key={b.name}>
-                        {b.name} · {b.remainingUses} neue Bosse ·{" "}
+                        {b.name} · {b.expiresAt!==undefined?time(remaining(b.expiresAt,now))+" verbleibend":b.remainingUses+" neue Bosse"} ·{" "}
                         {statsText(b.attributes).join(", ")}
                       </p>))}
                   {!state.player.buffs.some((b) => buffActive(b, now)) && (<p>Keine aktiven Buffs.</p>)}
@@ -328,6 +336,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                 </article>
               </>)}
             {tab === "Abenteuer" && (<>
+                {!isDemo&&state.remote?.zones&&source.readPlugin&&<ZonePanel zones={state.remote.zones} diving={state.remote.selectedDivingZone??"sunny_lagoon"} fishing={state.remote.selectedFishingZone??"sunny_lagoon"} busy={busy||state.remote.connection!=="ready"} cooldown={remaining(state.cooldowns.dive,now)} fishingCooldown={remaining(state.cooldowns.fishing,now)} onSelect={async(activity,zoneId)=>{setBusy(true);try{await source.dispatch({type:"selectZone",activity,zoneId});}finally{setBusy(false);}}} onStart={activity=>void run({type:activity==="dive"?"dive":"fishing",stake:0})}/>}
                 <article className="adventure">
                   <div className="sea-art">
                     <picture><source media="(min-width: 901px)" srcSet="./luminous-depths.png"/><img src="./luminous-depths-compact.webp" alt="Otter-Magier zwischen leuchtenden Quallen und einem Perlenschatz in versunkenen Ruinen" width="1536" height="1024"/></picture>
@@ -336,7 +345,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                       <h3>Ein Meer voller Geheimnisse.</h3>
                     </div>
                   </div>
-                  <div className="adventure-controls">
+                  <div className="adventure-controls" hidden={!isDemo&&!!state.remote?.zones}>
                     <label>
                       Einsatz in {isDemo?"Demo-Perlen":"Perlen"}
                       <select value={stake} onChange={(e) => setStake(Number(e.target.value))}>
@@ -407,6 +416,9 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                       </>)}
                   </article>)}
               </>)}
+            {tab === "Einstellungen"&&<article><h3>Spiel &amp; Einstellungen</h3>{["Talente","Perks","Kochen","Perlen-Minispiele"].map(name=><button key={name} onClick={()=>setTab(name)}>{name}</button>)}<p>Animationen können am unteren Fensterrand ausgeschaltet werden. Anmeldung und Updates findest du im Windows-Fenster.</p></article>}
+            {tab==="Sammlungen"&&<><h3>Schatzsammlung</h3><div className="cards">{(state.remote?.collectorItems??[]).map(def=>{const quantity=Math.min(5,state.inventory.filter(i=>i.itemId===def.Id).length);return <article key={def.Id}><ItemArtwork id={def.Id} name={def.Name}/><h3>{def.Name}</h3><p>{quantity}/5</p><progress value={quantity} max={5}/><p>Fundort: Gebietstruhen und berechtigte Kämpfe</p></article>;})}</div><p>{(state.remote?.collectorItems??[]).reduce((n,d)=>n+Math.min(5,state.inventory.filter(i=>i.itemId===d.Id).length),0)} / {(state.remote?.collectorItems?.length??0)*5} gesammelt</p></>}
+            {tab==="Waffen"&&<><h3>Waffenverwaltung</h3><label>Waffen suchen<input value={search} onChange={e=>setSearch(e.target.value)}/></label><div className="cards">{state.inventory.filter(i=>i.slot==="Weapon"&&(i.name+" "+i.rarity).toLowerCase().includes(search.toLowerCase())).map(itemCard)}</div>{!state.inventory.some(i=>i.slot==="Weapon")&&<p>Noch keine Waffe im Inventar.</p>}</>}
             {tab === "Inventar" && (<>
                 <p className="muted">
                   {state.inventory.length} Schätze · Favoriten und ausgerüstete
@@ -525,7 +537,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                           </div>
                         </div>
                         <p className="recipe-effect">
-                          {isDemo?recipeEffects(recipe as SushiRecipe):recipe.effectsText??"Effekte nicht übermittelt"} · {recipe.category === "Offensive" ? "Offensiv" : recipe.category==="Defensive"?"Defensiv":"Slot nicht übermittelt"} · {format(recipe.bossUses??Number.NaN)} Bosse
+                          {isDemo?recipeEffects(recipe as SushiRecipe):recipe.effectsText??"Effekte nicht übermittelt"} · {recipe.category === "Offensive" ? "Offensiv" : recipe.category==="Defensive"?"Defensiv":"Slot nicht übermittelt"} · {recipe.durationSeconds===3600?"1 Stunde":format(recipe.bossUses??Number.NaN)+" Bosse"}
                         </p>
                         <div className="recipe-ingredients">
                           {recipe.ingredients.map(i => <p key={i.fishId}><ItemArtwork id={`fish-${i.fishId}`} name={i.name} fallback="🐟" small/> {i.name} <strong>{state.fish[i.fishId] ?? 0} / {i.quantity}</strong></p>)}
@@ -542,7 +554,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                           <strong>{state.sushi[recipe.id] ?? 0} Sushi</strong>
                         </p>
                         {activeBuff && (<p className="active-bonus">
-                            ✓ Aktiv · {activeBuff.remainingUses} neue Bosse übrig
+                            ✓ Aktiv · {activeBuff.expiresAt!==undefined?time(remaining(activeBuff.expiresAt,now))+" verbleibend":activeBuff.remainingUses+" neue Bosse übrig"}
                           </p>)}
                         <div className="recipe-actions">
                           <button className="primary" disabled={!allowed("cook") || busy || (busy || !canCook)} onClick={() => void run({ type: "cook", recipeId: recipe.id })}>
@@ -596,3 +608,4 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
       </footer>
     </div>);
 }
+

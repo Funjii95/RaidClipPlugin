@@ -29,7 +29,7 @@ public sealed class RpgSushiTwoTests : IDisposable
     [Fact]
     public void WeightsAreRelativeRarePerkAppliesAndOldSpeciesRemain()
     {
-        var c=Config();c.Validate();Assert.Equal(10133,RpgFishingService.Weights(c,new(),0).Sum(p=>p.Weight));
+        var c=Config();c.Validate();Assert.Equal(10233,RpgFishingService.Weights(c,new(),0).Sum(p=>p.Weight));
         Assert.Equal(5,c.FishSpecies.Count(f=>new[]{"sardine","perch","crystal-carp","eel","leviathan"}.Contains(f.Id)));
         var weights=RpgFishingService.Weights(c,new(){FishingLuck=100},0);
         Assert.Equal(24,weights.Single(p=>p.Fish.Id=="giant_shrimp").Weight);Assert.Equal(50,weights.Single(p=>p.Fish.Id=="sea_cucumber").Weight);
@@ -128,7 +128,7 @@ public sealed class RpgSushiTwoTests : IDisposable
     public async Task ActualBossAttacksUseDefensiveReductionAndSpendOnlyOneChargePerBoss()
     {
         var c=new MinigameConfig{Enabled=true,PointsEnabled=true};c.Adventures.Rpg=Config();c.Adventures.Boss.HitPoints=100;
-        c.Adventures.Boss.AttackCooldownSeconds=1;c.Adventures.Rpg.Health.PassiveHealing=false;
+        c.Adventures.Boss.AttackCooldownSeconds=1;c.Adventures.Boss.RoundCooldownSeconds=0;c.Adventures.Rpg.Health.PassiveHealing=false;
         var store=new ViewerPointStore(_dir);
         await store.ApplyRpgAsync("u","U","seed",a=>{a.Rpg.Sushi["kugelfisch"]=1;return new(true);},default);
         Assert.True((await new RpgProgressionService(store,c.Adventures.Rpg,()=>_now).ActivateSushiAsync("u","U","eat","kugelfisch",default)).Success);
@@ -140,10 +140,11 @@ public sealed class RpgSushiTwoTests : IDisposable
             _now=_now.AddSeconds(2);
             Assert.True((await game.ExecuteBossAttackAsync("u","U","b"+round,default)).Success);
             var p=(await store.GetProfileAsync("u",default)).Entry.Rpg;
-            Assert.Equal(100-18*round,p.Health.CurrentHp);Assert.Equal(3-round,Assert.Single(p.Buffs).RemainingUses);
-            await game.ControlAsync("cancelboss",0,default);_now=_now.AddHours(1);
+            Assert.Equal(100-18*round,p.Health.CurrentHp);Assert.Equal(3,Assert.Single(p.Buffs).RemainingUses);
+            await game.ControlAsync("cancelboss",0,default);_now=_now.AddMinutes(1);
         }
-        Assert.Empty((await store.GetProfileAsync("u",default)).Entry.Rpg.Buffs);
+        _now=_now.AddHours(1);
+        Assert.False(RpgSushiService.Active(Assert.Single((await store.GetProfileAsync("u",default)).Entry.Rpg.Buffs),_now));
     }
     [Fact]
     public async Task FishWithoutStakeRoutesThroughChatAndFailedStorageRollsBackNewReward()
@@ -163,7 +164,7 @@ public sealed class RpgSushiTwoTests : IDisposable
     public void MigrationPreservesMultipleLegacyBuffsAndStockWithoutResettingCharges()
     {
         var p=new RpgProfile{Buffs=new(){new(){RecipeId="fighter",RemainingUses=2},new(){RecipeId="critical",RemainingUses=1}},Sushi=new(){{"fighter",7}}};
-        RpgSushiService.Upgrade(p);RpgSushiService.Upgrade(p);Assert.Equal(new[]{2,1},p.Buffs.Select(b=>b.RemainingUses));Assert.Equal(7,p.Sushi["fighter"]);Assert.All(p.Buffs,b=>Assert.True(b.EncounterBased));
+        RpgSushiService.Upgrade(p);RpgSushiService.Upgrade(p);Assert.Equal(new[]{2,1},p.Buffs.Select(b=>b.RemainingUses));Assert.Equal(7,p.Sushi["fighter"]);Assert.All(p.Buffs,b=>{Assert.False(b.EncounterBased);Assert.Equal(TimeSpan.FromHours(1),b.ExpiresAt-b.ActivatedAt);});
         Assert.True(RpgChatCommand.Recognizes("!cook"));Assert.True(RpgChatCommand.Recognizes("!eat"));Assert.True(RpgChatCommand.Recognizes("!fishbag"));
     }
 }

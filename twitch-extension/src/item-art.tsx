@@ -2,8 +2,10 @@ import {useState} from 'react';
 import artwork from './item-art.json';
 import tidesArtwork from './tides-art.json';
 import depthsArtwork from './depths-art.json';
+import eternalArtwork from './eternal-art.json';
+import cuisineArtwork from './cuisine-art.json';
 type Entry={src:string;name:string;width:number;height:number;sourceSha256:string;assetSha256:string};
-export const itemArt:Readonly<Record<string,Entry>>={...artwork.entries,...tidesArtwork,...depthsArtwork};
+export const itemArt:Readonly<Record<string,Entry>>={...artwork.entries,...tidesArtwork,...depthsArtwork,...eternalArtwork,...cuisineArtwork};
 export function ItemArtwork({id,name,fallback='✧',small=false}:{id:string;name?:string;fallback?:string;small?:boolean}){
  const [failedId,setFailedId]=useState<string>();const entry=itemArt[id];
  if(!entry||failedId===id)return <span className="item-art-fallback" aria-hidden="true">{fallback}</span>;

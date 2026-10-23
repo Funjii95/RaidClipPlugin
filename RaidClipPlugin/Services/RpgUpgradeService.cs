@@ -8,6 +8,7 @@ public sealed class RpgUpgradeService(ViewerPointStore points,RpgConfig config)
         if(!config.Enabled)return new(false,"RPG ist deaktiviert.");
         var item=a.Rpg.Inventory.SingleOrDefault(i=>i.InstanceId==instance);
         if(item?.Slot is null)return new(false,"Dieser Gegenstand gehört dir nicht oder ist nicht ausrüstbar.");
+        if(item.Rarity==ItemRarity.Divine)return new(false,"Göttliche Gegenstände sind nicht aufwertbar oder veredelbar.");
         if(item.UpgradeLevel!=expectedLevel)return new(false,"Die Aufwertungsstufe hat sich geändert. Bitte neu laden.");
         if(item.IsRefined||refine&&item.UpgradeLevel!=9||!refine&&item.UpgradeLevel>=9)return new(false,"Diese Aufwertung ist nicht möglich.");
         config.Upgrades.Validate();

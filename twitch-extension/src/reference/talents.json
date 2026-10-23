@@ -138,12 +138,12 @@
   },
   {
     "id": "fishing-pearls",
-    "name": "Perlenschuppen",
+    "name": "Fangreserve",
     "branch": "Fishing",
     "max": 5,
     "value": 3,
-    "effect": "fishPearls",
-    "description": "+3 % positive Netto-Perlen aus Fischfang pro Punkt.",
+    "effect": "reserveFish",
+    "description": "+3 % Chance auf einen zusätzlichen Fisch derselben Art pro Punkt. Gemeinsam mit dem Perk Reicher Fang addiert.",
     "requires": [
       "fishing-quality"
     ]
@@ -173,12 +173,12 @@
   },
   {
     "id": "dive-pearls",
-    "name": "Schatzsucher",
+    "name": "Materialsucher",
     "branch": "Dive",
     "max": 5,
     "value": 4,
-    "effect": "divePearls",
-    "description": "+4 % positive Netto-Perlen beim Tauchen pro Punkt.",
+    "effect": "diveMaterials",
+    "description": "+4 % relative Materialfundchance beim Tauchen pro Punkt. Keine zusätzlichen Eternal-Würfe und kein Bonus auf Mimic-Materialien.",
     "requires": []
   },
   {

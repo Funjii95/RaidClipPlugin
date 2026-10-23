@@ -78,6 +78,8 @@ public sealed class BossHpModeConverter : EnumConverter
 
 public sealed class BossAdventureConfig
 {
+    public string AreaId {get;set;}="";
+    public int EnemyLevel {get;set;}
     [DisplayName("Boss-Schadensreduktion (%)")] public decimal DamageReductionPercent {get;set;}
     [Browsable(false)] public bool IsMimic {get;set;}
     [Browsable(false)] public string DisplayName {get;set;}="Perlenwächter";

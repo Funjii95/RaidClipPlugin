@@ -7,7 +7,7 @@ namespace RaidClipPlugin.Services;
 public static class RpgHealthService
 {
     private static int BaseMaximum(RpgProfile p,RpgHealthConfig c) => checked(c.BaseHp + (Math.Clamp(p.PlayerLevel,1,c.MaximumLevel)-1)*c.HpPerLevel);
-    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked((int)decimal.Floor((BaseMaximum(p,c)*(1+RpgPerkCatalog.Combined(p,"health")/100)+Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina,c.EquipmentSets),0,c.EquipmentHpCap))*(1+Math.Clamp(RpgSetCombatService.Gear(p,"MaximumHpPercent")+RpgSetCombatService.Bonus(p,c.EquipmentSets,"MaximumHpPercent"),-90,200)/100)));
+    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked((int)decimal.Floor((BaseMaximum(p,c)*(1+RpgPerkCatalog.Combined(p,"health")/100)+Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina,c.EquipmentSets),0,RpgEternalCombat.Enhanced(p)?1000000:c.EquipmentHpCap))*(1+Math.Clamp(RpgSetCombatService.Gear(p,"MaximumHpPercent")+RpgSetCombatService.Bonus(p,c.EquipmentSets,"MaximumHpPercent"),-90,RpgEternalCombat.Enhanced(p)?10000:200)/100)));
     public static void Refresh(RpgProfile p, RpgHealthConfig c, DateTimeOffset now)
     {
         c.Validate(); p.Health ??= new();
@@ -48,7 +48,8 @@ public static class RpgHealthService
     public static void Experience(RpgProfile p, RpgHealthConfig c, int amount, DateTimeOffset now)
     {
         Refresh(p,c,now);
-        p.Experience=checked(p.Experience+Math.Max(0,amount));
+        var bonus=RpgSetCombatService.Bonus(p,c.EquipmentSets,"ExperienceBonus");
+        p.Experience=checked(p.Experience+(long)decimal.Floor(Math.Max(0,amount)*(1+bonus/100)));
         while(p.PlayerLevel<c.MaximumLevel && p.Experience >= (long)c.ExperiencePerLevel*p.PlayerLevel*(p.PlayerLevel+1)/2)
             p.PlayerLevel++;
         Refresh(p,c,now);

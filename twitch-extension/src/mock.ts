@@ -65,7 +65,7 @@ export class MockRpgDataSource implements RpgDataSource {
             return item;
     } return items[items.length - 1]; }
     private maximum(s: DemoState) { return rules.health.baseHp + (s.player.level - 1) * rules.health.hpPerLevel + characterStats(s).maximumHp; }
-    private refresh(s: DemoState, now: number) {
+    private refreshDemo(s: DemoState, now: number) {
         const p = s.player;
         p.maxHp = this.maximum(s);
         p.hp = Math.min(p.hp, p.maxHp);
@@ -164,13 +164,13 @@ export class MockRpgDataSource implements RpgDataSource {
             return this.getSnapshot();
         }
         const s = structuredClone(this.state);
-        this.refresh(s, now);
+        this.refreshDemo(s, now);
         const find = (id: string) => { const item = s.inventory.find(i => i.instanceId === id); if (!item)
             throw Error('Gegenstand nicht gefunden.'); return item; };
         switch (action.type) {
             case 'learnTalent':
                 s.talents=learnTalent(action.id,s.player.level,s.talents??{});
-                this.refresh(s,now);
+                this.refreshDemo(s,now);
                 break;
             case 'refresh': break;
             case 'demoWound':
@@ -211,12 +211,12 @@ export class MockRpgDataSource implements RpgDataSource {
                     if (s.equipment[slot] === i.instanceId)
                         delete s.equipment[slot];
                 s.equipment[action.slot] = i.instanceId;
-                this.refresh(s, now);
+                this.refreshDemo(s, now);
                 break;
             }
             case 'unequip':
                 delete s.equipment[action.slot];
-                this.refresh(s, now);
+                this.refreshDemo(s, now);
                 break;
             case 'dismantle':
             case 'salvageBatch': {
@@ -450,3 +450,4 @@ export class MockRpgDataSource implements RpgDataSource {
         return this.getSnapshot();
     }
 }
+

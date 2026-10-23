@@ -5,10 +5,15 @@ namespace RaidClipPlugin.Services;
 public static class RpgDepthsLootService
 {
     // An additional independent pool preserves the existing fish, treasure and equipment rolls.
-    public static void Award(RpgProfile p,RpgConfig c,string source,IDuelRandom rng,DateTimeOffset now,decimal hotTime=0,bool endgame=false)
+    public static void Award(RpgProfile p,RpgConfig c,string source,IDuelRandom rng,DateTimeOffset now,decimal hotTime=0,bool endgame=false,string areaId="")
     {
+        // High-tier gear requires a victorious, explicitly located combat source.
+        if(source is not ("boss" or "mimic" or "enemy"))return;
+        var area=c.Zones.Areas.SingleOrDefault(z=>z.Id==areaId);
+        if(area is null)return;
         foreach(var rarity in new[]{ItemRarity.True,ItemRarity.Cursed,ItemRarity.Abyss})
         {
+            if(rarity==ItemRarity.True&&area.Level<80||rarity==ItemRarity.Cursed&&area.Level<70||rarity==ItemRarity.Abyss&&area.Level<90)continue;
             if(rarity==ItemRarity.Abyss&&(!endgame||source is not ("boss" or "mimic")))continue;
             var key=rarity.ToString();var baseChance=c.Upgrades.EquipmentDropChances[key];
             var chance=Math.Clamp(baseChance*(1+Math.Clamp(hotTime,0,200)/100),0,100);

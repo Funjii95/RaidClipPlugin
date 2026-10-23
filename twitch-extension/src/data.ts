@@ -3,7 +3,7 @@ import type { CharacterStats, InventoryItem, ItemSet, SushiRecipe, DemoState, Ac
 export const reference = snapshot;
 export const rules = snapshot.config;
 export const rarities: Rarity[] = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'True', 'Cursed', 'Abyss'];
-export const labels: Record<keyof CharacterStats, string> = { movementSpeed: 'Bewegungstempo', bossLifeleech: 'Boss-Lebensraub', armor: 'Rüstung', armorPercent: 'Rüstungsbonus', maximumHpPercent: 'Maximales Leben', attackSpeed: 'Angriffstempo', healingPower: 'Heilungswirkung', damage: 'Schadensbonus', critChance: 'Kritische Trefferchance', critDamage: 'Kritischer Schaden', luck: 'Luck', bossDamage: 'Bossschaden', fishingLuck: 'Fishing Luck', diveLuck: 'Dive Luck', pearlBonus: 'Perlenbonus', power: 'Kraft', stamina: 'Ausdauer', maximumHp: 'Ausrüstungs-HP', doubleAttackChance: 'Doppelangriff', tripleAttackChance: 'Dreifachangriff', extraLootChance: 'Zusatzbeute', sushiPreservationChance: 'Sushi-Erhaltung (Altbuffs)', bossDamageReduction: 'Boss-Schadensreduktion', bossDodgeChance: 'Boss-Ausweichen', criticalHealing: 'Krit-Heilung', rareEquipmentLuck: 'Seltene Ausrüstung relativ' };
+export const labels: Record<keyof CharacterStats, string> = { enemyEncounterChance:'Gegnerchance relativ',materialFind:'Materialfund',attackPercent:'Angriffsbonus',experienceBonus:'EXP-Bonus',divineDamage:'Göttlicher Schaden',movementSpeed: 'Bewegungstempo', bossLifeleech: 'Boss-Lebensraub', armor: 'Rüstung', armorPercent: 'Rüstungsbonus', maximumHpPercent: 'Maximales Leben', attackSpeed: 'Angriffstempo', healingPower: 'Heilungswirkung', damage: 'Schadensbonus', critChance: 'Kritische Trefferchance', critDamage: 'Kritischer Schaden', luck: 'Luck', bossDamage: 'Bossschaden', fishingLuck: 'Fishing Luck', diveLuck: 'Dive Luck', pearlBonus: 'Perlenbonus', power: 'Kraft', stamina: 'Ausdauer', maximumHp: 'Ausrüstungs-HP', doubleAttackChance: 'Doppelangriff', tripleAttackChance: 'Dreifachangriff', extraLootChance: 'Zusatzbeute', sushiPreservationChance: 'Sushi-Erhaltung (Altbuffs)', bossDamageReduction: 'Boss-Schadensreduktion', bossDodgeChance: 'Boss-Ausweichen', criticalHealing: 'Krit-Heilung', rareEquipmentLuck: 'Seltene Ausrüstung relativ' };
 export const emptyStats = (): CharacterStats => Object.fromEntries(Object.keys(labels).map(k => [k, 0])) as unknown as CharacterStats;
 export const numberStat = (key: string, value: number) => `${value}${['power', 'stamina', 'maximumHp', 'armor'].includes(key) ? '' : ' %'}`;
 export const statsText = (a: Partial<CharacterStats>) => Object.entries(a).filter(([, v]) => v !== 0).map(([k, v]) => `${v!>0?'+':''}${numberStat(k, v!)} ${labels[k as keyof CharacterStats]}`);
@@ -69,3 +69,5 @@ export function generateItem(id: string, instanceId: string, random: () => numbe
     }
     return item;
 }
+
+

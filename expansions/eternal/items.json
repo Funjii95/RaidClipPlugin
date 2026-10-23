@@ -1,0 +1,291 @@
+[
+  {
+    "id": "eternal_star_hunter_helmet",
+    "name": "Krone des Sternenjägers",
+    "slot": "Helmet",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 230,
+      "Armor": 95,
+      "Luck": 30
+    },
+    "set": "eternal_star_hunter"
+  },
+  {
+    "id": "eternal_star_hunter_chest",
+    "name": "Brustplatte des Urmeers",
+    "slot": "Chest",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 480,
+      "Armor": 170,
+      "PearlBonus": 35
+    },
+    "set": "eternal_star_hunter"
+  },
+  {
+    "id": "eternal_star_hunter_gloves",
+    "name": "Griffe der Tiefenjagd",
+    "slot": "Gloves",
+    "rarity": "Eternal",
+    "stats": {
+      "Power": 175,
+      "CritChance": 28,
+      "FishingLuck": 20
+    },
+    "set": "eternal_star_hunter"
+  },
+  {
+    "id": "eternal_star_hunter_boots",
+    "name": "Stiefel der Strömungsspur",
+    "slot": "Boots",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 220,
+      "BossDodgeChance": 28,
+      "DiveLuck": 25
+    },
+    "set": "eternal_star_hunter"
+  },
+  {
+    "id": "eternal_star_hunter_ring",
+    "name": "Ring des Glücksstroms",
+    "slot": "Ring1",
+    "rarity": "Eternal",
+    "stats": {
+      "Power": 130,
+      "Luck": 40,
+      "MaterialFind": 25
+    },
+    "set": "eternal_star_hunter"
+  },
+  {
+    "id": "eternal_star_hunter_amulet",
+    "name": "Amulett des ewigen Fangs",
+    "slot": "Amulet",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 300,
+      "BossDamage": 35,
+      "FishingLuck": 35
+    },
+    "set": "eternal_star_hunter"
+  },
+  {
+    "id": "eternal_tide_blessing_helmet",
+    "name": "Diadem des Gezeitensegens",
+    "slot": "Helmet",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 320,
+      "Armor": 100,
+      "HealingPower": 35
+    },
+    "set": "eternal_tide_blessing"
+  },
+  {
+    "id": "eternal_tide_blessing_chest",
+    "name": "Gewand der ewigen Heilflut",
+    "slot": "Chest",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 620,
+      "Armor": 190,
+      "BossDamageReduction": 25
+    },
+    "set": "eternal_tide_blessing"
+  },
+  {
+    "id": "eternal_tide_blessing_gloves",
+    "name": "Hände der sanften Strömung",
+    "slot": "Gloves",
+    "rarity": "Eternal",
+    "stats": {
+      "Power": 145,
+      "BossLifeleech": 28,
+      "AttackSpeed": 25
+    },
+    "set": "eternal_tide_blessing"
+  },
+  {
+    "id": "eternal_tide_blessing_boots",
+    "name": "Stiefel des lebenden Wassers",
+    "slot": "Boots",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 300,
+      "BossDodgeChance": 25,
+      "HealingPower": 30
+    },
+    "set": "eternal_tide_blessing"
+  },
+  {
+    "id": "eternal_tide_blessing_ring",
+    "name": "Ring des Heilbrunnens",
+    "slot": "Ring1",
+    "rarity": "Eternal",
+    "stats": {
+      "Power": 120,
+      "CritChance": 25,
+      "BossLifeleech": 25
+    },
+    "set": "eternal_tide_blessing"
+  },
+  {
+    "id": "eternal_tide_blessing_amulet",
+    "name": "Amulett des Ozeanherzens",
+    "slot": "Amulet",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 420,
+      "HealingPower": 40,
+      "BossDamage": 35
+    },
+    "set": "eternal_tide_blessing"
+  },
+  {
+    "id": "eternal_primordial_wrath_helmet",
+    "name": "Helm des ewigen Zorns",
+    "slot": "Helmet",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 210,
+      "Armor": 100,
+      "CritChance": 35
+    },
+    "set": "eternal_primordial_wrath"
+  },
+  {
+    "id": "eternal_primordial_wrath_chest",
+    "name": "Panzer der Urtiefe",
+    "slot": "Chest",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 440,
+      "Armor": 160,
+      "BossDamage": 50
+    },
+    "set": "eternal_primordial_wrath"
+  },
+  {
+    "id": "eternal_primordial_wrath_gloves",
+    "name": "Klauen des Vernichters",
+    "slot": "Gloves",
+    "rarity": "Eternal",
+    "stats": {
+      "Power": 240,
+      "CritDamage": 45,
+      "DoubleAttackChance": 25
+    },
+    "set": "eternal_primordial_wrath"
+  },
+  {
+    "id": "eternal_primordial_wrath_boots",
+    "name": "Schritte des Untergangs",
+    "slot": "Boots",
+    "rarity": "Eternal",
+    "stats": {
+      "MaximumHp": 240,
+      "AttackSpeed": 35,
+      "CritDamage": 30
+    },
+    "set": "eternal_primordial_wrath"
+  },
+  {
+    "id": "eternal_primordial_wrath_ring",
+    "name": "Ring der letzten Flut",
+    "slot": "Ring1",
+    "rarity": "Eternal",
+    "stats": {
+      "Power": 190,
+      "CritChance": 35,
+      "BossDamage": 35
+    },
+    "set": "eternal_primordial_wrath"
+  },
+  {
+    "id": "eternal_primordial_wrath_amulet",
+    "name": "Amulett des Weltenbruchs",
+    "slot": "Amulet",
+    "rarity": "Eternal",
+    "stats": {
+      "Power": 220,
+      "CritDamage": 55,
+      "BossDamage": 50
+    },
+    "set": "eternal_primordial_wrath"
+  },
+  {
+    "id": "divine_infinity_helmet",
+    "name": "Krone der Unendlichkeit",
+    "slot": "Helmet",
+    "rarity": "Divine",
+    "stats": {
+      "MaximumHp": 5000,
+      "Armor": 500,
+      "Luck": 100
+    },
+    "set": "divine_infinity"
+  },
+  {
+    "id": "divine_infinity_chest",
+    "name": "Rüstung des göttlichen Lichts",
+    "slot": "Chest",
+    "rarity": "Divine",
+    "stats": {
+      "MaximumHp": 15000,
+      "Armor": 2000,
+      "BossDamageReduction": 95
+    },
+    "set": "divine_infinity"
+  },
+  {
+    "id": "divine_infinity_gloves",
+    "name": "Handschuhe der Schöpfung",
+    "slot": "Gloves",
+    "rarity": "Divine",
+    "stats": {
+      "Power": 10000,
+      "CritChance": 100,
+      "DoubleAttackChance": 100
+    },
+    "set": "divine_infinity"
+  },
+  {
+    "id": "divine_infinity_boots",
+    "name": "Stiefel der Transzendenz",
+    "slot": "Boots",
+    "rarity": "Divine",
+    "stats": {
+      "MaximumHp": 5000,
+      "BossDodgeChance": 100,
+      "AttackSpeed": 200
+    },
+    "set": "divine_infinity"
+  },
+  {
+    "id": "divine_infinity_ring",
+    "name": "Ring der ewigen Welten",
+    "slot": "Ring1",
+    "rarity": "Divine",
+    "stats": {
+      "Power": 5000,
+      "CritDamage": 500,
+      "Luck": 100
+    },
+    "set": "divine_infinity"
+  },
+  {
+    "id": "divine_infinity_amulet",
+    "name": "Amulett der Ursprungsquelle",
+    "slot": "Amulet",
+    "rarity": "Divine",
+    "stats": {
+      "MaximumHp": 5000,
+      "FishingLuck": 500,
+      "DiveLuck": 500,
+      "PearlBonus": 500
+    },
+    "set": "divine_infinity"
+  }
+]

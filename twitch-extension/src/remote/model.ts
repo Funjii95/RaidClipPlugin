@@ -1,6 +1,7 @@
 import type {Activity,CharacterStats,CollectorStats,DemoState,InventoryItem,ItemSet,Perk,Rarity,Slot,SushiCategory,SushiRecipe} from '../types';
-export type RecipeView=Omit<SushiRecipe,'activity'|'category'|'bossUses'|'attributes'|'passiveHealing'|'chatHealing'|'bossDamageReduction'|'bossLifeleech'> & Partial<Pick<SushiRecipe,'activity'|'category'|'bossUses'|'attributes'|'passiveHealing'|'chatHealing'|'bossDamageReduction'|'bossLifeleech'>> & {effectsText?:string};
+export type RecipeView=Omit<SushiRecipe,'activity'|'category'|'bossUses'|'attributes'|'passiveHealing'|'chatHealing'|'bossDamageReduction'|'bossLifeleech'> & Partial<Pick<SushiRecipe,'activity'|'category'|'bossUses'|'attributes'|'passiveHealing'|'chatHealing'|'bossDamageReduction'|'bossLifeleech'>> & {effectsText?:string;durationSeconds?:number;allActivities?:boolean};
 export interface RemoteView {
+ zones?:import("../ZonePanel").Zone[];selectedDivingZone?:string;selectedFishingZone?:string;collectorItems?:{Id:string;Name:string;Rarity:number}[];
  perkMaxPurchase?:boolean;itemUpgrade?:import("../UpgradePanel").UpgradeRules;materialCatalog?:import("../UpgradePanel").MaterialDefinition[];
  talentCatalogVersion?:number;talentCatalog?:import("../talents").Talent[];
  loaded:boolean; connection:'loading'|'unauthorized'|'offline'|'disconnected'|'ready'|'readonly'|'error'; message:string;
@@ -17,7 +18,7 @@ const string=(v:any,label:string):string=>{if(typeof v!=='string'||!v)throw Erro
 const number=(v:any,label:string):number=>{if(typeof v!=='number'||!Number.isFinite(v))throw Error(label+' ist ungültig.');return v;};
 const optionalNumber=(v:any)=>typeof v==='number'&&Number.isFinite(v)?v:unknown();
 const enumValue=<T extends string>(v:any,names:readonly T[],label:string):T=>{if(typeof v==='number'&&Number.isInteger(v)&&names[v])return names[v];if(names.includes(v))return v;throw Error(label+' ist unbekannt.');};
-const rarities=['Common','Uncommon','Rare','Epic','Legendary','True','Cursed','Abyss'] as const;
+const rarities=['Common','Uncommon','Rare','Epic','Legendary','True','Cursed','Abyss','Eternal','Divine'] as const;
 const slots=['Weapon','Helmet','Chest','Gloves','Boots','Ring1','Ring2','Amulet'] as const;
 const activities=['Dive','Fishing','Boss'] as const;
 const time=(v:any)=>typeof v==='string'&&Number.isFinite(Date.parse(v))?Date.parse(v):unknown();
@@ -42,7 +43,7 @@ export function emptyRemoteState():DemoState{return {
 export function catalogView(catalog:any):{sets:ItemSet[];recipes:RecipeView[];perks:Record<string,any>} {
  const sets:ItemSet[]=(catalog?.sets??[]).map((s:any)=>({id:string(field(s,'Id'),'Set-ID'),name:string(field(s,'Name'),'Setname'),description:field(s,'Description')??'',demoOnly:false,itemIds:field(s,'ItemIds')??[],bonuses:(field(s,'Bonuses')??[]).map((b:any)=>({pieces:number(field(b,'RequiredPieces'),'Setteile'),description:field(b,'Description')??'',attributes:attributes(field(b,'Attributes'))}))}));
  const recipes:RecipeView[]=(catalog?.recipes??[]).map((r:any)=>({id:string(field(r,'Id'),'Rezept-ID'),name:string(field(r,'Name')??field(r,'DisplayName'),'Rezeptname'),pearlCost:optionalNumber(field(r,'PearlCost')),ingredients:Object.entries(object(field(r,'Ingredients'),'Zutaten')).map(([id,n])=>({fishId:id,name:field((catalog?.fish??[]).find((f:any)=>field(f,'Id')===id),'Name')??id,quantity:number(n,'Zutat')})),
- activity:field(r,'Activity')==null?undefined:enumValue<Activity>(field(r,'Activity'),activities,'Aktivität'),category:field(r,'Category')==null?undefined:enumValue<SushiCategory>(field(r,'Category'),['Offensive','Defensive'],'Sushi-Slot'),bossUses:optionalNumber(field(r,'BossUses')),effectsText:field(r,'Effects'),attributes:field(r,'Attributes')?attributes(field(r,'Attributes')):undefined}));
+ activity:field(r,'Activity')==null?undefined:enumValue<Activity>(field(r,'Activity'),activities,'Aktivität'),category:field(r,'Category')==null?undefined:enumValue<SushiCategory>(field(r,'Category'),['Offensive','Defensive'],'Sushi-Slot'),durationSeconds:optionalNumber(field(r,'DurationSeconds')),allActivities:field(r,'AllActivities')===true,bossUses:optionalNumber(field(r,'BossUses')),effectsText:field(r,'Effects'),attributes:field(r,'Attributes')?attributes(field(r,'Attributes')):undefined}));
  return {sets,recipes,perks:Object.fromEntries((catalog?.perks??[]).map((p:any)=>[string(field(p,'Id'),'Perk-ID'),p]))};
 }
 export function mapProfile(raw:any,catalog:any={}):DemoState {
@@ -65,6 +66,7 @@ export function mapProfile(raw:any,catalog:any={}):DemoState {
  state.remote!.perkMaxPurchase=catalog?.perkMaxPurchase===true;
  const upgrade=catalog?.itemUpgrade;if(upgrade&&upgrade.maximumLevel===9&&Array.isArray(upgrade.bonuses)&&upgrade.bonuses.length===10&&upgrade.costsByRarity&&upgrade.refinement)state.remote!.itemUpgrade=upgrade;
  state.remote!.materialCatalog=catalog?.materialCatalog;
+ state.remote!.zones=catalog?.zones;state.remote!.collectorItems=catalog?.collectorItems;state.remote!.selectedDivingZone=field(rpg,"SelectedDivingZone")??"sunny_lagoon";state.remote!.selectedFishingZone=field(rpg,"SelectedFishingZone")??"sunny_lagoon";
  for(const perk of state.perks){const cost=field(view.perks[perk.id],'Costs')?.[perk.level];if(/^[1-9]\d*$/.test(String(cost))&&Number.isSafeInteger(Number(cost)))state.remote!.perkPrices[perk.id]=Number(cost);}
  for(const [id,stock]of Object.entries(object(field(rpg,'Fish'),'Fische'))){state.fish[id]=number(field(stock,'Quantity'),'Fischanzahl');if(!Number.isSafeInteger(state.fish[id])||state.fish[id]<0)throw Error('Ungültiger Fischvorrat.');}
  state.sushi=counts(field(rpg,'Sushi'),'Sushi');

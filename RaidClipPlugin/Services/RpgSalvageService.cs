@@ -40,6 +40,7 @@ public sealed class RpgSalvageService(ViewerPointStore points, RpgConfig config,
         Effects = item.Effects.Select(e => JsonSerializer.Serialize(e)).OrderBy(e => e, StringComparer.Ordinal).ToArray()
     });
     private static string? Blocked(RpgItem item, RpgProfile profile) =>
+        item.Rarity==ItemRarity.Divine ? "ist göttlich und darf nicht zerlegt werden" :
         profile.Equipment.Values.Contains(item.InstanceId) ? "ist ausgerüstet; zuerst ablegen" :
         item.IsLocked || item.IsFavorite ? "ist gesperrt oder favorisiert" : null;
     private static bool Sensitive(RpgItem item) => item.Rarity >= ItemRarity.Legendary || !string.IsNullOrEmpty(item.SetId);

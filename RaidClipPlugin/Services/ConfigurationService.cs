@@ -465,6 +465,7 @@ public sealed class ConfigurationService
         // Validate legitimate older snapshots after the same additive migration used on load.
         // Missing original rarity entries and invalid existing values still fail validation.
         RpgDepthsExpansion.AddMissing(settings.Minigame.Adventures.Rpg);
+        RpgEternalCatalog.AddMissing(settings.Minigame.Adventures.Rpg);
         ValidateMinigameSettings(settings.Minigame);settings.Minigame.Adventures.Rpg.Validate();
         ValidateMusicRequestSettings(settings.MusicRequests);ValidateDuelSettings(settings.Duel);
     }
@@ -949,6 +950,7 @@ public sealed class ConfigurationService
         RpgLootExpansionCatalog.AddMissing(config.Minigame.Adventures.Rpg.DiveLoot);
         RpgTidesExpansion.AddMissing(config.Minigame.Adventures.Rpg);
         RpgDepthsExpansion.AddMissing(config.Minigame.Adventures.Rpg);
+        RpgEternalCatalog.AddMissing(config.Minigame.Adventures.Rpg);
         foreach(var set in RpgLootExpansionCatalog.Sets())
             if(!config.Minigame.Adventures.Rpg.Sets.Any(s=>s.Id==set.Id))config.Minigame.Adventures.Rpg.Sets.Add(set);
         RpgSushiService.AddMissing(config.Minigame.Adventures.Rpg);

@@ -11,6 +11,22 @@ public sealed class RpgPerkReworkTests:IDisposable
     private sealed class Fixed(int value):IDuelRandom {public int NextInclusive(int min,int max)=>Math.Clamp(value,min,max);}
     private static MinigameConfig Config(){var c=new MinigameConfig{Enabled=true,PointsEnabled=true};c.Adventures.Rpg.Enabled=true;c.Adventures.Rpg.Upgrades.EquipmentDropChances.Keys.ToList().ForEach(k=>c.Adventures.Rpg.Upgrades.EquipmentDropChances[k]=0);c.Adventures.Rpg.Enemies.Enabled=false;return c;}
     public void Dispose(){if(Directory.Exists(dir))Directory.Delete(dir,true);}
+    [Fact] public async Task MaximumPurchaseBuysAffordableRanksOnceAndPreservesTalentPoints()
+    {
+        var c=Config();var store=new ViewerPointStore(dir);await store.AddPointsAsync("u","U",3600,0,default);
+        var svc=new RpgProgressionService(store,c.Adventures.Rpg);
+        Assert.True((await svc.BuyPerkAsync("u","U","max","pearl-scales",default,true)).Success);
+        var p=(await store.GetProfileAsync("u",default)).Entry;Assert.Equal(3,p.Rpg.Perks["pearl-scales"]);Assert.Equal(100,p.Points);
+        await svc.BuyPerkAsync("u","U","max","pearl-scales",default,true);
+        Assert.Equal(100,(await store.GetProfileAsync("u",default)).Entry.Points);
+        Assert.Equal(9,RpgPerkCatalog.Combined(p.Rpg,"reserveFish"));Assert.Equal(0,RpgPerkCatalog.Combined(p.Rpg,"fishPearls"));Assert.Empty(p.Rpg.TalentRanks);
+    }
+    [Fact] public void ExistingDivingRanksNowIncreaseMaterialsWithoutPearlBonus()
+    {
+        var p=new RpgProfile();p.Perks["pearl-chest"]=5;p.TalentRanks["dive-pearls"]=5;
+        Assert.Equal(45,RpgPerkCatalog.Combined(p,"diveMaterials"));Assert.Equal(0,RpgPerkCatalog.Combined(p,"divePearls"));
+        Assert.DoesNotContain(SnapshotProtocol.TalentRules.Catalog,t=>t.Effect is "fishPearls" or "divePearls");
+    }
     [Fact] public async Task SixthPurchaseIsRejectedAfterRestartWithoutSpendingOrChangingTalents()
     {
         var config=Config();var store=new ViewerPointStore(dir);
@@ -48,7 +64,7 @@ public sealed class RpgPerkReworkTests:IDisposable
         var game=new RpgAdventureService(store,config,new Low(),()=>now);
         Assert.False((await game.ExecuteAsync("u","U","bad",RpgActivity.Dive,-1,default)).BossDiscovered);
         Assert.False((await game.ExecuteAsync("u","U","fish",RpgActivity.Fishing,0,default)).BossDiscovered);
-        var dive=await game.ExecuteAsync("u","U","dive",RpgActivity.Dive,100,default);Assert.True(dive.Success);Assert.True(dive.BossDiscovered);
+        var dive=await game.ExecuteAsync("u","U","dive",RpgActivity.Dive,100,default);Assert.True(dive.Success);Assert.False(dive.BossDiscovered);Assert.Equal("mimic",dive.Enemy!.Source);
         now=now.AddHours(1);var replay=await game.ExecuteAsync("u","U","dive",RpgActivity.Dive,100,default);Assert.False(replay.Success);Assert.False(replay.BossDiscovered);
     }
     [Fact] public async Task SharedMimicSurvivesRestartCannotReplaceBossAndPaysOnce()

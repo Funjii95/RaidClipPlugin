@@ -141,21 +141,11 @@ public sealed class RpgItemSystemTests : IDisposable
     [InlineData(100)] [InlineData(10000)]
     public async Task ExtraLootOnlyAddsOneItemRollAndUsesSameLegendaryGate(long stake)
     {
-        var config = new MinigameConfig { Enabled = true, PointsEnabled = true };config.Adventures.Rpg.Upgrades.EquipmentDropChances.Keys.ToList().ForEach(k=>config.Adventures.Rpg.Upgrades.EquipmentDropChances[k]=0);
-        config.Adventures.Rpg.Enabled = true;
-        config.Adventures.Rpg.DiveLoot.BaseDropChance = config.Adventures.Rpg.DiveLoot.MaximumDropChance = 100;
-        config.Adventures.Rpg.DiveLoot.RarityWeights = new() { [ItemRarity.Legendary] = 1 };
-        var store = new ViewerPointStore(_directory);
-        await store.ApplyRpgAsync("42", "Otter", "seed", a => { a.Points = 50000; a.Rpg = Equipped(new() { ExtraLootChance = 10 }); return new(true); }, default);
-        var service = new RpgAdventureService(store, config, new Low(), () => Now);
-        var result = await service.ExecuteAsync("42", "Otter", "dive", RpgActivity.Dive, stake, default);
-        Assert.True(result.Success); Assert.Equal(0, result.Payout);
-        Assert.Equal(50000 - stake, result.Balance);
-        if (stake < 10000) { Assert.Null(result.Item); Assert.Empty(result.AdditionalItems); }
-        else { Assert.Equal(ItemRarity.Legendary, result.Item!.Rarity); Assert.Equal(ItemRarity.Legendary, Assert.Single(result.AdditionalItems).Rarity); }
-        var p = (await store.GetProfileAsync("42", default)).Entry;
-        Assert.Equal(stake < 10000 ? 1 : 3, p.Rpg.Inventory.Count); Assert.Equal(1, p.GamesPlayed);
-        Assert.False((await service.ExecuteAsync("42", "Otter", "dive", RpgActivity.Dive, stake, default)).Success);
+        var config=new MinigameConfig{Enabled=true,PointsEnabled=true};config.Adventures.Rpg.Enabled=true;var area=config.Adventures.Rpg.Zones.Get("sunny_lagoon");area.MimicChance=area.EnemyChance=0;area.ChestChance=100;
+        var store=new ViewerPointStore(_directory);await store.ApplyRpgAsync("42","Otter","seed",a=>{a.Points=50000;a.Rpg=Equipped(new(){ExtraLootChance=10});return new(true);},default);
+        var service=new RpgAdventureService(store,config,new Low(),()=>Now);var result=await service.ExecuteAsync("42","Otter","dive",RpgActivity.Dive,stake,default);
+        Assert.True(result.Success);Assert.Equal(0,result.Stake);Assert.Equal(10,result.Payout);Assert.Equal(50010,result.Balance);Assert.Null(result.Item);Assert.All(result.AdditionalItems,i=>Assert.Null(i.Slot));Assert.Equal(2,result.AdditionalItems.Count);
+        Assert.False((await service.ExecuteAsync("42","Otter","dive",RpgActivity.Dive,stake,default)).Success);
     }
 
     [Fact]

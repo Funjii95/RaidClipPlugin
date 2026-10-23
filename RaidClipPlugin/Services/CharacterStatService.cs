@@ -25,6 +25,7 @@ public static class CharacterStatService
         DateTimeOffset? now = null, long stake = 0)
     {
         var result = new RpgAttributes();
+        var enhanced=RpgEternalCombat.Enhanced(profile);
         foreach (var pair in profile.Perks)
         {
             var definition = config.Perks.SingleOrDefault(p => p.Id == pair.Key);
@@ -50,18 +51,18 @@ public static class CharacterStatService
                 }
             }
         }
-        foreach (var buff in profile.Buffs.Where(b => b.Activity == activity && RpgSushiService.Active(b,now??DateTimeOffset.UtcNow))) Add(result, buff.Attributes);
+        foreach (var buff in profile.Buffs.Where(b => (b.Activity == activity || b.AllActivities) && RpgSushiService.Active(b,now??DateTimeOffset.UtcNow))) Add(result, buff.Attributes);
         foreach (var progress in RpgSetService.Progress(profile, config))
         foreach (var bonus in progress.Set.Bonuses.Where(b => progress.Equipped >= b.RequiredPieces)) Add(result, bonus.Attributes);
-        result.CritChance = Math.Clamp(result.CritChance, 0, Math.Clamp(config.CritChanceCap, 0, 100));
-        result.CritDamage = Math.Clamp(result.CritDamage, 0, Math.Clamp(config.CritDamageCap, 0, 1000));
-        result.Luck = Math.Clamp(result.Luck, 0, Math.Clamp(config.LuckCap, 0, 1000));
-        result.DiveLuck = Math.Clamp(result.DiveLuck, 0, Math.Clamp(config.LuckCap, 0, 1000));
-        result.FishingLuck = Math.Clamp(result.FishingLuck, 0, Math.Clamp(config.LuckCap, 0, 1000));
-        result.Damage = Math.Clamp(result.Damage + result.Power*config.PowerDamagePerPoint, 0, Math.Clamp(config.DamageBonusCap, 0, 1000));
-        result.BossDamage = Math.Clamp(result.BossDamage, 0, Math.Clamp(config.DamageBonusCap, 0, 1000));
-        result.PearlBonus = Math.Clamp(result.PearlBonus, 0, Math.Clamp(config.PearlBonusCap, 0, 15));
-        result.DoubleAttackChance = Math.Clamp(result.DoubleAttackChance, 0, Math.Clamp(config.DoubleAttackChanceCap, 0, 20));
+        result.CritChance = Math.Clamp(result.CritChance, 0, (enhanced?100:Math.Clamp(config.CritChanceCap, 0, 100)));
+        result.CritDamage = Math.Clamp(result.CritDamage, 0, (enhanced?10000:Math.Clamp(config.CritDamageCap, 0, 1000)));
+        result.Luck = Math.Clamp(result.Luck, 0, (enhanced?10000:Math.Clamp(config.LuckCap, 0, 1000)));
+        result.DiveLuck = Math.Clamp(result.DiveLuck, 0, (enhanced?10000:Math.Clamp(config.LuckCap, 0, 1000)));
+        result.FishingLuck = Math.Clamp(result.FishingLuck, 0, (enhanced?10000:Math.Clamp(config.LuckCap, 0, 1000)));
+        result.Damage = Math.Clamp(result.Damage + result.Power*config.PowerDamagePerPoint, 0, (enhanced?10000:Math.Clamp(config.DamageBonusCap, 0, 1000)));
+        result.BossDamage = Math.Clamp(result.BossDamage, 0, (enhanced?10000:Math.Clamp(config.DamageBonusCap, 0, 1000)));
+        result.PearlBonus = Math.Clamp(result.PearlBonus, 0, (enhanced?10000:Math.Clamp(config.PearlBonusCap, 0, 15)));
+        result.DoubleAttackChance = Math.Clamp(result.DoubleAttackChance, 0, (enhanced?100:Math.Clamp(config.DoubleAttackChanceCap, 0, 20)));
         result.TripleAttackChance = Math.Clamp(result.TripleAttackChance, 0, Math.Clamp(config.TripleAttackChanceCap, 0, 5));
         result.ExtraLootChance = Math.Clamp(result.ExtraLootChance+RpgPerkCatalog.Bonus(profile,"extraLoot"), 0, Math.Min(100,Math.Clamp(config.ExtraLootChanceCap, 0, 10)+RpgPerkCatalog.Bonus(profile,"extraLoot")));
         result.SushiPreservationChance = Math.Clamp(result.SushiPreservationChance, 0, Math.Clamp(config.SushiPreservationChanceCap, 0, 20));
@@ -71,7 +72,7 @@ public static class CharacterStatService
         result.BossDodgeChance=Math.Clamp(result.BossDodgeChance,0,100);
         result.CriticalHealing=Math.Clamp(result.CriticalHealing,0,100);
         result.RareEquipmentLuck=Math.Clamp(result.RareEquipmentLuck,0,100);
-        result.MaximumHp = Math.Clamp(EquipmentMaximumHp(profile,config.Health.HpPerStamina,config.Sets),0,config.Health.EquipmentHpCap);
+        result.MaximumHp = Math.Clamp(EquipmentMaximumHp(profile,config.Health.HpPerStamina,config.Sets),0,enhanced?1000000:config.Health.EquipmentHpCap);
         // Permanent talents are applied after equipment caps; probabilities remain bounded.
         result.Damage+=RpgTalentService.Bonus(profile,"damage")+RpgDepthsCombatService.DamageBonus(profile,config,now??DateTimeOffset.UtcNow);
         if(profile.Cooldowns.TryGetValue("perk:otter-rage",out var rageUntil) && (now??DateTimeOffset.UtcNow)<rageUntil)result.Damage+=RpgPerkCatalog.Bonus(profile,"victoryDamage");
@@ -80,11 +81,13 @@ public static class CharacterStatService
         if(activity==RpgActivity.Boss)result.BossDamage+=RpgTalentService.Bonus(profile,"boss");
         if(activity==RpgActivity.Boss && RpgSetCombatService.Active(profile,config.Sets,"abyss_hunter",6) && RpgSetCombatService.Until(profile,"hunter-haste",now??DateTimeOffset.UtcNow)) {result.BossDamage+=18;result.AttackSpeed+=28;}
         if(activity==RpgActivity.Boss && RpgSetCombatService.Active(profile,config.Sets,"coral_oracle",6) && RpgSetCombatService.Until(profile,"coral-damage",now??DateTimeOffset.UtcNow))result.BossDamage+=20;
+        RpgEternalCombat.Dynamic(profile,config,result,now??DateTimeOffset.UtcNow);
         return result;
     }
 
     private static void Add(RpgAttributes a, RpgAttributes b, int count = 1)
     {
+        a.EnemyEncounterChance+=b.EnemyEncounterChance*count;a.MaterialFind+=b.MaterialFind*count;a.AttackPercent+=b.AttackPercent*count;a.ExperienceBonus+=b.ExperienceBonus*count;a.DivineDamage+=b.DivineDamage*count;
         a.MovementSpeed+=b.MovementSpeed*count;a.BossLifeleech+=b.BossLifeleech*count;a.Armor+=b.Armor*count;a.ArmorPercent+=b.ArmorPercent*count;a.MaximumHpPercent+=b.MaximumHpPercent*count;
         a.AttackSpeed+=b.AttackSpeed*count;a.HealingPower+=b.HealingPower*count;
         a.BossDamageReduction+=b.BossDamageReduction*count; a.BossDodgeChance+=b.BossDodgeChance*count;
@@ -102,8 +105,8 @@ public static class CharacterStatService
     {
         if (baseDamage < 0 || rollPercent is < 0 or >= 100) throw new ArgumentOutOfRangeException();
         critical = rollPercent < stats.CritChance;
-        var damage = baseDamage * (1 + stats.Damage / 100) * (1 + stats.BossDamage / 100);
+        var damage = baseDamage * (1+stats.AttackPercent/100) * (1 + stats.Damage / 100) * (1 + stats.BossDamage / 100);
         if (critical) damage *= Math.Clamp(baseCritMultiplier, 1, 10) + stats.CritDamage / 100;
-        return checked((int)decimal.Floor(damage));
+        return (int)Math.Min(int.MaxValue,decimal.Floor(damage));
     }
 }

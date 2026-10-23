@@ -1,9 +1,10 @@
-export type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary' | 'True' | 'Cursed' | 'Abyss';
+export type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary' | 'True' | 'Cursed' | 'Abyss' | 'Eternal' | 'Divine';
 export const slots = ['Weapon', 'Helmet', 'Chest', 'Gloves', 'Boots', 'Ring1', 'Ring2', 'Amulet'] as const;
 export type Slot = typeof slots[number];
 export type Activity = 'Dive' | 'Fishing' | 'Boss';
 export type SushiCategory = 'Offensive' | 'Defensive';
 export interface CharacterStats {
+    enemyEncounterChance?:number;materialFind?:number;attackPercent?:number;experienceBonus?:number;divineDamage?:number;
     movementSpeed?: number;
     bossLifeleech?: number;
     armor?: number;
@@ -238,7 +239,7 @@ export interface DemoState {
     salvageQuote?: SalvageQuote;
     effectCooldowns: Record<string, number>;
 }
-export type Action = {type:'refine';id:string;expectedLevel:number;} | {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
+export type Action = {type:'selectZone';activity:'dive'|'fish';zoneId:string;} | {type:'refine';id:string;expectedLevel:number;} | {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
     type: 'dive';
     stake: number;
 } | {
@@ -287,6 +288,7 @@ export type Action = {type:'refine';id:string;expectedLevel:number;} | {type:'up
 };
 // Remote adapters must verify JWT/channel/identity and authorize intents server-side.
 export interface RpgDataSource {
+    readPlugin?(kind:string,args?:Record<string,string>):Promise<any>;refresh?(force?:boolean):Promise<unknown>;
     selfDeletionStatus?():Promise<{request:import('./live/client').SelfDeletionJob|null}>;
     requestSelfDeletion?(requestId:string):Promise<import('./live/client').SelfDeletionJob>;
     readonly minigames?:import('./minigames/contracts').MinigameClient;
@@ -299,3 +301,4 @@ export interface RpgDataSource {
     requestIdentity?():void;
     dispatch(action: Action): Promise<DemoState>;
 }
+

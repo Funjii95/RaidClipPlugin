@@ -31,13 +31,13 @@ public sealed record SelfDeletionJob(string UserId,Guid RequestId,DateTimeOffset
 
 public static class RpgIntents
 {
-    public static bool IsAdmin(string kind)=>kind is "adminCatalog" or "adminStart" or "adminGrant" or "adminMaterialGrant" or "adminBalance" or "adminHealAll";
-    public static readonly string[] Supported = ["refineItem","upgradeItem","status","inventory","sets","perks","equip","unequip","buyPerk","dive","fish","craft","eat","preview","minigames","casino","bossStatus","bossAttack","itemlock","favorite","salvagePreview","salvageBatch","salvageConfirm","salvageCancel","community","openShells","learnTalent"];
+    public static bool IsAdmin(string kind)=>kind is "adminCatalog" or "adminStart" or "adminGrant" or "adminMaterialGrant" or "adminBalance" or "adminHealAll" or "adminDivine" or "adminZoneDebug";
+    public static readonly string[] Supported = ["compareEquipment","selectZone","refineItem","upgradeItem","status","inventory","sets","perks","equip","unequip","buyPerk","dive","fish","craft","eat","preview","minigames","casino","bossStatus","bossAttack","itemlock","favorite","salvagePreview","salvageBatch","salvageConfirm","salvageCancel","community","openShells","learnTalent"];
     public static string Canonical(RpgIntent intent)
     {
         if(intent.ActionId==Guid.Empty || !(Supported.Contains(intent.Kind)||IsAdmin(intent.Kind)) || intent.Arguments.ValueKind!=JsonValueKind.Object)
             throw new ArgumentException("Unsupported RPG intent.");
-        string[] required=intent.Kind switch {"upgradeItem" or "refineItem"=>["instanceId","expectedLevel"],"learnTalent"=>["talentId","expectedRank","catalogVersion"],"openShells"=>["count"],"equip"=>["instanceId"],"unequip"=>["slot"],"buyPerk"=>["perkId"],"dive" or "fish"=>["stake"],"craft" or "eat"=>["recipeId"],"preview"=>["stake","fishingStake"],"casino"=>["game","stake","choice"],"itemlock" or "favorite"=>["instanceId","enabled"],"salvagePreview"=>["instanceId"],"salvageBatch"=>["selection"],"salvageConfirm" or "salvageCancel"=>["token"],"community"=>["game","operation","eventId","stake","target"],_=>[]};
+        string[] required=intent.Kind switch {"compareEquipment"=>["instanceId","slot"],"selectZone"=>["activity","zoneId"],"adminDivine"=>["operation","targetUserId"],"adminZoneDebug"=>["zoneId","operation","enemyIndex","value"],"upgradeItem" or "refineItem"=>["instanceId","expectedLevel"],"learnTalent"=>["talentId","expectedRank","catalogVersion"],"openShells"=>["count"],"equip"=>["instanceId"],"unequip"=>["slot"],"buyPerk"=>["perkId"],"dive" or "fish"=>["stake"],"craft" or "eat"=>["recipeId"],"preview"=>["stake","fishingStake"],"casino"=>["game","stake","choice"],"itemlock" or "favorite"=>["instanceId","enabled"],"salvagePreview"=>["instanceId"],"salvageBatch"=>["selection"],"salvageConfirm" or "salvageCancel"=>["token"],"community"=>["game","operation","eventId","stake","target"],_=>[]};
         var values=new SortedDictionary<string,string>(StringComparer.Ordinal);
         if(intent.Kind=="adminMaterialGrant")required=["targetUserId","materialId","count"];
         if(intent.Kind=="adminBalance")required=["path","value"];
@@ -51,6 +51,9 @@ public static class RpgIntents
                 throw new ArgumentException("Invalid action arguments.");
         }
         if(required.Any(p=>!values.ContainsKey(p)))throw new ArgumentException("Missing action arguments.");
+        if(intent.Kind=="selectZone"&&values["activity"] is not ("dive" or "fish"))throw new ArgumentException("Invalid zone activity.");
+        if(intent.Kind=="adminDivine"&&(values["operation"] is not ("grantSet" or "remove" or "list")||!System.Text.RegularExpressions.Regex.IsMatch(values["targetUserId"],"^[0-9]{1,25}$")))throw new ArgumentException("Invalid Divine operation.");
+        if(intent.Kind=="adminZoneDebug"&&(values["operation"] is not ("enemy" or "chest" or "mimic" or "simulate" or "eternalNormal" or "eternalElite" or "eternalMimic" or "eternalEndgame" or "chestChance" or "mimicChance" or "enemyChance")||!int.TryParse(values["enemyIndex"],out var index)||index is <0 or >2||!decimal.TryParse(values["value"],System.Globalization.NumberStyles.AllowDecimalPoint,System.Globalization.CultureInfo.InvariantCulture,out var debugValue)||debugValue is <0 or >100))throw new ArgumentException("Invalid zone debug operation.");
         if(intent.Kind=="adminMaterialGrant"&&(!System.Text.RegularExpressions.Regex.IsMatch(values["targetUserId"],"^[0-9]{1,25}$")||!int.TryParse(values["count"],out var matCount)||matCount is <1 or >1000000||matCount.ToString()!=values["count"]))throw new ArgumentException("Invalid material grant.");
         if(intent.Kind=="adminBalance"&&(!decimal.TryParse(values["value"],System.Globalization.NumberStyles.AllowDecimalPoint,System.Globalization.CultureInfo.InvariantCulture,out var balance)||balance is <0 or >1000000000))throw new ArgumentException("Invalid balance value.");
         if(intent.Kind=="adminStart" && values["event"] is not ("boss" or "mimic" or "race" or "heist" or "hotTime"))throw new ArgumentException("Unsupported admin event.");

@@ -1,0 +1,338 @@
+{
+  "eternal_star_hunter_helmet": {
+    "src": "./items/eternal/eternal_star_hunter_helmet.webp",
+    "name": "Krone des Sternenj\u00C3\u00A4gers",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "305029af0e27547f9d86ed2d2d029840effa380e0712b11f0f8cb6657150e5af",
+    "assetSha256": "030d78496e3822e7b383730c9f2ea37f32aff0e827cfe375aceb732f0f63eec6",
+    "crop": [
+      25,
+      335,
+      350,
+      720
+    ]
+  },
+  "eternal_star_hunter_chest": {
+    "src": "./items/eternal/eternal_star_hunter_chest.webp",
+    "name": "Brustplatte des Urmeers",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "305029af0e27547f9d86ed2d2d029840effa380e0712b11f0f8cb6657150e5af",
+    "assetSha256": "371235116e939893a8cba18d3f1944a3be8782d26570cb92146f72052326a2ff",
+    "crop": [
+      396,
+      335,
+      721,
+      720
+    ]
+  },
+  "eternal_star_hunter_gloves": {
+    "src": "./items/eternal/eternal_star_hunter_gloves.webp",
+    "name": "Griffe der Tiefenjagd",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "305029af0e27547f9d86ed2d2d029840effa380e0712b11f0f8cb6657150e5af",
+    "assetSha256": "92cee4c410435042fe8f30cf6c57ba432f6675af61ecabe23396e73d0ded34e0",
+    "crop": [
+      767,
+      335,
+      1092,
+      720
+    ]
+  },
+  "eternal_star_hunter_boots": {
+    "src": "./items/eternal/eternal_star_hunter_boots.webp",
+    "name": "Stiefel der Str\u00C3\u00B6mungsspur",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "305029af0e27547f9d86ed2d2d029840effa380e0712b11f0f8cb6657150e5af",
+    "assetSha256": "b1810e9749987e38056d733e04fef9d9cc0dbaa21995bdbd67f528ef63ad89f5",
+    "crop": [
+      25,
+      845,
+      350,
+      1230
+    ]
+  },
+  "eternal_star_hunter_ring": {
+    "src": "./items/eternal/eternal_star_hunter_ring.webp",
+    "name": "Ring des Gl\u00C3\u00BCcksstroms",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "305029af0e27547f9d86ed2d2d029840effa380e0712b11f0f8cb6657150e5af",
+    "assetSha256": "646d9802b2c96a5c02fc7d21ce0564f7736861952153dee27c8ce9cc3ed679e4",
+    "crop": [
+      396,
+      845,
+      721,
+      1230
+    ]
+  },
+  "eternal_star_hunter_amulet": {
+    "src": "./items/eternal/eternal_star_hunter_amulet.webp",
+    "name": "Amulett des ewigen Fangs",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "305029af0e27547f9d86ed2d2d029840effa380e0712b11f0f8cb6657150e5af",
+    "assetSha256": "849285f547dee0131cb0d81adb0643f8c4f5a07aac4ee6314086ffd681b27440",
+    "crop": [
+      767,
+      845,
+      1092,
+      1230
+    ]
+  },
+  "eternal_tide_blessing_helmet": {
+    "src": "./items/eternal/eternal_tide_blessing_helmet.webp",
+    "name": "Diadem des Gezeitensegens",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "c854647199191fb87bc9518e1c6f773343656fbd326aacb10403063d616d6b77",
+    "assetSha256": "3773d5b0657c756b34433c8fb51ecb30ae416c72ab63cf669fce16a39a80b93d",
+    "crop": [
+      30,
+      335,
+      360,
+      690
+    ]
+  },
+  "eternal_tide_blessing_chest": {
+    "src": "./items/eternal/eternal_tide_blessing_chest.webp",
+    "name": "Gewand der ewigen Heilflut",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "c854647199191fb87bc9518e1c6f773343656fbd326aacb10403063d616d6b77",
+    "assetSha256": "0e91135d1b6f3df4b3e7c9f26adcd4b9a29d78eb59ea9e2ad357a574fdb71ea2",
+    "crop": [
+      396,
+      335,
+      726,
+      690
+    ]
+  },
+  "eternal_tide_blessing_gloves": {
+    "src": "./items/eternal/eternal_tide_blessing_gloves.webp",
+    "name": "H\u00C3\u00A4nde der sanften Str\u00C3\u00B6mung",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "c854647199191fb87bc9518e1c6f773343656fbd326aacb10403063d616d6b77",
+    "assetSha256": "4097657ce760c6461b8c6652566cadda079b38e4f196ea68536801261779c92f",
+    "crop": [
+      762,
+      335,
+      1092,
+      690
+    ]
+  },
+  "eternal_tide_blessing_boots": {
+    "src": "./items/eternal/eternal_tide_blessing_boots.webp",
+    "name": "Stiefel des lebenden Wassers",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "c854647199191fb87bc9518e1c6f773343656fbd326aacb10403063d616d6b77",
+    "assetSha256": "8ca7ec0134b5c23527dba25b1f1fba3a8e4f08e4110e06b555fd1ee461fd8a16",
+    "crop": [
+      30,
+      859,
+      360,
+      1214
+    ]
+  },
+  "eternal_tide_blessing_ring": {
+    "src": "./items/eternal/eternal_tide_blessing_ring.webp",
+    "name": "Ring des Heilbrunnens",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "c854647199191fb87bc9518e1c6f773343656fbd326aacb10403063d616d6b77",
+    "assetSha256": "761b880858060a53ebfc8f5463f3c80f7130449cad9f4f51aec61fa36c589d45",
+    "crop": [
+      396,
+      859,
+      726,
+      1214
+    ]
+  },
+  "eternal_tide_blessing_amulet": {
+    "src": "./items/eternal/eternal_tide_blessing_amulet.webp",
+    "name": "Amulett des Ozeanherzens",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "c854647199191fb87bc9518e1c6f773343656fbd326aacb10403063d616d6b77",
+    "assetSha256": "dc0cef3bd9128f559771e65a43d7b1da9dc12139148526a37d272d2786c9d9fd",
+    "crop": [
+      762,
+      859,
+      1092,
+      1214
+    ]
+  },
+  "eternal_primordial_wrath_helmet": {
+    "src": "./items/eternal/eternal_primordial_wrath_helmet.webp",
+    "name": "Helm des ewigen Zorns",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "628e782b669f004f26ece7b3f27b7d073b2dd57bab10878bf18ccd67ab773cdf",
+    "assetSha256": "f022ce31c14cdfbca67d0551c22a2e36d27e7f11ea5f64bb35101353edf3fc03",
+    "crop": [
+      30,
+      370,
+      350,
+      778
+    ]
+  },
+  "eternal_primordial_wrath_chest": {
+    "src": "./items/eternal/eternal_primordial_wrath_chest.webp",
+    "name": "Panzer der Urtiefe",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "628e782b669f004f26ece7b3f27b7d073b2dd57bab10878bf18ccd67ab773cdf",
+    "assetSha256": "1cf10ebbc8539bf59119f2b362f6dabb194c23680da3cba466621c87713fe773",
+    "crop": [
+      398,
+      370,
+      718,
+      778
+    ]
+  },
+  "eternal_primordial_wrath_gloves": {
+    "src": "./items/eternal/eternal_primordial_wrath_gloves.webp",
+    "name": "Klauen des Vernichters",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "628e782b669f004f26ece7b3f27b7d073b2dd57bab10878bf18ccd67ab773cdf",
+    "assetSha256": "03d96f034d5ab07fc0bf912e9b8e3e7f0046b04fd57ef6d25c4cdc93320b2b30",
+    "crop": [
+      766,
+      370,
+      1086,
+      778
+    ]
+  },
+  "eternal_primordial_wrath_boots": {
+    "src": "./items/eternal/eternal_primordial_wrath_boots.webp",
+    "name": "Schritte des Untergangs",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "628e782b669f004f26ece7b3f27b7d073b2dd57bab10878bf18ccd67ab773cdf",
+    "assetSha256": "574cd08ba67d738cc7e0da020908eb0324c6b1148671f4b085623971cd47e3b5",
+    "crop": [
+      30,
+      902,
+      350,
+      1310
+    ]
+  },
+  "eternal_primordial_wrath_ring": {
+    "src": "./items/eternal/eternal_primordial_wrath_ring.webp",
+    "name": "Ring der letzten Flut",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "628e782b669f004f26ece7b3f27b7d073b2dd57bab10878bf18ccd67ab773cdf",
+    "assetSha256": "7d063750c282b207ec7e46634e413f97e123575de8e2f049b7de8a6165489845",
+    "crop": [
+      398,
+      902,
+      718,
+      1310
+    ]
+  },
+  "eternal_primordial_wrath_amulet": {
+    "src": "./items/eternal/eternal_primordial_wrath_amulet.webp",
+    "name": "Amulett des Weltenbruchs",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "628e782b669f004f26ece7b3f27b7d073b2dd57bab10878bf18ccd67ab773cdf",
+    "assetSha256": "e4c0a2e22974eb0fd3f122b0b80fabbc9fa5dea47585d34ed312fbf2d876adaa",
+    "crop": [
+      766,
+      902,
+      1086,
+      1310
+    ]
+  },
+  "divine_infinity_helmet": {
+    "src": "./items/eternal/divine_infinity_helmet.webp",
+    "name": "Krone der Unendlichkeit",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "09daa3b35e60eb8e0fbdc5d983245bfcfa35ad783feac49390bb4f4b17a41f9e",
+    "assetSha256": "29be0b5b5f10cd50494653b85324947d7ae3d4a72ee006f2051d9059acb8ae4f",
+    "crop": [
+      535,
+      325,
+      680,
+      515
+    ]
+  },
+  "divine_infinity_chest": {
+    "src": "./items/eternal/divine_infinity_chest.webp",
+    "name": "R\u00C3\u00BCstung des g\u00C3\u00B6ttlichen Lichts",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "09daa3b35e60eb8e0fbdc5d983245bfcfa35ad783feac49390bb4f4b17a41f9e",
+    "assetSha256": "81eb062331764e214a31cd3d9d6d87d48fabe86a5185452506ee9719feb574b4",
+    "crop": [
+      700,
+      325,
+      845,
+      515
+    ]
+  },
+  "divine_infinity_gloves": {
+    "src": "./items/eternal/divine_infinity_gloves.webp",
+    "name": "Handschuhe der Sch\u00C3\u00B6pfung",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "09daa3b35e60eb8e0fbdc5d983245bfcfa35ad783feac49390bb4f4b17a41f9e",
+    "assetSha256": "0b2a1bda5fd3a865db40b6bf6b1d47f7ba265ec653a929f0dacf5ad4440a0d58",
+    "crop": [
+      865,
+      325,
+      1010,
+      515
+    ]
+  },
+  "divine_infinity_boots": {
+    "src": "./items/eternal/divine_infinity_boots.webp",
+    "name": "Stiefel der Transzendenz",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "09daa3b35e60eb8e0fbdc5d983245bfcfa35ad783feac49390bb4f4b17a41f9e",
+    "assetSha256": "abd483d38a987befa19785060f77d08294240a17721eaf4f0e24734390e001fa",
+    "crop": [
+      1030,
+      325,
+      1175,
+      515
+    ]
+  },
+  "divine_infinity_ring": {
+    "src": "./items/eternal/divine_infinity_ring.webp",
+    "name": "Ring der ewigen Welten",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "09daa3b35e60eb8e0fbdc5d983245bfcfa35ad783feac49390bb4f4b17a41f9e",
+    "assetSha256": "54479ed68b3d0f626d42d9844e4540f93089f93bb7ca717ebe521531ffbd5656",
+    "crop": [
+      1195,
+      325,
+      1340,
+      515
+    ]
+  },
+  "divine_infinity_amulet": {
+    "src": "./items/eternal/divine_infinity_amulet.webp",
+    "name": "Amulett der Ursprungsquelle",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "09daa3b35e60eb8e0fbdc5d983245bfcfa35ad783feac49390bb4f4b17a41f9e",
+    "assetSha256": "31fe3c303e0f7edb8f5ba80999dd4f0ed3e21a059c24cb59444adb4db0f42584",
+    "crop": [
+      1360,
+      325,
+      1505,
+      515
+    ]
+  }
+}

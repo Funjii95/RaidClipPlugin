@@ -5,6 +5,7 @@ namespace RaidClipPlugin.Services;
 
 public static class RpgSushiService
 {
+    public const int DurationSeconds=3600;
     public static int Uses(RpgRecipe r,RpgConfig c)=>r.BossUses>0?r.BossUses:c.BuffUses;
     public static bool Active(RpgBuff b,DateTimeOffset now) => b.ExpiresAt is {} end ? now<end : b.RemainingUses>0;
     public static IEnumerable<RpgBuff> Defensive(RpgProfile p,DateTimeOffset now) => p.Buffs.Where(b=>b.Category==SushiCategory.Defensive && Active(b,now));
@@ -32,7 +33,7 @@ public static class RpgSushiService
         (r.ChatHealing>0?$"+{r.ChatHealing} HP je gültiger Chat-Heilung. ":"")+
         (r.BossDamageReduction>0?$"{RpgChatPresentation.Number(r.BossDamageReduction)} % weniger großer Boss-Gegenschaden. ":"")+
         (r.BossLifeleech>0?$"{RpgChatPresentation.Number(r.BossLifeleech)} % Lebensraub aus tatsächlichem großen Boss-Schaden, ohne Overkill und ohne festes Heilungscap. ":"")+
-        (r.Category==SushiCategory.Offensive?RpgChatPresentation.Bonuses(r.Attributes):"");
+        RpgChatPresentation.Bonuses(r.Attributes);
     public static string Status(RpgProfile p,DateTimeOffset now) => string.Join(" | ",p.Buffs.Where(b=>Active(b,now)).Select(b=>
         $"{(b.Category==SushiCategory.Defensive?"Defensiv":"Offensiv")}: {b.RecipeId}, {b.RemainingUses} Boss-Teilnahmen"+(b.RemainingUses==0?" (letzter Boss noch aktiv)":"")));
     public static void Participate(RpgProfile p,string bossId,DateTimeOffset end,DateTimeOffset now)
@@ -52,11 +53,12 @@ public static class RpgSushiService
     }
     public static void Upgrade(RpgProfile p)
     {
-        if(p.SushiVersion>=1)return;
+        if(p.SushiVersion>=2)return;
+        p.Buffs.RemoveAll(b=>b.ExpiresAt is {} end && end<=DateTimeOffset.UtcNow || b.RemainingUses<=0 && b.ExpiresAt is null);
         foreach(var b in p.Buffs)
-        {b.EncounterBased=true; if(b.ActivatedAt==default)b.ActivatedAt=DateTimeOffset.UtcNow;}
+        {if(b.ActivatedAt==default)b.ActivatedAt=DateTimeOffset.UtcNow;b.EncounterBased=false;b.ExpiresAt=b.ActivatedAt.AddHours(1);}
         // Existing multi-buff profiles remain intact; their slot stays occupied until all legacy buffs end.
-        p.SushiVersion=1;
+        p.SushiVersion=2;
     }
     public static void Validate(RpgConfig c)
     {
@@ -82,5 +84,6 @@ public static class RpgSushiService
             new RpgRecipe{Id="kugelfisch",DisplayName="Kugelfisch-Sashimi",FishId="pufferfish",FishQuantity=2,PearlCost=700,BossUses=3,Category=SushiCategory.Defensive,Activity=RpgActivity.Boss,BossDamageReduction=15},
             new RpgRecipe{Id="vampir",DisplayName="Vampir-Maki",FishId="vampire_squid",FishQuantity=2,Ingredients=new(){{"vampire_squid",2},{"tuna",1}},PearlCost=750,BossUses=3,Category=SushiCategory.Defensive,Activity=RpgActivity.Boss,BossLifeleech=5}};
         foreach(var r in recipes)if(!c.Recipes.Any(x=>x.Id==r.Id))c.Recipes.Add(r);
+        RpgZoneCuisine.AddMissing(c);
     }
 }

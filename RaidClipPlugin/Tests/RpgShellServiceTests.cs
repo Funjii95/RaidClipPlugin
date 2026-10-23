@@ -110,7 +110,7 @@ public sealed class RpgShellServiceTests : IDisposable
         Assert.True(caught.Success);Assert.Equal(1,caught.ShellsAwarded);
         Assert.Contains("Muschel",RpgChatPresentation.AdventureOutcome(caught,RpgActivity.Fishing));
         var account=(await Store().GetProfileAsync("1001",default)).Entry;
-        Assert.Equal(990,account.Points);Assert.Equal(1,account.Rpg.Materials.Shells);
+        Assert.Equal(1000,account.Points);Assert.Equal(1,account.Rpg.Materials.Shells);
         Assert.False((await service.ExecuteAsync("1001","SYNTHETIC","fish",RpgActivity.Fishing,10,default)).Success);
         Assert.Equal(1,(await store.GetProfileAsync("1001",default)).Entry.Rpg.Materials.Shells);
     }

@@ -6,7 +6,7 @@ import {RemoteMinigameClient} from '../minigames/remote-client';
 export type TwitchHelper={onAuthorized:(callback:(auth:Authorization)=>void)=>void;actions?:{requestIdShare:()=>void}};
 import {PluginRuleError} from './errors';
 import {materialKeys,materialNames} from '../UpgradePanel';
-const actionKinds:Partial<Record<Action['type'],string>>={refine:'refineItem',upgrade:'upgradeItem',learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
+const actionKinds:Partial<Record<Action['type'],string>>={selectZone:'selectZone',refine:'refineItem',upgrade:'upgradeItem',learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
 const canonical=(v:any):any=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k[0].toLowerCase()+k.slice(1),canonical(v)])):v;
 const signature=(v:any)=>JSON.stringify(canonical([field(v,'UserId'),field(v,'Points'),field(v,'Rpg')]));
 // Pearls, fishing stocks and regenerating HP can change while the read-only status
@@ -126,6 +126,7 @@ export class BackendRpgDataSource implements RpgDataSource {
   try {
    let args:Record<string,string>={};
    if(action.type==='dive'||action.type==='fishing'){const n=action.stake??0;if(!Number.isSafeInteger(n)||n<0)throw Error('Ungültiger Einsatz.');args={stake:String(n)};}
+   if(action.type==='selectZone')args={activity:action.activity,zoneId:action.zoneId};
    if(action.type==='openShells'){if(!Number.isSafeInteger(action.count)||action.count<1||action.count>100)throw Error('Bitte 1 bis 100 Muscheln auswählen.');args={count:String(action.count)};}
    if(action.type==='equip')args={instanceId:action.id,slot:action.slot};
    if(action.type==='unequip')args={slot:action.slot};
@@ -209,7 +210,8 @@ export class BackendRpgDataSource implements RpgDataSource {
    if(typeof payout==='number'&&Number.isSafeInteger(payout)&&typeof stake==='number'&&Number.isSafeInteger(stake)){
     const items=[field(data,'Item'),...(field(data,'AdditionalItems')??[])].filter(Boolean).map(inventoryItem);
     const found=field(data,'MaterialRewards');const materialText=found?Object.entries(found).map(([id,n])=>`${n} × ${materialNames[id]??id}`).join(', '):'';
-    this.state.result={kind:action.type==='dive'?'dive':'fishing',pearls:payout,stake,items,message:(field(data,'Outcome')||'Aktion abgeschlossen.')+(materialText?' Materialien: '+materialText:'')};
+    const enemy=field(data,'Enemy');
+    this.state.result={...(enemy?{enemy:{name:field(enemy,'Name'),victory:field(enemy,'Victory'),rounds:field(enemy,'Rounds'),damageTaken:field(enemy,'DamageTaken'),experience:field(enemy,'Experience')}}:{}),kind:action.type==='dive'?'dive':'fishing',pearls:payout,stake,items,message:(field(data,'ZoneName')?field(data,'ZoneName')+' · ':'')+(field(data,'Outcome')||'Aktion abgeschlossen.')+(materialText?' Materialien: '+materialText:'')};
    }
   }
   this.emit();

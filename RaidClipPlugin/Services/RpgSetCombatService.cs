@@ -19,6 +19,7 @@ public static class RpgSetCombatService
     public static void Refresh(RpgProfile p,RpgHealthConfig c,DateTimeOffset now)
     {
         RpgDepthsCombatService.Refresh(p,c,now);
+        RpgEternalCombat.Refresh(p,c,now);
         var sets=c.EquipmentSets;
         bool Has(string id,int n)=>Active(p,sets,id,n);
         foreach(var key in p.Cooldowns.Keys.Where(k=>k.StartsWith("set:")).ToArray())
@@ -60,6 +61,7 @@ public static class RpgSetCombatService
         var amount=(int)Math.Min(int.MaxValue,decimal.Floor(raw*(1+power/100)));
         var missing=Math.Max(0,max-p.Health.CurrentHp.Value);var granted=Math.Min(missing,amount);
         p.Health.CurrentHp+=granted;
+        RpgEternalCombat.Healed(p,c,granted,now);
         if(amount>missing&&Active(p,c.EquipmentSets,"coral_oracle",6))Shield(p,Math.Min(amount-missing,(int)(max*0.18m)),"coral",now);
         return granted;
     }
@@ -89,6 +91,7 @@ public static class RpgSetCombatService
     {
         var haste=Gear(p,"AttackSpeed")+Bonus(p,c.Sets,"AttackSpeed");
         if(Active(p,c.Sets,"abyss_hunter",6)&&Until(p,"hunter-haste",now))haste+=28;
+        var dynamic=new RpgAttributes();RpgEternalCombat.Dynamic(p,c,dynamic,now);haste+=dynamic.AttackSpeed;
         return Math.Max(1,seconds/(1+(double)Math.Clamp(haste,-90,200)/100));
     }
 }

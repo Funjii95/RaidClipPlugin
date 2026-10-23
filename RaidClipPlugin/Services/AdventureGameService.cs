@@ -201,6 +201,10 @@ public sealed partial class AdventureGameService
             {
                 var gameConfig = command == "!fish" ? settings.Fishing : settings.Treasure;
                 long rpgStake = 0;
+                if(parts.Length==2&&settings.Rpg.Zones.Areas.Any(z=>z.Id==parts[1])){
+                    var selected=await RpgZoneService.SelectAsync(_points,settings.Rpg,message.UserId,message.UserName,"zone:"+(string.IsNullOrWhiteSpace(message.Id)?Guid.NewGuid().ToString("N"):message.Id),command=="!fish"?"fish":"dive",parts[1],token);
+                    await Say($"@{message.UserName}, {selected.Error}",token);if(selected.Success)DataChanged?.Invoke();return;
+                }
                 var availablePoints = Math.Max(0, await _points.GetPointsAsync(message.UserId, token) - Math.Max(0, _config.MinimumPoints));
                 var validStake = parts.Length == 1 || parts.Length == 2 &&
                     (parts[1].Equals("all", StringComparison.OrdinalIgnoreCase) ?
@@ -451,6 +455,8 @@ public sealed partial class AdventureGameService
                         return new(false, $"Angriff in {Math.Ceiling((until - clock).TotalSeconds)} Sekunden wieder möglich.");
                     var hit = RpgPassiveService.BossAttack(damage, account.Rpg, _config.Adventures.Rpg, _random, clock);
                     damage = RpgDepthsCombatService.MitigateBoss(hit.Damage,_boss.Config.DamageReductionPercent,hit.Critical,account.Rpg,_config.Adventures.Rpg); critical = hit.Critical; extraHits = hit.ExtraHits;
+                    if(RpgEternalCombat.Judgment(account.Rpg,_config.Adventures.Rpg))damage=_boss.Hp;
+                    RpgEternalCombat.AfterHit(account.Rpg,_config.Adventures.Rpg,Math.Min(hit.DirectDamage,_boss.Hp),clock);
                     if(hpEnabled)
                     {
                         var health=account.Rpg.Health;
@@ -464,6 +470,7 @@ public sealed partial class AdventureGameService
                         lifeleechHealing=RpgSushiService.HealFromBossAttack(damage,_boss.Hp,account.Rpg,_config.Adventures.Rpg.Health,_boss.Id,clock,critical?combatStats.CriticalHealing:0);
                         if(damage<_boss.Hp)
                             receivedDamage=RpgBossDefenseService.Counter(RpgHealthService.CounterDamage(_boss.Config.HitPoints,_config.Adventures.Rpg.Health,_random),account.Rpg,_config.Adventures.Rpg,_random,clock);
+                        receivedDamage=RpgEternalCombat.Receive(receivedDamage,account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
                         health.CurrentHp=Math.Max(0,health.CurrentHp!.Value-receivedDamage);
                         RpgDepthsCombatService.AfterCounter(account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
                         playerDied=health.Defeated=health.CurrentHp==0;
@@ -604,7 +611,7 @@ public sealed partial class AdventureGameService
                         ItemRarity.Epic,_points.HotTime.DropBonus(rpg.HotTime)).Item;
                     if(found is not null) a.Rpg.Inventory.Add(found);
                 }
-                if(victory){RpgDepthsLootService.Award(a.Rpg,rpg,boss.Config.IsMimic?"mimic":"boss",_random,_now(),_points.HotTime.DropBonus(rpg.HotTime),boss.MaximumHp>=rpg.Health.LegendaryThreshold);RpgMaterialLootService.Award(a.Rpg,rpg.Upgrades,boss.Config.IsMimic?"mimic":"boss",_random,_points.HotTime.DropBonus(rpg.HotTime));RpgPerkCatalog.Victory(a.Rpg,_now());legendary=RpgBossLootService.RollLegendary(rpg,_random,_now(),boss.Config.IsMimic);if(legendary is not null)a.Rpg.Inventory.Add(legendary);}
+                if(victory){RpgDepthsLootService.Award(a.Rpg,rpg,boss.Config.IsMimic?"mimic":"boss",_random,_now(),_points.HotTime.DropBonus(rpg.HotTime),boss.MaximumHp>=rpg.Health.LegendaryThreshold,boss.Config.AreaId);RpgEternalLoot.Victory(a.Rpg,rpg,boss.Config.AreaId,boss.Config.EnemyLevel,boss.Config.IsMimic?"mimic":"endgame",true,_random,_now());RpgMaterialLootService.Award(a.Rpg,rpg.Upgrades,boss.Config.IsMimic?"mimic":"boss",_random,_points.HotTime.DropBonus(rpg.HotTime));RpgPerkCatalog.Victory(a.Rpg,_now());legendary=RpgBossLootService.RollLegendary(rpg,_random,_now(),boss.Config.IsMimic);if(legendary is not null)a.Rpg.Inventory.Add(legendary);}
                 return new(true);
             },token);
             if(result.Success && victory)await AnnounceBossRewardAsync(player.Name,credited,token);
@@ -676,6 +683,7 @@ public sealed partial class AdventureGameService
             : Format(race.Config.Adventures.Race.CancelMessage, ("reason", result.Error)), token);
     }
 }
+
 
 
 

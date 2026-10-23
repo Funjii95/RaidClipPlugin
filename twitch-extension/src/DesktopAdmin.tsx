@@ -1,3 +1,4 @@
+import {EternalAdmin} from './EternalAdmin';
 import {MaterialDebug} from './MaterialDebug';
 import {useEffect,useState} from 'react';
 import type {BackendRpgDataSource} from './remote/BackendRpgDataSource';
@@ -28,14 +29,14 @@ export function DesktopAdmin({source,identity}:{source:BackendRpgDataSource;iden
    <p>Angemeldet als Kanalinhaber. Aktionen werden im verbundenen Plugin ausgeführt.</p>
    {!catalog?<button disabled={disabled} onClick={()=>void execute('adminCatalog')}>Adminfunktionen laden</button>:<>
     <MaterialDebug source={source} settings={catalog.settings} materials={catalog.materials} target={target} disabled={disabled}/>
-    <h2>Bosse &amp; Events</h2>
+    <EternalAdmin source={source} target={target} disabled={disabled}/><h2>Bosse &amp; Events</h2>
     <button className="primary" disabled={disabled} onClick={()=>void execute('adminHealAll')}>♥ Alle Spieler heilen (Heal all)</button>
     <label>Rennen: Einsatz in Perlen <input inputMode="numeric" value={stake} onChange={e=>setStake(e.target.value)}/></label>
     <div className="admin-events">{catalog.events.map(event=><button key={event} disabled={disabled} onClick={()=>void execute('adminStart',{event,stake:event==='race'?stake:'0'})}>{eventNames[event]??event} starten</button>)}</div>
     <h2>Items erstellen</h2>
     <button disabled={disabled} onClick={()=>void execute('adminCatalog')}>Itemkatalog aktualisieren</button>
     <label>Items suchen<input value={itemSearch} onChange={e=>setItemSearch(e.target.value)} placeholder="Name oder Item-ID"/></label>
-    <label>Seltenheit filtern<select value={rarityFilter} onChange={e=>{setRarityFilter(e.target.value);setItem('');}}><option value="">Alle Seltenheiten</option><option value="True">Wahr / True</option><option value="Abyss">Abyss</option><option value="Cursed">Cursed / Verflucht</option><option value="Legendary">Legendär</option><option value="Epic">Episch</option><option value="Rare">Selten</option><option value="Uncommon">Ungewöhnlich</option><option value="Common">Gewöhnlich</option></select></label>
+    <label>Seltenheit filtern<select value={rarityFilter} onChange={e=>{setRarityFilter(e.target.value);setItem('');}}><option value="">Alle Seltenheiten</option><option value="Divine">Göttlich / Divine</option><option value="Eternal">Eternal</option><option value="True">Wahr / True</option><option value="Abyss">Abyss</option><option value="Cursed">Cursed / Verflucht</option><option value="Legendary">Legendär</option><option value="Epic">Episch</option><option value="Rare">Selten</option><option value="Uncommon">Ungewöhnlich</option><option value="Common">Gewöhnlich</option></select></label>
     <p>{catalog.items.filter(i=>(!rarityFilter||i.rarity===rarityFilter)&&(i.name+' '+i.id).toLowerCase().includes(itemSearch.toLowerCase())).length} passende Ausrüstungsgegenstände · Neue Wahre Sets, Abyss-Sets, Abyss-Schmuck und Cursed-Items sind enthalten.</p>
     <div className="admin-fields">
      <label>Gegenstand <select value={itemId} disabled={busy} onChange={e=>setItem(e.target.value)}><option value="">Gegenstand auswählen</option>{catalog.items.filter(i=>(!rarityFilter||i.rarity===rarityFilter)&&(i.name+' '+i.id).toLowerCase().includes(itemSearch.toLowerCase())).map(i=><option key={i.id} value={i.id}>{i.name} · {i.rarity}</option>)}</select></label>

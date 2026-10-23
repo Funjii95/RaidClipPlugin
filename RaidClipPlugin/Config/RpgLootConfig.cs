@@ -14,6 +14,7 @@ public sealed class RpgLootConfig
         RpgLootExpansionCatalog.AddMissing(this);
         RpgTidesExpansion.AddMissing(this);
         RpgDepthsExpansion.AddMissing(this);
+        RpgEternalCatalog.AddMissing(this);
     }
     public List<RpgItemEffect> Effects { get; set; } = new()
     {

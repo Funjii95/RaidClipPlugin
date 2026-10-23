@@ -83,6 +83,24 @@ public sealed class RemoteAdminTests:IDisposable
         Assert.All(RpgDepthsExpansion.Items(),i=>Assert.Contains(items,x=>x.GetProperty("id").GetString()==i.ItemId));
         Assert.DoesNotContain(items,x=>x.GetProperty("id").GetString()=="shell");
     }
+    [Fact] public async Task DivineAdministrationIsOwnerOnlyFixedPersistentAndReplaySafe()
+    {
+        await points.SetPointsAsync("42","SYNTHETIC OWNER",1000,0,default);await points.SetPointsAsync("1001","SYNTHETIC VIEWER",1000,0,default);
+        Assert.Equal("admin_required",(await Executor().ExecuteAsync(Envelope("adminDivine",new{operation="grantSet",targetUserId="42"},"1001"),default)).Code);
+        Assert.False((await Executor().ExecuteAsync(Envelope("adminDivine",new{operation="grantSet",targetUserId="1001"}),default)).Success);
+        var request=Envelope("adminDivine",new{operation="grantSet",targetUserId="42"});var first=await Executor().ExecuteAsync(request,default);Assert.True(first.Success,first.Message);Assert.Equal(first,await Executor().ExecuteAsync(request,default));
+        var owner=(await new ViewerPointStore(root).GetProfileAsync("42",default)).Entry;Assert.Equal(6,owner.Rpg.Inventory.Count);Assert.Equal(1000,owner.Points);Assert.All(owner.Rpg.Inventory,i=>Assert.Equal(RaidClipPlugin.Models.ItemRarity.Divine,i.Rarity));
+        var cheat=Envelope("adminGrant",new{itemId="divine_infinity_helmet",targetUserId="42",count="1",roll="custom",stats="{\"Power\":1}"});Assert.False((await Executor().ExecuteAsync(cheat,default)).Success);
+        Assert.True((await Executor().ExecuteAsync(Envelope("adminDivine",new{operation="list",targetUserId="42"}),default)).Success);
+        Assert.True((await Executor().ExecuteAsync(Envelope("adminDivine",new{operation="remove",targetUserId="42"}),default)).Success);Assert.Empty((await new ViewerPointStore(root).GetProfileAsync("42",default)).Entry.Rpg.Inventory);
+    }
+    [Fact] public async Task ZoneDebugIsOwnerOnlyAndDoesNotSaveSimulatedRewards()
+    {
+        await points.SetPointsAsync("42","SYNTHETIC OWNER",1000,0,default);
+        var args=new{zoneId="primordial_throne",operation="mimic",enemyIndex="1",value="0"};
+        Assert.Equal("admin_required",(await Executor().ExecuteAsync(Envelope("adminZoneDebug",args,"1001"),default)).Code);
+        var before=await points.ReadCommittedFileAsync(default);Assert.True((await Executor().ExecuteAsync(Envelope("adminZoneDebug",args),default)).Success);Assert.Equal(before,await points.ReadCommittedFileAsync(default));
+    }
     [Fact] public void AdministrativeHotTimePersistsWithoutPretendingABossVictory()
     {
         var hot=new RpgHotTimeService(root);var cfg=new RpgHotTimeConfig{AutoAfterBoss=false};

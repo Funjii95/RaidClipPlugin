@@ -6,7 +6,7 @@ export const materialKeys:Record<string,keyof MaterialStock>={pearl_dust:'pearlD
 export type UpgradeCost={TargetLevel:number;Pearls:number;Materials:Record<string,number>};
 export type UpgradeRules={maximumLevel:number;bonuses:number[];costsByRarity:Record<string,UpgradeCost[]>;refinement:UpgradeCost};
 export type MaterialDefinition={Id:string;Name:string;Rarity:number;Description:string;Sources:string[]};
-const rarities=['Common','Uncommon','Rare','Epic','Legendary','True','Cursed','Abyss'];
+const rarities=['Common','Uncommon','Rare','Epic','Legendary','True','Cursed','Abyss','Eternal','Divine'];
 export function MaterialInventory({stock,catalog}:{stock?:MaterialStock;catalog?:MaterialDefinition[]}){
  return <div className="cards material-inventory">{(catalog??Object.keys(materialNames).map(Id=>({Id,Name:materialNames[Id],Rarity:1,Description:'',Sources:[]}))).map(m=><article className={`item ${rarities[m.Rarity]}`} key={m.Id}>
   <ItemArtwork id={m.Id} name={m.Name}/><h3>{m.Name}</h3><strong>{stock?(stock[materialKeys[m.Id]]??0).toLocaleString('de-DE'):'–'} im Besitz</strong><p>{m.Description}</p><small>Fundorte: {m.Sources.join(', ')||'Plugin verbinden'}</small>
@@ -14,6 +14,7 @@ export function MaterialInventory({stock,catalog}:{stock?:MaterialStock;catalog?
 }
 export function EquipmentUpgrade({item,rules,stock,points,busy,allowed,onSubmit}:{item?:InventoryItem;rules?:UpgradeRules;stock?:MaterialStock;points?:string;busy:boolean;allowed:(type:Action['type'])=>boolean;onSubmit:(action:Action)=>void}){
  if(!item)return <p>Bitte einen Ausrüstungsgegenstand auswählen.</p>;
+ if(item.rarity==='Divine')return <><h3>{item.name}</h3><ItemArtwork id={item.itemId} name={item.name}/><p>Nicht aufwertbar · Göttliche Ausrüstung besitzt feste Werte.</p></>;
  const level=item.upgradeLevel??0;const refine=level===9;const cost=refine?rules?.refinement:rules?.costsByRarity[item.rarity]?.[level];
  const enoughPearls=!!cost&&!!points&&BigInt(points)>=BigInt(cost.Pearls);
  const enoughMaterials=!!stock&&!!cost&&Object.entries(cost.Materials).every(([id,n])=>(stock[materialKeys[id]]??0)>=n);

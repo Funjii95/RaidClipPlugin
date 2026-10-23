@@ -50,7 +50,7 @@ public static class RpgChatPresentation
         Add(a.Armor,"Rüstung");Add(a.ArmorPercent,"Rüstungsbonus",true);Add(a.MaximumHpPercent,"maximale Lebenspunkte",true);
         Add(a.AttackSpeed,"Angriffstempo",true);Add(a.HealingPower,"Heilungswirkung",true);
         Add(a.MovementSpeed,"Bewegungstempo",true);Add(a.BossLifeleech,"Boss-Lebensraub",true);
-        Add(a.Power,"Kraft");Add(a.Stamina,"Ausdauer");
+        Add(a.AttackPercent,"Angriff",true);Add(a.EnemyEncounterChance,"relative Gegnerchance",true);Add(a.Power,"Kraft");Add(a.Stamina,"Ausdauer");
         Add(a.FishingLuck, "Angelglück"); Add(a.DiveLuck, "Tauchglück");
         Add(a.DoubleAttackChance, "Doppelangriffschance", true); Add(a.TripleAttackChance, "Dreifachangriffschance", true);
         Add(a.ExtraLootChance, "Zusätzlicher Lootwurf", true); Add(a.SushiPreservationChance, "Sushi-Erhaltung", true);
@@ -62,8 +62,8 @@ public static class RpgChatPresentation
         return details.Kind switch
         {
             RpgActionKind.Craft => $"🍣 {user} hat {name} hergestellt! Verbraucht: {(details.IngredientsDescription.Length>0?details.IngredientsDescription:$"{Number(details.FishQuantity)}× {Label(details.FishName)}")} + {Number(details.Cost)} Perlen. Erhalten: {Number(details.Quantity)}× {name}. " +
-                $"Buff nach Aktivierung: {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))}, {Number(details.RemainingUses)} {(details.EncounterBased?"Bosskampfteilnahmen":"gültige "+Activity(details.Activity??RpgActivity.Dive))} (noch nicht aktiviert).",
-            RpgActionKind.ActivateSushi => $"🍣✨ {user} aktiviert {name}! {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))} für die nächsten {Number(details.RemainingUses)} {(details.EncounterBased?"Bosskampfteilnahmen":"gültigen "+Activity(details.Activity??RpgActivity.Dive))}.",
+                $"Buff nach Aktivierung: {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))}, {(details.DurationSeconds>0?"1 Stunde":Number(details.RemainingUses)+" "+(details.EncounterBased?"Bosskampfteilnahmen":"gültige "+Activity(details.Activity??RpgActivity.Dive)))} (noch nicht aktiviert).",
+            RpgActionKind.ActivateSushi => $"🍣✨ {user} aktiviert {name}! {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))} {(details.DurationSeconds>0?"für 1 Stunde":"für die nächsten "+Number(details.RemainingUses)+" "+(details.EncounterBased?"Bosskampfteilnahmen":"gültigen "+Activity(details.Activity??RpgActivity.Dive)))}.",
             RpgActionKind.BuyPerk => $"⭐ {user} verbessert {name} auf Level {Number(details.Level)}! {(details.EffectDescription.Length>0?details.EffectDescription:Bonuses(details.Bonuses))} insgesamt aus diesem Perk. Kosten: {Number(details.Cost)} Perlen." +
                 (balance.HasValue ? $" Stand: {Number(balance.Value)} Perlen." : "") +
                 (details.NextCost.HasValue ? $" Nächstes Upgrade: {Number(details.NextCost.Value)} Perlen." : details.MaximumLevel > 0 && details.Level >= details.MaximumLevel ? " Maximallevel erreicht." : ""),
@@ -80,9 +80,10 @@ public static class RpgChatPresentation
         if (activity == RpgActivity.Fishing)
             return (result.Item is null ? "🎣 Diesmal kein Fisch gefangen." : $"🎣 Gefangen: 1× {Label(ItemName(result.Item))} ({result.Item.Rarity}).") +
                 (result.AdditionalItems.Count > 0 ? " Ausrüstung gefunden: " + string.Join(", ", result.AdditionalItems.Select(i => Label(ItemName(i)))) + "." : "");
+        var areaText=string.IsNullOrEmpty(result.ZoneName)?"":result.ZoneName+" · ";
         var enemyText=result.Enemy is {} enemy ? $"⚔️ {Label(enemy.Name)}: " + (enemy.Victory ? $"besiegt, +{enemy.Experience} EXP" : "Kampf verloren, keine Gegnerbeute/EXP") +
             $", -{enemy.DamageTaken} HP, ❤️ {enemy.CurrentHp}/{enemy.MaximumHp}. " : "";
-        return enemyText + (result.Item?.Rarity == ItemRarity.Legendary ? "💎 " : "🦦 ") + result.Outcome + (result.Item is null ? "" : $" Fund: {Label(ItemName(result.Item))} ({result.Item.Rarity})" +
+        return areaText+enemyText + (result.Item?.Rarity == ItemRarity.Legendary ? "💎 " : "🦦 ") + result.Outcome + (result.Item is null ? "" : $" Fund: {Label(ItemName(result.Item))} ({result.Item.Rarity})" +
             (result.Item.Slot.HasValue ? " – " + Bonuses(result.Item.Attributes) : "") + ".") +
             (result.AdditionalItems.Count > 0 ? " Extra-Fund: " + string.Join(", ", result.AdditionalItems.Select(i => Label(ItemName(i)) + " [" + i.Rarity + "]")) + "." : "");
     }

@@ -5,8 +5,9 @@ namespace RaidClipPlugin.Config;
 
 public sealed class RpgConfig
 {
+    public RpgZoneConfig Zones {get;set;}=new();
     public RpgUpgradeConfig Upgrades {get;set;}=new();
-    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); }
+    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); RpgZoneService.AddMissing(this); }
     public long FreeFishingReward { get; set; } = 40;
     public decimal PowerDamagePerPoint { get; set; } = 1;
     private RpgHealthConfig _health = new();
@@ -15,7 +16,7 @@ public sealed class RpgConfig
     public RpgEnemyConfig Enemies { get; set; } = new();
     public RpgHotTimeConfig HotTime { get; set; } = new();
     public RpgSalvageConfig Salvage { get; set; } = new();
-    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).Concat(RpgTidesExpansion.Sets()).Concat(RpgDepthsExpansion.Sets()).ToList();
+    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).Concat(RpgTidesExpansion.Sets()).Concat(RpgDepthsExpansion.Sets()).Concat(RpgEternalCatalog.Sets()).ToList();
     public decimal BossLootChance { get; set; } = 2;
     public bool BossLegendaryEnabled { get; set; }
     public int BossLegendaryMinimumHp { get; set; } = 1000;
@@ -24,6 +25,7 @@ public sealed class RpgConfig
     public void Validate()
     {
         Upgrades.Validate();
+        Zones.Validate();
         if(PowerDamagePerPoint is <0 or >10)throw new InvalidOperationException("Kraft-Schadensbonus muss zwischen 0 und 10 Prozent je Punkt liegen.");
         Health.Validate();
         Enemies.Validate();
@@ -134,6 +136,7 @@ public sealed class RpgPerkDefinition
 
 public sealed class RpgRecipe
 {
+    public bool AllActivities {get;set;}
     public SushiCategory Category { get; set; }
     public Dictionary<string,int> Ingredients { get; set; } = new();
     public int BossUses { get; set; }

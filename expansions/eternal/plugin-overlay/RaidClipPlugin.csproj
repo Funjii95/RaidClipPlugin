@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>RaidClipPlugin</AssemblyName>
+    <RootNamespace>RaidClipPlugin</RootNamespace>
+    <ApplicationIcon>Assets\RaidClipPlugin.ico</ApplicationIcon>
+    <Version>2.4.0</Version>
+    <FileVersion>2.4.0.0</FileVersion>
+    <AssemblyVersion>2.4.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IsolatedActionsTest)' == 'true'">
+    <DefineConstants>$(DefineConstants);ISOLATED_ACTIONS_TEST</DefineConstants>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <None Remove="Config\config.template.json" />
+    <Compile Remove="Tests\**\*.cs" />
+    <Compile Remove="Tools\RpgEconomySimulation\**\*.cs" />
+    <Compile Remove="Tools\OverlayPreview\**\*.cs" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Content Include="Config\config.template.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\Overlay\otter-events.png" LogicalName="RaidClipPlugin.Overlay.OtterEvents.png" />
+    <EmbeddedResource Include="Assets\Overlay\mimic.png" LogicalName="RaidClipPlugin.Overlay.Mimic.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4022.49" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.9" />
+    <PackageReference Include="obs-websocket-dotnet" Version="5.0.1" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.9" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="../Sync/src/SnapshotProtocol/SnapshotProtocol.csproj" />
+    <ProjectReference Include="../Sync/src/SnapshotDelivery/SnapshotDelivery.csproj" />
+  </ItemGroup>
+  <Target Name="GenerateApplicationIcon" BeforeTargets="PrepareForBuild">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\Tools\GenerateIcon.ps1&quot; -ProjectDirectory &quot;$(MSBuildProjectDirectory)&quot;" />
+  </Target>
+
+
+</Project>
+
+
+
+
+
+
+
+
+
+
+

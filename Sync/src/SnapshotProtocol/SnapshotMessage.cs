@@ -16,7 +16,7 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 6;
+    public const int RpgProjectionVersion = 7;
     public const int MaxMessageBytes = 256 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
@@ -81,7 +81,8 @@ public static class SnapshotValidation
             throw new InvalidDataException("Invalid account identity, balance, date or RPG object.");
         var rpg = Clean(JsonSerializer.SerializeToElement(root["Rpg"]),
             ["SchemaVersion", "LegacyFishImported", "Inventory", "Equipment", "Perks", "Fish", "Sushi", "Buffs", "Cooldowns",
-                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials", "TalentRanks"]);
+                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials", "TalentRanks", "SelectedDivingZone", "SelectedFishingZone"]);
+        foreach(var selected in new[]{"SelectedDivingZone","SelectedFishingZone"})if(rpg.ContainsKey(selected)&&rpg[selected]?.GetValue<string>() is not ("sunny_lagoon" or "sunken_temples" or "shipwreck_graveyard" or "glowing_coral_forest" or "tidal_maelstrom" or "crystal_grotto" or "cursed_depths" or "true_abyss" or "abyss" or "primordial_throne"))throw new InvalidDataException("Invalid selected zone.");
         if (rpg["SchemaVersion"]?.GetValue<int>() != 1) throw new InvalidDataException("Unsupported RPG schema.");
         foreach (var key in new[] { "PlayerLevel", "Experience", "SushiVersion" })
             if (rpg.ContainsKey(key) && (rpg[key] is not JsonValue value ||
@@ -133,14 +134,14 @@ public static class SnapshotValidation
             {
                 var item = Clean(JsonSerializer.SerializeToElement(array[i]), key == "Inventory"
                     ? ["UpgradeLevel", "IsRefined", "InstanceId", "ItemId", "DisplayName", "Description", "IconId", "Rarity", "Kind", "ConsumableRecipeId", "Slot", "Attributes", "FoundAt", "DropWeight", "Collector", "CoreStatsVersion", "SalvageValue", "IsLocked", "IsFavorite", "SetId", "DropActivities", "Effects", "Generation"]
-                    : ["RecipeId", "Activity", "RemainingUses", "Attributes", "Category", "EncounterBased", "ActivatedAt", "LastBossId", "ExpiresAt", "PassiveHealing", "ChatHealing", "BossDamageReduction", "BossLifeleech"]);
+                    : ["RecipeId", "AllActivities", "Activity", "RemainingUses", "Attributes", "Category", "EncounterBased", "ActivatedAt", "LastBossId", "ExpiresAt", "PassiveHealing", "ChatHealing", "BossDamageReduction", "BossLifeleech"]);
                 if (item["Attributes"] is not null)
                 {
                     item["Attributes"] = Clean(JsonSerializer.SerializeToElement(item["Attributes"]),
                         ["Damage", "CritChance", "CritDamage", "Luck", "BossDamage", "PearlBonus", "FishingLuck", "DiveLuck",
                             "Power", "Stamina", "MaximumHp", "DoubleAttackChance", "TripleAttackChance", "ExtraLootChance",
                             "SushiPreservationChance", "BossDamageReduction", "BossDodgeChance", "CriticalHealing", "RareEquipmentLuck",
-                            "MovementSpeed", "BossLifeleech", "Armor", "ArmorPercent", "MaximumHpPercent", "AttackSpeed", "HealingPower"]);
+                            "EnemyEncounterChance", "MaterialFind", "AttackPercent", "ExperienceBonus", "DivineDamage", "MovementSpeed", "BossLifeleech", "Armor", "ArmorPercent", "MaximumHpPercent", "AttackSpeed", "HealingPower"]);
                     foreach (var attribute in (JsonObject)item["Attributes"]!)
                         if (attribute.Value is not JsonValue number || !number.TryGetValue<decimal>(out _))
                             throw new InvalidDataException("Invalid decimal RPG attribute.");
@@ -154,7 +155,7 @@ public static class SnapshotValidation
                     if (field.Key == "Slot" && field.Value is null) continue;
                     if (field.Key is "Rarity" or "Kind" or "Slot" or "Activity" or "RemainingUses")
                     {
-                        var maximum = field.Key switch { "Rarity" => 7, "Kind" or "Activity" => 2, "Slot" => 7, _ => int.MaxValue };
+                        var maximum = field.Key switch { "Rarity" => 9, "Kind" or "Activity" => 2, "Slot" => 7, _ => int.MaxValue };
                         if (field.Value is not JsonValue number || !number.TryGetValue<int>(out var value) || value < 0 || value > maximum)
                             throw new InvalidDataException("Invalid enum or remaining uses.");
                     }
@@ -229,3 +230,4 @@ public static class SnapshotValidation
     }
     private static bool Numeric(string? value) => value is { Length: > 0 and <= 25 } && value.All(c => c is >= '0' and <= '9');
 }
+

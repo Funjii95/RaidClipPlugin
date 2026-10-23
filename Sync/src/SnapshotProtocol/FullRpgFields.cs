@@ -9,7 +9,7 @@ internal static class FullRpgFields
     {
         switch(name)
         {
-            case "IsLocked": case "IsFavorite": case "EncounterBased":
+            case "IsLocked": case "IsFavorite": case "EncounterBased": case "AllActivities":
                 Require(node is JsonValue flag && flag.TryGetValue<bool>(out _)); return true;
             case "CoreStatsVersion": case "DropWeight": case "SalvageValue":
                 Require(name=="SalvageValue" && node is null || node is JsonValue integer && integer.TryGetValue<long>(out var n) && n>=0); return true;

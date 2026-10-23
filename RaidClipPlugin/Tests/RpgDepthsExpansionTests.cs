@@ -99,7 +99,7 @@ public sealed class RpgDepthsExpansionTests:IDisposable
     {
         var c=new RpgConfig();c.Upgrades.EquipmentDropChances["Abyss"]=100;c.Upgrades.EquipmentDropChances["True"]=c.Upgrades.EquipmentDropChances["Cursed"]=0;
         var p=new RpgProfile();RpgDepthsLootService.Award(p,c,"dive",new Low(),now,0,true);RpgDepthsLootService.Award(p,c,"boss",new Low(),now);Assert.Empty(p.Inventory);
-        RpgDepthsLootService.Award(p,c,"boss",new Low(),now,0,true);var item=Assert.Single(p.Inventory);Assert.Equal(ItemRarity.Abyss,item.Rarity);Assert.Null(item.Generation);
+        RpgDepthsLootService.Award(p,c,"boss",new Low(),now,0,true,"abyss");var item=Assert.Single(p.Inventory);Assert.Equal(ItemRarity.Abyss,item.Rarity);Assert.Null(item.Generation);
     }
     [Fact] public void DevourerCriticalsIgnoreFifteenPercentOfExistingBossReduction()
     {
@@ -114,3 +114,4 @@ public sealed class RpgDepthsExpansionTests:IDisposable
         Assert.True((await service.ApplyAsync("42","Synthetic","upgrade",item.InstanceId,0,false,default)).Success);Assert.Equal(900,(await store.GetProfileAsync("42",default)).Entry.Points);
     }
 }
+

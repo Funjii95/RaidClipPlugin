@@ -72,7 +72,8 @@ public sealed class RpgProgressionTests : IDisposable
         RpgProgressionService.ConsumeBuffs(profile.Rpg, RpgActivity.Dive);
         Assert.Equal(3, Assert.Single(profile.Rpg.Buffs).RemainingUses);
         for (var i = 0; i < 3; i++) RpgProgressionService.ConsumeBuffs(profile.Rpg, RpgActivity.Fishing);
-        Assert.Empty(profile.Rpg.Buffs);
+        Assert.Equal(3,Assert.Single(profile.Rpg.Buffs).RemainingUses);
+        Assert.Equal(TimeSpan.FromHours(1),profile.Rpg.Buffs[0].ExpiresAt-profile.Rpg.Buffs[0].ActivatedAt);
     }
 
     [Fact]

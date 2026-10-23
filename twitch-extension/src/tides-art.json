@@ -1,530 +1,920 @@
 {
   "tide_king_helmet": {
-    "src": "./items/tides/tide_king_helmet.svg",
+    "src": "./items/tides/tide_king_helmet.webp",
     "name": "Krone des Gezeitenk\u00F6nigs",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "277562aeaf0f729e5c191cd3b1d8cc96960dd350427e8e7062ed6fe8b04f86a9"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "772594d690cb9c5d7b021de88278f8523c7c57428f5d66b1b0191aaaa110c10f",
+    "crop": [
+      206,
+      44,
+      270,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "tide_king_chest": {
-    "src": "./items/tides/tide_king_chest.svg",
+    "src": "./items/tides/tide_king_chest.webp",
     "name": "Brustpanzer der K\u00F6nigsflut",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "849efa2dba4a54676eec0c0f3df2c7f9ad92bd4a1a8d294914d2f923df374e07"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "4a8b1fbee5636387bc370c3c3baae0aa2b7ce752dc6cee7ffb3f965f6e54eb09",
+    "crop": [
+      273,
+      44,
+      337,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "tide_king_gloves": {
-    "src": "./items/tides/tide_king_gloves.svg",
+    "src": "./items/tides/tide_king_gloves.webp",
     "name": "Krallen der Sturmflut",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "7276622c8ceed792977c133ca2f88142e48d5c56c49dcf227278b3d48915e6b2"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "c3433497e2a2d1228e2a3cd787c6a07126a5095f771dd9cdbefdea282b6a80a8",
+    "crop": [
+      340,
+      44,
+      404,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "tide_king_boots": {
-    "src": "./items/tides/tide_king_boots.svg",
+    "src": "./items/tides/tide_king_boots.webp",
     "name": "Stiefel des Tiefenstroms",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "490529fec2cc1ca0f2fbb933848040462ac3678d68b2cbe7174e1178b2712fc4"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "c701ea3711c53fd84273ec51a5fec44d9e4e88bef748cdf23219dc45574c14be",
+    "crop": [
+      407,
+      44,
+      471,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "tide_king_ring": {
-    "src": "./items/tides/tide_king_ring.svg",
+    "src": "./items/tides/tide_king_ring.webp",
     "name": "Siegel des Gezeitenk\u00F6nigs",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "b21df272a245d6c32b96287a723c9e427807fc0e297c61e41d81f53a4b0923bd"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "930f4d402afe55fcc0458efad6c39412d78164e516d8d97340b007411279711b",
+    "crop": [
+      474,
+      44,
+      538,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "tide_king_amulet": {
-    "src": "./items/tides/tide_king_amulet.svg",
+    "src": "./items/tides/tide_king_amulet.webp",
     "name": "Herz der K\u00F6nigsflut",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "c8a0876818581b1fadde80ba95ece013cc4f55811c77a1c3def1e7a7c8718a31"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "89bdb8b422c00849a8ef615938b86914f03a520cc0b958b53be5b21b110e34f7",
+    "crop": [
+      541,
+      44,
+      605,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "abyss_hunter_helmet": {
-    "src": "./items/tides/abyss_hunter_helmet.svg",
+    "src": "./items/tides/abyss_hunter_helmet.webp",
     "name": "Maske des Abgrundj\u00E4gers",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "34f65293c48f22fac9710d99cd5219dadccd5a21d9eb162310959d7545d2bec5"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "be5c3df2a5dc5d8e88236c98adf8de81d4e2ee29f12e63fd297998fff8faec2d",
+    "crop": [
+      630,
+      45,
+      689,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "abyss_hunter_chest": {
-    "src": "./items/tides/abyss_hunter_chest.svg",
+    "src": "./items/tides/abyss_hunter_chest.webp",
     "name": "Panzer der Leere",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "a69387e3af78f5f381cd0e7fdc6005ca469be6dfe46242c7ccd3c962cb0dcc48"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "951b39f6a863fec42809e7c1466458001459fff38f2e3e2e1aeef94cee5fd397",
+    "crop": [
+      692,
+      45,
+      751,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "abyss_hunter_gloves": {
-    "src": "./items/tides/abyss_hunter_gloves.svg",
+    "src": "./items/tides/abyss_hunter_gloves.webp",
     "name": "Griffe der Finsternis",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "cfbcc33219e0d72bf0f70ea14a3bbd55422824f60fd92e3d5bd0591cacd44324"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "40906e1e71db64b9ad7a636c182576c56b736ff3f3ac8292204344a93ee0f08d",
+    "crop": [
+      754,
+      45,
+      813,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "abyss_hunter_boots": {
-    "src": "./items/tides/abyss_hunter_boots.svg",
+    "src": "./items/tides/abyss_hunter_boots.webp",
     "name": "Schritte des Niemals",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "d5367ba8b9915c3034529c563f2662625818e16571047db91edb1a1176669941"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "e3490750caf59d2f97e2da625bd1fd962b4b9563c85e96f21bab5dca32c85a45",
+    "crop": [
+      816,
+      45,
+      875,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "abyss_hunter_ring": {
-    "src": "./items/tides/abyss_hunter_ring.svg",
+    "src": "./items/tides/abyss_hunter_ring.webp",
     "name": "Siegel der Finsternis",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "7e457ba2e94d1f178f1990993d18bb15f8b1373ed93caaec78a921d51a94a1d5"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "46afbfc51337591ecaa8005a6351704ef293a7f7edf5ef27d2300729172f336e",
+    "crop": [
+      878,
+      45,
+      937,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "abyss_hunter_amulet": {
-    "src": "./items/tides/abyss_hunter_amulet.svg",
+    "src": "./items/tides/abyss_hunter_amulet.webp",
     "name": "Auge des Abgrunds",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "2ca97fa0a73f442201af3bf0ee9e6ea303250c89b52075c89419317ce71227fe"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "b15d2fc170bf21e1a4751b4575574a19ec3e2a27e81df9258e34112baab82aa8",
+    "crop": [
+      940,
+      45,
+      999,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coral_oracle_helmet": {
-    "src": "./items/tides/coral_oracle_helmet.svg",
+    "src": "./items/tides/coral_oracle_helmet.webp",
     "name": "Diadem des Orakels",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "05b931fcd8c81690e3d9506832ca24f8a5ace4ff8c41490828cccdf7f6cd020b"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "333faeef2608d106a5bd893b9ff1515ab1bf662978cc4f4341e7827889d06c96",
+    "crop": [
+      1021,
+      44,
+      1067,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coral_oracle_chest": {
-    "src": "./items/tides/coral_oracle_chest.svg",
+    "src": "./items/tides/coral_oracle_chest.webp",
     "name": "Gewand der lebenden Riffe",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "5ec3dd587a2567205d3e3e674c262a27c1e4fef2e959bd64ea6c218370a05bc0"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "27575badc1373059dd002c2fc769a567230eaa0bd5b03e5205ceedd6c852bdc8",
+    "crop": [
+      1070,
+      44,
+      1116,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coral_oracle_gloves": {
-    "src": "./items/tides/coral_oracle_gloves.svg",
+    "src": "./items/tides/coral_oracle_gloves.webp",
     "name": "H\u00E4nde des Orakels",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "7331879cae9f4c916c037032c30ddedee9ecec93e5d5105126071b2326f6a722"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "8f317f62628470e3bcd36cc29b795d1db31e8d7f312326dea3502829340bf3b9",
+    "crop": [
+      1119,
+      44,
+      1165,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coral_oracle_boots": {
-    "src": "./items/tides/coral_oracle_boots.svg",
+    "src": "./items/tides/coral_oracle_boots.webp",
     "name": "Stiefel der Korallenw\u00E4chter",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "daf985f5d75bf269075f18370dbcb5e69bd8073e0d7691e60103efc00a2ca177"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "3fafa9ceeb37287d3bf99d26b5ffc60b468405ecc11ac48965cd53b88be78e3a",
+    "crop": [
+      1168,
+      44,
+      1214,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coral_oracle_ring": {
-    "src": "./items/tides/coral_oracle_ring.svg",
+    "src": "./items/tides/coral_oracle_ring.webp",
     "name": "Ring des Orakels",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "84e89e79dcf8714c9a674b793d048cb54f7115c24149d560989f65ebee3647e2"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "43ed7f6faa1912e8afd392b44e252d7351e74f89b258ff7f041ec3f07bb9a422",
+    "crop": [
+      1217,
+      44,
+      1263,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coral_oracle_amulet": {
-    "src": "./items/tides/coral_oracle_amulet.svg",
+    "src": "./items/tides/coral_oracle_amulet.webp",
     "name": "Amulett der Gezeitenweisheit",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "ba440bffe57fd459e5f40ada4175bf3b32fee7c425722b920b61462773b085a0"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "b38e19a59b70831678a3172ce2b59dcd0ab3098ca44945ae86566e3bd1ec7b2c",
+    "crop": [
+      1266,
+      44,
+      1312,
+      171
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "current_twin_ring_a": {
-    "src": "./items/tides/current_twin_ring_a.svg",
+    "src": "./items/tides/current_twin_ring_a.webp",
     "name": "Ring der ersten Str\u00F6mung",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "a96c83dc02a038a610395625f24541cfdf76b0f98ef1fa8a3504acfe467a5483"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "78eef5ddb2f46b662cd94c961b08f222b4dd395cdcad66fea51399bbc035a7d6",
+    "assetSha256": "2fc57c107ff55c16aa6bb5cd71befac9f131f8e93eab234e09735002163e6e39",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "current_twin_ring_b": {
-    "src": "./items/tides/current_twin_ring_b.svg",
+    "src": "./items/tides/current_twin_ring_b.webp",
     "name": "Ring der zweiten Str\u00F6mung",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "168187ff1976805b5998c3dfd275207bb9aadf33b08950ff9fa83389f28205c6"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "533649cb4d1f86b5d41bcfe31b9eb358d1490feeac79647a70ae2cb386acea1b",
+    "assetSha256": "3ff872c4415d750469996e9b884c159c503fa4e319bdecd0fb08e2c140db99e6",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "dark_pearl_ring_a": {
-    "src": "./items/tides/dark_pearl_ring_a.svg",
+    "src": "./items/tides/dark_pearl_ring_a.webp",
     "name": "Ring der dunklen Perle",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "711d56be67e11cbae96915992e2841697a30b2564eb0ce5ed1ba89645b371387"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "218eccff9c0c507967e99e9a39b775edfeed1b8750172bacdf202461e20c0078",
+    "assetSha256": "af482226a881c8681d56d392fff1b7a2598606763e2657873e382ff2dae4cb3a",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "dark_pearl_ring_b": {
-    "src": "./items/tides/dark_pearl_ring_b.svg",
+    "src": "./items/tides/dark_pearl_ring_b.webp",
     "name": "Ring der schwarzen Str\u00F6mung",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "fa6a4a175933577397a9c8d9692f93870be8ab1aa348a81ebdf5d0b7828db7cb"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "969f008d3ebf56ca75b6fed9a4fdc60fdefabed48e6e6478cd7c18a98d69a851",
+    "assetSha256": "89628a5d4dd52135961c5d18dd987c78919f3328c7029add1dbfaffe99617b9d",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "moon_tide_ring": {
-    "src": "./items/tides/moon_tide_ring.svg",
+    "src": "./items/tides/moon_tide_ring.webp",
     "name": "Mondflut-Band",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "f16d57006ec92ebfd6044839dd8aeedf43d12e2863cfce087575728aff91b5b5"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "4b8b598bb7ce10277382c51d838014c0eae86bf345e4176a94c2613787b421bf",
+    "assetSha256": "d432a1d8e2ec52344dd71414b2e3bb083e5da1824faf24d870fb1791ded2b5d8",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "moon_tide_amulet": {
-    "src": "./items/tides/moon_tide_amulet.svg",
+    "src": "./items/tides/moon_tide_amulet.webp",
     "name": "Tiefsee-Amulett",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "3bfb29daf9e314c8df7c791a6ad8d5c715ca4b9602ac1747d613beef9e8bd3ee"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "a815c94dda3537b5caa1693bf930739d7a6e225362e1e891e33fa3f68a2a5053",
+    "assetSha256": "dd34c3bb8fc53647613311cf771cefca1e1ffd22c68e593ba41b115e223e4fc1",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "reef_guardian_helmet": {
-    "src": "./items/tides/reef_guardian_helmet.svg",
+    "src": "./items/tides/reef_guardian_helmet.webp",
     "name": "Riffw\u00E4chter-Helm",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "e8ec5164e2a7b982e08121e49f47f6e285806a9672c86994a6539874940b0254"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "9a6621e661bd7c077faf9436bd079ca0d2467c5e7a3b12dd4996e2a1af243240",
+    "crop": [
+      211,
+      714,
+      270,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "reef_guardian_chest": {
-    "src": "./items/tides/reef_guardian_chest.svg",
+    "src": "./items/tides/reef_guardian_chest.webp",
     "name": "Riffw\u00E4chter-Panzer",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "b06491dda3797b06cda0a7938ca399c088d9f025973d2ab27a074cb12d15fdc6"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "f85deb766d3959a5e6d96c42ffc3557911a22950f885a9eb585bf282bb7d6277",
+    "crop": [
+      273,
+      714,
+      332,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "reef_guardian_gloves": {
-    "src": "./items/tides/reef_guardian_gloves.svg",
+    "src": "./items/tides/reef_guardian_gloves.webp",
     "name": "Riffw\u00E4chter-Krallen",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "111595697918953c4e67bd2ff27eb7168e280434f44c45728f044ef1e97ee63f"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "f0c3e1340566ffdb62113d6b66bddb04295c89e2279beac707b829c2b1ac5f12",
+    "crop": [
+      335,
+      714,
+      394,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "reef_guardian_boots": {
-    "src": "./items/tides/reef_guardian_boots.svg",
+    "src": "./items/tides/reef_guardian_boots.webp",
     "name": "Riffw\u00E4chter-Stiefel",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "f0b96c5bfed6ab044eb7797538b8f1b6afbf7d89de5378741ae29a54f962082c"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "8a539b8276cf472772519783642bf7215d550d74dca6c2920bce8073b9d1b2ec",
+    "crop": [
+      397,
+      714,
+      456,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "reef_guardian_ring": {
-    "src": "./items/tides/reef_guardian_ring.svg",
+    "src": "./items/tides/reef_guardian_ring.webp",
     "name": "Riffw\u00E4chter-Ring",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "0d2fdbaf7a1d1df97e133f3ebe1aee431c0cebe2fbb932b536e32468414b98ab"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "f766c6d7e1eeb4307642202f4d8e8509551b15639624bea2d94df499b0317923",
+    "crop": [
+      459,
+      714,
+      518,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "reef_guardian_amulet": {
-    "src": "./items/tides/reef_guardian_amulet.svg",
+    "src": "./items/tides/reef_guardian_amulet.webp",
     "name": "Riffw\u00E4chter-Amulett",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "fe3077408e064bc9d134c61147a945489f07998a6ed75d62e55f9af39628fab6"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "211f1b2b8b4ea56096462b47a93fbeff06fa608fc57d181a308e5f38377c5cb9",
+    "crop": [
+      521,
+      714,
+      580,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "lagoon_runner_helmet": {
-    "src": "./items/tides/lagoon_runner_helmet.svg",
+    "src": "./items/tides/lagoon_runner_helmet.webp",
     "name": "Lagunenl\u00E4ufer-Helm",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "7e2c68b87d2597298fbfa33af1337cf49c5ac2e213f116bbffbfe495533d25c8"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "322013c2e91cc5d9b77c20b08e6e8fde160720739eb45e0a519a266142d81a4d",
+    "crop": [
+      597,
+      714,
+      654,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "lagoon_runner_chest": {
-    "src": "./items/tides/lagoon_runner_chest.svg",
+    "src": "./items/tides/lagoon_runner_chest.webp",
     "name": "Lagunenl\u00E4ufer-Wams",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "d49e7dcbdaaa3b95ca494242bbcf80fb9eeffbd8c36d52e528115c2c1ef89139"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "30381d123a87cae4c2fed0fd2cfc8172cbe0a30b7f01004dd403420d5d769e8a",
+    "crop": [
+      657,
+      714,
+      714,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "lagoon_runner_gloves": {
-    "src": "./items/tides/lagoon_runner_gloves.svg",
+    "src": "./items/tides/lagoon_runner_gloves.webp",
     "name": "Lagunenl\u00E4ufer-Handschuhe",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "83a705af518fa70f6167beae2b644a52b03df6b79e8d468224b205cfdff8b944"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "853c86fbddcff7ed1386aaffea57f6958cc718174c0489c19a6fd18ef6356079",
+    "crop": [
+      717,
+      714,
+      774,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "lagoon_runner_boots": {
-    "src": "./items/tides/lagoon_runner_boots.svg",
+    "src": "./items/tides/lagoon_runner_boots.webp",
     "name": "Lagunenl\u00E4ufer-Stiefel",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "58608574fb4eeaecfb2c7d46c61056f294d592b6064d077bfba639af397fa1b2"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "54a4dae90fefbc333d5e0c08ba2d0be04d345b895e9d32421faec0d81c6a4450",
+    "crop": [
+      777,
+      714,
+      834,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "lagoon_runner_ring": {
-    "src": "./items/tides/lagoon_runner_ring.svg",
+    "src": "./items/tides/lagoon_runner_ring.webp",
     "name": "Lagunenl\u00E4ufer-Ring",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "b0833d6926feac5277aa62edede86634d57fd9d474e8eaeac77f5e9495f43aaa"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "8c37827fffea91b472dbc202be505d4957bedf08409184ff827c34a66e3cf3ac",
+    "crop": [
+      837,
+      714,
+      894,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "lagoon_runner_amulet": {
-    "src": "./items/tides/lagoon_runner_amulet.svg",
+    "src": "./items/tides/lagoon_runner_amulet.webp",
     "name": "Lagunenl\u00E4ufer-Amulett",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "802634be676db889739075b4cb04a8836f3e644db4be2c04d54aacbd7e20dd2a"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "532a4a2e9b585acd13392cdd52279ec03100d5befbe306bad55cd6d8572de568",
+    "crop": [
+      897,
+      714,
+      954,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "shell_speaker_helmet": {
-    "src": "./items/tides/shell_speaker_helmet.svg",
+    "src": "./items/tides/shell_speaker_helmet.webp",
     "name": "Muschelsprecher-Krone",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "96ac6e6914ee9b6c7c0cb55f792f1af238080b916e61c61062a0d819953bb609"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "3f517403159de2d8caecab410f58e8ba19c2b664a10e6bc9c06dac9857dd8e7d",
+    "crop": [
+      968,
+      714,
+      1023,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "shell_speaker_chest": {
-    "src": "./items/tides/shell_speaker_chest.svg",
+    "src": "./items/tides/shell_speaker_chest.webp",
     "name": "Muschelsprecher-Gewand",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "3ddfaa5b686e83dc84ed64cce4594587355695adf2af233ebf0dd3f96caa6f81"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "57a4e197dc03b851b82d681e1257f5b882e26bb93727ea0283519a0b693b5d6b",
+    "crop": [
+      1026,
+      714,
+      1081,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "shell_speaker_gloves": {
-    "src": "./items/tides/shell_speaker_gloves.svg",
+    "src": "./items/tides/shell_speaker_gloves.webp",
     "name": "Muschelsprecher-Handschuhe",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "ee35330973be3f8b108d95accfda891f25697557cef5cbf11591240836d0eaac"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "f1da9971f3da66cde9eaec6e641f57d4ab30f508e8cf6601d991c5efcce58924",
+    "crop": [
+      1084,
+      714,
+      1139,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "shell_speaker_boots": {
-    "src": "./items/tides/shell_speaker_boots.svg",
+    "src": "./items/tides/shell_speaker_boots.webp",
     "name": "Muschelsprecher-Stiefel",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "e809d692b1a94e784229726f01ed83eba954e977817bb6e76fadacb4e48cbe60"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "b0eb5deb3c77187dcd87373625a2fbb5550b16b367b94de388d5586f528aa779",
+    "crop": [
+      1142,
+      714,
+      1197,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "shell_speaker_ring": {
-    "src": "./items/tides/shell_speaker_ring.svg",
+    "src": "./items/tides/shell_speaker_ring.webp",
     "name": "Muschelsprecher-Ring",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "0d50c5cab385f03dca78c010efa07fce174994f370c574f9522aa36a02f03ff3"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "d7c5fb038a142c43705e50dd01658c8635feaea783126058353ff9eb4c793738",
+    "crop": [
+      1200,
+      714,
+      1255,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "shell_speaker_amulet": {
-    "src": "./items/tides/shell_speaker_amulet.svg",
+    "src": "./items/tides/shell_speaker_amulet.webp",
     "name": "Muschelsprecher-Amulett",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "5216644f5e4b83b1a8a267c7f55bea8b41c7632a04382634ab9d3c94aec90e86"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "c018b37b1bdfa0aa41ecab740cc1b1c797a05732b06b755d33e9d87e25824677",
+    "crop": [
+      1258,
+      714,
+      1313,
+      805
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "kelp_collector_helmet": {
-    "src": "./items/tides/kelp_collector_helmet.svg",
+    "src": "./items/tides/kelp_collector_helmet.webp",
     "name": "Tangsammler-Helm",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "e374e9a95360948230ecdc5561d2ce0993f3a40cd3fe23357b65467a719b2396"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "39b6d08519467aa3107be83a9874ead01c4e649c8e451b68eaa1be09c5e8e46c",
+    "crop": [
+      215,
+      892,
+      272,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "kelp_collector_chest": {
-    "src": "./items/tides/kelp_collector_chest.svg",
+    "src": "./items/tides/kelp_collector_chest.webp",
     "name": "Tangsammler-Weste",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "7e6f52aec089f8830749076aaf690859be7184d0101c0c8ef171b62a3d7252e4"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "4834b34e3927737dde8e75f5d4a5ebdf2a5cde7d34fc8bf1913353a89d90a7c2",
+    "crop": [
+      275,
+      892,
+      332,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "kelp_collector_gloves": {
-    "src": "./items/tides/kelp_collector_gloves.svg",
+    "src": "./items/tides/kelp_collector_gloves.webp",
     "name": "Tangsammler-Handschuhe",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "a98f710fbf495f5b7a88f6334bc7e32c9df417e95e4cc872e7f929cc118fdc10"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "ccd2290f804b0042923f1747db401bd1996dd29099e3dc85eea1b45a5ac7f918",
+    "crop": [
+      335,
+      892,
+      392,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "kelp_collector_boots": {
-    "src": "./items/tides/kelp_collector_boots.svg",
+    "src": "./items/tides/kelp_collector_boots.webp",
     "name": "Tangsammler-Stiefel",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "1bc4397c587274cc8c4a8ec368cdeb4800a8ef075b7f3e25f1ee9e87bfd68dd1"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "4f1dcb9b16d7c8648a4238f9f5c1fbb1e61d02cfd9598552c34290a4f64ef232",
+    "crop": [
+      395,
+      892,
+      452,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "kelp_collector_ring": {
-    "src": "./items/tides/kelp_collector_ring.svg",
+    "src": "./items/tides/kelp_collector_ring.webp",
     "name": "Tangsammler-Ring",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "967fbb49015f9da3c093dab646d5b06769e1026fe6cbae2de604e9d044a99414"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "b1dad48566b29305b8e4ea5935c5b7f4ebcf4daa4ca9750d5cfc13a745961e20",
+    "crop": [
+      455,
+      892,
+      512,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "kelp_collector_amulet": {
-    "src": "./items/tides/kelp_collector_amulet.svg",
+    "src": "./items/tides/kelp_collector_amulet.webp",
     "name": "Tangsammler-Amulett",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "ae3507328dc3e48c0049c6d558f821d4eb96a8170731b79e11856c4e83c628eb"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "d1166e5a9641d7db466f6ad7a629e9a42327e600e6b1813ac48b234f9ef39dba",
+    "crop": [
+      515,
+      892,
+      572,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coast_runner_helmet": {
-    "src": "./items/tides/coast_runner_helmet.svg",
+    "src": "./items/tides/coast_runner_helmet.webp",
     "name": "K\u00FCstenl\u00E4ufer-Kapuze",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "914facf656dac6a92302174506f468c07ee9a9814da47c10377ae9354580c203"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "5743881ca6a339cc3cd0e444806a499f326fef368faed90ce269379045d24357",
+    "crop": [
+      597,
+      892,
+      654,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coast_runner_chest": {
-    "src": "./items/tides/coast_runner_chest.svg",
+    "src": "./items/tides/coast_runner_chest.webp",
     "name": "K\u00FCstenl\u00E4ufer-Wams",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "2e09ad152861c104bf2b2d985dbeca91494bd4bdd5c5bdd02005fc3c2e1cf034"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "c286bb907af27d25393e6a903df020f7404519bc270a4efae88cc5ff7e73989b",
+    "crop": [
+      657,
+      892,
+      714,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coast_runner_gloves": {
-    "src": "./items/tides/coast_runner_gloves.svg",
+    "src": "./items/tides/coast_runner_gloves.webp",
     "name": "K\u00FCstenl\u00E4ufer-Handschuhe",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "b01dbf2d7c9a4298abca32f16c8f8837551b963aef911354822d6b44ab3bef7d"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "3b21179db8666bd21f26940e6cbdb8419ce7c89fbcd2340247eaf71827e20b42",
+    "crop": [
+      717,
+      892,
+      774,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coast_runner_boots": {
-    "src": "./items/tides/coast_runner_boots.svg",
+    "src": "./items/tides/coast_runner_boots.webp",
     "name": "K\u00FCstenl\u00E4ufer-Stiefel",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "29e4a3398e2082ddb17b99fe55a82e192c9b117524812fc1e5d1a65ea49fcf56"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "edead402c3d4ad90d559e95588d05e7660296fd32360bce2a0b25e19d5938433",
+    "crop": [
+      777,
+      892,
+      834,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coast_runner_ring": {
-    "src": "./items/tides/coast_runner_ring.svg",
+    "src": "./items/tides/coast_runner_ring.webp",
     "name": "K\u00FCstenl\u00E4ufer-Ring",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "72827a4795c23d368310437b415867ad483ed586ae5fa88e3a756869f09aaf67"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "1cf5326772bd46406c30072e02b9edb3e7ddbc0ae9a31e680650e74dc65f0262",
+    "crop": [
+      837,
+      892,
+      894,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "coast_runner_amulet": {
-    "src": "./items/tides/coast_runner_amulet.svg",
+    "src": "./items/tides/coast_runner_amulet.webp",
     "name": "K\u00FCstenl\u00E4ufer-Amulett",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "b70b7cbb516550ccca14aacfa19a1eb9358658c0879db2c8eaaa08cab3cc1c35"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "b178bd45f54bf704c23d928cfca341698ef0d282a2524a11734961d962f1fc2d",
+    "crop": [
+      897,
+      892,
+      954,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "pearl_digger_helmet": {
-    "src": "./items/tides/pearl_digger_helmet.svg",
+    "src": "./items/tides/pearl_digger_helmet.webp",
     "name": "Perlenbuddler-Helm",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "90956f78ec9ea0f5274382d9f428b5ea4193a3b625da7d7cea6d900fb32af84a"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "d4a2c24a64d195e6be18467e41c9d61dda67ae59c39d0c365644eb09104d32fd",
+    "crop": [
+      967,
+      892,
+      1022,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "pearl_digger_chest": {
-    "src": "./items/tides/pearl_digger_chest.svg",
+    "src": "./items/tides/pearl_digger_chest.webp",
     "name": "Perlenbuddler-Panzer",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "dad58c8965797cb2a825e7dee9a2777c30c68614712ef3e2d8371695d707e9f2"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "0b0b38c623b96adb1c9537ea5fc03946698ad9b069fee8593ca869fa8076e6fe",
+    "crop": [
+      1025,
+      892,
+      1080,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "pearl_digger_gloves": {
-    "src": "./items/tides/pearl_digger_gloves.svg",
+    "src": "./items/tides/pearl_digger_gloves.webp",
     "name": "Perlenbuddler-Handschuhe",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "73761fa4a456170f975dfb9f79978f2d6835771739dfae28134a6de6ec9156a6"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "af4168d85792ac4a8ef2633c8a1c3cb40fbd8197e77cf81783da91fa06fb04a7",
+    "crop": [
+      1083,
+      892,
+      1138,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "pearl_digger_boots": {
-    "src": "./items/tides/pearl_digger_boots.svg",
+    "src": "./items/tides/pearl_digger_boots.webp",
     "name": "Perlenbuddler-Stiefel",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "3c84183ee3fceef22ad1f9d58472dd7dec3b30aa2b010cd71aff75f98aac21d6"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "4a6ee501649e42b5c8812439cc2430bc115ca617363c6fa089327236f9767c46",
+    "crop": [
+      1141,
+      892,
+      1196,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "pearl_digger_ring": {
-    "src": "./items/tides/pearl_digger_ring.svg",
+    "src": "./items/tides/pearl_digger_ring.webp",
     "name": "Perlenbuddler-Ring",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "73730f06f33bf7a068f2349854ac4e074211803242fc9b6b30e17110d2598e58"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "aeb290949b716b8cd194118b06d4fbb39822e6b0f0667fddf9fea6d9cf13f166",
+    "crop": [
+      1199,
+      892,
+      1254,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "pearl_digger_amulet": {
-    "src": "./items/tides/pearl_digger_amulet.svg",
+    "src": "./items/tides/pearl_digger_amulet.webp",
     "name": "Perlenbuddler-Amulett",
     "width": 256,
     "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "429e6dda0a71ca74c5ee7d8ee300a396ff4f500d1f10a200e0a99ad1fa9cddb7"
+    "sourceSha256": "f88dc769cba93053362577ac0898a731616b941408ed3ccc248524df1d470263",
+    "assetSha256": "d84bffc6a2f3fc6e46cd3308bfcc4be1d13cc65571b25b264294ffc3b028557f",
+    "crop": [
+      1257,
+      892,
+      1312,
+      979
+    ],
+    "provenance": "Supplied original item board, isolated equipment artwork"
   },
   "otter_captain_hood": {
-    "src": "./items/tides/otter_captain_hood.svg",
+    "src": "./items/tides/otter_captain_hood.webp",
     "name": "Otterkapit\u00E4ns-Haube",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "05d51ae2724337df177a79a37dfea668e169fc12cd6f9902bdcb573e32eed279"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "7df91ece2cd6c300a757d97f2c858c48cc9c159d4f614c61b3064b0d7007632a",
+    "assetSha256": "0ed0fdb31399ddbce6aecab1248ecc82243e9eb41beb25574c75e9f83907b5b8",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "coral_keeper_vest": {
-    "src": "./items/tides/coral_keeper_vest.svg",
+    "src": "./items/tides/coral_keeper_vest.webp",
     "name": "Korallenh\u00FCter-Wams",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "ce604c1ececdb16ca48c293bfeaa5b39110d6ba66ee714a5d2cf8918e43a44b5"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "6408fd133f7777f8ee65c5c3fac97f33d4be98f04645b596d2dd74d0229cdf74",
+    "assetSha256": "5205554d1ada1fd99cf57e9957f2c9511e110d148c43e6c89a4c0fd8b17ab55a",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "pearl_diver_claws": {
-    "src": "./items/tides/pearl_diver_claws.svg",
+    "src": "./items/tides/pearl_diver_claws.webp",
     "name": "Perlentaucher-Krallen",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "496cf2e8400c40ee8fbe5237afff3b2acde97a1c86dac6c256a3a70d283fc5e1"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "c755dd64e0e522b6b4d435846b218ae4b2c6e33766f000c2fe6836c455914467",
+    "assetSha256": "470b55fd99ef18907ac8d15574992c549e39b6735b30b8a80c0a83f481741d50",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "tide_runner_boots": {
-    "src": "./items/tides/tide_runner_boots.svg",
+    "src": "./items/tides/tide_runner_boots.webp",
     "name": "Gezeitenl\u00E4ufer-Stiefel",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "72f0a10281f0ea1a40a1977f7135c05c95b89082f51665dc3cb57dffe81b284d"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "d3ddd768fc15c5001b1e35cc30ec907e8576e7043fdc81d9981cdf3e5ce3a568",
+    "assetSha256": "a1ca4d292ffaeea489453cacc9b3a8ae66686b512237119c20b7d19afc7a2cfe",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "still_lagoon_ring": {
-    "src": "./items/tides/still_lagoon_ring.svg",
+    "src": "./items/tides/still_lagoon_ring.webp",
     "name": "Ring der stillen Lagune",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "42a0b2a0e7fc6b8c37dbe9d54532e035f80c899a3299ca25e914b1e3211cb8fe"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "19e136c855036cc36e4ec7e8405a93e6d90a48cf607374255f03b31ca4835fe3",
+    "assetSha256": "4d78042c0d48adce6d154e9f73db133335764adaebba416cb90bc695f9c4b4aa",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   },
   "abyss_moon_amulet": {
-    "src": "./items/tides/abyss_moon_amulet.svg",
+    "src": "./items/tides/abyss_moon_amulet.webp",
     "name": "Abyssischer Mondanh\u00E4nger",
-    "width": 256,
-    "height": 256,
-    "sourceSha256": "",
-    "assetSha256": "0ecd8c66fbd9245f04822dbab3907c7006f306a93b00cd07fd854e5dbe86659b"
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "26f0b319b6ab273027c01187dc67fb00319b60e85fd0bec40160584de4d676c0",
+    "assetSha256": "93696810a5ffc1f48ace04ace78f86e7de6c85d2671ac69de1a56242dbd59648",
+    "provenance": "Generated individual underwater equipment illustration; item values unchanged"
   }
 }

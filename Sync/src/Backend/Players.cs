@@ -6,6 +6,8 @@ public sealed record PlayerView(string UserId, string DisplayName, long Points, 
 public sealed class RpgView
 {
     public int SchemaVersion { get; init; }
+    public string SelectedDivingZone {get;init;}="sunny_lagoon";
+    public string SelectedFishingZone {get;init;}="sunny_lagoon";
     public bool LegacyFishImported { get; init; }
     public int? PlayerLevel { get; init; }
     public long? Experience { get; init; }
