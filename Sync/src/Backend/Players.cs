@@ -22,7 +22,7 @@ public sealed class RpgView
     public Dictionary<string, DateTimeOffset> Cooldowns { get; init; } = [];
     // CompletedActions are private plugin idempotency tokens and never exposed.
 }
-public sealed record MaterialView(int Shells, int WhitePearls, int BluePearls, int RedPearls, int StoneChips);
+public sealed record MaterialView(int Shells, int WhitePearls, int BluePearls, int RedPearls, int StoneChips, int PearlDust=0, int LuminousScale=0, int RuneShell=0, int EternalDepthCore=0, int TrueCoralCore=0, int CursedSilk=0, int AbyssShard=0, int ReinforcementCore=0);
 public sealed class HealthView
 {
     public int? SetShieldHp { get; init; }
@@ -122,7 +122,7 @@ public static class SnapshotParser
         if (account.UserId != expectedId || account.Points is null or < 0 || account.UpdatedAt is null ||
             account.Rpg?.SchemaVersion != 1 || string.IsNullOrWhiteSpace(account.DisplayName))
             throw new InvalidDataException("Invalid snapshot identity, balance or schema.");
-        if(account.Rpg.Materials is {} m && (m.Shells<0 || m.WhitePearls<0 || m.BluePearls<0 || m.RedPearls<0 || m.StoneChips<0))throw new InvalidDataException("Invalid material balance.");
+        if(account.Rpg.Materials is {} m && (typeof(MaterialView).GetProperties().Any(p=>(int)p.GetValue(m)!<0)))throw new InvalidDataException("Invalid material balance.");
         return new(account.UserId, account.DisplayName, account.Points.Value, account.Rpg,
             account.UpdatedAt.Value, "plugin-snapshot");
     }

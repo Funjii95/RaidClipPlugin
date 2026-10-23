@@ -1,10 +1,11 @@
+import {MaterialDebug} from './MaterialDebug';
 import {useEffect,useState} from 'react';
 import type {BackendRpgDataSource} from './remote/BackendRpgDataSource';
 import {labels} from './presentation';
 import type {CharacterStats} from './types';
 
 type Identity={userId:string;channelId?:string;connected?:boolean};
-type AdminCatalog={items:{id:string;name:string;rarity:string;slot:string}[];attributes:string[];events:string[]};
+type AdminCatalog={settings?:import("./MaterialDebug").MaterialSettings;materials?:import("./UpgradePanel").MaterialDefinition[];items:{id:string;name:string;rarity:string;slot:string}[];attributes:string[];events:string[]};
 export const isDesktopAdmin=(identity?:Identity)=>!!identity?.connected&&!!identity.channelId&&identity.userId===identity.channelId;
 const eventNames:Record<string,string>={boss:'Boss',mimic:'Mimic-Boss',race:'Otter-Rennen',heist:'Heist',hotTime:'Hot-Time'};
 export function DesktopAdmin({source,identity}:{source:BackendRpgDataSource;identity?:Identity}){
@@ -24,7 +25,9 @@ export function DesktopAdmin({source,identity}:{source:BackendRpgDataSource;iden
   {open&&<div className="admin-content">
    <p>Angemeldet als Kanalinhaber. Aktionen werden im verbundenen Plugin ausgeführt.</p>
    {!catalog?<button disabled={disabled} onClick={()=>void execute('adminCatalog')}>Adminfunktionen laden</button>:<>
+    <MaterialDebug source={source} settings={catalog.settings} materials={catalog.materials} target={target} disabled={disabled}/>
     <h2>Bosse &amp; Events</h2>
+    <button className="primary" disabled={disabled} onClick={()=>void execute('adminHealAll')}>♥ Alle Spieler heilen (Heal all)</button>
     <label>Rennen: Einsatz in Perlen <input inputMode="numeric" value={stake} onChange={e=>setStake(e.target.value)}/></label>
     <div className="admin-events">{catalog.events.map(event=><button key={event} disabled={disabled} onClick={()=>void execute('adminStart',{event,stake:event==='race'?stake:'0'})}>{eventNames[event]??event} starten</button>)}</div>
     <h2>Items erstellen</h2>

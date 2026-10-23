@@ -3,7 +3,7 @@ using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
-public sealed record RpgBossHit(int Damage, bool Critical, int ExtraHits);
+public sealed record RpgBossHit(int Damage, bool Critical, int ExtraHits){public int DirectDamage{get;init;}}
 
 public static class RpgPassiveService
 {
@@ -51,7 +51,8 @@ public static class RpgPassiveService
         var hits = strength > 0 ? 2 : 0;
         if (hits == 0) { strength = TryProc(profile, config, RpgActivity.Boss, RpgEffectTrigger.DoubleAttack, random, now, critical: critical); if (strength > 0) hits = 1; }
         var attack=checked((int)decimal.Floor(baseDamage*(1+stats.Damage/100)*(1+stats.BossDamage/100)));
-        return new(checked(regular + hits * (int)decimal.Floor(regular * strength)+RpgSetCombatService.ProcDamage(attack,critical,hits,profile,config,now)), critical, hits);
+        var direct=checked(regular+hits*(int)decimal.Floor(regular*strength));
+        return new(checked(direct+RpgSetCombatService.ProcDamage(attack,critical,hits,profile,config,now)+RpgDepthsCombatService.AttackProc(attack,critical,hits,profile,config,random,now)),critical,hits){DirectDamage=direct};
     }
 
     public static long RewardPayout(long payout, long stake, decimal bonus)

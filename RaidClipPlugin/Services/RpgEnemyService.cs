@@ -46,6 +46,7 @@ public sealed class RpgEnemyService(IDuelRandom random)
         if(victory)
         {
             RpgPerkCatalog.Victory(profile,now);
+            RpgMaterialLootService.Award(profile,config.Upgrades,"enemy",random,hotTimePercent);
             var sources=CharacterStatService.DiveLuckSources(profile,config);
             loot=new RpgLootService(random).RollEnemy(paidStake,sources.Perks,config.DiveLoot,now,sources.Sushi,sources.Equipment,hotTimePercent,RpgCollectorService.Calculate(profile,config.DiveLoot),stats.RareEquipmentLuck,RpgPerkCatalog.Combined(profile,"loot")).Item;
             if(RpgPerkCatalog.Proc(profile,"enemyLoot",random))extraLoot=new RpgLootService(random).RollEnemy(paidStake,sources.Perks,config.DiveLoot,now,sources.Sushi,sources.Equipment,hotTimePercent,RpgCollectorService.Calculate(profile,config.DiveLoot),stats.RareEquipmentLuck,RpgPerkCatalog.Combined(profile,"loot")).Item;

@@ -18,7 +18,7 @@ public sealed class RpgEnemyTests : IDisposable
     }
     private static RpgConfig Config()
     {
-        var c=new RpgConfig{Enabled=true};foreach(var t in c.Enemies.Tiers)t.HitPoints=1;
+        var c=new RpgConfig{Enabled=true};c.Upgrades.EquipmentDropChances.Keys.ToList().ForEach(k=>c.Upgrades.EquipmentDropChances[k]=0);foreach(var t in c.Enemies.Tiers)t.HitPoints=1;
         c.DiveLoot.BaseDropChance=c.DiveLoot.MaximumDropChance=100;return c;
     }
     public void Dispose(){if(Directory.Exists(_dir))Directory.Delete(_dir,true);}

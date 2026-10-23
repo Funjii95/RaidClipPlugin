@@ -141,7 +141,7 @@ public sealed class RpgItemSystemTests : IDisposable
     [InlineData(100)] [InlineData(10000)]
     public async Task ExtraLootOnlyAddsOneItemRollAndUsesSameLegendaryGate(long stake)
     {
-        var config = new MinigameConfig { Enabled = true, PointsEnabled = true };
+        var config = new MinigameConfig { Enabled = true, PointsEnabled = true };config.Adventures.Rpg.Upgrades.EquipmentDropChances.Keys.ToList().ForEach(k=>config.Adventures.Rpg.Upgrades.EquipmentDropChances[k]=0);
         config.Adventures.Rpg.Enabled = true;
         config.Adventures.Rpg.DiveLoot.BaseDropChance = config.Adventures.Rpg.DiveLoot.MaximumDropChance = 100;
         config.Adventures.Rpg.DiveLoot.RarityWeights = new() { [ItemRarity.Legendary] = 1 };

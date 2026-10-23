@@ -1,3 +1,4 @@
+import {MaterialInventory,EquipmentUpgrade,materialNames} from './UpgradePanel';
 import {PerkPanel} from './PerkPanel';
 import {TalentTree} from './TalentTree';
 import { useEffect, useState, useRef } from "react";
@@ -30,6 +31,7 @@ const tabs = [
     "Boss",
     "Kochen",
     "Perlen-Minispiele",
+    "Aufwertungs-Materialien",
 ];
 const symbols = [
     "otter",
@@ -42,6 +44,7 @@ const symbols = [
     "boss",
     "cook",
     "pearl",
+    "bag",
 ] as const;
 const time = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:DemoPresentation;minigameClient?:MinigameClient}) {
@@ -60,11 +63,6 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
     const upgradeDialog=useRef<HTMLDialogElement>(null);
     const [upgradeItem,setUpgradeItem]=useState<string|null>(null);
     const upgrading=state.inventory.find(i=>i.instanceId===upgradeItem);
-    const upgradeRules=state.remote?.itemUpgrade;
-    const upgradeLevel=upgrading?.upgradeLevel??0;
-    const upgradeCost=upgradeRules?.costs[upgradeLevel];
-    const upgradeMaterial=upgradeLevel===6?"weiße":upgradeLevel===7?"blaue":upgradeLevel===8?"rote":null;
-    const materialAvailable=!upgradeMaterial||!!state.materials&&(upgradeLevel===6?state.materials.whitePearls:upgradeLevel===7?state.materials.bluePearls:state.materials.redPearls)>0;
     useEffect(()=>{if(upgradeItem){upgradeDialog.current?.showModal();upgradeDialog.current?.querySelector<HTMLElement>("h2")?.focus();}else upgradeDialog.current?.close();},[upgradeItem]);
     useEffect(() => { if (state.salvageQuote)
         dialog.current?.showModal();
@@ -137,7 +135,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
             {i.rarity} · {i.slot ?? "Fundstück"}
           </small>
         </div>
-        <h3>{i.name}{(i.upgradeLevel??0)>0?` +${i.upgradeLevel}`:""}</h3>
+        <h3>{i.name}{(i.upgradeLevel??0)>0?` +${i.upgradeLevel}`:""}{i.isRefined?" · Veredelt":""}</h3>
         <p>{i.description}</p>
         <ul className="attributes">
           {statsText(i.attributes).map((t) => (<li key={t}>{t}</li>))}
@@ -289,6 +287,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
               </article>
               {(isDemo?minigameClient:source.minigames)?<PearlMinigames client={(isDemo?minigameClient:source.minigames)!}/>:<article><h3>Die Perlen-Spielhalle</h3><p>Für diese Spiele ist noch kein sicherer Backend-Aufruf freigegeben. Dein gespeicherter Perlenstand bleibt unverändert.</p></article>}
             </>}
+            {tab === "Aufwertungs-Materialien" && <>{state.materialFinds&&<p role="status">Materialien erhalten: {Object.entries(state.materialFinds).map(([id,n])=>`${n} × ${materialNames[id]??id}`).join(', ')}</p>}<MaterialInventory stock={state.materials} catalog={state.remote?.materialCatalog}/><h3>Ausrüstung aufwerten</h3><div className="cards">{state.inventory.filter(i=>i.slot).map(itemCard)}</div></>}
             {tab === "Charakter" && (<>
                 <article className="hero">
                   <img src={state.player.avatarUrl} alt="Otter-Magier als Spielillustration"/>
@@ -429,6 +428,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
                 </p>
                 {sets.map((set) => (<article key={set.id}>
                     <h3>🪸 {set.name}</h3>
+                    <div className="set-artwork">{set.itemIds.map(id=><ItemArtwork key={id} id={id} small/>)}</div>
                     <p>{setCount(state, set.id)} / {set.itemIds.length} Teile ausgerüstet</p>
                     <progress max={set.itemIds.length} value={setCount(state, set.id)}/>
                     {set.bonuses.map((b) => (<p className={setCount(state, set.id) >= b.pieces
@@ -578,11 +578,7 @@ export function App({source,demo,minigameClient}:{source:RpgDataSource;demo?:Dem
       </main>
       <dialog ref={upgradeDialog} aria-labelledby="upgrade-heading" onCancel={()=>setUpgradeItem(null)}>
         <h2 id="upgrade-heading" tabIndex={-1}>Ausrüstung aufwerten</h2>
-        <p>{upgrading?.name} · Stufe +{upgradeLevel} / +9</p>
-        <p>Je Stufe +2,5 % additiv auf die ursprünglichen Attribute. Jedes Upgrade gelingt. Spezialeffekte bleiben unverändert.</p>
-        {upgradeRules&&upgradeCost?<><p>Nächste Stufe: +{upgradeLevel+1}</p><p>Kosten: {BigInt(upgradeCost).toLocaleString('de-DE')} Perlen{upgradeMaterial?` + 1 ${upgradeMaterial} Perle`:''}</p>
-        {!materialAvailable&&<p>Die benötigte farbige Perle fehlt.</p>}
-        <button disabled={!allowed('upgrade')||busy||!upgrading||!materialAvailable||!state.remote?.pointsExact||BigInt(state.remote.pointsExact)<BigInt(upgradeCost)} onClick={()=>upgrading&&void run({type:'upgrade',id:upgrading.instanceId,expectedLevel:upgradeLevel})}>{busy?'Wird aufgewertet …':`Jetzt auf +${upgradeLevel+1} aufwerten`}</button></>:<p>{upgradeLevel>=9?'Maximalstufe +9 erreicht.':'Aufwertung wird vom verbundenen Plugin noch nicht angeboten.'}</p>}
+        <EquipmentUpgrade item={upgrading} rules={state.remote?.itemUpgrade} stock={state.materials} points={state.remote?.pointsExact} busy={busy} allowed={allowed} onSubmit={a=>void run(a)}/>
         <p role="status">{message}</p>
         <button onClick={()=>setUpgradeItem(null)}>Schließen</button>
       </dialog>

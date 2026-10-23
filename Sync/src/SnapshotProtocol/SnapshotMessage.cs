@@ -16,7 +16,7 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 5;
+    public const int RpgProjectionVersion = 6;
     public const int MaxMessageBytes = 256 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
@@ -96,10 +96,11 @@ public static class SnapshotValidation
         if (rpg.ContainsKey("Materials"))
         {
             var materials = Clean(JsonSerializer.SerializeToElement(rpg["Materials"]),
-                ["Shells", "WhitePearls", "BluePearls", "RedPearls", "StoneChips"]);
+                ["Shells", "WhitePearls", "BluePearls", "RedPearls", "StoneChips", "PearlDust", "LuminousScale", "RuneShell", "EternalDepthCore", "TrueCoralCore", "CursedSilk", "AbyssShard", "ReinforcementCore"]);
             foreach (var key in new[] {"Shells","WhitePearls","BluePearls","RedPearls","StoneChips"})
                 if (materials[key] is not JsonValue value || !value.TryGetValue<int>(out var count) || count < 0)
                     throw new InvalidDataException("Invalid RPG material balance.");
+            foreach(var field in materials) if(field.Value is not JsonValue v||!v.TryGetValue<int>(out var n)||n<0)throw new InvalidDataException("Invalid material balance.");
             rpg["Materials"] = materials;
         }
         if (rpg.ContainsKey("Health"))
@@ -131,7 +132,7 @@ public static class SnapshotValidation
             for (var i = 0; i < array.Count; i++)
             {
                 var item = Clean(JsonSerializer.SerializeToElement(array[i]), key == "Inventory"
-                    ? ["InstanceId", "ItemId", "DisplayName", "Description", "IconId", "Rarity", "Kind", "ConsumableRecipeId", "Slot", "Attributes", "FoundAt", "DropWeight", "Collector", "CoreStatsVersion", "SalvageValue", "IsLocked", "IsFavorite", "SetId", "DropActivities", "Effects", "Generation"]
+                    ? ["UpgradeLevel", "IsRefined", "InstanceId", "ItemId", "DisplayName", "Description", "IconId", "Rarity", "Kind", "ConsumableRecipeId", "Slot", "Attributes", "FoundAt", "DropWeight", "Collector", "CoreStatsVersion", "SalvageValue", "IsLocked", "IsFavorite", "SetId", "DropActivities", "Effects", "Generation"]
                     : ["RecipeId", "Activity", "RemainingUses", "Attributes", "Category", "EncounterBased", "ActivatedAt", "LastBossId", "ExpiresAt", "PassiveHealing", "ChatHealing", "BossDamageReduction", "BossLifeleech"]);
                 if (item["Attributes"] is not null)
                 {
@@ -139,19 +140,21 @@ public static class SnapshotValidation
                         ["Damage", "CritChance", "CritDamage", "Luck", "BossDamage", "PearlBonus", "FishingLuck", "DiveLuck",
                             "Power", "Stamina", "MaximumHp", "DoubleAttackChance", "TripleAttackChance", "ExtraLootChance",
                             "SushiPreservationChance", "BossDamageReduction", "BossDodgeChance", "CriticalHealing", "RareEquipmentLuck",
-                            "Armor", "ArmorPercent", "MaximumHpPercent", "AttackSpeed", "HealingPower"]);
+                            "MovementSpeed", "BossLifeleech", "Armor", "ArmorPercent", "MaximumHpPercent", "AttackSpeed", "HealingPower"]);
                     foreach (var attribute in (JsonObject)item["Attributes"]!)
                         if (attribute.Value is not JsonValue number || !number.TryGetValue<decimal>(out _))
                             throw new InvalidDataException("Invalid decimal RPG attribute.");
                 }
                 foreach (var field in item.ToArray())
                 {
+                    if(field.Key=="UpgradeLevel") {if(field.Value is not JsonValue v||!v.TryGetValue<int>(out var level)||level is <0 or >9)throw new InvalidDataException("Invalid upgrade level.");continue;}
+                    if(field.Key=="IsRefined") {if(field.Value is not JsonValue v||!v.TryGetValue<bool>(out var refined)||refined&&(item["UpgradeLevel"]?.GetValue<int>()??0)!=9)throw new InvalidDataException("Invalid refinement.");continue;}
                     if (field.Key == "Attributes") continue;
                     if (FullRpgFields.Validate(item, field.Key, field.Value)) continue;
                     if (field.Key == "Slot" && field.Value is null) continue;
                     if (field.Key is "Rarity" or "Kind" or "Slot" or "Activity" or "RemainingUses")
                     {
-                        var maximum = field.Key switch { "Rarity" => 4, "Kind" or "Activity" => 2, "Slot" => 7, _ => int.MaxValue };
+                        var maximum = field.Key switch { "Rarity" => 7, "Kind" or "Activity" => 2, "Slot" => 7, _ => int.MaxValue };
                         if (field.Value is not JsonValue number || !number.TryGetValue<int>(out var value) || value < 0 || value > maximum)
                             throw new InvalidDataException("Invalid enum or remaining uses.");
                     }

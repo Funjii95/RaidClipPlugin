@@ -9,7 +9,7 @@ public static class RpgSetCombatService
     public static bool Active(RpgProfile p,IReadOnlyList<RpgItemSet> sets,string id,int pieces) => sets.Any(s=>s.Id==id &&
         p.Inventory.Where(i=>i.SetId==id && s.ItemIds.Contains(i.ItemId) && p.Equipment.Values.Contains(i.InstanceId)).Select(i=>i.ItemId).Distinct().Count()>=pieces);
     public static decimal Bonus(RpgProfile p,IReadOnlyList<RpgItemSet> sets,string attribute) => sets.Sum(s=>s.Bonuses.Where(b=>Active(p,sets,s.Id,b.RequiredPieces)).Sum(b=>(decimal)typeof(RpgAttributes).GetProperty(attribute)!.GetValue(b.Attributes)!));
-    public static decimal Gear(RpgProfile p,string attribute) => p.Inventory.Where(i=>p.Equipment.Values.Contains(i.InstanceId)).DistinctBy(i=>i.InstanceId).Sum(i=>(decimal)typeof(RpgAttributes).GetProperty(attribute)!.GetValue(i.Attributes)!);
+    public static decimal Gear(RpgProfile p,string attribute) => p.Inventory.Where(i=>p.Equipment.Values.Contains(i.InstanceId)).DistinctBy(i=>i.InstanceId).Sum(i=>(decimal)typeof(RpgAttributes).GetProperty(attribute)!.GetValue(RpgEquipmentUpgradeRules.Effective(i))!);
     public static bool Until(RpgProfile p,string key,DateTimeOffset now)=>p.Cooldowns.TryGetValue("set:"+key,out var end)&&now<end;
     private static bool Ready(RpgProfile p,string key,int seconds,DateTimeOffset now)
     {
@@ -18,6 +18,7 @@ public static class RpgSetCombatService
     }
     public static void Refresh(RpgProfile p,RpgHealthConfig c,DateTimeOffset now)
     {
+        RpgDepthsCombatService.Refresh(p,c,now);
         var sets=c.EquipmentSets;
         bool Has(string id,int n)=>Active(p,sets,id,n);
         foreach(var key in p.Cooldowns.Keys.Where(k=>k.StartsWith("set:")).ToArray())
@@ -31,7 +32,7 @@ public static class RpgSetCombatService
         {p.Health.SetShieldHp=0;p.Health.SetShieldSource="";}
         if(p.Health.CurrentHp is null or <=0)return;
         var max=RpgHealthService.Maximum(p,c);
-        p.Health.SetShieldHp=Math.Clamp(p.Health.SetShieldHp,0,(int)(max*0.18m));
+        p.Health.SetShieldHp=Math.Clamp(p.Health.SetShieldHp,0,(int)(max*(p.Health.SetShieldSource=="true_deep_guardian"?.2m:.18m)));
         if(Has("tide_king_regalia",6)&&p.Cooldowns.ContainsKey("set:tide-regen"))
         {
             var end=p.Cooldowns["set:tide-regen"];
@@ -55,7 +56,7 @@ public static class RpgSetCombatService
     {
         if(p.Health.CurrentHp is null or <0||raw<=0)return 0;
         var max=RpgHealthService.Maximum(p,c);
-        var power=Math.Clamp(Gear(p,"HealingPower")+Bonus(p,c.EquipmentSets,"HealingPower"),0,200);
+        var power=Math.Clamp(Gear(p,"HealingPower")+Bonus(p,c.EquipmentSets,"HealingPower"),-90,200);
         var amount=(int)Math.Min(int.MaxValue,decimal.Floor(raw*(1+power/100)));
         var missing=Math.Max(0,max-p.Health.CurrentHp.Value);var granted=Math.Min(missing,amount);
         p.Health.CurrentHp+=granted;
@@ -88,6 +89,6 @@ public static class RpgSetCombatService
     {
         var haste=Gear(p,"AttackSpeed")+Bonus(p,c.Sets,"AttackSpeed");
         if(Active(p,c.Sets,"abyss_hunter",6)&&Until(p,"hunter-haste",now))haste+=28;
-        return Math.Max(1,seconds/(1+(double)Math.Clamp(haste,0,200)/100));
+        return Math.Max(1,seconds/(1+(double)Math.Clamp(haste,-90,200)/100));
     }
 }

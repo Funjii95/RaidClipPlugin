@@ -1,0 +1,21 @@
+import {useState} from 'react';
+import type {BackendRpgDataSource} from './remote/BackendRpgDataSource';
+import type {MaterialDefinition} from './UpgradePanel';
+import {materialNames} from './UpgradePanel';
+export type MaterialSettings={PearlCosts:number[];CoreCosts:number[];ColoredPearlCosts:number[];RarityCosts:Record<string,number[]>;RefinementPearls:number;EquipmentDropChances:Record<string,number>;Drops:Record<string,Record<string,{Chance:number;Minimum:number;Maximum:number}>>;MimicWeights:Record<string,number>};
+export function MaterialDebug({source,settings:initial,materials,target,disabled}:{source:BackendRpgDataSource;settings?:MaterialSettings;materials?:MaterialDefinition[];target:string;disabled:boolean}){
+ const [settings,setSettings]=useState(initial),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[material,setMaterial]=useState('reinforcement_core'),[count,setCount]=useState(10);
+ if(!settings)return null;
+ const save=async(path:string,value:string)=>{setBusy(true);try{const r=await source.readPlugin('adminBalance',{path,value});setSettings(r.settings);setMessage('Gespeichert.');await source.refresh(true);}catch(e){setMessage(e instanceof Error?e.message:'Speichern fehlgeschlagen.');}finally{setBusy(false);}};
+ const input=(path:string,value:number,step='1')=><label key={path}>{path.split(':').at(-1)}<input key={`${path}:${value}`} aria-label={path} type="number" min={0} step={step} defaultValue={value} onBlur={e=>{if(e.currentTarget.value!==String(value))void save(path,e.currentTarget.value);}}/></label>;
+ return <details className="material-debug"><summary>Materialien, Aufwertungen &amp; Balancing</summary><fieldset disabled={disabled||busy}>
+  <p>Änderungen werden beim Verlassen des Feldes gespeichert. Mimics behalten immer ihre feste Sonderchance von 50 %; bearbeitet werden ausschließlich die Gewichte im Materialpool.</p>
+  {Object.entries(settings.Drops).map(([activity,pool])=><details key={activity}><summary>Fundort: {activity}</summary>{Object.entries(pool).map(([id,rule])=><fieldset key={id}><legend>{materialNames[id]}</legend>{input(`drop:${activity}:${id}:Chance`,rule.Chance,'0.01')}{input(`drop:${activity}:${id}:Minimum`,rule.Minimum)}{input(`drop:${activity}:${id}:Maximum`,rule.Maximum)}</fieldset>)}</details>)}
+  <details><summary>Mimic-Poolgewichte</summary>{Object.entries(settings.MimicWeights).map(([id,w])=><div key={id}>{materialNames[id]}{input(`mimic:${id}`,w)}</div>)}</details>
+  <details><summary>Neue Ausrüstungsfunde</summary>{Object.entries(settings.EquipmentDropChances).map(([id,w])=><div key={id}>{id}{input(`equipment:${id}`,w,'0.01')}</div>)}</details>
+  <details><summary>Aufwertungskosten</summary>{settings.PearlCosts.map((cost,n)=><fieldset key={n}><legend>Zielstufe +{n+1}</legend>{input(`cost:${n+1}:Pearls`,cost)}{input(`cost:${n+1}:Cores`,settings.CoreCosts[n])}{n>=6&&input(`color:${n+1}`,settings.ColoredPearlCosts[n-6])}</fieldset>)}{Object.entries(settings.RarityCosts).map(([rarity,costs])=><fieldset key={rarity}><legend>Zusatzmaterial: {rarity}</legend>{costs.map((cost,n)=>input(`rarity:${rarity}:${n+7}`,cost))}</fieldset>)}{input('refinement:Pearls',settings.RefinementPearls)}</details>
+  <h3>Testmaterialien vergeben</h3><p>Ziel: Twitch-ID {target||'oben eintragen'}</p><select aria-label="Testmaterial" value={material} onChange={e=>setMaterial(e.target.value)}>{materials?.map(m=><option key={m.Id} value={m.Id}>{m.Name}</option>)}</select><input aria-label="Materialanzahl" type="number" min={1} max={1000000} value={count} onChange={e=>setCount(Number(e.target.value))}/>
+  <button disabled={!/^\d{1,25}$/.test(target)||!Number.isInteger(count)||count<1||count>1000000} onClick={async()=>{setBusy(true);try{await source.readPlugin('adminMaterialGrant',{targetUserId:target,materialId:material,count:String(count)});setMessage('Materialien gespeichert.');await source.refresh(true);}catch(e){setMessage(e instanceof Error?e.message:'Vergabe fehlgeschlagen.');}finally{setBusy(false);}}}>Materialien vergeben</button>
+  <button onClick={()=>void save('reset:all','0')}>Alle Material- und Aufwertungsregeln auf Standard setzen</button>
+ </fieldset><p role="status">{message}</p></details>;
+}

@@ -7,7 +7,7 @@ public static class CharacterStatService
 {
     public static decimal EquipmentMaximumHp(RpgProfile profile,int hpPerStamina=5, IReadOnlyList<RpgItemSet>? sets=null) => profile.Equipment.Values.Distinct()
         .Select(id=>profile.Inventory.SingleOrDefault(i=>i.InstanceId==id))
-        .Where(i=>i?.Slot is not null).Sum(i=>Math.Clamp(i!.Attributes.MaximumHp,0,1000000)+Math.Clamp(i.Attributes.Stamina,0,1000000)*hpPerStamina)
+        .Where(i=>i?.Slot is not null).Sum(i=>Math.Clamp(RpgEquipmentUpgradeRules.Effective(i!).MaximumHp,0,1000000)+Math.Clamp(RpgEquipmentUpgradeRules.Effective(i!).Stamina,0,1000000)*hpPerStamina)
         + (sets??Array.Empty<RpgItemSet>()).Sum(s=>s.Bonuses.Where(b=>profile.Inventory.Where(i=>i.SetId==s.Id && s.ItemIds.Contains(i.ItemId) && profile.Equipment.Values.Contains(i.InstanceId)).Select(i=>i.ItemId).Distinct().Count()>=b.RequiredPieces)
             .Sum(b=>Math.Max(0,b.Attributes.MaximumHp)+Math.Max(0,b.Attributes.Stamina)*hpPerStamina));
     public static (decimal Perks, decimal Equipment, decimal Sushi) DiveLuckSources(RpgProfile profile, RpgConfig config)
@@ -35,7 +35,7 @@ public static class CharacterStatService
             var item = profile.Inventory.SingleOrDefault(i => i.InstanceId == id);
             if (item is not null)
             {
-                Add(result, item.Attributes);
+                Add(result, RpgEquipmentUpgradeRules.Effective(item));
                 if (includeEffects)
                 foreach (var effect in item.Effects.Where(e => !e.RequiresCritical && (!e.Activity.HasValue || e.Activity == activity) && stake >= e.MinimumStake &&
                     (!profile.Cooldowns.TryGetValue("effect:" + item.InstanceId + ":" + e.Id, out var until) || (now ?? DateTimeOffset.UtcNow) >= until)))
@@ -67,13 +67,13 @@ public static class CharacterStatService
         result.SushiPreservationChance = Math.Clamp(result.SushiPreservationChance, 0, Math.Clamp(config.SushiPreservationChanceCap, 0, 20));
         if(activity==RpgActivity.Boss)
             result.BossDamageReduction+=RpgSushiService.Defensive(profile,now??DateTimeOffset.UtcNow).Select(b=>b.BossDamageReduction).DefaultIfEmpty().Max();
-        result.BossDamageReduction=Math.Clamp(result.BossDamageReduction+RpgPerkCatalog.Bonus(profile,"defense"),0,80);
+        result.BossDamageReduction=Math.Clamp(result.BossDamageReduction+RpgPerkCatalog.Bonus(profile,"defense"),-80,80);
         result.BossDodgeChance=Math.Clamp(result.BossDodgeChance,0,100);
         result.CriticalHealing=Math.Clamp(result.CriticalHealing,0,100);
         result.RareEquipmentLuck=Math.Clamp(result.RareEquipmentLuck,0,100);
         result.MaximumHp = Math.Clamp(EquipmentMaximumHp(profile,config.Health.HpPerStamina,config.Sets),0,config.Health.EquipmentHpCap);
         // Permanent talents are applied after equipment caps; probabilities remain bounded.
-        result.Damage+=RpgTalentService.Bonus(profile,"damage");
+        result.Damage+=RpgTalentService.Bonus(profile,"damage")+RpgDepthsCombatService.DamageBonus(profile,config,now??DateTimeOffset.UtcNow);
         if(profile.Cooldowns.TryGetValue("perk:otter-rage",out var rageUntil) && (now??DateTimeOffset.UtcNow)<rageUntil)result.Damage+=RpgPerkCatalog.Bonus(profile,"victoryDamage");
         if(activity==RpgActivity.Boss)result.DoubleAttackChance=Math.Min(100,result.DoubleAttackChance+RpgTalentService.Bonus(profile,"doubleAttack"));
         result.CritChance=Math.Min(100,result.CritChance+RpgTalentService.Bonus(profile,"crit"));
@@ -85,7 +85,7 @@ public static class CharacterStatService
 
     private static void Add(RpgAttributes a, RpgAttributes b, int count = 1)
     {
-        a.Armor+=b.Armor*count;a.ArmorPercent+=b.ArmorPercent*count;a.MaximumHpPercent+=b.MaximumHpPercent*count;
+        a.MovementSpeed+=b.MovementSpeed*count;a.BossLifeleech+=b.BossLifeleech*count;a.Armor+=b.Armor*count;a.ArmorPercent+=b.ArmorPercent*count;a.MaximumHpPercent+=b.MaximumHpPercent*count;
         a.AttackSpeed+=b.AttackSpeed*count;a.HealingPower+=b.HealingPower*count;
         a.BossDamageReduction+=b.BossDamageReduction*count; a.BossDodgeChance+=b.BossDodgeChance*count;
         a.CriticalHealing+=b.CriticalHealing*count; a.RareEquipmentLuck+=b.RareEquipmentLuck*count;

@@ -1102,3 +1102,5 @@ nav button:last-child:nth-child(9) { grid-column: 1 / -1; flex-direction: row; j
 .talent-details summary {cursor:pointer;padding:4px;}
 .talent-details p {font-size:10px;line-height:1.5;margin:0;padding:5px;}
 @media(min-width:600px){.talent-caption h4{font-size:16px;}}
+.True{--rarity:#9bff76;color:#9bff76}.Cursed{--rarity:#dc55ff;color:#dc55ff}.Abyss{--rarity:#e51d48;color:#e51d48}.item.True,.item.Cursed,.item.Abyss{border-color:var(--rarity)}.missing{color:#ff8195}.material-inventory .item-art{width:100%;height:150px;object-fit:contain} dialog table{width:100%;text-align:left} dialog .item-art{width:150px;height:150px;object-fit:contain}
+.set-artwork{display:flex;flex-wrap:wrap;gap:.5rem;margin:.8rem 0}.set-artwork img{width:90px;height:90px;object-fit:contain}.material-debug fieldset{display:flex;flex-wrap:wrap;gap:.8rem}.material-debug details{margin:1rem 0}.material-debug label{max-width:160px}

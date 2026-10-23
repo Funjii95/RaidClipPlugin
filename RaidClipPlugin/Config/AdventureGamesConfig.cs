@@ -78,6 +78,7 @@ public sealed class BossHpModeConverter : EnumConverter
 
 public sealed class BossAdventureConfig
 {
+    [DisplayName("Boss-Schadensreduktion (%)")] public decimal DamageReductionPercent {get;set;}
     [Browsable(false)] public bool IsMimic {get;set;}
     [Browsable(false)] public string DisplayName {get;set;}="Perlenwächter";
     [DisplayName("Angriffs-Cooldown-Text"), Description("{user}, {remaining} (Sekunden)")]

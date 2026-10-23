@@ -5,6 +5,7 @@ namespace RaidClipPlugin.Config;
 
 public sealed class RpgConfig
 {
+    public RpgUpgradeConfig Upgrades {get;set;}=new();
     public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); }
     public long FreeFishingReward { get; set; } = 40;
     public decimal PowerDamagePerPoint { get; set; } = 1;
@@ -14,7 +15,7 @@ public sealed class RpgConfig
     public RpgEnemyConfig Enemies { get; set; } = new();
     public RpgHotTimeConfig HotTime { get; set; } = new();
     public RpgSalvageConfig Salvage { get; set; } = new();
-    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).Concat(RpgTidesExpansion.Sets()).ToList();
+    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).Concat(RpgTidesExpansion.Sets()).Concat(RpgDepthsExpansion.Sets()).ToList();
     public decimal BossLootChance { get; set; } = 2;
     public bool BossLegendaryEnabled { get; set; }
     public int BossLegendaryMinimumHp { get; set; } = 1000;
@@ -22,6 +23,7 @@ public sealed class RpgConfig
     public decimal FishingEquipmentChance { get; set; } = 0.5m;
     public void Validate()
     {
+        Upgrades.Validate();
         if(PowerDamagePerPoint is <0 or >10)throw new InvalidOperationException("Kraft-Schadensbonus muss zwischen 0 und 10 Prozent je Punkt liegen.");
         Health.Validate();
         Enemies.Validate();

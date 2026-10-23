@@ -1,6 +1,6 @@
 namespace RaidClipPlugin.Models;
 
-public enum ItemRarity { Common, Uncommon, Rare, Epic, Legendary }
+public enum ItemRarity { Common, Uncommon, Rare, Epic, Legendary, True, Cursed, Abyss }
 public enum EquipmentSlot { Weapon, Helmet, Chest, Gloves, Boots, Ring1, Ring2, Amulet }
 public enum RpgActivity { Dive, Fishing, Boss }
 public enum RpgItemKind { Treasure, Equipment, Consumable }
@@ -10,11 +10,13 @@ public static class RarityPresentation
 {
     public static string ColorHex(ItemRarity rarity) => rarity switch
     { ItemRarity.Common => "#9CA3AF", ItemRarity.Uncommon => "#22C55E", ItemRarity.Rare => "#3B82F6",
-        ItemRarity.Epic => "#A855F7", ItemRarity.Legendary => "#EAB308", _ => "#9CA3AF" };
+        ItemRarity.Epic => "#A855F7", ItemRarity.Legendary => "#EAB308", ItemRarity.True => "#9BFF76", ItemRarity.Cursed => "#DC55FF", ItemRarity.Abyss => "#E51D48", _ => "#9CA3AF" };
 }
 
 public sealed class RpgAttributes
 {
+    public decimal MovementSpeed { get; set; }
+    public decimal BossLifeleech { get; set; }
     public decimal Armor { get; set; }
     public decimal ArmorPercent { get; set; }
     public decimal MaximumHpPercent { get; set; }
@@ -43,6 +45,8 @@ public sealed class RpgAttributes
 
 public sealed class RpgItem
 {
+    public int UpgradeLevel { get; set; }
+    public bool IsRefined { get; set; }
     public int DropWeight { get; set; } = 1;
     public RpgCollectorBonuses? Collector { get; set; }
     public int CoreStatsVersion { get; set; }

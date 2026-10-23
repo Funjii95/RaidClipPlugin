@@ -12,7 +12,7 @@ public sealed class RpgHealthTests : IDisposable
     private sealed class Low:IDuelRandom {public int NextInclusive(int min,int max)=>min;}
     private static MinigameConfig Config()
     {
-        var c=new MinigameConfig{Enabled=true,PointsEnabled=true};c.Adventures.Rpg.Enabled=true;
+        var c=new MinigameConfig{Enabled=true,PointsEnabled=true};c.Adventures.Rpg.Enabled=true;c.Adventures.Rpg.Upgrades.EquipmentDropChances.Keys.ToList().ForEach(k=>c.Adventures.Rpg.Upgrades.EquipmentDropChances[k]=0);
         c.Adventures.Boss.HitPoints=200;c.Adventures.Boss.RewardPool=100;c.Adventures.Boss.AttackCooldownSeconds=1;
         c.Adventures.Rpg.BossLootChance=100;return c;
     }

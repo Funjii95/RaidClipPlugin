@@ -22,7 +22,7 @@ public sealed class RpgEconomyAndAdministrationTests : IDisposable
         Assert.Equal(10000, rpg.DiveLoot.LegendaryMinimumStake);
         Assert.Equal(new long[] { 0, 250, 1000, 5000, 10000 }, rpg.DiveLoot.RiskTiers.Select(t => t.MinimumStake));
         Assert.Equal(new decimal[] { 0, 4, 8, 12, 15 }, rpg.DiveLoot.RiskTiers.Select(t => t.DropBonus));
-        Assert.Equal(new[] { 6000, 2900, 850, 200, 50 }, Enum.GetValues<ItemRarity>().Select(r => rpg.DiveLoot.RarityWeights[r]));
+        Assert.Equal(new[] { 6000, 2900, 850, 200, 50 }, Enum.GetValues<ItemRarity>().Where(r=>r<=ItemRarity.Legendary).Select(r => rpg.DiveLoot.RarityWeights[r]));
         Assert.Equal(10000, config.Adventures.Treasure.MaximumBet);
         Assert.Equal(1000, config.Adventures.Fishing.MaximumBet);
         Assert.Equal(1000, config.MaximumBet);

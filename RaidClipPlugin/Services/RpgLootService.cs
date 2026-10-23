@@ -57,7 +57,7 @@ public sealed class RpgLootService(IDuelRandom? random = null)
     }
     private RpgLootResult Select(RpgLootConfig config, DateTimeOffset now, LootChanceBreakdown chances, RpgActivity activity, RpgCollectorBonuses? collectors=null,decimal rareEquipmentLuck=0)
     {
-        var pool = config.Items.Where(i => i.DropActivities.Contains(activity) && (i.Collector is null || config.CollectorPoolChance>0)).ToArray();
+        var pool = config.Items.Where(i => i.Rarity<=ItemRarity.Legendary && i.DropActivities.Contains(activity) && (i.Collector is null || config.CollectorPoolChance>0)).ToArray();
         // Gate the complete candidate table BEFORE either rarity or item selection.
         var eligible = config.RarityWeights.Where(p => p.Key <= chances.MaximumRarity && p.Value > 0 && pool.Any(i => i.Rarity == p.Key)).OrderBy(p => p.Key).ToArray();
         if (eligible.Length == 0 || _random.NextInclusive(1, 10000) > chances.Total * 100) return new(null, chances);

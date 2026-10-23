@@ -55,18 +55,24 @@ public sealed partial class ViewerPointStore
             {
                 string[] keys = ["Shells","WhitePearls","BluePearls","RedPearls","StoneChips"];
                 if (materials.ValueKind != JsonValueKind.Object ||
-                    materials.EnumerateObject().Count() != keys.Length ||
-                    materials.EnumerateObject().Select(p=>p.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=keys.Length)
+                    materials.EnumerateObject().Any(p=>!typeof(RpgMaterials).GetProperties().Any(k=>k.Name.Equals(p.Name,StringComparison.OrdinalIgnoreCase))) ||
+                    materials.EnumerateObject().Select(p=>p.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=materials.EnumerateObject().Count())
                     throw new InvalidDataException("Gespeicherter Materialvorrat ist unvollständig.");
                 foreach (var key in keys)
                     if (!Property(materials,key,out var value) || !value.TryGetInt32(out var count) || count<0)
                         throw new InvalidDataException("Gespeicherter Materialvorrat ist ungültig.");
+                foreach(var field in materials.EnumerateObject())
+                    if(!field.Value.TryGetInt32(out var balance)||balance<0)throw new InvalidDataException("Ungültiger Materialbestand.");
             }
             if (!Property(rpg, "Inventory", out var inventory) || inventory.ValueKind != JsonValueKind.Array)
                 throw new InvalidDataException("Gespeichertes RPG-Inventar fehlt oder ist keine Liste.");
             foreach (var item in inventory.EnumerateArray())
+            {
                 if (!Property(item, "InstanceId", out var id) || id.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(id.GetString()))
                     throw new InvalidDataException("Gespeichertes Item ohne gültige InstanceId; automatische ID-Erzeugung beim Laden wird verhindert.");
+                if(Property(item,"UpgradeLevel",out var level)&&(!level.TryGetInt32(out var n)||n is <0 or >9))throw new InvalidDataException("Ungültige Aufwertungsstufe.");
+                if(Property(item,"IsRefined",out var refined)&&(refined.ValueKind is not (JsonValueKind.True or JsonValueKind.False)||refined.ValueKind==JsonValueKind.True&&(!Property(item,"UpgradeLevel",out var l)||l.GetInt32()!=9)))throw new InvalidDataException("Ungültige Veredelung.");
+            }
         }
     }
     private static void PrepareRpg(ViewerPointEntry account)

@@ -9,7 +9,7 @@ public sealed class RpgPerkReworkTests:IDisposable
     private readonly string dir=Path.Combine(Path.GetTempPath(),"PerkRework-"+Guid.NewGuid().ToString("N"));
     private sealed class Low:IDuelRandom {public int NextInclusive(int min,int max)=>min;}
     private sealed class Fixed(int value):IDuelRandom {public int NextInclusive(int min,int max)=>Math.Clamp(value,min,max);}
-    private static MinigameConfig Config(){var c=new MinigameConfig{Enabled=true,PointsEnabled=true};c.Adventures.Rpg.Enabled=true;c.Adventures.Rpg.Enemies.Enabled=false;return c;}
+    private static MinigameConfig Config(){var c=new MinigameConfig{Enabled=true,PointsEnabled=true};c.Adventures.Rpg.Enabled=true;c.Adventures.Rpg.Upgrades.EquipmentDropChances.Keys.ToList().ForEach(k=>c.Adventures.Rpg.Upgrades.EquipmentDropChances[k]=0);c.Adventures.Rpg.Enemies.Enabled=false;return c;}
     public void Dispose(){if(Directory.Exists(dir))Directory.Delete(dir,true);}
     [Fact] public async Task SixthPurchaseIsRejectedAfterRestartWithoutSpendingOrChangingTalents()
     {

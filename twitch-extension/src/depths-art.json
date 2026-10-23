@@ -1,0 +1,1136 @@
+{
+  "true_eternal_reef_helmet": {
+    "src": "./items/depths/true_eternal_reef_helmet.webp",
+    "name": "Helm des Ewigen Riffs",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "ffe854551898270944f037d80a652b25284a6bb1ac3598fc9632759efa86a15d",
+    "crop": [
+      50,
+      270,
+      174,
+      390
+    ]
+  },
+  "true_eternal_reef_chest": {
+    "src": "./items/depths/true_eternal_reef_chest.webp",
+    "name": "Riffherz-Panzer",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "9451140dcd03fa8a6eb65cc900aabd4e6ad13da99f8428f9842484bc1e3b131a",
+    "crop": [
+      194,
+      270,
+      318,
+      390
+    ]
+  },
+  "true_eternal_reef_gloves": {
+    "src": "./items/depths/true_eternal_reef_gloves.webp",
+    "name": "Krallen der Reinheit",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "0494a4ca51f4da64c41fa251175636d48368cfcee8923d0fead7d081b3088474",
+    "crop": [
+      338,
+      270,
+      462,
+      390
+    ]
+  },
+  "true_eternal_reef_boots": {
+    "src": "./items/depths/true_eternal_reef_boots.webp",
+    "name": "Stiefel der Korallenwurzel",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "22d9334dc1b292bc8e4d3c9a313d3d97891a485282458ffd8f526b950edf83d6",
+    "crop": [
+      50,
+      470,
+      174,
+      590
+    ]
+  },
+  "true_eternal_reef_ring": {
+    "src": "./items/depths/true_eternal_reef_ring.webp",
+    "name": "Ring der Riffessenz",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "5bd7c93e0f7bf8654dcb4725d7d4ac544805c37a16ae558f37c01e75bf7fc2a4",
+    "crop": [
+      194,
+      470,
+      318,
+      590
+    ]
+  },
+  "true_eternal_reef_amulet": {
+    "src": "./items/depths/true_eternal_reef_amulet.webp",
+    "name": "Amulett des Ewigen Riffs",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "ba63370d98426f8b71a0a1477d6b3e5ed06b9e5052e6844a46be7391be6c3f61",
+    "crop": [
+      338,
+      470,
+      462,
+      590
+    ]
+  },
+  "true_deep_guardian_helmet": {
+    "src": "./items/depths/true_deep_guardian_helmet.webp",
+    "name": "Helm des Tiefenw\u00E4chters",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "c6c4c48817221bf781930edc40448cf547507297c0e1329baca1661d331767fd",
+    "crop": [
+      520,
+      270,
+      644,
+      390
+    ]
+  },
+  "true_deep_guardian_chest": {
+    "src": "./items/depths/true_deep_guardian_chest.webp",
+    "name": "Brustpanzer des Meereswalls",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "e778ed19adcbd7cf76c40243aafc4445e5fa3f619e2c6d32d2409c58b6c7e720",
+    "crop": [
+      664,
+      270,
+      788,
+      390
+    ]
+  },
+  "true_deep_guardian_gloves": {
+    "src": "./items/depths/true_deep_guardian_gloves.webp",
+    "name": "Handschuhe des W\u00E4chters",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "9cabb97e24b1df5f5582ac81e18de8f42d592b67b32ad4f348b5ef8b0e651b51",
+    "crop": [
+      808,
+      270,
+      932,
+      390
+    ]
+  },
+  "true_deep_guardian_boots": {
+    "src": "./items/depths/true_deep_guardian_boots.webp",
+    "name": "Stiefel der Standhaftigkeit",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "09c2abec29cad207bde5f5107e3ffdf72f0bd621586c4da64932b0e66c111867",
+    "crop": [
+      520,
+      470,
+      644,
+      590
+    ]
+  },
+  "true_deep_guardian_ring": {
+    "src": "./items/depths/true_deep_guardian_ring.webp",
+    "name": "Ring des Schutzwalls",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "2e5660f45de37ac605e1ece540df79f5db3abb3b5be0842d4890da716fd93c7f",
+    "crop": [
+      664,
+      470,
+      788,
+      590
+    ]
+  },
+  "true_deep_guardian_amulet": {
+    "src": "./items/depths/true_deep_guardian_amulet.webp",
+    "name": "Amulett des Tiefenherzens",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "9137dd435b322852d4a327405215eda8241048eceaf556313768dee5101f45bb",
+    "crop": [
+      808,
+      470,
+      932,
+      590
+    ]
+  },
+  "true_ancient_current_helmet": {
+    "src": "./items/depths/true_ancient_current_helmet.webp",
+    "name": "Diadem des Str\u00F6mungss\u00E4ngers",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "c733d83158b2b4cd2b764f6504b73c81c91cda21a4d71accc4190931a19be1ec",
+    "crop": [
+      990,
+      270,
+      1114,
+      390
+    ]
+  },
+  "true_ancient_current_chest": {
+    "src": "./items/depths/true_ancient_current_chest.webp",
+    "name": "Gewand des Urmeers",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "d4368a4aea3493ce5be29d7c8ecca7f15a85160849dc261a972d3ca4120678b1",
+    "crop": [
+      1134,
+      270,
+      1258,
+      390
+    ]
+  },
+  "true_ancient_current_gloves": {
+    "src": "./items/depths/true_ancient_current_gloves.webp",
+    "name": "Handschuhe der Flutmagie",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "1d2e4dc977967fc31a8465f3f74f0570a32e392ca709153620297214e8bc0d60",
+    "crop": [
+      1278,
+      270,
+      1402,
+      390
+    ]
+  },
+  "true_ancient_current_boots": {
+    "src": "./items/depths/true_ancient_current_boots.webp",
+    "name": "Stiefel des Meergesangs",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "63dea6eb25203b9faffc72d212556d3e65d7f7f67ee014efa51bc5e4429c7c73",
+    "crop": [
+      990,
+      470,
+      1114,
+      590
+    ]
+  },
+  "true_ancient_current_ring": {
+    "src": "./items/depths/true_ancient_current_ring.webp",
+    "name": "Ring der Urstr\u00F6mung",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "3516ce30faa1b4a8300fa5f80795c16142311ca0eb372a7e3196fae3db0d3930",
+    "crop": [
+      1134,
+      470,
+      1258,
+      590
+    ]
+  },
+  "true_ancient_current_amulet": {
+    "src": "./items/depths/true_ancient_current_amulet.webp",
+    "name": "Amulett des Gezeitenliedes",
+    "width": 124,
+    "height": 120,
+    "sourceSha256": "04eb4697ad55accda175cdadba99ca2848ad02ae4634ae161a30798a76c05713",
+    "assetSha256": "a8255c84a401c7a8d13b84f08c37d9a7e5b4f2bced37e5ef96cd83aa7d04d443",
+    "crop": [
+      1278,
+      470,
+      1402,
+      590
+    ]
+  },
+  "abyss_devourer_helmet": {
+    "src": "./items/depths/abyss_devourer_helmet.webp",
+    "name": "Krone des Verschlingers",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "4d126136c719fa956c73dca3ec79bcae97eee7a80cc32827f79409d2ab6bd078",
+    "crop": [
+      49,
+      302,
+      171,
+      406
+    ]
+  },
+  "abyss_devourer_chest": {
+    "src": "./items/depths/abyss_devourer_chest.webp",
+    "name": "Panzer der Endlosen Leere",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "bf4704cc92788669b0bb1479c64dbf75be3d0ffffb3c1dbe2848160e53760fcf",
+    "crop": [
+      192,
+      302,
+      314,
+      406
+    ]
+  },
+  "abyss_devourer_gloves": {
+    "src": "./items/depths/abyss_devourer_gloves.webp",
+    "name": "Klauen der Ausl\u00F6schung",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "bc0054da8519eed5f314894a2543bcdd112a79efaa816d78f2adafe5510bfddc",
+    "crop": [
+      335,
+      302,
+      457,
+      406
+    ]
+  },
+  "abyss_devourer_boots": {
+    "src": "./items/depths/abyss_devourer_boots.webp",
+    "name": "Schritte des Untergangs",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "c8447b1c214759404faee635ddcaf1019a9272927af8b1388d2f5bfa4f2319dd",
+    "crop": [
+      49,
+      500,
+      171,
+      604
+    ]
+  },
+  "abyss_devourer_ring": {
+    "src": "./items/depths/abyss_devourer_ring.webp",
+    "name": "Ring des Nichts",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "1917f77e35d0e083c79ea6d894872fdd04107cd1b0cddc0b4e21da946b9d7a72",
+    "crop": [
+      192,
+      500,
+      314,
+      604
+    ]
+  },
+  "abyss_devourer_amulet": {
+    "src": "./items/depths/abyss_devourer_amulet.webp",
+    "name": "Herz des Verschlingers",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "e5778dfdbd62ab59e9f3fad74b824c06828d66c6a4e76ac82df5850c5312757d",
+    "crop": [
+      335,
+      500,
+      457,
+      604
+    ]
+  },
+  "abyss_blood_dynasty_helmet": {
+    "src": "./items/depths/abyss_blood_dynasty_helmet.webp",
+    "name": "Blutkrone der Dynastie",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "4ebd1ed4eb1b139e3e86470219476e553ce09568cfb1f47278ca8778ed28f647",
+    "crop": [
+      514,
+      302,
+      636,
+      406
+    ]
+  },
+  "abyss_blood_dynasty_chest": {
+    "src": "./items/depths/abyss_blood_dynasty_chest.webp",
+    "name": "Brustplatte des Blutmeers",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "36cf52fe0794ba8f03cbe9266d55ebbb23d860ade309aff5d20fa853ef5a60b0",
+    "crop": [
+      657,
+      302,
+      779,
+      406
+    ]
+  },
+  "abyss_blood_dynasty_gloves": {
+    "src": "./items/depths/abyss_blood_dynasty_gloves.webp",
+    "name": "Krallen des Tiefenblutes",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "6844380beadfa7f46ed08953fc652fd2413e7163f46eb66d776c5758f50fab2b",
+    "crop": [
+      800,
+      302,
+      922,
+      406
+    ]
+  },
+  "abyss_blood_dynasty_boots": {
+    "src": "./items/depths/abyss_blood_dynasty_boots.webp",
+    "name": "Stiefel der Blutstr\u00F6mung",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "7f0e2064f5d69f340d9600d1413e48c9dac850d86d0b965255475ebfd7e9e222",
+    "crop": [
+      514,
+      500,
+      636,
+      604
+    ]
+  },
+  "abyss_blood_dynasty_ring": {
+    "src": "./items/depths/abyss_blood_dynasty_ring.webp",
+    "name": "Blutring der Dynastie",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "8c0e6bc95dde5a5b03e507f11ed2a7dc9409d80f9016fc67d81d70857a2756d2",
+    "crop": [
+      657,
+      500,
+      779,
+      604
+    ]
+  },
+  "abyss_blood_dynasty_amulet": {
+    "src": "./items/depths/abyss_blood_dynasty_amulet.webp",
+    "name": "Amulett des Ewigen Blutes",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "ef769abb983a146d75b295f9d156be71392f7bf8709cb11fb9250a59d502e3e1",
+    "crop": [
+      800,
+      500,
+      922,
+      604
+    ]
+  },
+  "abyss_sunken_world_helmet": {
+    "src": "./items/depths/abyss_sunken_world_helmet.webp",
+    "name": "Maske der Versunkenen Welt",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "acd57a882b258a46bf600860eb363ef07dc0cba04ca34dbf8bae942a1b190c27",
+    "crop": [
+      979,
+      302,
+      1101,
+      406
+    ]
+  },
+  "abyss_sunken_world_chest": {
+    "src": "./items/depths/abyss_sunken_world_chest.webp",
+    "name": "Schattenpanzer der Tiefe",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "bf9e9542842c9a80821a821edb072e0c256fd5344aabbb109214aa0982ff116c",
+    "crop": [
+      1122,
+      302,
+      1244,
+      406
+    ]
+  },
+  "abyss_sunken_world_gloves": {
+    "src": "./items/depths/abyss_sunken_world_gloves.webp",
+    "name": "Klauen des Schattenmeers",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "18c0cf1149e16b9df8854c64990cb81affbd35eef7cfb3ce1d6b9a3f602a1fb5",
+    "crop": [
+      1265,
+      302,
+      1387,
+      406
+    ]
+  },
+  "abyss_sunken_world_boots": {
+    "src": "./items/depths/abyss_sunken_world_boots.webp",
+    "name": "Schritte der Verlorenen",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "8ac54aaa3403e41661e41a0362f49ce5e06c47c6a1c66f1de5a10e4f04632e99",
+    "crop": [
+      979,
+      500,
+      1101,
+      604
+    ]
+  },
+  "abyss_sunken_world_ring": {
+    "src": "./items/depths/abyss_sunken_world_ring.webp",
+    "name": "Ring der Schattenflut",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "c9503841050c145b568b64b5c5da5398e908718b26a31b6634e2b9a1219fef23",
+    "crop": [
+      1122,
+      500,
+      1244,
+      604
+    ]
+  },
+  "abyss_sunken_world_amulet": {
+    "src": "./items/depths/abyss_sunken_world_amulet.webp",
+    "name": "Amulett der Versunkenen Seele",
+    "width": 122,
+    "height": 104,
+    "sourceSha256": "f08e0a2ee1bfffa39e7401b1b7b3545f97e50ece2d4ec1b390e55753658b49e8",
+    "assetSha256": "ab03489876b0aaa23a3b2d2f2fe5c44cef37beb6ca3858e3ef4a24d1ee2c1030",
+    "crop": [
+      1265,
+      500,
+      1387,
+      604
+    ]
+  },
+  "abyss_void_tide_ring": {
+    "src": "./items/depths/abyss_void_tide_ring.webp",
+    "name": "Ring der Leerenflut",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "3a3ff6bfacf5f15db08143db2e9af4d8b96b0550479a92299a8dc8c4ffcdfd7a",
+    "crop": [
+      24,
+      160,
+      250,
+      326
+    ]
+  },
+  "abyss_devourer_fang": {
+    "src": "./items/depths/abyss_devourer_fang.webp",
+    "name": "Zahn des Verschlingers",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "c3ccaf0c78c5c3b48512df7bcb3465fdf0e417198d166e31aeffa4da4fb8e4dd",
+    "crop": [
+      276,
+      160,
+      502,
+      326
+    ]
+  },
+  "abyss_depth_eye": {
+    "src": "./items/depths/abyss_depth_eye.webp",
+    "name": "Auge der Tiefen",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "ccf35a1d684d10faefae15a39fcfd5156474da7829ce70b17fff40293192b022",
+    "crop": [
+      528,
+      160,
+      754,
+      326
+    ]
+  },
+  "abyss_blood_pearl_seal": {
+    "src": "./items/depths/abyss_blood_pearl_seal.webp",
+    "name": "Blutperlen-Siegel",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "adf8f451ba29a6d67800a2036fd7ccb59fb8a489c8fba84f9071c2cf8829c97f",
+    "crop": [
+      780,
+      160,
+      1006,
+      326
+    ]
+  },
+  "abyss_lost_world_ring": {
+    "src": "./items/depths/abyss_lost_world_ring.webp",
+    "name": "Ring der Versunkenen Welt",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "f29821b781c0d0aec60b7c923be4648ddd4987145ddf9da9c8ec23ccdd7cad59",
+    "crop": [
+      1032,
+      160,
+      1258,
+      326
+    ]
+  },
+  "abyss_bone_ring": {
+    "src": "./items/depths/abyss_bone_ring.webp",
+    "name": "Knochenring der Tiefe",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "65f3a148e3426f8928faafaf34be0824c77ac19b202d1c1c8eecc810e1b72f13",
+    "crop": [
+      1284,
+      160,
+      1510,
+      326
+    ]
+  },
+  "abyss_void_heart": {
+    "src": "./items/depths/abyss_void_heart.webp",
+    "name": "Herz der Leere",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "f51cfd73c480a4183c554ed99f0001e04a8ea0f6775704cc98dcdf81d57134b7",
+    "crop": [
+      24,
+      627,
+      250,
+      793
+    ]
+  },
+  "abyss_depthlord_soul": {
+    "src": "./items/depths/abyss_depthlord_soul.webp",
+    "name": "Seele des Tiefenlords",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "28c6a9defdb0e2a311ec537bed32563e8ff14c715f4aa199469b29094ffb79fb",
+    "crop": [
+      276,
+      627,
+      502,
+      793
+    ]
+  },
+  "abyss_whisper": {
+    "src": "./items/depths/abyss_whisper.webp",
+    "name": "Fl\u00FCstern der Abgr\u00FCnde",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "540dc89327090bcece55f71c27678ff07d391b50f92049007f72aa850845db93",
+    "crop": [
+      528,
+      627,
+      754,
+      793
+    ]
+  },
+  "abyss_sunken_crown": {
+    "src": "./items/depths/abyss_sunken_crown.webp",
+    "name": "Krone der Versunkenen",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "56b9bdd5f3a6b8672573e2f6bd4d733e7eac71c79985019d51ed1d5bb51219a8",
+    "crop": [
+      780,
+      627,
+      1006,
+      793
+    ]
+  },
+  "abyss_infinity_jellyfish": {
+    "src": "./items/depths/abyss_infinity_jellyfish.webp",
+    "name": "Qualle der Unendlichkeit",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "6378cd55598362dbd2eb54a6709e64391a70dba81b65cf0501e2662b8ff67bed",
+    "crop": [
+      1032,
+      627,
+      1258,
+      793
+    ]
+  },
+  "abyss_endless_tide_amulet": {
+    "src": "./items/depths/abyss_endless_tide_amulet.webp",
+    "name": "Amulett der Endlosen Flut",
+    "width": 226,
+    "height": 166,
+    "sourceSha256": "5d53ac29fbf90a659061f3da662c014c8354bfed9c5fee904d13172df3fbc3a3",
+    "assetSha256": "5f50b9679b9a36996c5342c74b67917ddd3141256c66619ee4278835ecae90bc",
+    "crop": [
+      1284,
+      627,
+      1510,
+      793
+    ]
+  },
+  "cursed_greed_crown": {
+    "src": "./items/depths/cursed_greed_crown.webp",
+    "name": "Krone der Gierflut",
+    "width": 414,
+    "height": 163,
+    "sourceSha256": "826643184451061c34274fb811ad729bbf919f1bca4c855848183eda3222d714",
+    "assetSha256": "68d23b9b9f15a92e27e7f9a6952944ed084b48b1d45e5850ee8fa89a1c32d8f7",
+    "crop": [
+      70,
+      237,
+      484,
+      400
+    ]
+  },
+  "cursed_whisper_chest": {
+    "src": "./items/depths/cursed_whisper_chest.webp",
+    "name": "Panzer des Fl\u00FCsterabgrunds",
+    "width": 414,
+    "height": 163,
+    "sourceSha256": "826643184451061c34274fb811ad729bbf919f1bca4c855848183eda3222d714",
+    "assetSha256": "6a7dd115d286094edd7000b0c977ca4395ba952e70bf48b9792d539da0e514c5",
+    "crop": [
+      540,
+      237,
+      954,
+      400
+    ]
+  },
+  "cursed_broken_current_claws": {
+    "src": "./items/depths/cursed_broken_current_claws.webp",
+    "name": "Krallen der Gebrochenen Str\u00F6mung",
+    "width": 414,
+    "height": 163,
+    "sourceSha256": "826643184451061c34274fb811ad729bbf919f1bca4c855848183eda3222d714",
+    "assetSha256": "0509cb4f1d9c40df1e9fcbcb5a7d2884d675a64bf8dfdcea6da548e018e40231",
+    "crop": [
+      1010,
+      237,
+      1424,
+      400
+    ]
+  },
+  "cursed_restless_echo_boots": {
+    "src": "./items/depths/cursed_restless_echo_boots.webp",
+    "name": "Stiefel des Ruhelosen Echos",
+    "width": 414,
+    "height": 150,
+    "sourceSha256": "826643184451061c34274fb811ad729bbf919f1bca4c855848183eda3222d714",
+    "assetSha256": "720159825d83f321d374b735f86d61e12711118e5d77bc40e4137f930520625c",
+    "crop": [
+      70,
+      695,
+      484,
+      845
+    ]
+  },
+  "cursed_last_sacrifice_ring": {
+    "src": "./items/depths/cursed_last_sacrifice_ring.webp",
+    "name": "Ring des Letzten Opfers",
+    "width": 414,
+    "height": 150,
+    "sourceSha256": "826643184451061c34274fb811ad729bbf919f1bca4c855848183eda3222d714",
+    "assetSha256": "54b28042d7135bf93256dbee4960dc24c528531a15e64978df2a6bd27ece07d4",
+    "crop": [
+      540,
+      695,
+      954,
+      845
+    ]
+  },
+  "cursed_black_mercy_amulet": {
+    "src": "./items/depths/cursed_black_mercy_amulet.webp",
+    "name": "Amulett der Schwarzen Gnade",
+    "width": 414,
+    "height": 150,
+    "sourceSha256": "826643184451061c34274fb811ad729bbf919f1bca4c855848183eda3222d714",
+    "assetSha256": "fcc5aea56466b8f47d281586b12a0f8371fd4f933395622f106ae84fa4c1426f",
+    "crop": [
+      1010,
+      695,
+      1424,
+      845
+    ]
+  },
+  "red_pearl": {
+    "src": "./items/depths/red_pearl.webp",
+    "name": "Rote Perle",
+    "width": 265,
+    "height": 193,
+    "sourceSha256": "b8254aa6146372cef2a02a0f5d6146c61450590bbaacc65ff5434e792fbeac43",
+    "assetSha256": "0ceccdc96f41f9470b9727ec69806f0fb86d4a189a158f47fc21b5f10a0a2253",
+    "crop": [
+      27,
+      113,
+      292,
+      306
+    ]
+  },
+  "blue_pearl": {
+    "src": "./items/depths/blue_pearl.webp",
+    "name": "Blaue Perle",
+    "width": 265,
+    "height": 193,
+    "sourceSha256": "b8254aa6146372cef2a02a0f5d6146c61450590bbaacc65ff5434e792fbeac43",
+    "assetSha256": "841187a564567499c112bbda37b75695a1b5cd39961125c992bd71e9595a1793",
+    "crop": [
+      330,
+      113,
+      595,
+      306
+    ]
+  },
+  "white_pearl": {
+    "src": "./items/depths/white_pearl.webp",
+    "name": "Wei\u00DFe Perle",
+    "width": 265,
+    "height": 193,
+    "sourceSha256": "b8254aa6146372cef2a02a0f5d6146c61450590bbaacc65ff5434e792fbeac43",
+    "assetSha256": "4a7f3f6c1e1eb1c43d022d38d5905683a0af59007644495ae3583e897e9c9049",
+    "crop": [
+      633,
+      113,
+      898,
+      306
+    ]
+  },
+  "abyss_shard": {
+    "src": "./items/depths/abyss_shard.webp",
+    "name": "Abyss-Scherbe",
+    "width": 265,
+    "height": 193,
+    "sourceSha256": "b8254aa6146372cef2a02a0f5d6146c61450590bbaacc65ff5434e792fbeac43",
+    "assetSha256": "3d35c9d7769df4c35cae56a6ac50927aa54d031b5773d56850e0528e5182cab1",
+    "crop": [
+      936,
+      113,
+      1201,
+      306
+    ]
+  },
+  "true_coral_core": {
+    "src": "./items/depths/true_coral_core.webp",
+    "name": "Wahrer Korallenkern",
+    "width": 265,
+    "height": 193,
+    "sourceSha256": "b8254aa6146372cef2a02a0f5d6146c61450590bbaacc65ff5434e792fbeac43",
+    "assetSha256": "75b858ef1d0e8acc2f9c9610c39fd52eeb83d31574c01c2aea456165228456b8",
+    "crop": [
+      1239,
+      113,
+      1504,
+      306
+    ]
+  },
+  "cursed_silk": {
+    "src": "./items/depths/cursed_silk.webp",
+    "name": "Verfluchter Seidenfaden",
+    "width": 265,
+    "height": 193,
+    "sourceSha256": "b8254aa6146372cef2a02a0f5d6146c61450590bbaacc65ff5434e792fbeac43",
+    "assetSha256": "6e5e892c2ec422f164f654799e9d61895fe226ec1da2a88b39e7c70404ccab1e",
+    "crop": [
+      27,
+      543,
+      292,
+      736
+    ]
+  },
+  "luminous_scale": {
+    "src": "./items/depths/luminous_scale.webp",
+    "name": "Leuchtende Flossenschuppe",
+    "width": 265,
+    "height": 193,
+    "sourceSha256": "b8254aa6146372cef2a02a0f5d6146c61450590bbaacc65ff5434e792fbeac43",
+    "assetSha256": "8005f0746c7dda4d39850df0a866a0e2c3e7536387f4a28f80d5a2e30026cc57",
+    "crop": [
+      330,
+      543,
+      595,
+      736
+    ]
+  },
+  "rune_shell": {
+    "src": "./items/depths/rune_shell.webp",
+    "name": "Runenmuschel",
+    "width": 265,
+    "height": 193,
+    "sourceSha256": "b8254aa6146372cef2a02a0f5d6146c61450590bbaacc65ff5434e792fbeac43",
+    "assetSha256": "239d736d69411d9635a88e77c74fb3733be2e603c10458e538db42a2817481c4",
+    "crop": [
+      633,
+      543,
+      898,
+      736
+    ]
+  },
+  "pearl_dust": {
+    "src": "./items/depths/pearl_dust.webp",
+    "name": "Perlenstaub",
+    "width": 265,
+    "height": 193,
+    "sourceSha256": "b8254aa6146372cef2a02a0f5d6146c61450590bbaacc65ff5434e792fbeac43",
+    "assetSha256": "a8d240f688ce85dbf369d22ffb7ec659551fc8bd7aeadaf4760d8cc9019fd493",
+    "crop": [
+      936,
+      543,
+      1201,
+      736
+    ]
+  },
+  "eternal_depth_core": {
+    "src": "./items/depths/eternal_depth_core.webp",
+    "name": "Kern der Ewigen Tiefe",
+    "width": 265,
+    "height": 193,
+    "sourceSha256": "b8254aa6146372cef2a02a0f5d6146c61450590bbaacc65ff5434e792fbeac43",
+    "assetSha256": "1abb3b66c5009e4041e6e373f6bb5418b2fd00a747f5ae60df03a9af38395f5b",
+    "crop": [
+      1239,
+      543,
+      1504,
+      736
+    ]
+  },
+  "reinforcement_core": {
+    "src": "./items/depths/reinforcement_core.webp",
+    "name": "Verst\u00E4rkungskern",
+    "width": 775,
+    "height": 665,
+    "sourceSha256": "74bb172fe991fc18d8293f72fd6bd9cce2cf46b4452d33bbcce66203343511e2",
+    "assetSha256": "3fb436fe7d203a3cbc2f83407720b048b2a2e211972e2e8655346facee7b5205",
+    "crop": [
+      255,
+      180,
+      1030,
+      845
+    ]
+  },
+  "deepsea-crown": {
+    "src": "./items/depths/deepsea-crown.webp",
+    "name": "Krone des Abgrunds",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "e6909f8c4cc8ce142c8edde1584deda25842675419d0ac715d9e43168f822d99",
+    "crop": [
+      260,
+      164,
+      371,
+      301
+    ]
+  },
+  "deepsea-chest": {
+    "src": "./items/depths/deepsea-chest.webp",
+    "name": "Panzer des Leviathans",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "24faa703861d798d347eeb19ad32241f03b874969d53f84c39e4c81c5b49e294",
+    "crop": [
+      383,
+      164,
+      494,
+      301
+    ]
+  },
+  "deepsea-grip": {
+    "src": "./items/depths/deepsea-grip.webp",
+    "name": "Griff der Tiefsee",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "3454fa326e011407715ec3a97809328c2fb0fe4d7d6b57148a047a04787fe290",
+    "crop": [
+      506,
+      164,
+      617,
+      301
+    ]
+  },
+  "deepsea-boots": {
+    "src": "./items/depths/deepsea-boots.webp",
+    "name": "Schritte des Abgrunds",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "b1d7dc5b1b9a0027b96d8fcaf70172ffa1afe33a47b96daff444d6219360c725",
+    "crop": [
+      629,
+      164,
+      740,
+      301
+    ]
+  },
+  "ocean-mask": {
+    "src": "./items/depths/ocean-mask.webp",
+    "name": "Maske des Perlensuchers",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "b2cba87683c015c95d5c3d517f71a5d7c0d8f47a6a0fdd1b113781b40ed7bea4",
+    "crop": [
+      1024,
+      164,
+      1135,
+      301
+    ]
+  },
+  "ocean-garment": {
+    "src": "./items/depths/ocean-garment.webp",
+    "name": "Gewand des Schatzsuchers",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "402392dd7f0e0e998123ced59ee22ba595e5f9d4e5dd5d4d9b24b80c86340dc2",
+    "crop": [
+      1147,
+      164,
+      1258,
+      301
+    ]
+  },
+  "ocean-fingers": {
+    "src": "./items/depths/ocean-fingers.webp",
+    "name": "Finger des Gl\u00FCcks",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "641bc6b9e451db225d8de0429c385d6bc024245f1c4709710f223ac8c3a4d8ed",
+    "crop": [
+      1270,
+      164,
+      1381,
+      301
+    ]
+  },
+  "ocean-flippers": {
+    "src": "./items/depths/ocean-flippers.webp",
+    "name": "Flossen des Entdeckers",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "60761336089a62585c47323e06ea1d061bec3d6b62439c87e26a7fae9f58e390",
+    "crop": [
+      1393,
+      164,
+      1504,
+      301
+    ]
+  },
+  "warden-helm": {
+    "src": "./items/depths/warden-helm.webp",
+    "name": "Helm des Tiefseew\u00E4chters",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "666c39a266fe5a9dc23825c4afcb433445b0e5b0df58382a329570db1a029c7f",
+    "crop": [
+      260,
+      638,
+      371,
+      775
+    ]
+  },
+  "warden-chest": {
+    "src": "./items/depths/warden-chest.webp",
+    "name": "Brustplatte des Tiefseew\u00E4chters",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "811e6b74f58f1007110136063008c441eff5da63249f8233f4d7dc1d8665fd38",
+    "crop": [
+      383,
+      638,
+      494,
+      775
+    ]
+  },
+  "warden-gloves": {
+    "src": "./items/depths/warden-gloves.webp",
+    "name": "Handschuhe des Tiefseew\u00E4chters",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "7deefbc1a198082f60e4c87a99e4fa9a0a9a8983ce1739d5cdc24ee8ab573f6a",
+    "crop": [
+      506,
+      638,
+      617,
+      775
+    ]
+  },
+  "warden-boots": {
+    "src": "./items/depths/warden-boots.webp",
+    "name": "Stiefel des Tiefseew\u00E4chters",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "5213125c1e75aa1badab7169efd52b542733bf4f8aec78ed875e3dc366ab1296",
+    "crop": [
+      629,
+      638,
+      740,
+      775
+    ]
+  },
+  "wrath-helm": {
+    "src": "./items/depths/wrath-helm.webp",
+    "name": "Krone des Ozeanzorns",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "0012d0dfc04b0b044f63f424acfe09c14d3289b4f320f59901c5335541433f5d",
+    "crop": [
+      1024,
+      638,
+      1135,
+      775
+    ]
+  },
+  "wrath-chest": {
+    "src": "./items/depths/wrath-chest.webp",
+    "name": "Panzer des Ozeanzorns",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "c7b00a065483be9ebf1cf32ab39ff3b1987c81503c27a898a5574b4f6d333ce9",
+    "crop": [
+      1147,
+      638,
+      1258,
+      775
+    ]
+  },
+  "wrath-gloves": {
+    "src": "./items/depths/wrath-gloves.webp",
+    "name": "Klauen des Ozeanzorns",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "d0c4ebdc9e0c5b31b201456498d89e2deed0d2f15805e327763132017228403c",
+    "crop": [
+      1270,
+      638,
+      1381,
+      775
+    ]
+  },
+  "wrath-boots": {
+    "src": "./items/depths/wrath-boots.webp",
+    "name": "Schritte des Ozeanzorns",
+    "width": 111,
+    "height": 137,
+    "sourceSha256": "3f1f9db7ea4e366e5364c49dd8b88d285b34179be62ab1bd2a1354969d384949",
+    "assetSha256": "adc2a6518f0c95b1ac3498b24fb33f516fea5b21e8a660b2fa45b53512fe6b0e",
+    "crop": [
+      1393,
+      638,
+      1504,
+      775
+    ]
+  }
+}

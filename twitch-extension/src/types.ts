@@ -1,9 +1,11 @@
-export type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
+export type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary' | 'True' | 'Cursed' | 'Abyss';
 export const slots = ['Weapon', 'Helmet', 'Chest', 'Gloves', 'Boots', 'Ring1', 'Ring2', 'Amulet'] as const;
 export type Slot = typeof slots[number];
 export type Activity = 'Dive' | 'Fishing' | 'Boss';
 export type SushiCategory = 'Offensive' | 'Defensive';
 export interface CharacterStats {
+    movementSpeed?: number;
+    bossLifeleech?: number;
     armor?: number;
     armorPercent?: number;
     maximumHpPercent?: number;
@@ -50,6 +52,7 @@ export interface ItemEffect {
 }
 export interface InventoryItem {
     upgradeLevel?: number;
+    isRefined?: boolean;
     instanceId: string;
     itemId: string;
     name: string;
@@ -211,8 +214,9 @@ export interface SalvageQuote {
     total: number;
     fingerprint: string;
 }
-export interface MaterialStock { shells:number; whitePearls:number; bluePearls:number; redPearls:number; stoneChips:number; }
+export interface MaterialStock { pearlDust?:number; luminousScale?:number; runeShell?:number; eternalDepthCore?:number; trueCoralCore?:number; cursedSilk?:number; abyssShard?:number; reinforcementCore?:number; shells:number; whitePearls:number; bluePearls:number; redPearls:number; stoneChips:number; }
 export interface DemoState {
+    materialFinds?:Record<string,number>;
     talents?: import("./talents").TalentRanks;
     materials?: MaterialStock;
     remote?: import("./remote/model").RemoteView;
@@ -234,7 +238,7 @@ export interface DemoState {
     salvageQuote?: SalvageQuote;
     effectCooldowns: Record<string, number>;
 }
-export type Action = {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
+export type Action = {type:'refine';id:string;expectedLevel:number;} | {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
     type: 'dive';
     stake: number;
 } | {

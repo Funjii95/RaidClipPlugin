@@ -146,7 +146,7 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
             if (item is null) return $"💍 @{user.UserName}, dieses Item ist nicht in deinem Inventar. Übersicht: !inv; Details: !item <Nummer>.";
             var detailPage = parts.Length == 3 && int.TryParse(parts[2], out var requestedDetail) ? Math.Max(1, requestedDetail) : 1;
             return ListPage(user.UserName, "💍 Itemdetails", new[] { ItemLine(item, profile, true),
-                "Vollständige Werte: " + RpgChatPresentation.Bonuses(item.Attributes),
+                "Vollständige Werte: " + RpgChatPresentation.Bonuses(RpgEquipmentUpgradeRules.Effective(item)),
                 $"Zerlegewert: {RpgChatPresentation.Number(RpgSalvageService.Value(item,config.Salvage))} Perlen." +
                     (item.IsLocked || item.IsFavorite ? " Gesperrt/favorisiert: nicht zerlegbar." : "") +
                     (item.Rarity==ItemRarity.Legendary || !string.IsNullOrEmpty(item.SetId) ? " ⚠ Legendary/Setteil: ausdrückliche Bestätigung erforderlich; Sammelzerlegen ausgeschlossen." : "")
@@ -244,3 +244,4 @@ public sealed class RpgChatCommand(ViewerPointStore points, RpgConfig config, lo
         return RpgChatPages.Page(name, label, entries, page, command, empty);
     }
 }
+

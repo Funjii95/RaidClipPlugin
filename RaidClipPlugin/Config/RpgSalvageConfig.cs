@@ -18,7 +18,10 @@ public sealed class RpgSalvageConfig
         [ItemRarity.Uncommon] = new() { Minimum=75, Maximum=150 },
         [ItemRarity.Rare] = new() { Minimum=200, Maximum=400 },
         [ItemRarity.Epic] = new() { Minimum=600, Maximum=1200 },
-        [ItemRarity.Legendary] = new() { Minimum=2000, Maximum=4000 }
+        [ItemRarity.Legendary] = new() { Minimum=2000, Maximum=4000 },
+        [ItemRarity.True] = new() { Minimum=2500, Maximum=5000 },
+        [ItemRarity.Cursed] = new() { Minimum=2500, Maximum=5000 },
+        [ItemRarity.Abyss] = new() { Minimum=4000, Maximum=8000 }
     };
     public void Validate()
     {

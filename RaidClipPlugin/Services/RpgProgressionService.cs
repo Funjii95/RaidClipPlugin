@@ -74,7 +74,7 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             RpgSetCombatService.Refresh(account.Rpg,config.Health,clock?.Invoke()??DateTimeOffset.UtcNow);
             if(config.Health.Enabled) RpgHealthService.Refresh(account.Rpg,config.Health,DateTimeOffset.UtcNow);
             return new(true, Details: new(RpgActionKind.Equip, RpgChatPresentation.ItemName(item),
-                Bonuses: RpgChatPresentation.Snapshot(item.Attributes), Slot: slot,
+                Bonuses: RpgChatPresentation.Snapshot(RpgEquipmentUpgradeRules.Effective(item)), Slot: slot,
                 Effects: JsonSerializer.Deserialize<List<RpgItemEffect>>(JsonSerializer.Serialize(item.Effects)),
                 SetName: config.Sets.FirstOrDefault(s => s.Id == item.SetId)?.Name ?? ""));
         }, token);
@@ -128,3 +128,4 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
         profile.Buffs.RemoveAll(b => b.RemainingUses <= 0);
     }
 }
+

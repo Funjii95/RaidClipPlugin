@@ -450,7 +450,7 @@ public sealed partial class AdventureGameService
                     if (account.Rpg.Cooldowns.TryGetValue("!attack", out var until) && clock < until)
                         return new(false, $"Angriff in {Math.Ceiling((until - clock).TotalSeconds)} Sekunden wieder möglich.");
                     var hit = RpgPassiveService.BossAttack(damage, account.Rpg, _config.Adventures.Rpg, _random, clock);
-                    damage = hit.Damage; critical = hit.Critical; extraHits = hit.ExtraHits;
+                    damage = RpgDepthsCombatService.MitigateBoss(hit.Damage,_boss.Config.DamageReductionPercent,hit.Critical,account.Rpg,_config.Adventures.Rpg); critical = hit.Critical; extraHits = hit.ExtraHits;
                     if(hpEnabled)
                     {
                         var health=account.Rpg.Health;
@@ -458,10 +458,14 @@ public sealed partial class AdventureGameService
                         health.BossDamage=checked(health.BossDamage+Math.Min(damage,_boss.Hp));
                         health.BossRemainingHp=Math.Max(0,_boss.Hp-damage);
                         var combatStats=CharacterStatService.Calculate(account.Rpg,_config.Adventures.Rpg,RpgActivity.Boss,now:clock);
+                        var bloodLeech=RpgDepthsCombatService.Has(account.Rpg,_config.Adventures.Rpg,"abyss_blood_dynasty",4)?10m:0;
+                        var gearLeech=Math.Clamp(combatStats.BossLifeleech,0,100);
+                        if(bloodLeech+gearLeech>0)RpgSetCombatService.Heal(account.Rpg,_config.Adventures.Rpg.Health,(int)(Math.Min(RpgDepthsCombatService.MitigateBoss(hit.DirectDamage,_boss.Config.DamageReductionPercent,hit.Critical,account.Rpg,_config.Adventures.Rpg),_boss.Hp)*(bloodLeech+gearLeech)/100),clock);
                         lifeleechHealing=RpgSushiService.HealFromBossAttack(damage,_boss.Hp,account.Rpg,_config.Adventures.Rpg.Health,_boss.Id,clock,critical?combatStats.CriticalHealing:0);
                         if(damage<_boss.Hp)
                             receivedDamage=RpgBossDefenseService.Counter(RpgHealthService.CounterDamage(_boss.Config.HitPoints,_config.Adventures.Rpg.Health,_random),account.Rpg,_config.Adventures.Rpg,_random,clock);
                         health.CurrentHp=Math.Max(0,health.CurrentHp!.Value-receivedDamage);
+                        RpgDepthsCombatService.AfterCounter(account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
                         playerDied=health.Defeated=health.CurrentHp==0;
                         healthText=$" Gegenangriff: -{receivedDamage} HP. ❤️ {health.CurrentHp}/{RpgHealthService.Maximum(account.Rpg,_config.Adventures.Rpg.Health)} HP.";
                         if(lifeleechHealing>0)healthText=$" Lifeleech: +{lifeleechHealing} HP."+healthText;
@@ -600,7 +604,7 @@ public sealed partial class AdventureGameService
                         ItemRarity.Epic,_points.HotTime.DropBonus(rpg.HotTime)).Item;
                     if(found is not null) a.Rpg.Inventory.Add(found);
                 }
-                if(victory){RpgPerkCatalog.Victory(a.Rpg,_now());legendary=RpgBossLootService.RollLegendary(rpg,_random,_now(),boss.Config.IsMimic);if(legendary is not null)a.Rpg.Inventory.Add(legendary);}
+                if(victory){RpgDepthsLootService.Award(a.Rpg,rpg,boss.Config.IsMimic?"mimic":"boss",_random,_now(),_points.HotTime.DropBonus(rpg.HotTime),boss.MaximumHp>=rpg.Health.LegendaryThreshold);RpgMaterialLootService.Award(a.Rpg,rpg.Upgrades,boss.Config.IsMimic?"mimic":"boss",_random,_points.HotTime.DropBonus(rpg.HotTime));RpgPerkCatalog.Victory(a.Rpg,_now());legendary=RpgBossLootService.RollLegendary(rpg,_random,_now(),boss.Config.IsMimic);if(legendary is not null)a.Rpg.Inventory.Add(legendary);}
                 return new(true);
             },token);
             if(result.Success && victory)await AnnounceBossRewardAsync(player.Name,credited,token);
@@ -672,3 +676,6 @@ public sealed partial class AdventureGameService
             : Format(race.Config.Adventures.Race.CancelMessage, ("reason", result.Error)), token);
     }
 }
+
+
+

@@ -31,14 +31,16 @@ public sealed record SelfDeletionJob(string UserId,Guid RequestId,DateTimeOffset
 
 public static class RpgIntents
 {
-    public static bool IsAdmin(string kind)=>kind is "adminCatalog" or "adminStart" or "adminGrant";
-    public static readonly string[] Supported = ["upgradeItem","status","inventory","sets","perks","equip","unequip","buyPerk","dive","fish","craft","eat","preview","minigames","casino","bossStatus","bossAttack","itemlock","favorite","salvagePreview","salvageBatch","salvageConfirm","salvageCancel","community","openShells","learnTalent"];
+    public static bool IsAdmin(string kind)=>kind is "adminCatalog" or "adminStart" or "adminGrant" or "adminMaterialGrant" or "adminBalance" or "adminHealAll";
+    public static readonly string[] Supported = ["refineItem","upgradeItem","status","inventory","sets","perks","equip","unequip","buyPerk","dive","fish","craft","eat","preview","minigames","casino","bossStatus","bossAttack","itemlock","favorite","salvagePreview","salvageBatch","salvageConfirm","salvageCancel","community","openShells","learnTalent"];
     public static string Canonical(RpgIntent intent)
     {
         if(intent.ActionId==Guid.Empty || !(Supported.Contains(intent.Kind)||IsAdmin(intent.Kind)) || intent.Arguments.ValueKind!=JsonValueKind.Object)
             throw new ArgumentException("Unsupported RPG intent.");
-        string[] required=intent.Kind switch {"upgradeItem"=>["instanceId","expectedLevel"],"learnTalent"=>["talentId","expectedRank","catalogVersion"],"openShells"=>["count"],"equip"=>["instanceId"],"unequip"=>["slot"],"buyPerk"=>["perkId"],"dive" or "fish"=>["stake"],"craft" or "eat"=>["recipeId"],"preview"=>["stake","fishingStake"],"casino"=>["game","stake","choice"],"itemlock" or "favorite"=>["instanceId","enabled"],"salvagePreview"=>["instanceId"],"salvageBatch"=>["selection"],"salvageConfirm" or "salvageCancel"=>["token"],"community"=>["game","operation","eventId","stake","target"],_=>[]};
+        string[] required=intent.Kind switch {"upgradeItem" or "refineItem"=>["instanceId","expectedLevel"],"learnTalent"=>["talentId","expectedRank","catalogVersion"],"openShells"=>["count"],"equip"=>["instanceId"],"unequip"=>["slot"],"buyPerk"=>["perkId"],"dive" or "fish"=>["stake"],"craft" or "eat"=>["recipeId"],"preview"=>["stake","fishingStake"],"casino"=>["game","stake","choice"],"itemlock" or "favorite"=>["instanceId","enabled"],"salvagePreview"=>["instanceId"],"salvageBatch"=>["selection"],"salvageConfirm" or "salvageCancel"=>["token"],"community"=>["game","operation","eventId","stake","target"],_=>[]};
         var values=new SortedDictionary<string,string>(StringComparer.Ordinal);
+        if(intent.Kind=="adminMaterialGrant")required=["targetUserId","materialId","count"];
+        if(intent.Kind=="adminBalance")required=["path","value"];
         if(intent.Kind=="adminStart")required=["event","stake"];
         if(intent.Kind=="adminGrant")required=["itemId","targetUserId","count","roll","stats"];
         foreach(var field in intent.Arguments.EnumerateObject())
@@ -49,6 +51,8 @@ public static class RpgIntents
                 throw new ArgumentException("Invalid action arguments.");
         }
         if(required.Any(p=>!values.ContainsKey(p)))throw new ArgumentException("Missing action arguments.");
+        if(intent.Kind=="adminMaterialGrant"&&(!System.Text.RegularExpressions.Regex.IsMatch(values["targetUserId"],"^[0-9]{1,25}$")||!int.TryParse(values["count"],out var matCount)||matCount is <1 or >1000000||matCount.ToString()!=values["count"]))throw new ArgumentException("Invalid material grant.");
+        if(intent.Kind=="adminBalance"&&(!decimal.TryParse(values["value"],System.Globalization.NumberStyles.AllowDecimalPoint,System.Globalization.CultureInfo.InvariantCulture,out var balance)||balance is <0 or >1000000000))throw new ArgumentException("Invalid balance value.");
         if(intent.Kind=="adminStart" && values["event"] is not ("boss" or "mimic" or "race" or "heist" or "hotTime"))throw new ArgumentException("Unsupported admin event.");
         if(intent.Kind=="adminGrant")
         {
@@ -70,6 +74,7 @@ public static class RpgIntents
         if(intent.Kind=="learnTalent" && (!int.TryParse(values["expectedRank"],out var rank) || rank is <0 or >5 || rank.ToString()!=values["expectedRank"] || values["catalogVersion"]!="1"))throw new ArgumentException("Invalid talent allocation.");
         if(intent.Kind=="buyPerk" && values.TryGetValue("mode",out var mode) && mode!="max")throw new ArgumentException("Invalid perk purchase mode.");
         if(intent.Kind=="upgradeItem" && (!int.TryParse(values["expectedLevel"],out var level) || level is <0 or >8 || level.ToString()!=values["expectedLevel"]))throw new ArgumentException("Invalid upgrade level.");
+        if(intent.Kind=="refineItem" && values["expectedLevel"]!="9")throw new ArgumentException("Invalid refinement level.");
         return JsonSerializer.Serialize(new {intent.Kind,Arguments=values});
     }
     public static string Hash(RpgIntent intent)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Canonical(intent))));

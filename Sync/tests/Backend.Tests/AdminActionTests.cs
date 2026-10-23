@@ -7,6 +7,9 @@ namespace Backend.Tests;
 
 public sealed class AdminActionTests
 {
+    [InlineData("adminHealAll","{}")]
+    [InlineData("adminMaterialGrant","{\"targetUserId\":\"1001\",\"materialId\":\"reinforcement_core\",\"count\":\"1\"}")]
+    [InlineData("adminBalance","{\"path\":\"reset:all\",\"value\":\"0\"}")]
     [Theory][InlineData("adminCatalog","{}")][InlineData("adminStart","{\"event\":\"boss\",\"stake\":\"0\"}")][InlineData("adminGrant","{\"itemId\":\"tide_king_helmet\",\"targetUserId\":\"1001\",\"count\":\"1\",\"roll\":\"random\",\"stats\":\"{}\"}")]
     public async Task OrdinaryVerifiedViewerCannotQueueAdminActions(string kind,string arguments)
     {

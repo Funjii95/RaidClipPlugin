@@ -8,6 +8,7 @@ public sealed record RpgAdventureResult(bool Success, string PlayerId, long Stak
 {
     public IReadOnlyList<RpgItem> AdditionalItems { get; init; } = Array.Empty<RpgItem>();
     public RpgEnemyResult? Enemy { get; init; }
+    public IReadOnlyDictionary<string,int> MaterialRewards {get;init;}=new Dictionary<string,int>();
     public int ShellsAwarded { get; init; }
     public bool BossDiscovered { get; init; }
 }
@@ -44,6 +45,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
         RpgEnemyResult? enemy = null;
         RpgFishDefinition? caughtFish=null;
         var additional = new List<RpgItem>();
+        IReadOnlyDictionary<string,int> materials=new Dictionary<string,int>();
         var remaining = 0;
         var bossDiscovered=false;
         var applied = Array.Empty<string>();
@@ -88,6 +90,8 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                         var extra = new RpgLootService(_random).Roll(stake, sources.Perks, rpg.DiveLoot, clock, sources.Sushi, sources.Equipment,points.HotTime.DropBonus(rpg.HotTime),collectors,stats.RareEquipmentLuck,RpgPerkCatalog.Combined(account.Rpg,"loot")).Item;
                         if (extra is not null) { StoreLoot(extra); additional.Add(extra); }
                     }
+                    if(RpgDepthsCombatService.Has(account.Rpg,rpg,"true_eternal_reef",6))
+                    foreach(var chance in new[]{20,10})if(_random.NextInclusive(0,9999)<chance*100){var reefLoot=new RpgLootService(_random).Roll(stake,sources.Perks,rpg.DiveLoot,clock,sources.Sushi,sources.Equipment,points.HotTime.DropBonus(rpg.HotTime),collectors,stats.RareEquipmentLuck,RpgPerkCatalog.Combined(account.Rpg,"loot")).Item;if(reefLoot is not null){StoreLoot(reefLoot);additional.Add(reefLoot);}}
                     enemy=new RpgEnemyService(_random).Encounter(account.Rpg,rpg,stake,clock,points.HotTime.DropBonus(rpg.HotTime));
                     if(enemy?.Loot is not null) { StoreLoot(enemy.Loot); additional.Add(enemy.Loot); }
                     if(enemy?.ExtraLoot is not null) { StoreLoot(enemy.ExtraLoot); additional.Add(enemy.ExtraLoot); }
@@ -99,6 +103,7 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                     if (!account.Rpg.Fish.TryGetValue(id, out var fish)) account.Rpg.Fish[id] = fish = new() { FishId = id, FirstCaughtAt = clock };
                     var quantity=1;
                     if(RpgPerkCatalog.Proc(account.Rpg,"doubleFish",_random))quantity++;
+                    if(RpgDepthsCombatService.Has(account.Rpg,rpg,"true_eternal_reef",4)&&_random.NextInclusive(0,9999)<1500)quantity++;
                     if(rpg.Recipes.Any(r=>RpgSushiService.Ingredients(r).ContainsKey(id)) && RpgPerkCatalog.Proc(account.Rpg,"ingredient",_random))quantity++;
                     fish.Quantity = checked(fish.Quantity + quantity); fish.LastCaughtAt = clock;
                     loot = new() { ItemId = id, DisplayName = species.Name, Rarity = species.Rarity, IconId = species.IconId, FoundAt = clock };
@@ -110,8 +115,14 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
                     account.Rpg.Materials.Shells=checked(account.Rpg.Materials.Shells+1);
                     outcome="Eine Muschel gefunden!";
                 }
+                var hotTime=points.HotTime.DropBonus(rpg.HotTime);
+                var materialFound=new Dictionary<string,int>(RpgMaterialLootService.Award(account.Rpg,rpg.Upgrades,fishing?"fish":"dive",_random,hotTime));
+                if(!fishing&&tier>0&&account.Rpg.Health.CurrentHp is not <=0)
+                    foreach(var reward in RpgMaterialLootService.Award(account.Rpg,rpg.Upgrades,tier==1?"chest":tier==2?"rareChest":"legendaryChest",_random,hotTime))materialFound[reward.Key]=checked(materialFound.GetValueOrDefault(reward.Key)+reward.Value);
+                materials=materialFound;
+                if(account.Rpg.Health.CurrentHp is not <=0)RpgDepthsLootService.Award(account.Rpg,rpg,fishing?"fish":"dive",_random,clock,hotTime);
                 RpgPassiveService.ConsumeBuffs(account.Rpg, activity, rpg, _random, clock, stake);
-                account.Rpg.Cooldowns[command] = clock.AddSeconds(RpgPerkCatalog.Cooldown(account.Rpg,game.CooldownSeconds,fishing?"fishCooldown":"diveCooldown"));
+                account.Rpg.Cooldowns[command] = clock.AddSeconds(RpgPerkCatalog.Cooldown(account.Rpg,game.CooldownSeconds,fishing?"fishCooldown":"diveCooldown")/(1+(double)Math.Clamp(stats.MovementSpeed,-90,200)/100));
                 if (string.IsNullOrWhiteSpace(requestId) || requestId.Length > 200) throw new ArgumentException("Ungültige Aktions-ID.");
                 bossDiscovered=!fishing && rpg.Health.Enabled && config.Adventures.Boss.Enabled && RpgPerkCatalog.DiscoverMimic(account.Rpg,rpg,_random);
                 account.Rpg.CompletedActions.Add(requestId);
@@ -147,6 +158,6 @@ public sealed class RpgAdventureService(ViewerPointStore points, MinigameConfig 
             name));
         return new(result.Success, userId, stake, payout, result.Balance, result.Error, outcome,
             result.Success ? loot : null, remaining, result.Success ? applied : Array.Empty<string>())
-            { BossDiscovered=result.Success && bossDiscovered, AdditionalItems = result.Success ? additional : Array.Empty<RpgItem>(),Enemy=result.Success?enemy:null,ShellsAwarded=result.Success && fishing && tier==0?1:0 };
+            { MaterialRewards=result.Success?materials:new Dictionary<string,int>(), BossDiscovered=result.Success && bossDiscovered, AdditionalItems = result.Success ? additional : Array.Empty<RpgItem>(),Enemy=result.Success?enemy:null,ShellsAwarded=result.Success && fishing && tier==0?1:0 };
     }
 }

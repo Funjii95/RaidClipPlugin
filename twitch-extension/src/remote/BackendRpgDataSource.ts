@@ -5,7 +5,8 @@ import {attributes,emptyRemoteState,field,inventoryItem,mapProfile} from './mode
 import {RemoteMinigameClient} from '../minigames/remote-client';
 export type TwitchHelper={onAuthorized:(callback:(auth:Authorization)=>void)=>void;actions?:{requestIdShare:()=>void}};
 import {PluginRuleError} from './errors';
-const actionKinds:Partial<Record<Action['type'],string>>={upgrade:'upgradeItem',learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
+import {materialKeys,materialNames} from '../UpgradePanel';
+const actionKinds:Partial<Record<Action['type'],string>>={refine:'refineItem',upgrade:'upgradeItem',learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
 const canonical=(v:any):any=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k[0].toLowerCase()+k.slice(1),canonical(v)])):v;
 const signature=(v:any)=>JSON.stringify(canonical([field(v,'UserId'),field(v,'Points'),field(v,'Rpg')]));
 // Pearls, fishing stocks and regenerating HP can change while the read-only status
@@ -96,6 +97,8 @@ export class BackendRpgDataSource implements RpgDataSource {
     }
     const incoming=this.confirmedProfile??observed;
     const old=this.state;const mapped=this.confirmedProfile?mapProfile(incoming,this.catalog):validated;
+    mapped.materialFinds=old.materialFinds;
+    if(old.materials&&mapped.materials){const found=Object.fromEntries(Object.entries(materialKeys).map(([id,key])=>[id,(mapped.materials![key]??0)-(old.materials![key]??0)]).filter(([,n])=>Number(n)>0));if(Object.keys(found).length)mapped.materialFinds=found as Record<string,number>;}
     if(old.remote!.loaded&&old.player.id!==mapped.player.id)throw Error('Unerwarteter Spielerwechsel ohne neue Twitch-Autorisierung.');
     mapped.result=old.result;mapped.salvageQuote=old.salvageQuote;if(old.remote!.bossKnown){mapped.boss=old.boss;mapped.remote!.bossKnown=true;}if(old.remote!.hotKnown){mapped.hotTime=old.hotTime;mapped.remote!.hotKnown=true;}mapped.remote!.pendingState=old.remote!.pendingState;
     mapped.remote!.syncing=!!this.confirmedProfile||(!hadConfirmedProfile&&old.remote!.syncing&&signature(observed)===signature(this.profile));
@@ -128,7 +131,7 @@ export class BackendRpgDataSource implements RpgDataSource {
    if(action.type==='unequip')args={slot:action.slot};
    if(action.type==='learnTalent')args={talentId:action.id,expectedRank:String(this.state.talents?.[action.id]??0),catalogVersion:String(this.state.remote?.talentCatalogVersion??0)};
    if(action.type==='perk')args={perkId:action.id,...(action.maximum?{mode:'max'}:{})};
-   if(action.type==='upgrade')args={instanceId:action.id,expectedLevel:String(action.expectedLevel)};
+   if(action.type==='upgrade'||action.type==='refine')args={instanceId:action.id,expectedLevel:String(action.expectedLevel)};
    if(action.type==='cook'||action.type==='activateSushi')args={recipeId:action.recipeId};
    if(action.type==='favorite'||action.type==='lock'){
     const item=this.state.inventory.find(i=>i.instanceId===action.id);if(!item)throw Error('Gegenstand nicht mehr vorhanden.');
@@ -205,7 +208,8 @@ export class BackendRpgDataSource implements RpgDataSource {
    const payout=field(data,'Payout');const stake=field(data,'Stake');
    if(typeof payout==='number'&&Number.isSafeInteger(payout)&&typeof stake==='number'&&Number.isSafeInteger(stake)){
     const items=[field(data,'Item'),...(field(data,'AdditionalItems')??[])].filter(Boolean).map(inventoryItem);
-    this.state.result={kind:action.type==='dive'?'dive':'fishing',pearls:payout,stake,items,message:field(data,'Outcome')||'Aktion abgeschlossen.'};
+    const found=field(data,'MaterialRewards');const materialText=found?Object.entries(found).map(([id,n])=>`${n} × ${materialNames[id]??id}`).join(', '):'';
+    this.state.result={kind:action.type==='dive'?'dive':'fishing',pearls:payout,stake,items,message:(field(data,'Outcome')||'Aktion abgeschlossen.')+(materialText?' Materialien: '+materialText:'')};
    }
   }
   this.emit();

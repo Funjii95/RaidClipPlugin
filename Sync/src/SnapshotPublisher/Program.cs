@@ -69,7 +69,7 @@ public partial class PublisherProgram
         });
         app.UseRateLimiter();
         app.MapGet("/health/live", () => Results.Ok(new { status = "ok" }));
-        app.MapGet("/api/v1/snapshots/capabilities", () => Results.Json(new { rpgProjectionVersion = 2, supportedRpgProjectionVersions = new[] { 2, 3, 4, SnapshotValidation.RpgProjectionVersion }, channelId = channel, automaticPlayerEnrollment = settings.AutomaticPlayerEnrollment, allowedUserIds = settings.AllowedUserIds, maxMessageBytes = SnapshotValidation.MaxMessageBytes }));
+        app.MapGet("/api/v1/snapshots/capabilities", () => Results.Json(new { rpgProjectionVersion = 2, supportedRpgProjectionVersions = new[] { 2, 3, 4, 5, SnapshotValidation.RpgProjectionVersion }, channelId = channel, automaticPlayerEnrollment = settings.AutomaticPlayerEnrollment, allowedUserIds = settings.AllowedUserIds, maxMessageBytes = SnapshotValidation.MaxMessageBytes }));
         app.MapGet("/api/v1/snapshots/{userId}/head", async (string userId, CancellationToken ct) =>
         {
             if (settings.Mode is not ("FirestoreProfilesTest" or "FirestoreTest")) return Results.NotFound();

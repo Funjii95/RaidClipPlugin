@@ -42,7 +42,7 @@ public sealed class RpgSalvageService(ViewerPointStore points, RpgConfig config,
     private static string? Blocked(RpgItem item, RpgProfile profile) =>
         profile.Equipment.Values.Contains(item.InstanceId) ? "ist ausgerüstet; zuerst ablegen" :
         item.IsLocked || item.IsFavorite ? "ist gesperrt oder favorisiert" : null;
-    private static bool Sensitive(RpgItem item) => item.Rarity == ItemRarity.Legendary || !string.IsNullOrEmpty(item.SetId);
+    private static bool Sensitive(RpgItem item) => item.Rarity >= ItemRarity.Legendary || !string.IsNullOrEmpty(item.SetId);
     private static string Fingerprint(RpgItem item) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(item))));
 
     public async Task<RpgSalvagePreview> PreviewAsync(string userId, string selection, CancellationToken token)
@@ -84,7 +84,7 @@ public sealed class RpgSalvageService(ViewerPointStore points, RpgConfig config,
         if (items.Length > config.Salvage.MaximumBatchSize) return new(false,$"Maximal {config.Salvage.MaximumBatchSize} Items pro Vorschau. Bitte einzeln auswählen.");
         foreach (var item in items) if (Blocked(item,profile) is { } reason) return new(false,$"{RpgChatPresentation.ItemName(item)} {reason}. Nichts wurde zerlegt.");
         var rows = items.Select(i => new RpgSalvageItem(profile.Inventory.IndexOf(i)+1,i.InstanceId,RpgChatPresentation.ItemName(i),i.Rarity,Value(i,config.Salvage),Fingerprint(i),Sensitive(i),
-            RpgChatPresentation.Bonuses(i.Attributes) + string.Concat(i.Effects.Select(e=>"; "+RpgPassiveService.Describe(e))))).ToArray();
+            RpgChatPresentation.Bonuses(RpgEquipmentUpgradeRules.Effective(i)) + string.Concat(i.Effects.Select(e=>"; "+RpgPassiveService.Describe(e))))).ToArray();
         var quote = new RpgSalvageQuote(Guid.NewGuid().ToString("N"),userId,selection,_now().AddSeconds(config.Salvage.ConfirmationSeconds),Array.AsReadOnly(rows),checked(rows.Sum(i=>i.Value)));
         lock (Cache.Users)
         {
@@ -170,3 +170,4 @@ public sealed class RpgSalvageService(ViewerPointStore points, RpgConfig config,
         return new(true,"",quote.Total,result.Balance,quote.Items.Count);
     }
 }
+

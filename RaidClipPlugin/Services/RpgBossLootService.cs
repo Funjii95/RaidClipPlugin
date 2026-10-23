@@ -31,6 +31,8 @@ public sealed class RpgBossLootService(ViewerPointStore points, RpgConfig config
             item = new RpgLootService(random).RollReward(config.DiveLoot, now, RpgActivity.Boss, config.BossLootChance,
                 ItemRarity.Epic,points.HotTime.DropBonus(config.HotTime)).Item;
             if (item is not null) account.Rpg.Inventory.Add(item);
+            RpgMaterialLootService.Award(account.Rpg,config.Upgrades,"boss",random,points.HotTime.DropBonus(config.HotTime));
+            RpgDepthsLootService.Award(account.Rpg,config,"boss",random,now,points.HotTime.DropBonus(config.HotTime),initialHp>=config.Health.LegendaryThreshold);
             var legendary=RollLegendary(config,random,now);
             if(legendary is not null){account.Rpg.Inventory.Add(legendary);item=legendary;}
             return new(true);

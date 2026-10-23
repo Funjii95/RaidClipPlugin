@@ -1,0 +1,6777 @@
+{
+  "schemaVersion": 1,
+  "id": "depths",
+  "items": [
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_eternal_reef",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 12,
+            "Maximum": 25
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_eternal_reef_helmet",
+      "DisplayName": "Helm des Ewigen Riffs",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_eternal_reef_helmet",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Helmet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_eternal_reef",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 70,
+            "Maximum": 110
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 22,
+            "Maximum": 40
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_eternal_reef_chest",
+      "DisplayName": "Riffherz-Panzer",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_eternal_reef_chest",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Chest",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_eternal_reef",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 20,
+            "Maximum": 35
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_eternal_reef_gloves",
+      "DisplayName": "Krallen der Reinheit",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_eternal_reef_gloves",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Gloves",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_eternal_reef",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_eternal_reef_boots",
+      "DisplayName": "Stiefel der Korallenwurzel",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_eternal_reef_boots",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Boots",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_eternal_reef",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 15,
+            "Maximum": 28
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_eternal_reef_ring",
+      "DisplayName": "Ring der Riffessenz",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_eternal_reef_ring",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_eternal_reef",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 45,
+            "Maximum": 85
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_eternal_reef_amulet",
+      "DisplayName": "Amulett des Ewigen Riffs",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_eternal_reef_amulet",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_deep_guardian",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 12,
+            "Maximum": 25
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_deep_guardian_helmet",
+      "DisplayName": "Helm des Tiefenw\u00E4chters",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_deep_guardian_helmet",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Helmet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_deep_guardian",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 70,
+            "Maximum": 110
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 22,
+            "Maximum": 40
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_deep_guardian_chest",
+      "DisplayName": "Brustpanzer des Meereswalls",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_deep_guardian_chest",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Chest",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_deep_guardian",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 20,
+            "Maximum": 35
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_deep_guardian_gloves",
+      "DisplayName": "Handschuhe des W\u00E4chters",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_deep_guardian_gloves",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Gloves",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_deep_guardian",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_deep_guardian_boots",
+      "DisplayName": "Stiefel der Standhaftigkeit",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_deep_guardian_boots",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Boots",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_deep_guardian",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 15,
+            "Maximum": 28
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_deep_guardian_ring",
+      "DisplayName": "Ring des Schutzwalls",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_deep_guardian_ring",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_deep_guardian",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 45,
+            "Maximum": 85
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_deep_guardian_amulet",
+      "DisplayName": "Amulett des Tiefenherzens",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_deep_guardian_amulet",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_ancient_current",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 12,
+            "Maximum": 25
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_ancient_current_helmet",
+      "DisplayName": "Diadem des Str\u00F6mungss\u00E4ngers",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_ancient_current_helmet",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Helmet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_ancient_current",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 70,
+            "Maximum": 110
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 22,
+            "Maximum": 40
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_ancient_current_chest",
+      "DisplayName": "Gewand des Urmeers",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_ancient_current_chest",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Chest",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_ancient_current",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 20,
+            "Maximum": 35
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_ancient_current_gloves",
+      "DisplayName": "Handschuhe der Flutmagie",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_ancient_current_gloves",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Gloves",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_ancient_current",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_ancient_current_boots",
+      "DisplayName": "Stiefel des Meergesangs",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_ancient_current_boots",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Boots",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_ancient_current",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 15,
+            "Maximum": 28
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_ancient_current_ring",
+      "DisplayName": "Ring der Urstr\u00F6mung",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_ancient_current_ring",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "true_ancient_current",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 45,
+            "Maximum": 85
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "true_ancient_current_amulet",
+      "DisplayName": "Amulett des Gezeitenliedes",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "true_ancient_current_amulet",
+      "Rarity": "True",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_devourer",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 12,
+            "Maximum": 25
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_devourer_helmet",
+      "DisplayName": "Krone des Verschlingers",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_devourer_helmet",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Helmet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_devourer",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 70,
+            "Maximum": 110
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 22,
+            "Maximum": 40
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_devourer_chest",
+      "DisplayName": "Panzer der Endlosen Leere",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_devourer_chest",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Chest",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_devourer",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 20,
+            "Maximum": 35
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_devourer_gloves",
+      "DisplayName": "Klauen der Ausl\u00F6schung",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_devourer_gloves",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Gloves",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_devourer",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_devourer_boots",
+      "DisplayName": "Schritte des Untergangs",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_devourer_boots",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Boots",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_devourer",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 15,
+            "Maximum": 28
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_devourer_ring",
+      "DisplayName": "Ring des Nichts",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_devourer_ring",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_devourer",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 45,
+            "Maximum": 85
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_devourer_amulet",
+      "DisplayName": "Herz des Verschlingers",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_devourer_amulet",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_blood_dynasty",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 12,
+            "Maximum": 25
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_blood_dynasty_helmet",
+      "DisplayName": "Blutkrone der Dynastie",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_blood_dynasty_helmet",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Helmet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_blood_dynasty",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 70,
+            "Maximum": 110
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 22,
+            "Maximum": 40
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_blood_dynasty_chest",
+      "DisplayName": "Brustplatte des Blutmeers",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_blood_dynasty_chest",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Chest",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_blood_dynasty",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 20,
+            "Maximum": 35
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_blood_dynasty_gloves",
+      "DisplayName": "Krallen des Tiefenblutes",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_blood_dynasty_gloves",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Gloves",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_blood_dynasty",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_blood_dynasty_boots",
+      "DisplayName": "Stiefel der Blutstr\u00F6mung",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_blood_dynasty_boots",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Boots",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_blood_dynasty",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 15,
+            "Maximum": 28
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_blood_dynasty_ring",
+      "DisplayName": "Blutring der Dynastie",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_blood_dynasty_ring",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_blood_dynasty",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 45,
+            "Maximum": 85
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_blood_dynasty_amulet",
+      "DisplayName": "Amulett des Ewigen Blutes",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_blood_dynasty_amulet",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_sunken_world",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 12,
+            "Maximum": 25
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_sunken_world_helmet",
+      "DisplayName": "Maske der Versunkenen Welt",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_sunken_world_helmet",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Helmet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_sunken_world",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 70,
+            "Maximum": 110
+          },
+          {
+            "Attribute": "Armor",
+            "Minimum": 22,
+            "Maximum": 40
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_sunken_world_chest",
+      "DisplayName": "Schattenpanzer der Tiefe",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_sunken_world_chest",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Chest",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_sunken_world",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 20,
+            "Maximum": 35
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_sunken_world_gloves",
+      "DisplayName": "Klauen des Schattenmeers",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_sunken_world_gloves",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Gloves",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_sunken_world",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 35,
+            "Maximum": 65
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_sunken_world_boots",
+      "DisplayName": "Schritte der Verlorenen",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_sunken_world_boots",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Boots",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_sunken_world",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "Damage",
+            "Minimum": 15,
+            "Maximum": 28
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_sunken_world_ring",
+      "DisplayName": "Ring der Schattenflut",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_sunken_world_ring",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "abyss_sunken_world",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": {
+        "BaseAttributes": [
+          {
+            "Attribute": "MaximumHp",
+            "Minimum": 45,
+            "Maximum": 85
+          }
+        ],
+        "MinimumAttributes": 3,
+        "MaximumAttributes": 4,
+        "AttributeCount": null,
+        "GenerateEffect": false,
+        "DoubleAttackMinimumChance": 2,
+        "DoubleAttackMaximumChance": 4,
+        "Attributes": [
+          {
+            "Attribute": "CritChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "CritDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDamage",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "Luck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "PearlBonus",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "FishingLuck",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "BossDodgeChance",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "AttackSpeed",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "HealingPower",
+            "Minimum": 6,
+            "Maximum": 14
+          },
+          {
+            "Attribute": "DoubleAttackChance",
+            "Minimum": 1,
+            "Maximum": 7
+          },
+          {
+            "Attribute": "BossDamageReduction",
+            "Minimum": 1,
+            "Maximum": 7
+          }
+        ],
+        "EffectIds": []
+      },
+      "InstanceId": "",
+      "ItemId": "abyss_sunken_world_amulet",
+      "DisplayName": "Amulett der Versunkenen Seele",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_sunken_world_amulet",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_void_tide_ring",
+      "DisplayName": "Ring der Leerenflut",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_void_tide_ring",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 12,
+        "CritDamage": 18,
+        "Luck": 10,
+        "BossDamage": 10,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_devourer_fang",
+      "DisplayName": "Zahn des Verschlingers",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_devourer_fang",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 10,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 28,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 12,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 12,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_depth_eye",
+      "DisplayName": "Auge der Tiefen",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_depth_eye",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 14,
+        "CritDamage": 0,
+        "Luck": 16,
+        "BossDamage": 0,
+        "PearlBonus": 12,
+        "FishingLuck": 10,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_blood_pearl_seal",
+      "DisplayName": "Blutperlen-Siegel",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_blood_pearl_seal",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 8,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 10,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 10,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 22,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_lost_world_ring",
+      "DisplayName": "Ring der Versunkenen Welt",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_lost_world_ring",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 15,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 12,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 12,
+        "BossDamage": 12,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_bone_ring",
+      "DisplayName": "Knochenring der Tiefe",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_bone_ring",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 12,
+        "MaximumHpPercent": 20,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 8,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 10,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_void_heart",
+      "DisplayName": "Herz der Leere",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_void_heart",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 12,
+        "BossDamageReduction": 12,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 35,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 10,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_depthlord_soul",
+      "DisplayName": "Seele des Tiefenlords",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_depthlord_soul",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 10,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 28,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 14,
+        "CritDamage": 12,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_whisper",
+      "DisplayName": "Fl\u00FCstern der Abgr\u00FCnde",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_whisper",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 16,
+        "BossDamage": 10,
+        "PearlBonus": 12,
+        "FishingLuck": 12,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_sunken_crown",
+      "DisplayName": "Krone der Versunkenen",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_sunken_crown",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 12,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 10,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 45,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 10,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_infinity_jellyfish",
+      "DisplayName": "Qualle der Unendlichkeit",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_infinity_jellyfish",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 18,
+        "HealingPower": 0,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 12,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 12,
+        "CritDamage": 0,
+        "Luck": 12,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "abyss_endless_tide_amulet",
+      "DisplayName": "Amulett der Endlosen Flut",
+      "Description": "Werte werden beim Fund dauerhaft gespeichert. Setboni z\u00E4hlen nur unterschiedliche angelegte Teile.",
+      "IconId": "abyss_endless_tide_amulet",
+      "Rarity": "Abyss",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 10,
+        "AttackSpeed": 0,
+        "HealingPower": 10,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 20,
+        "PearlBonus": 10,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "cursed_greed_crown",
+      "DisplayName": "Krone der Gierflut",
+      "Description": "Verflucht: starke Vorteile mit dauerhaften Nachteilen. Aufwertungen verst\u00E4rken ausschlie\u00DFlich positive Grundwerte.",
+      "IconId": "cursed_greed_crown",
+      "Rarity": "Cursed",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Helmet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": -10,
+        "AttackSpeed": 0,
+        "HealingPower": -12,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 28,
+        "CritDamage": 0,
+        "Luck": 10,
+        "BossDamage": 0,
+        "PearlBonus": 18,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "cursed_whisper_chest",
+      "DisplayName": "Panzer des Fl\u00FCsterabgrunds",
+      "Description": "Verflucht: starke Vorteile mit dauerhaften Nachteilen. Aufwertungen verst\u00E4rken ausschlie\u00DFlich positive Grundwerte.",
+      "IconId": "cursed_whisper_chest",
+      "Rarity": "Cursed",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Chest",
+      "Attributes": {
+        "MovementSpeed": -10,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": 12,
+        "BossDodgeChance": -16,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 45,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 40,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "cursed_broken_current_claws",
+      "DisplayName": "Krallen der Gebrochenen Str\u00F6mung",
+      "Description": "Verflucht: starke Vorteile mit dauerhaften Nachteilen. Aufwertungen verst\u00E4rken ausschlie\u00DFlich positive Grundwerte.",
+      "IconId": "cursed_broken_current_claws",
+      "Rarity": "Cursed",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Gloves",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": -12,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 14,
+        "HealingPower": -10,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 36,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 18,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "cursed_restless_echo_boots",
+      "DisplayName": "Stiefel des Ruhelosen Echos",
+      "Description": "Verflucht: starke Vorteile mit dauerhaften Nachteilen. Aufwertungen verst\u00E4rken ausschlie\u00DFlich positive Grundwerte.",
+      "IconId": "cursed_restless_echo_boots",
+      "Rarity": "Cursed",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Boots",
+      "Attributes": {
+        "MovementSpeed": 18,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": -15,
+        "AttackSpeed": 24,
+        "HealingPower": 0,
+        "BossDamageReduction": -10,
+        "BossDodgeChance": 12,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": 0,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "cursed_last_sacrifice_ring",
+      "DisplayName": "Ring des Letzten Opfers",
+      "Description": "Verflucht: starke Vorteile mit dauerhaften Nachteilen. Aufwertungen verst\u00E4rken ausschlie\u00DFlich positive Grundwerte.",
+      "IconId": "cursed_last_sacrifice_ring",
+      "Rarity": "Cursed",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Ring1",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 0,
+        "AttackSpeed": 0,
+        "HealingPower": 0,
+        "BossDamageReduction": -12,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": -10,
+        "CritDamage": 0,
+        "Luck": 24,
+        "BossDamage": 0,
+        "PearlBonus": 0,
+        "FishingLuck": 18,
+        "DiveLuck": 20
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    },
+    {
+      "UpgradeLevel": 0,
+      "IsRefined": false,
+      "DropWeight": 1,
+      "Collector": null,
+      "CoreStatsVersion": 1,
+      "SalvageValue": null,
+      "IsLocked": false,
+      "IsFavorite": false,
+      "SetId": "",
+      "DropActivities": [
+        "Dive",
+        "Fishing",
+        "Boss"
+      ],
+      "Effects": [],
+      "Generation": null,
+      "InstanceId": "",
+      "ItemId": "cursed_black_mercy_amulet",
+      "DisplayName": "Amulett der Schwarzen Gnade",
+      "Description": "Verflucht: starke Vorteile mit dauerhaften Nachteilen. Aufwertungen verst\u00E4rken ausschlie\u00DFlich positive Grundwerte.",
+      "IconId": "cursed_black_mercy_amulet",
+      "Rarity": "Cursed",
+      "Kind": "Equipment",
+      "ConsumableRecipeId": "",
+      "Slot": "Amulet",
+      "Attributes": {
+        "MovementSpeed": 0,
+        "BossLifeleech": 0,
+        "Armor": 0,
+        "ArmorPercent": 0,
+        "MaximumHpPercent": 12,
+        "AttackSpeed": -15,
+        "HealingPower": 28,
+        "BossDamageReduction": 0,
+        "BossDodgeChance": 0,
+        "CriticalHealing": 0,
+        "RareEquipmentLuck": 0,
+        "Power": 0,
+        "Stamina": 0,
+        "MaximumHp": 0,
+        "DoubleAttackChance": 0,
+        "TripleAttackChance": 0,
+        "ExtraLootChance": 0,
+        "SushiPreservationChance": 0,
+        "Damage": 0,
+        "CritChance": -10,
+        "CritDamage": 0,
+        "Luck": 0,
+        "BossDamage": 18,
+        "PearlBonus": 0,
+        "FishingLuck": 0,
+        "DiveLuck": 0
+      },
+      "FoundAt": "1970-01-01T00:00:00+00:00"
+    }
+  ],
+  "sets": [
+    {
+      "Id": "true_eternal_reef",
+      "Name": "Essenz des Ewigen Riffs",
+      "Description": "",
+      "ItemIds": [
+        "true_eternal_reef_helmet",
+        "true_eternal_reef_chest",
+        "true_eternal_reef_gloves",
+        "true_eternal_reef_boots",
+        "true_eternal_reef_ring",
+        "true_eternal_reef_amulet"
+      ],
+      "Bonuses": [
+        {
+          "Description": "\u002B15 % Perlenfund, \u002B10 % Luck",
+          "RequiredPieces": 2,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 10,
+            "BossDamage": 0,
+            "PearlBonus": 15,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "15 % Chance auf einen zus\u00E4tzlichen Fisch bei erfolgreichem Angeln",
+          "RequiredPieces": 4,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "20 % zus\u00E4tzliche Tauchbeute; 10 % zweiter normaler Beuteroll",
+          "RequiredPieces": 6,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        }
+      ]
+    },
+    {
+      "Id": "true_deep_guardian",
+      "Name": "Herz der Tiefenw\u00E4chter",
+      "Description": "",
+      "ItemIds": [
+        "true_deep_guardian_helmet",
+        "true_deep_guardian_chest",
+        "true_deep_guardian_gloves",
+        "true_deep_guardian_boots",
+        "true_deep_guardian_ring",
+        "true_deep_guardian_amulet"
+      ],
+      "Bonuses": [
+        {
+          "Description": "\u002B16 % Schadensreduktion",
+          "RequiredPieces": 2,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 16,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "Boss-Treffer: Schild \u00FCber 20 % der maximalen HP, 20 Sekunden Abklingzeit",
+          "RequiredPieces": 4,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "\u002B30 % Leben, \u002B25 % Boss-Schaden",
+          "RequiredPieces": 6,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 30,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 25,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        }
+      ]
+    },
+    {
+      "Id": "true_ancient_current",
+      "Name": "Gesang der Uralten Str\u00F6mung",
+      "Description": "",
+      "ItemIds": [
+        "true_ancient_current_helmet",
+        "true_ancient_current_chest",
+        "true_ancient_current_gloves",
+        "true_ancient_current_boots",
+        "true_ancient_current_ring",
+        "true_ancient_current_amulet"
+      ],
+      "Bonuses": [
+        {
+          "Description": "\u002B12 % Angriffstempo, \u002B12 % Krit-Chance",
+          "RequiredPieces": 2,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 12,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 12,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "Krits heilen 5 % maximale HP, h\u00F6chstens alle 5 Sekunden",
+          "RequiredPieces": 4,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "Alle 20 Sekunden: n\u00E4chster eigener Angriff \u002B200 % Angriffsschaden",
+          "RequiredPieces": 6,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        }
+      ]
+    },
+    {
+      "Id": "abyss_devourer",
+      "Name": "Leere des Verschlingers",
+      "Description": "",
+      "ItemIds": [
+        "abyss_devourer_helmet",
+        "abyss_devourer_chest",
+        "abyss_devourer_gloves",
+        "abyss_devourer_boots",
+        "abyss_devourer_ring",
+        "abyss_devourer_amulet"
+      ],
+      "Bonuses": [
+        {
+          "Description": "\u002B25 % Krit-Schaden",
+          "RequiredPieces": 2,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 25,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "Krits: 12 % Chance auf Leereexplosion mit 250 % Angriffsschaden, 8 Sekunden Abklingzeit",
+          "RequiredPieces": 4,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "\u002B40 % Boss-Schaden; Krits ignorieren 15 % Boss-Schadensreduktion",
+          "RequiredPieces": 6,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 40,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        }
+      ]
+    },
+    {
+      "Id": "abyss_blood_dynasty",
+      "Name": "Blut der Tiefsee-Dynastie",
+      "Description": "",
+      "ItemIds": [
+        "abyss_blood_dynasty_helmet",
+        "abyss_blood_dynasty_chest",
+        "abyss_blood_dynasty_gloves",
+        "abyss_blood_dynasty_boots",
+        "abyss_blood_dynasty_ring",
+        "abyss_blood_dynasty_amulet"
+      ],
+      "Bonuses": [
+        {
+          "Description": "\u002B20 % Leben, \u002B15 % Schadensreduktion",
+          "RequiredPieces": 2,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 20,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 15,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "10 % des tats\u00E4chlich verursachten direkten Schadens als HP",
+          "RequiredPieces": 4,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "Einmal pro Boss unter 30 % HP: 45 % maximale HP heilen, 10 Sekunden \u002B35 % Angriffsschaden",
+          "RequiredPieces": 6,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        }
+      ]
+    },
+    {
+      "Id": "abyss_sunken_world",
+      "Name": "Schatten der Versunkenen Welt",
+      "Description": "",
+      "ItemIds": [
+        "abyss_sunken_world_helmet",
+        "abyss_sunken_world_chest",
+        "abyss_sunken_world_gloves",
+        "abyss_sunken_world_boots",
+        "abyss_sunken_world_ring",
+        "abyss_sunken_world_amulet"
+      ],
+      "Bonuses": [
+        {
+          "Description": "\u002B18 % Angriffstempo, \u002B18 % Luck",
+          "RequiredPieces": 2,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 18,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 18,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "Krits: 15 % Chance auf Schattenangriff mit 120 % Schaden, 6 Sekunden Abklingzeit",
+          "RequiredPieces": 4,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        },
+        {
+          "Description": "Erfolgreicher Doppelangriff: \u002B5 % Schaden f\u00FCr 8 Sekunden, maximal 5 Stapel",
+          "RequiredPieces": 6,
+          "Attributes": {
+            "MovementSpeed": 0,
+            "BossLifeleech": 0,
+            "Armor": 0,
+            "ArmorPercent": 0,
+            "MaximumHpPercent": 0,
+            "AttackSpeed": 0,
+            "HealingPower": 0,
+            "BossDamageReduction": 0,
+            "BossDodgeChance": 0,
+            "CriticalHealing": 0,
+            "RareEquipmentLuck": 0,
+            "Power": 0,
+            "Stamina": 0,
+            "MaximumHp": 0,
+            "DoubleAttackChance": 0,
+            "TripleAttackChance": 0,
+            "ExtraLootChance": 0,
+            "SushiPreservationChance": 0,
+            "Damage": 0,
+            "CritChance": 0,
+            "CritDamage": 0,
+            "Luck": 0,
+            "BossDamage": 0,
+            "PearlBonus": 0,
+            "FishingLuck": 0,
+            "DiveLuck": 0
+          }
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "Id": "pearl_dust",
+      "Name": "Perlenstaub",
+      "Rarity": "Uncommon",
+      "Description": "Feiner magischer Staub f\u00FCr einfache Aufwertungen.",
+      "Sources": [
+        "Tauchen",
+        "Angeln",
+        "Kleine Gegner",
+        "Truhen"
+      ]
+    },
+    {
+      "Id": "white_pearl",
+      "Name": "Wei\u00DFe Perle",
+      "Rarity": "Uncommon",
+      "Description": "Allgemeine Ausr\u00FCstungsaufwertung auf \u002B7.",
+      "Sources": [
+        "Tauchen",
+        "Angeln",
+        "Kleine Gegner",
+        "Truhen"
+      ]
+    },
+    {
+      "Id": "blue_pearl",
+      "Name": "Blaue Perle",
+      "Rarity": "Rare",
+      "Description": "Geb\u00FCndelte Meeresstr\u00F6mungen f\u00FCr \u002B8.",
+      "Sources": [
+        "Tauchen",
+        "Angeln",
+        "Truhen"
+      ]
+    },
+    {
+      "Id": "red_pearl",
+      "Name": "Rote Perle",
+      "Rarity": "Epic",
+      "Description": "Wilde Energie f\u00FCr die Aufwertung auf \u002B9.",
+      "Sources": [
+        "Bosse",
+        "Truhen",
+        "Mimics"
+      ]
+    },
+    {
+      "Id": "luminous_scale",
+      "Name": "Leuchtende Flossenschuppe",
+      "Rarity": "Epic",
+      "Description": "Verbessert epische Ausr\u00FCstung.",
+      "Sources": [
+        "Angeln",
+        "Truhen"
+      ]
+    },
+    {
+      "Id": "rune_shell",
+      "Name": "Runenmuschel",
+      "Rarity": "Legendary",
+      "Description": "Vergessene Runen verbessern legend\u00E4re Ausr\u00FCstung.",
+      "Sources": [
+        "Bosse",
+        "Truhen",
+        "Mimics"
+      ]
+    },
+    {
+      "Id": "eternal_depth_core",
+      "Name": "Kern der Ewigen Tiefe",
+      "Rarity": "Legendary",
+      "Description": "Einmalige Endveredelung auf \u002B9.",
+      "Sources": [
+        "Bosse",
+        "Seltene und legend\u00E4re Truhen",
+        "Mimics"
+      ]
+    },
+    {
+      "Id": "true_coral_core",
+      "Name": "Wahrer Korallenkern",
+      "Rarity": "True",
+      "Description": "Reine Korallenenergie verbessert wahre Ausr\u00FCstung.",
+      "Sources": [
+        "Bosse",
+        "Truhen",
+        "Mimics"
+      ]
+    },
+    {
+      "Id": "cursed_silk",
+      "Name": "Verfluchter Seidenfaden",
+      "Rarity": "Cursed",
+      "Description": "Uralte Magie f\u00FCr verfluchte Ausr\u00FCstung.",
+      "Sources": [
+        "Tauchen",
+        "Truhen",
+        "Mimics"
+      ]
+    },
+    {
+      "Id": "abyss_shard",
+      "Name": "Abyss-Scherbe",
+      "Rarity": "Abyss",
+      "Description": "Endlose Finsternis f\u00FCr Abyss-Aufwertungen.",
+      "Sources": [
+        "Bosse",
+        "Seltene und legend\u00E4re Truhen",
+        "Mimics"
+      ]
+    },
+    {
+      "Id": "reinforcement_core",
+      "Name": "Verst\u00E4rkungskern",
+      "Rarity": "Rare",
+      "Description": "Stabilisiert garantierte Aufwertungen ab \u002B5.",
+      "Sources": [
+        "Tauchen",
+        "Angeln",
+        "Kleine Gegner",
+        "Bosse",
+        "Truhen"
+      ]
+    }
+  ],
+  "upgrades": {
+    "EquipmentDropChances": {
+      "True": 0.25,
+      "Cursed": 0.4,
+      "Abyss": 0.1
+    },
+    "PearlCosts": [
+      100,
+      250,
+      500,
+      1000,
+      2000,
+      3500,
+      5000,
+      8000,
+      12000
+    ],
+    "CoreCosts": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "ColoredPearlCosts": [
+      1,
+      1,
+      1
+    ],
+    "RarityCosts": {
+      "Common": [
+        2,
+        3,
+        5
+      ],
+      "Uncommon": [
+        2,
+        3,
+        5
+      ],
+      "Rare": [
+        2,
+        3,
+        5
+      ],
+      "Epic": [
+        1,
+        2,
+        3
+      ],
+      "Legendary": [
+        1,
+        2,
+        3
+      ],
+      "True": [
+        1,
+        2,
+        3
+      ],
+      "Cursed": [
+        1,
+        2,
+        3
+      ],
+      "Abyss": [
+        1,
+        2,
+        3
+      ]
+    },
+    "RefinementPearls": 15000,
+    "Drops": {
+      "dive": {
+        "pearl_dust": {
+          "Chance": 25,
+          "Minimum": 1,
+          "Maximum": 3
+        },
+        "white_pearl": {
+          "Chance": 12,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "blue_pearl": {
+          "Chance": 5,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "reinforcement_core": {
+          "Chance": 10,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "cursed_silk": {
+          "Chance": 2,
+          "Minimum": 1,
+          "Maximum": 1
+        }
+      },
+      "fish": {
+        "luminous_scale": {
+          "Chance": 8,
+          "Minimum": 1,
+          "Maximum": 2
+        },
+        "pearl_dust": {
+          "Chance": 12,
+          "Minimum": 1,
+          "Maximum": 3
+        },
+        "white_pearl": {
+          "Chance": 6,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "blue_pearl": {
+          "Chance": 3,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "reinforcement_core": {
+          "Chance": 4,
+          "Minimum": 1,
+          "Maximum": 1
+        }
+      },
+      "boss": {
+        "reinforcement_core": {
+          "Chance": 20,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "red_pearl": {
+          "Chance": 8,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "rune_shell": {
+          "Chance": 12,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "true_coral_core": {
+          "Chance": 3,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "abyss_shard": {
+          "Chance": 0.5,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "eternal_depth_core": {
+          "Chance": 0.25,
+          "Minimum": 1,
+          "Maximum": 1
+        }
+      },
+      "enemy": {
+        "pearl_dust": {
+          "Chance": 15,
+          "Minimum": 1,
+          "Maximum": 3
+        },
+        "white_pearl": {
+          "Chance": 5,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "reinforcement_core": {
+          "Chance": 3,
+          "Minimum": 1,
+          "Maximum": 1
+        }
+      },
+      "chest": {
+        "pearl_dust": {
+          "Chance": 35,
+          "Minimum": 1,
+          "Maximum": 3
+        },
+        "white_pearl": {
+          "Chance": 20,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "blue_pearl": {
+          "Chance": 8,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "red_pearl": {
+          "Chance": 1,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "reinforcement_core": {
+          "Chance": 20,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "luminous_scale": {
+          "Chance": 10,
+          "Minimum": 1,
+          "Maximum": 2
+        },
+        "rune_shell": {
+          "Chance": 0.5,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "cursed_silk": {
+          "Chance": 2,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "true_coral_core": {
+          "Chance": 0.5,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "abyss_shard": {
+          "Chance": 0,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "eternal_depth_core": {
+          "Chance": 0,
+          "Minimum": 1,
+          "Maximum": 1
+        }
+      },
+      "rareChest": {
+        "pearl_dust": {
+          "Chance": 45,
+          "Minimum": 1,
+          "Maximum": 3
+        },
+        "white_pearl": {
+          "Chance": 30,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "blue_pearl": {
+          "Chance": 18,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "red_pearl": {
+          "Chance": 5,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "reinforcement_core": {
+          "Chance": 35,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "luminous_scale": {
+          "Chance": 20,
+          "Minimum": 1,
+          "Maximum": 2
+        },
+        "rune_shell": {
+          "Chance": 4,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "cursed_silk": {
+          "Chance": 5,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "true_coral_core": {
+          "Chance": 2,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "abyss_shard": {
+          "Chance": 0.2,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "eternal_depth_core": {
+          "Chance": 0.1,
+          "Minimum": 1,
+          "Maximum": 1
+        }
+      },
+      "legendaryChest": {
+        "pearl_dust": {
+          "Chance": 50,
+          "Minimum": 1,
+          "Maximum": 3
+        },
+        "white_pearl": {
+          "Chance": 40,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "blue_pearl": {
+          "Chance": 30,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "red_pearl": {
+          "Chance": 12,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "reinforcement_core": {
+          "Chance": 50,
+          "Minimum": 1,
+          "Maximum": 2
+        },
+        "luminous_scale": {
+          "Chance": 30,
+          "Minimum": 1,
+          "Maximum": 2
+        },
+        "rune_shell": {
+          "Chance": 12,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "cursed_silk": {
+          "Chance": 10,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "true_coral_core": {
+          "Chance": 6,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "abyss_shard": {
+          "Chance": 1,
+          "Minimum": 1,
+          "Maximum": 1
+        },
+        "eternal_depth_core": {
+          "Chance": 0.5,
+          "Minimum": 1,
+          "Maximum": 1
+        }
+      }
+    },
+    "MimicWeights": {
+      "red_pearl": 30,
+      "rune_shell": 25,
+      "cursed_silk": 18,
+      "true_coral_core": 15,
+      "abyss_shard": 10,
+      "eternal_depth_core": 2
+    }
+  }
+}

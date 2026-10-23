@@ -8,7 +8,7 @@ public static class RpgCoreStatService
     public static (int Power,int Stamina) Baseline(ItemRarity rarity) => rarity switch
     {
         ItemRarity.Common=>(1,1),ItemRarity.Uncommon=>(2,2),ItemRarity.Rare=>(3,4),
-        ItemRarity.Epic=>(5,7),ItemRarity.Legendary=>(8,10),_=>throw new InvalidOperationException("Unbekannte Seltenheit.")
+        ItemRarity.Epic=>(5,7),ItemRarity.Legendary or ItemRarity.True or ItemRarity.Cursed or ItemRarity.Abyss=>(8,10),_=>throw new InvalidOperationException("Unbekannte Seltenheit.")
     };
     public static bool Apply(RpgItem item)
     {

@@ -8,10 +8,10 @@ namespace RaidClipPlugin.Services;
 internal sealed record LocalActionRecord(string Hash,string UserId,ActionOutcome? Outcome);
 internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<MinigameConfig> configuration,
     StreamAdmission admission,Guid epoch,string channel,IReadOnlySet<string> users,string journal,
-    Func<string,string,bool> permitted,ChatMinigameService? minigames=null,Func<string,bool>? enrolled=null)
+    Func<string,string,bool> permitted,ChatMinigameService? minigames=null,Func<string,bool>? enrolled=null,Action<RpgUpgradeConfig>? saveUpgrades=null)
 {
     private readonly SemaphoreSlim gate=new(1,1);
-    internal static string CommandFor(string kind)=>kind switch {"learnTalent"=>"!talent","openShells"=>"!muscheln","status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
+    internal static string CommandFor(string kind)=>kind switch {"upgradeItem" or "refineItem"=>"!equip","learnTalent"=>"!talent","openShells"=>"!muscheln","status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
     internal async Task<ActionOutcome> ExecuteAsync(ActionEnvelope envelope,CancellationToken ct,TimeSpan? remainingWindow=null)
     {
         var hash=RpgIntents.Hash(envelope.Intent);
@@ -98,6 +98,8 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             if(!Enum.TryParse<EquipmentSlot>(Arg("slot"),false,out var slot) || !Enum.IsDefined(slot))return new(false,"invalid_slot","Ungültiger Slot.");
             mutation=await progression.UnequipAsync(e.UserId,account.DisplayName,request,slot,ct);
         }
+        if(e.Intent.Kind is "upgradeItem" or "refineItem")mutation=await new RpgUpgradeService(points,rpg).ApplyAsync(e.UserId,account.DisplayName,request,Arg("instanceId"),int.Parse(Arg("expectedLevel")),e.Intent.Kind=="refineItem",ct);
+        if(e.Intent.Kind=="openShells"){var opened=await new RpgShellService(points,rpg).OpenAsync(e.UserId,account.DisplayName,request,int.Parse(Arg("count")),ct);return new(opened.Success,opened.Success?"applied":"rule_rejected",opened.Message);}
         if(e.Intent.Kind=="learnTalent")mutation=await RpgTalentService.LearnAsync(points,rpg,e.UserId,account.DisplayName,request,Arg("talentId"),int.Parse(Arg("expectedRank")),int.Parse(Arg("catalogVersion")),ct);
         if(e.Intent.Kind=="buyPerk")mutation=await progression.BuyPerkAsync(e.UserId,account.DisplayName,request,Arg("perkId"),ct);
         if(e.Intent.Kind=="craft")mutation=await progression.CraftAsync(e.UserId,account.DisplayName,request,Arg("recipeId"),ct);
@@ -107,7 +109,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             if(adventure.BossDiscovered && minigames is not null)await minigames.StartDiscoveredBossAsync(account.DisplayName,ct);
             return new(adventure.Success,adventure.Success?"applied":"rule_rejected",adventure.Error,JsonSerializer.Serialize(adventure));
         }
-        if(e.Intent.Kind is "buyPerk" or "learnTalent" && mutation?.Success==true){
+        if(e.Intent.Kind is "buyPerk" or "learnTalent" or "upgradeItem" or "refineItem" && mutation?.Success==true){
             // Read the committed authoritative state; the viewer need not wait for
             // the independent Firestore delivery before seeing the purchased level.
             var committed=(await points.GetProfileAsync(e.UserId,ct)).Entry;
@@ -121,7 +123,8 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     internal string CatalogJson()
     {
         var config=configuration();var rpg=config.Adventures.Rpg;
-        return JsonSerializer.Serialize(new{supported=RpgIntents.Supported.Where(kind=>kind!="openShells").Concat(new[]{"adminCatalog","adminStart","adminGrant"}),
+        return JsonSerializer.Serialize(new{supported=RpgIntents.Supported.Where(kind=>kind!="openShells").Concat(new[]{"adminCatalog","adminStart","adminGrant","adminMaterialGrant","adminBalance","adminHealAll"}),
+            materialCatalog=RpgUpgradeCatalog.Materials, itemUpgrade=new{maximumLevel=9,bonuses=RpgEquipmentUpgradeRules.Bonuses,costsByRarity=Enum.GetValues<ItemRarity>().ToDictionary(r=>r.ToString(),r=>Enumerable.Range(0,9).Select(level=>RpgEquipmentUpgradeRules.Cost(level,r,rpg.Upgrades))),refinement=new{TargetLevel=9,Pearls=rpg.Upgrades.RefinementPearls,Materials=new Dictionary<string,int>{{"eternal_depth_core",1}}}},
             talentCatalogVersion=TalentRules.CatalogVersion,talents=TalentRules.Catalog,
             perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Presentation=RpgPerkCatalog.Find(p.Id),Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
             recipes=rpg.Recipes.Select(r=>new{r.Id,Name=RpgChatPresentation.RecipeName(r),r.PearlCost,r.Category,r.Activity,BossUses=RpgSushiService.Uses(r,rpg),r.Attributes,r.PassiveHealing,r.ChatHealing,r.BossDamageReduction,r.BossLifeleech,Ingredients=RpgSushiService.Ingredients(r),Effects=RpgSushiService.Effects(r)}),

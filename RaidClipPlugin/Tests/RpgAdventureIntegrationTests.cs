@@ -14,7 +14,7 @@ public sealed class RpgAdventureIntegrationTests : IDisposable
     private static MinigameConfig Configuration()
     {
         var config = new MinigameConfig { Enabled = true, PointsEnabled = true };
-        config.Adventures.Rpg.Enabled = true;
+        config.Adventures.Rpg.Enabled = true;config.Adventures.Rpg.Upgrades.EquipmentDropChances.Keys.ToList().ForEach(k=>config.Adventures.Rpg.Upgrades.EquipmentDropChances[k]=0);
         config.Adventures.Treasure.MaximumBet = 10000;
         return config;
     }

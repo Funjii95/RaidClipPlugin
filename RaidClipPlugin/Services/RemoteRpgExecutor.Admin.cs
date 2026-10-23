@@ -13,8 +13,15 @@ internal sealed partial class RemoteRpgExecutor
         if(e.UserId!=channel)return new(false,"admin_required","Nur der Kanalinhaber hat Adminzugriff.");
         var cfg=configuration();var rpg=cfg.Adventures.Rpg;
         if(!cfg.Enabled||!cfg.PointsEnabled||!rpg.Enabled)return new(false,"disabled","RPG ist nicht spielbereit.");
+        if(e.Intent.Kind=="adminHealAll"){
+            if(!rpg.Health.Enabled)return new(false,"disabled","Das HP-System ist deaktiviert.");
+            var healed=await points.HealAllAsync(channel,e.Intent.ActionId.ToString("N"),rpg.Health,DateTimeOffset.UtcNow,ct);
+            return new(healed.Success,healed.Success?"applied":"rule_rejected",healed.Message,JsonSerializer.Serialize(new{message=healed.Message,healed=healed.Healed,players=healed.Players}));
+        }
         string Arg(string key)=>e.Intent.Arguments.GetProperty(key).GetString()!;
+        if(e.Intent.Kind is "adminMaterialGrant" or "adminBalance")return await InvokeMaterialAdminAsync(e,ct);
         if(e.Intent.Kind=="adminCatalog")return new(true,"read","Adminbereich bereit.",JsonSerializer.Serialize(new{
+            settings=rpg.Upgrades, materials=RpgUpgradeCatalog.Materials,
             items=rpg.DiveLoot.Items.Where(i=>i.Slot.HasValue&&i.Kind!=RpgItemKind.Consumable).Select(i=>new{id=i.ItemId,name=i.DisplayName,rarity=i.Rarity.ToString(),slot=i.Slot!.Value.ToString()}),
             attributes=typeof(RpgAttributes).GetProperties().Select(p=>p.Name),events=new[]{"boss","mimic","race","heist","hotTime"}}));
         if(e.Intent.Kind=="adminStart")
