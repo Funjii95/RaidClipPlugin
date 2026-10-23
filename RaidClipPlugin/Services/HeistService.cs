@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 
@@ -335,6 +335,11 @@ public sealed partial class HeistService : IAsyncDisposable
         try{if(State==HeistState.Joining)Publish(await _points.GetJackpotAsync(_minigame.JackpotStartValue,token));}
         finally{_gate.Release();}
     }
+    internal async Task FinishAdministrativeAsync(CancellationToken token)
+    {
+        await _gate.WaitAsync(token);try{if(State!=HeistState.Joining)throw new InvalidOperationException("Kein offener Heist.");_remaining=0;_joinEndsAt=DateTimeOffset.UtcNow;}finally{_gate.Release();}
+        await ResolveAsync(token);
+    }
     // Debug only: the caller must own an isolated service/store, never a live frontend.
     internal async Task FinishJoiningForTestAsync(CancellationToken token=default)
     {
@@ -344,5 +349,3 @@ public sealed partial class HeistService : IAsyncDisposable
     private void CleanupSession(){_participants=null;_creator="";_remaining=0;_sessionCts?.Cancel();_sessionCts?.Dispose();_sessionCts=null;}
     public async ValueTask DisposeAsync(){if(_disposed)return;_disposed=true;await CancelAsync(false);if(_sessionTask is not null)try{await _sessionTask;}catch(OperationCanceledException){} _gate.Dispose();}
 }
-
-

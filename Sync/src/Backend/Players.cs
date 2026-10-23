@@ -27,6 +27,11 @@ public sealed class RpgView
 public sealed record MaterialView(int Shells, int WhitePearls, int BluePearls, int RedPearls, int StoneChips, int PearlDust=0, int LuminousScale=0, int RuneShell=0, int EternalDepthCore=0, int TrueCoralCore=0, int CursedSilk=0, int AbyssShard=0, int ReinforcementCore=0);
 public sealed class HealthView
 {
+    public decimal? CurrentMana {get;init;}
+    public DateTimeOffset? LastManaRegen {get;init;}
+    public int? ManaShieldHp {get;init;}
+    public string? ManaShieldSource {get;init;}
+    public DateTimeOffset? ManaShieldExpires {get;init;}
     public int? SetShieldHp { get; init; }
     public string? SetShieldSource { get; init; }
     public long? CurrentHp { get; init; }

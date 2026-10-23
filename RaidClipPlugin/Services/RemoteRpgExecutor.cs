@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using SnapshotProtocol;
@@ -8,10 +8,10 @@ namespace RaidClipPlugin.Services;
 internal sealed record LocalActionRecord(string Hash,string UserId,ActionOutcome? Outcome);
 internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<MinigameConfig> configuration,
     StreamAdmission admission,Guid epoch,string channel,IReadOnlySet<string> users,string journal,
-    Func<string,string,bool> permitted,ChatMinigameService? minigames=null,Func<string,bool>? enrolled=null,Action<RpgUpgradeConfig>? saveUpgrades=null,Action<RpgZoneConfig>? saveZones=null)
+    Func<string,string,bool> permitted,ChatMinigameService? minigames=null,Func<string,bool>? enrolled=null,Action<RpgUpgradeConfig>? saveUpgrades=null,Action<RpgZoneConfig>? saveZones=null,Func<AppConfig>? readAdminConfiguration=null,Action<AppConfig>? saveAdminConfiguration=null)
 {
     private readonly SemaphoreSlim gate=new(1,1);
-    internal static string CommandFor(string kind)=>kind switch {"compareEquipment"=>"!equip","selectZone"=>"!dive","upgradeItem" or "refineItem"=>"!equip","learnTalent"=>"!talent","openShells"=>"!muscheln","status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
+    internal static string CommandFor(string kind)=>kind switch {"selectBoss"=>"!attack","compareEquipment"=>"!equip","selectZone"=>"!dive","upgradeItem" or "refineItem"=>"!equip","learnTalent"=>"!talent","openShells"=>"!muscheln","status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
     internal async Task<ActionOutcome> ExecuteAsync(ActionEnvelope envelope,CancellationToken ct,TimeSpan? remainingWindow=null)
     {
         var hash=RpgIntents.Hash(envelope.Intent);
@@ -38,6 +38,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             try {result=await InvokeAsync(envelope,ct);}
             catch(GameplayUnavailableException){result=new(false,"not_ready","Speicherung wegen abgelaufener Plugin-Sitzung abgelehnt.");}
             catch{result=Unknown();}
+            await AuditAdminAsync(envelope,result,ct);
             result=result with{Message=result.Message.Length>1000?result.Message[..1000]:result.Message};
             if(JsonSerializer.SerializeToUtf8Bytes(result).Length>ActionResultLimits.MaximumOutcomeBytes)result=result with{DataJson=null,Message="Ergebnis gespeichert. Vollständigen Snapshot aktualisieren."};
             await SaveAsync(file,new(hash,envelope.UserId,result));
@@ -69,7 +70,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
         var progression=new RpgProgressionService(points,rpg);
         var request="extension:"+e.Intent.ActionId.ToString("N");
         RpgTransactionResult? mutation=null;
-        if(e.Intent.Kind is "bossStatus" or "bossAttack" or "itemlock" or "favorite" or "salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel" or "community")
+        if(e.Intent.Kind is "selectBoss" or "bossStatus" or "bossAttack" or "itemlock" or "favorite" or "salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel" or "community")
             return await InvokeExtendedAsync(e,account,request,ct);
         if(e.Intent.Kind=="preview")return new(true,"read","Aktuelle primäre Ausrüstungs-Lootchance.",JsonSerializer.Serialize(new{profile=JsonDocument.Parse(SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account)),channel).AccountJson!).RootElement.Clone(),dive=AdventurePreview(account,"dive",long.Parse(Arg("stake"))),fish=AdventurePreview(account,"fish",long.Parse(Arg("fishingStake")))}));
         if(e.Intent.Kind=="minigames")return new(true,"read","Spielhallenstatus.",JsonSerializer.Serialize(await MinigameDataAsync(account,ct)));
@@ -132,10 +133,10 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     internal string CatalogJson()
     {
         var config=configuration();var rpg=config.Adventures.Rpg;
-        return JsonSerializer.Serialize(new{perkMaxPurchase=true,collectorItems=rpg.DiveLoot.Items.Where(i=>i.Collector is not null).Select(i=>new{Id=i.ItemId,Name=i.DisplayName,i.Rarity}),zones=rpg.Zones.Areas, supported=RpgIntents.Supported.Where(kind=>kind!="openShells").Concat(new[]{"adminCatalog","adminStart","adminGrant","adminMaterialGrant","adminBalance","adminHealAll","adminDivine","adminZoneDebug"}),
-            materialCatalog=RpgUpgradeCatalog.Materials, itemUpgrade=new{maximumLevel=9,bonuses=RpgEquipmentUpgradeRules.Bonuses,costsByRarity=Enum.GetValues<ItemRarity>().Where(r=>r!=ItemRarity.Divine).ToDictionary(r=>r.ToString(),r=>Enumerable.Range(0,9).Select(level=>RpgEquipmentUpgradeRules.Cost(level,r,rpg.Upgrades))),refinement=new{TargetLevel=9,Pearls=rpg.Upgrades.RefinementPearls,Materials=new Dictionary<string,int>{{"eternal_depth_core",1}}}},
+        return JsonSerializer.Serialize(new{staffAccess=new{channelId=channel,moderators=rpg.AdminAccess.Moderators},pluginVersion=typeof(RemoteRpgExecutor).Assembly.GetName().Version!.ToString(),progressionRules=new{rpg.Health.ExperiencePerLevel,rpg.Health.MaximumLevel},magicRules=new{MaximumMana=100,BaseRegenerationPerSecond=5,AutomaticWeaponSpells=true},perkMaxPurchase=true,collectorItems=rpg.DiveLoot.Items.Where(i=>i.Collector is not null).Select(i=>new{Id=i.ItemId,Name=i.DisplayName,i.Rarity}),zones=rpg.Zones.Areas, supported=RpgIntents.Supported.Where(kind=>kind!="openShells").Concat(new[]{"adminCatalog","adminStart","adminGrantSet","adminGrant","adminMaterialGrant","adminBalance","adminHealAll","adminDivine","adminZoneDebug","adminDashboard","adminConfigRead","adminConfigSave","adminPlayers","adminPlayer","adminControl","adminRoles"}),
+            materialCatalog=RpgUpgradeCatalog.Materials, itemUpgrade=new{maximumLevel=9,bonuses=RpgEquipmentUpgradeRules.Bonuses,baseCosts=Enumerable.Range(0,6).Select(level=>RpgEquipmentUpgradeRules.Cost(level,ItemRarity.Common,rpg.Upgrades)).Select(cost=>new object[]{cost.Pearls,cost.Materials}),highCostsByRarity=Enum.GetValues<ItemRarity>().Where(r=>r!=ItemRarity.Divine).ToDictionary(r=>r.ToString(),r=>Enumerable.Range(6,3).Select(level=>RpgEquipmentUpgradeRules.Cost(level,r,rpg.Upgrades)).Select(cost=>new object[]{cost.Pearls,cost.Materials})),refinement=new{TargetLevel=9,Pearls=rpg.Upgrades.RefinementPearls,Materials=new Dictionary<string,int>{{"eternal_depth_core",1}}}},
             talentCatalogVersion=TalentRules.CatalogVersion,talents=TalentRules.Catalog,
-            perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Presentation=RpgPerkCatalog.Find(p.Id),Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
+            perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Presentation=RpgPerkCatalog.Find(p.Id) is {} presentation?new{presentation.Category,presentation.Symbol,presentation.Value,presentation.Label}:null,Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
             recipes=rpg.Recipes.Select(r=>new{r.Id,Name=RpgChatPresentation.RecipeName(r),r.PearlCost,r.Category,r.Activity,r.AllActivities,DurationSeconds=RpgSushiService.DurationSeconds,BossUses=RpgSushiService.Uses(r,rpg),r.Attributes,r.PassiveHealing,r.ChatHealing,r.BossDamageReduction,r.BossLifeleech,Ingredients=RpgSushiService.Ingredients(r),Effects=RpgSushiService.Effects(r)}),
             fish=rpg.FishSpecies.Select(f=>new{f.Id,f.Name,f.Rarity}),sets=rpg.Sets,blocked=new[]{"bossStart","heistStart","moderatorCommands","give","reset"}},new JsonSerializerOptions{Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,Converters={new CatalogAttributesConverter()}});
     }

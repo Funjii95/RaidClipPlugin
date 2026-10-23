@@ -1,9 +1,9 @@
-using RaidClipPlugin.Config;
+﻿using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
-public sealed record RpgBossHit(int Damage, bool Critical, int ExtraHits){public int DirectDamage{get;init;}}
+public sealed record RpgBossHit(int Damage, bool Critical, int ExtraHits){public int DirectDamage{get;init;} public RpgWeaponSpell? Spell{get;init;} public int SoulProcDamage{get;init;}}
 
 public static class RpgPassiveService
 {
@@ -50,9 +50,12 @@ public static class RpgPassiveService
         var strength = TryProc(profile, config, RpgActivity.Boss, RpgEffectTrigger.TripleAttack, random, now, critical: critical);
         var hits = strength > 0 ? 2 : 0;
         if (hits == 0) { strength = TryProc(profile, config, RpgActivity.Boss, RpgEffectTrigger.DoubleAttack, random, now, critical: critical); if (strength > 0) hits = 1; }
-        var attack=checked((int)decimal.Floor(baseDamage*(1+stats.AttackPercent/100)*(1+stats.Damage/100)*(1+stats.BossDamage/100)));
+        regular=RpgWeaponService.ElementDamage(regular,profile,stats);
+        var attack=checked((int)decimal.Floor((baseDamage+stats.Attack)*(1+stats.AttackPercent/100)*(1+stats.Damage/100)*(1+stats.BossDamage/100)));
         var direct=checked(regular+hits*(int)decimal.Floor(regular*strength));
-        return new(checked(direct+RpgSetCombatService.ProcDamage(attack,critical,hits,profile,config,now)+RpgDepthsCombatService.AttackProc(attack,critical,hits,profile,config,random,now)+RpgEternalCombat.Proc(attack,critical,hits,profile,config,now)),critical,hits){DirectDamage=direct};
+        var spell=RpgWeaponService.Cast(profile,config,stats,attack,now);
+        var eight=RpgEternalEightCombat.Proc(attack,critical,hits,profile,config,now);
+        return new((int)Math.Min(int.MaxValue,(long)direct+eight.Damage+(spell?.Damage??0)+RpgSetCombatService.ProcDamage(attack,critical,hits,profile,config,now)+RpgDepthsCombatService.AttackProc(attack,critical,hits,profile,config,random,now)+RpgEternalCombat.Proc(attack,critical,hits,profile,config,now)),critical,hits){DirectDamage=direct,Spell=spell,SoulProcDamage=eight.SoulDamage};
     }
 
     public static long RewardPayout(long payout, long stake, decimal bonus)

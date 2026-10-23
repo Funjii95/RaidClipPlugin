@@ -1,0 +1,62 @@
+{
+  "boss_korallus": {
+    "src": "./bosses/boss_korallus.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "8ff582b725b181195ec0fb43664158b096c24a4cced21845e02b07acc8e2b56d"
+  },
+  "boss_thalruun": {
+    "src": "./bosses/boss_thalruun.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "1ab8609fc947bd543c7b0afbec265c0aa4b36e69e70fafea85a10009a27583a2"
+  },
+  "boss_moderklaue": {
+    "src": "./bosses/boss_moderklaue.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "3a04d39075a573e9737ab6d59aa922198df8e388cf045a30f002f0f37b303f09"
+  },
+  "boss_luminara": {
+    "src": "./bosses/boss_luminara.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "55a71b1c15dd8fe92642ff3969310214ef71550c127b6eddd2e4a894d55a4d1f"
+  },
+  "boss_vortexion": {
+    "src": "./bosses/boss_vortexion.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "d4934889e439bc0761612a51a28ee80db043e80b8e8d84266e5c50247acbc119"
+  },
+  "boss_krysalith": {
+    "src": "./bosses/boss_krysalith.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "356ffd8e19b5d65e8f56fba534c66b8e28727636c09e1552177cebb95c279411"
+  },
+  "boss_maledictus": {
+    "src": "./bosses/boss_maledictus.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "494ffcdb75c5420fc5e2501f3f8dfe14099917fe25b876704b1ff3ec13d64900"
+  },
+  "boss_aethernos": {
+    "src": "./bosses/boss_aethernos.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "2539e1b9154fc406edca130be5cec1559e3d97c1625f8e0c2e06cdd04b330800"
+  },
+  "boss_nharzul": {
+    "src": "./bosses/boss_nharzul.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "6312c8274e129524b2558b1d872127dc583c42f3a0c54f4d43658bc601797517"
+  },
+  "boss_eonath": {
+    "src": "./bosses/boss_eonath.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "7d24d526271e2e8deb6805215539556915ed459b22daa620d90bf47c49df954f"
+  }
+}

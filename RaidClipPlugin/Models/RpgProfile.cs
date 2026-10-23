@@ -15,6 +15,14 @@ public static class RarityPresentation
 
 public sealed class RpgAttributes
 {
+    public decimal Attack {get;set;}
+    public decimal MagicPower {get;set;}
+    public decimal ManaRegeneration {get;set;}
+    public decimal WaterDamage {get;set;}
+    public decimal ElementalDamage {get;set;}
+    public decimal AbyssDamage {get;set;}
+    public decimal LightDamage {get;set;}
+
     public decimal EnemyEncounterChance {get;set;}
     public decimal MaterialFind {get;set;}
     public decimal AttackPercent {get;set;}
@@ -116,6 +124,7 @@ public sealed class RpgBuff
 public sealed class RpgProfile
 {
     public string SelectedDivingZone {get;set;}="sunny_lagoon";
+    public string SelectedBossId {get;set;}="boss_korallus";
     public string SelectedFishingZone {get;set;}="sunny_lagoon";
     public Dictionary<string, int> TalentRanks { get; set; } = new();
     public int SushiVersion { get; set; }
@@ -138,6 +147,11 @@ public sealed class RpgProfile
 
 public sealed class RpgHealthState
 {
+    public decimal? CurrentMana {get;set;}
+    public DateTimeOffset? LastManaRegen {get;set;}
+    public int ManaShieldHp {get;set;}
+    public string ManaShieldSource {get;set;}="";
+    public DateTimeOffset? ManaShieldExpires {get;set;}
     public int SetShieldHp { get; set; }
     public string SetShieldSource { get; set; } = "";
     // Nullable distinguishes legacy profiles from an injured player at zero HP.

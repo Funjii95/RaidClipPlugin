@@ -16,7 +16,7 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 7;
+    public const int RpgProjectionVersion = 9;
     public const int MaxMessageBytes = 256 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
@@ -81,7 +81,8 @@ public static class SnapshotValidation
             throw new InvalidDataException("Invalid account identity, balance, date or RPG object.");
         var rpg = Clean(JsonSerializer.SerializeToElement(root["Rpg"]),
             ["SchemaVersion", "LegacyFishImported", "Inventory", "Equipment", "Perks", "Fish", "Sushi", "Buffs", "Cooldowns",
-                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials", "TalentRanks", "SelectedDivingZone", "SelectedFishingZone"]);
+                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials", "TalentRanks", "SelectedDivingZone", "SelectedFishingZone", "SelectedBossId"]);
+        if(rpg.ContainsKey("SelectedBossId")&&rpg["SelectedBossId"]?.GetValue<string>() is not ("boss_korallus" or "boss_thalruun" or "boss_moderklaue" or "boss_luminara" or "boss_vortexion" or "boss_krysalith" or "boss_maledictus" or "boss_aethernos" or "boss_nharzul" or "boss_eonath"))throw new InvalidDataException("Invalid selected boss.");
         foreach(var selected in new[]{"SelectedDivingZone","SelectedFishingZone"})if(rpg.ContainsKey(selected)&&rpg[selected]?.GetValue<string>() is not ("sunny_lagoon" or "sunken_temples" or "shipwreck_graveyard" or "glowing_coral_forest" or "tidal_maelstrom" or "crystal_grotto" or "cursed_depths" or "true_abyss" or "abyss" or "primordial_throne"))throw new InvalidDataException("Invalid selected zone.");
         if (rpg["SchemaVersion"]?.GetValue<int>() != 1) throw new InvalidDataException("Unsupported RPG schema.");
         foreach (var key in new[] { "PlayerLevel", "Experience", "SushiVersion" })
@@ -107,16 +108,17 @@ public static class SnapshotValidation
         if (rpg.ContainsKey("Health"))
         {
             var health = Clean(JsonSerializer.SerializeToElement(rpg["Health"]),
-                ["CurrentHp", "AppliedMaximumHp", "AppliedBaseMaximumHp", "LastPassiveRegen", "SushiRegenRemainder",
+                ["CurrentMana", "LastManaRegen", "ManaShieldHp", "ManaShieldSource", "ManaShieldExpires", "CurrentHp", "AppliedMaximumHp", "AppliedBaseMaximumHp", "LastPassiveRegen", "SushiRegenRemainder",
                     "LastChatHeal", "BossId", "Defeated", "BossDamage", "BossRemainingHp", "SetShieldHp", "SetShieldSource"]);
             foreach (var field in health)
             {
                 if (field.Value is null) continue;
                 if (field.Value is not JsonValue value || (field.Key switch
                 {
-                    "LastPassiveRegen" or "LastChatHeal" => !value.TryGetValue<DateTimeOffset>(out _),
-                    "BossId" or "SetShieldSource" => !value.TryGetValue<string>(out _),
+                    "LastManaRegen" or "ManaShieldExpires" or "LastPassiveRegen" or "LastChatHeal" => !value.TryGetValue<DateTimeOffset>(out _),
+                    "ManaShieldSource" or "BossId" or "SetShieldSource" => !value.TryGetValue<string>(out _),
                     "Defeated" => !value.TryGetValue<bool>(out _),
+                    "CurrentMana" => !value.TryGetValue<decimal>(out var mana) || mana < 0 || mana > 100,
                     "SushiRegenRemainder" => !value.TryGetValue<decimal>(out var remainder) || remainder < 0,
                     _ => !value.TryGetValue<long>(out var number) || number < 0
                 })) throw new InvalidDataException("Invalid RPG health value.");
@@ -141,7 +143,7 @@ public static class SnapshotValidation
                         ["Damage", "CritChance", "CritDamage", "Luck", "BossDamage", "PearlBonus", "FishingLuck", "DiveLuck",
                             "Power", "Stamina", "MaximumHp", "DoubleAttackChance", "TripleAttackChance", "ExtraLootChance",
                             "SushiPreservationChance", "BossDamageReduction", "BossDodgeChance", "CriticalHealing", "RareEquipmentLuck",
-                            "EnemyEncounterChance", "MaterialFind", "AttackPercent", "ExperienceBonus", "DivineDamage", "MovementSpeed", "BossLifeleech", "Armor", "ArmorPercent", "MaximumHpPercent", "AttackSpeed", "HealingPower"]);
+                            "Attack","MagicPower","ManaRegeneration","WaterDamage","ElementalDamage","AbyssDamage","LightDamage", "EnemyEncounterChance", "MaterialFind", "AttackPercent", "ExperienceBonus", "DivineDamage", "MovementSpeed", "BossLifeleech", "Armor", "ArmorPercent", "MaximumHpPercent", "AttackSpeed", "HealingPower"]);
                     foreach (var attribute in (JsonObject)item["Attributes"]!)
                         if (attribute.Value is not JsonValue number || !number.TryGetValue<decimal>(out _))
                             throw new InvalidDataException("Invalid decimal RPG attribute.");

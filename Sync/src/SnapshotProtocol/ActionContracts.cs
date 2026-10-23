@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -31,26 +31,38 @@ public sealed record SelfDeletionJob(string UserId,Guid RequestId,DateTimeOffset
 
 public static class RpgIntents
 {
-    public static bool IsAdmin(string kind)=>kind is "adminCatalog" or "adminStart" or "adminGrant" or "adminMaterialGrant" or "adminBalance" or "adminHealAll" or "adminDivine" or "adminZoneDebug";
-    public static readonly string[] Supported = ["compareEquipment","selectZone","refineItem","upgradeItem","status","inventory","sets","perks","equip","unequip","buyPerk","dive","fish","craft","eat","preview","minigames","casino","bossStatus","bossAttack","itemlock","favorite","salvagePreview","salvageBatch","salvageConfirm","salvageCancel","community","openShells","learnTalent"];
+    public static bool IsAdmin(string kind)=>kind is "adminGrantSet" or "adminDashboard" or "adminConfigRead" or "adminConfigSave" or "adminPlayers" or "adminPlayer" or "adminControl" or "adminRoles" or "adminCatalog" or "adminStart" or "adminGrant" or "adminMaterialGrant" or "adminBalance" or "adminHealAll" or "adminDivine" or "adminZoneDebug";
+    public static readonly string[] Supported = ["selectBoss","compareEquipment","selectZone","refineItem","upgradeItem","status","inventory","sets","perks","equip","unequip","buyPerk","dive","fish","craft","eat","preview","minigames","casino","bossStatus","bossAttack","itemlock","favorite","salvagePreview","salvageBatch","salvageConfirm","salvageCancel","community","openShells","learnTalent"];
     public static string Canonical(RpgIntent intent)
     {
         if(intent.ActionId==Guid.Empty || !(Supported.Contains(intent.Kind)||IsAdmin(intent.Kind)) || intent.Arguments.ValueKind!=JsonValueKind.Object)
             throw new ArgumentException("Unsupported RPG intent.");
-        string[] required=intent.Kind switch {"compareEquipment"=>["instanceId","slot"],"selectZone"=>["activity","zoneId"],"adminDivine"=>["operation","targetUserId"],"adminZoneDebug"=>["zoneId","operation","enemyIndex","value"],"upgradeItem" or "refineItem"=>["instanceId","expectedLevel"],"learnTalent"=>["talentId","expectedRank","catalogVersion"],"openShells"=>["count"],"equip"=>["instanceId"],"unequip"=>["slot"],"buyPerk"=>["perkId"],"dive" or "fish"=>["stake"],"craft" or "eat"=>["recipeId"],"preview"=>["stake","fishingStake"],"casino"=>["game","stake","choice"],"itemlock" or "favorite"=>["instanceId","enabled"],"salvagePreview"=>["instanceId"],"salvageBatch"=>["selection"],"salvageConfirm" or "salvageCancel"=>["token"],"community"=>["game","operation","eventId","stake","target"],_=>[]};
+        string[] required=intent.Kind switch {"selectBoss"=>["bossId"],"compareEquipment"=>["instanceId","slot"],"selectZone"=>["activity","zoneId"],"adminDivine"=>["operation","targetUserId"],"adminZoneDebug"=>["zoneId","operation","enemyIndex","value"],"upgradeItem" or "refineItem"=>["instanceId","expectedLevel"],"learnTalent"=>["talentId","expectedRank","catalogVersion"],"openShells"=>["count"],"equip"=>["instanceId"],"unequip"=>["slot"],"buyPerk"=>["perkId"],"dive" or "fish"=>["stake"],"craft" or "eat"=>["recipeId"],"preview"=>["stake","fishingStake"],"casino"=>["game","stake","choice"],"itemlock" or "favorite"=>["instanceId","enabled"],"salvagePreview"=>["instanceId"],"salvageBatch"=>["selection"],"salvageConfirm" or "salvageCancel"=>["token"],"community"=>["game","operation","eventId","stake","target"],_=>[]};
         var values=new SortedDictionary<string,string>(StringComparer.Ordinal);
+        if(intent.Kind=="adminConfigRead")required=["section","filter","page"];
+        if(intent.Kind=="adminConfigSave")required=["section","changes","version"];
+        if(intent.Kind=="adminPlayers")required=["query"];
+        if(intent.Kind=="adminPlayer")required=["operation","targetUserId","value","instanceId"];
+        if(intent.Kind=="adminControl")required=["operation"];
+        if(intent.Kind=="adminRoles")required=["targetUserId","enabled"];
         if(intent.Kind=="adminMaterialGrant")required=["targetUserId","materialId","count"];
         if(intent.Kind=="adminBalance")required=["path","value"];
         if(intent.Kind=="adminStart")required=["event","stake"];
         if(intent.Kind=="adminGrant")required=["itemId","targetUserId","count","roll","stats"];
+        if(intent.Kind=="adminGrantSet")required=["setId","targetUserId"];
         foreach(var field in intent.Arguments.EnumerateObject())
         {
             if((!required.Contains(field.Name) && !(intent.Kind=="equip" && field.Name=="slot") && !(intent.Kind=="buyPerk" && field.Name=="mode")) ||
                 field.Value.ValueKind!=JsonValueKind.String || !values.TryAdd(field.Name,field.Value.GetString()!) ||
-                string.IsNullOrWhiteSpace(values[field.Name]) || values[field.Name].Length>(intent.Kind=="adminGrant"&&field.Name=="stats"?1500:150) || values[field.Name].Any(char.IsControl))
+                string.IsNullOrWhiteSpace(values[field.Name]) || values[field.Name].Length>(intent.Kind=="adminConfigSave"&&field.Name=="changes"?6000:intent.Kind=="adminGrant"&&field.Name=="stats"?1500:150) || values[field.Name].Any(char.IsControl))
                 throw new ArgumentException("Invalid action arguments.");
         }
         if(required.Any(p=>!values.ContainsKey(p)))throw new ArgumentException("Missing action arguments.");
+        if(intent.Kind=="adminConfigRead"&&(!int.TryParse(values["page"],out var configPage)||configPage is <0 or >100000))throw new ArgumentException("Invalid configuration page.");
+
+        if(intent.Kind=="adminRoles"&&(!System.Text.RegularExpressions.Regex.IsMatch(values["targetUserId"],"^[0-9]{1,25}$")||values["enabled"] is not ("true" or "false")))throw new ArgumentException("Invalid moderator role.");
+        if(intent.Kind=="adminPlayer"&&(!System.Text.RegularExpressions.Regex.IsMatch(values["targetUserId"],"^[0-9]{1,25}$")||values["operation"] is not ("profile" or "pearls" or "experience" or "removeItem" or "material" or "resetTest")))throw new ArgumentException("Invalid player administration.");
+        if(intent.Kind=="adminControl"&&values["operation"] is not ("finishboss" or "cancelboss" or "cancelrace" or "cancelheist" or "finishheist" or "finishrace" or "hotTimeStop" or "reload"))throw new ArgumentException("Invalid live control.");
         if(intent.Kind=="selectZone"&&values["activity"] is not ("dive" or "fish"))throw new ArgumentException("Invalid zone activity.");
         if(intent.Kind=="adminDivine"&&(values["operation"] is not ("grantSet" or "remove" or "list")||!System.Text.RegularExpressions.Regex.IsMatch(values["targetUserId"],"^[0-9]{1,25}$")))throw new ArgumentException("Invalid Divine operation.");
         if(intent.Kind=="adminZoneDebug"&&(values["operation"] is not ("enemy" or "chest" or "mimic" or "simulate" or "eternalNormal" or "eternalElite" or "eternalMimic" or "eternalEndgame" or "chestChance" or "mimicChance" or "enemyChance")||!int.TryParse(values["enemyIndex"],out var index)||index is <0 or >2||!decimal.TryParse(values["value"],System.Globalization.NumberStyles.AllowDecimalPoint,System.Globalization.CultureInfo.InvariantCulture,out var debugValue)||debugValue is <0 or >100))throw new ArgumentException("Invalid zone debug operation.");

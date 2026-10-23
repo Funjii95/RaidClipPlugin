@@ -1,4 +1,4 @@
-using RaidClipPlugin.Models;
+﻿using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
@@ -11,7 +11,7 @@ public sealed partial class AdventureGameService
     {
         await _gate.WaitAsync(ct);
         try{
-            PublishStatus();var last=_lastRemoteRace;var joined=last?.Users.Contains(user)==true;
+            await RecoverAreaBossAsync(ct);PublishStatus();var last=_lastRemoteRace;var joined=last?.Users.Contains(user)==true;
             var won=joined && last!.Success && last.Users[last.Winner]==user;
             var payout=won?checked(last!.Stake*last.Users.Length):0;
             var loss=joined && last!.Success && !won?last.Stake:0;

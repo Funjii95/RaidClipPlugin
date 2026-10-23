@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
@@ -20,7 +20,7 @@ public sealed class RpgLootExpansionTests : IDisposable
     public void DefaultsHaveFiftyTwoNewDefinitionsPreserveLegacyCrownAndRarityWeights()
     {
         var c=new RpgConfig();c.Validate();Assert.Equal(52,RpgLootExpansionCatalog.Items().Count);
-        Assert.Equal(10,c.DiveLoot.Items.Count(i=>i.Collector is not null));Assert.Equal(20,c.Sets.Count);
+        Assert.Equal(10,c.DiveLoot.Items.Count(i=>i.Collector is not null));Assert.Equal(23,c.Sets.Count);
         Assert.Equal("deepsea-crown",Assert.Single(c.DiveLoot.Items,i=>i.DisplayName=="Krone des Abgrunds").ItemId);
         Assert.Equal(new[]{6000,2900,850,200,50},c.DiveLoot.RarityWeights.OrderBy(p=>p.Key).Select(p=>p.Value));
         var count=c.DiveLoot.Items.Count;RpgLootExpansionCatalog.AddMissing(c.DiveLoot);Assert.Equal(count,c.DiveLoot.Items.Count);

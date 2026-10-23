@@ -8,7 +8,11 @@ public sealed partial class ViewerPointStore
         try
         {
             await EnsureLoadedAsync(ct);
-            return File.Exists(_filePath) ? await File.ReadAllBytesAsync(_filePath,ct) : null;
+            if(!File.Exists(_filePath))return null;
+            // Event metadata shares the atomic save but is never a player account.
+            var bytes=await File.ReadAllBytesAsync(_filePath,ct);
+            var node=System.Text.Json.Nodes.JsonNode.Parse(bytes)!.AsObject();
+            node.Remove(GlobalBossKey);return System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(node,JsonOptions);
         }
         finally{_lock.Release();}
     }

@@ -1,3 +1,5 @@
+import {BossGallery} from './BossGallery';
+import {isCollectionItem} from './collectionInventory';
 import {CodexCharacter} from './CodexCharacter';
 import {ItemComparison} from './ItemComparison';
 import {ZonePanel} from './ZonePanel';
@@ -51,7 +53,7 @@ const symbols = [
 ] as const;
 const time = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{source:RpgDataSource;demo?:DemoPresentation;minigameClient?:MinigameClient;desktop?:boolean;desktopAdmin?:ReactNode}) {
-    const desktopTabs=["Abenteuer","Charakter","Waffen","Ausrüstung","Inventar","Aufwertung","Materialien","Sammlungen","Itemsets","Boss","Talente","Perks","Kochen","Perlen-Minispiele"];
+    const desktopTabs=["Abenteuer","Charakter","Waffen","Ausrüstung","Inventar","Aufwertung","Materialien","Sammlungen","Itemsets","Boss","Sushi-Küche","Talente & Perks","Minispiele","Werte & Statistiken","RPG-Verwaltung"];
     const isDemo=source.mode==="demo";
     const allowed=(type:Action["type"])=>isDemo || source.canDispatch?.(type)===true;
     const clickLock=useRef(false);
@@ -243,14 +245,14 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
             </small>) : null}
         </section>)}
       {!config && (<nav aria-label="Hauptnavigation">
-          {(desktop?desktopTabs:tabs).map((name, n) => (<button key={name} aria-current={tab === name ? "page" : undefined} onClick={() => {
+          {(desktop?desktopTabs:tabs).map((name, n) => (<button key={name} aria-current={tab === name ? "page" : undefined} disabled={desktop&&name==="RPG-Verwaltung"&&!desktopAdmin} onClick={() => {
                     setTab(name);
                     setMessage("");
                 }}>
-              <Icon name={desktop?(["compass","otter","swords","swords","bag","sets","pearl","bag","sets","boss","perk","perk","cook","pearl"] as const)[n]:symbols[n]}/>
+              <Icon name={desktop?(["compass","otter","swords","swords","bag","sets","pearl","bag","sets","boss","cook","perk","pearl","sets","perk"] as const)[n]:symbols[n]}/>
               {name}
             </button>))}
-          {desktop&&desktopAdmin&&<button onClick={()=>setTab("Admin")} aria-current={tab==="Admin"?"page":undefined}>♛ Admin</button>}
+
           {desktop&&<button onClick={()=>setTab("Einstellungen")} aria-current={tab==="Einstellungen"?"page":undefined}>⚙ Einstellungen</button>}
         </nav>)}
       {focusedItem&&<div className="codex-item-dialog" role="dialog" aria-label="Itemdetails"><button onClick={()=>setFocusedItem(undefined)}>Itemdetails schließen</button>{state.inventory.filter(i=>i.instanceId===focusedItem).map(itemCard)}</div>}
@@ -281,7 +283,7 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
               Demo zurücksetzen
             </button>
           </>) : (<>
-            {tab === "Perlen-Minispiele" && <>
+            {(tab === "Perlen-Minispiele"||tab==="Minispiele") && <>
               <article><h3>Muscheln öffnen</h3>
                 <p>Eine Öffnung verbraucht eine Muschel. Muscheln findest du statt des alten Stiefels beim Angeln.</p>
                 {state.materials ? <><p>Muscheln: {format(state.materials.shells)}</p>
@@ -417,16 +419,17 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
                       </>)}
                   </article>)}
               </>)}
-            {desktop&&tab==="Admin"&&desktopAdmin}
+            {desktop&&(tab==="Admin"||tab==="RPG-Verwaltung")&&desktopAdmin}
             {tab === "Einstellungen"&&<article><h3>Spiel &amp; Einstellungen</h3>{["Talente","Perks","Kochen","Perlen-Minispiele"].map(name=><button key={name} onClick={()=>setTab(name)}>{name}</button>)}<p>Animationen können am unteren Fensterrand ausgeschaltet werden. Anmeldung und Updates findest du im Windows-Fenster.</p></article>}
-            {tab==="Sammlungen"&&<><h3>Schatzsammlung</h3><div className="cards">{(state.remote?.collectorItems??[]).map(def=>{const quantity=Math.min(5,state.inventory.filter(i=>i.itemId===def.Id).length);return <article key={def.Id}><ItemArtwork id={def.Id} name={def.Name}/><h3>{def.Name}</h3><p>{quantity}/5</p><progress value={quantity} max={5}/><p>Fundort: Gebietstruhen und berechtigte Kämpfe</p></article>;})}</div><p>{(state.remote?.collectorItems??[]).reduce((n,d)=>n+Math.min(5,state.inventory.filter(i=>i.itemId===d.Id).length),0)} / {(state.remote?.collectorItems?.length??0)*5} gesammelt</p></>}
+            {tab==="Sammlungen"&&<><h3>Sammelinventar</h3><p>Sammelobjekte werden hier aufbewahrt. Überzählige Exemplare ab dem sechsten werden automatisch zum Zerlegewert in Perlen umgewandelt. Gesperrte und favorisierte Stücke bleiben geschützt.</p><div className="cards">{(state.remote?.collectorItems??[]).map(def=>{const quantity=state.inventory.filter(i=>isCollectionItem(i)&&i.itemId===def.Id).length;return <article key={def.Id}><ItemArtwork id={def.Id} name={def.Name}/><h3>{def.Name}</h3><p>{quantity}/5</p><progress value={quantity} max={5}/><p>Fundort: Gebietstruhen und berechtigte Kämpfe</p></article>;})}</div><p>{(state.remote?.collectorItems??[]).reduce((n,d)=>n+Math.min(5,state.inventory.filter(i=>i.itemId===d.Id).length),0)} / {(state.remote?.collectorItems?.length??0)*5} gesammelt</p></>}
+            {tab==="Werte & Statistiken"&&<><h3>Charakterwerte</h3><p>Aktuelle Werte aus deinem synchronisierten Spielstand.</p><div className="cards"><article>{statsText(state.remote?.stats??{}).map(text=><p key={text}>{text}</p>)}</article><article><h3>Sammlerboni</h3>{collectorText(collectors(state)).map(text=><p key={text}>{text}</p>)}<p>Weitere persönliche Kampfstatistiken: noch nicht erfasst.</p></article></div></>}
             {tab==="Waffen"&&<><h3>Waffenverwaltung</h3><label>Waffen suchen<input value={search} onChange={e=>setSearch(e.target.value)}/></label><div className="cards">{state.inventory.filter(i=>i.slot==="Weapon"&&(i.name+" "+i.rarity).toLowerCase().includes(search.toLowerCase())).map(itemCard)}</div>{!state.inventory.some(i=>i.slot==="Weapon")&&<p>Noch keine Waffe im Inventar.</p>}</>}
             {tab === "Inventar" && (<>
                 <p className="muted">
                   {state.inventory.length} Schätze · Favoriten und ausgerüstete
                   Items sind vor Zerlegen geschützt.
                 </p>
-                <article><h3>Sammlerboni</h3><p>{collectorText(collectors(state)).join(" · ")}</p><button onClick={() => void run({ type: "salvageBatch", selection: "common" })} disabled={!allowed("salvageBatch") || busy}>Common-Stapel prüfen</button><button onClick={() => void run({ type: "salvageBatch", selection: "duplicates" })} disabled={!allowed("salvageBatch") || busy}>Duplikate prüfen</button></article><label>Inventar durchsuchen<input value={search} onChange={e => setSearch(e.target.value)}/></label><div className="cards">{state.inventory.filter(i => (i.name + " " + i.rarity).toLowerCase().includes(search.toLowerCase())).map(itemCard)}</div>
+                <article><h3>Sammlerboni</h3><p>{collectorText(collectors(state)).join(" · ")}</p><button onClick={() => void run({ type: "salvageBatch", selection: "common" })} disabled={!allowed("salvageBatch") || busy}>Common-Stapel prüfen</button><button onClick={() => void run({ type: "salvageBatch", selection: "duplicates" })} disabled={!allowed("salvageBatch") || busy}>Duplikate prüfen</button></article><label>Inventar durchsuchen<input value={search} onChange={e => setSearch(e.target.value)}/></label><div className="cards">{state.inventory.filter(i => !isCollectionItem(i) && (i.name + " " + i.rarity).toLowerCase().includes(search.toLowerCase())).map(itemCard)}</div>
               </>)}
             {tab === "Ausrüstung" &&
                 slots.map((slot) => {
@@ -455,9 +458,10 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
                       </p>))}
                   </article>))}
               </>)}
-            {tab === "Talente" && <TalentTree state={state} demo={isDemo} busy={busy} canLearn={allowed("learnTalent")} onLearn={id=>void run({type:"learnTalent",id})}/>}
-            {tab === "Perks" && <PerkPanel perks={state.perks} price={perkPrice} affordable={affordable} canBuy={allowed("perk")} busy={busy} demo={isDemo} pearls={isDemo?format(state.player.pearls):state.remote?.pointsExact?BigInt(state.remote.pointsExact).toLocaleString('de-DE'):'–'} canBuyMax={!isDemo&&state.remote?.perkMaxPurchase===true} onBuy={(id,maximum)=>void run({type:"perk",id,maximum})}/>}
-            {tab === "Boss" && (<article className="boss">
+            {(tab === "Talente"||tab==="Talente & Perks") && <TalentTree state={state} demo={isDemo} busy={busy} canLearn={allowed("learnTalent")} onLearn={id=>void run({type:"learnTalent",id})}/>}
+            {(tab === "Perks"||tab==="Talente & Perks") && <PerkPanel perks={state.perks} price={perkPrice} affordable={affordable} canBuy={allowed("perk")} busy={busy} demo={isDemo} pearls={isDemo?format(state.player.pearls):state.remote?.pointsExact?BigInt(state.remote.pointsExact).toLocaleString('de-DE'):'–'} canBuyMax={!isDemo&&state.remote?.perkMaxPurchase===true} onBuy={(id,maximum)=>void run({type:"perk",id,maximum})}/>}
+            {tab === "Boss"&&state.remote?.areaBoss?.enabled&&!state.boss.isMimic&&<BossGallery view={state.remote.areaBoss} hp={state.player.hp} maxHp={state.player.maxHp} buffs={state.player.buffs.filter(b=>buffActive(b,now)).map(b=>b.recipeId)} busy={busy} canAttack={allowed("boss")} canSelect={allowed("selectBoss")} cooldown={remaining(state.cooldowns.boss,now)} onAttack={()=>void run({type:"boss"})} onSelect={id=>void run({type:"selectBoss",id})}/>}
+            {tab === "Boss"&&(!state.remote?.areaBoss?.enabled||state.boss.isMimic) && (<article className="boss">
                 <div className="boss-art">
                   <img src={state.boss.isMimic?"./boss-mimic.png":"./boss-kraken.png"} alt={state.boss.isMimic?"Mimic – lebendige Schatztruhe":"Kraken in versunkenen Ruinen"} width="1254" height="1254" loading="lazy"/>
                 </div>
@@ -505,7 +509,7 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
                   {isDemo?"Ein Angriff alle 10 Sekunden. Normaler Boss: 10–20 Gegenschaden. Passive Heilung: 2 HP pro Minute.":"Es werden keine Bossregeln oder Bossgegner im Browser simuliert."}
                 </small><p>{state.boss.reward?.message} {state.boss.reward && `+${state.boss.reward.pearls} Perlen · +${state.boss.reward.experience} EXP`}</p>{isDemo&&(<button onClick={() => void run({ type: "newBoss" })} disabled={!allowed("newBoss") || busy}>Neuen Demo-Boss starten</button>)}{isDemo&&(<button onClick={() => void run({ type: "healChat" })} disabled={!allowed("healChat") || busy}>Chat-Heilung testen</button>)}
               </article>)}
-            {tab === "Kochen" && (<>
+            {(tab === "Kochen"||tab==="Sushi-Küche") && (<>
                 <article className="kitchen-intro">
                   <span className="kitchen-icon" aria-hidden="true">
                     🍣
@@ -610,4 +614,3 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
       </footer>
     </div>);
 }
-

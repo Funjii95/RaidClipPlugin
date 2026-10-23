@@ -21,12 +21,14 @@ public sealed class RpgZoneConfig
 {
     public List<RpgZoneDefinition> Areas {get;set;}=Defaults();
     public Dictionary<string,decimal> EternalChances {get;set;}=new(){["normal"]=.03m,["elite"]=.12m,["mimic"]=.20m,["endgame"]=.35m};
+    public Dictionary<string,decimal> EternalEightChances {get;set;}=new(){["normal"]=.01m,["elite"]=.04m,["mimic"]=.08m,["eonath"]=.10m};
     public RpgZoneDefinition Get(string id)=>Areas.SingleOrDefault(z=>z.Id==id)??throw new InvalidOperationException("Unbekanntes Gebiet: "+id+". Bitte ein gültiges Tauchgebiet auswählen.");
     public void Validate()
     {
         var standard=Defaults();
         if(Areas.Count!=10||Areas.Select(z=>z.Id).Distinct().Count()!=10||Areas.Any(z=>!standard.Any(s=>s.Id==z.Id&&s.Level==z.Level&&s.Name==z.Name)||z.Hp is <1 or >1000000||z.Attack is <1 or >1000000||z.Armor is <0 or >100000||z.Enemies.Length!=3||z.Enemies.Any(string.IsNullOrWhiteSpace)||z.ChestChance is <0 or >100||z.MimicChance is <0 or >100||z.EnemyChance is <0 or >100||z.EliteChance is <0 or >100||z.ChestChance+z.MimicChance+z.EnemyChance>100||z.MaximumRarity==ItemRarity.Divine))throw new InvalidOperationException("Ungültige Tauchgebietsregeln.");
         if(EternalChances.Count!=4||new[]{"normal","elite","mimic","endgame"}.Any(k=>!EternalChances.TryGetValue(k,out var v)||v is <0 or >100))throw new InvalidOperationException("Ungültige Eternal-Chancen.");
+        if(EternalEightChances.Count!=4||new[]{"normal","elite","mimic","eonath"}.Any(k=>!EternalEightChances.TryGetValue(k,out var v)||v is <0 or >100))throw new InvalidOperationException("Ungültige Eternal-8er-Chancen.");
     }
     public static List<RpgZoneDefinition> Defaults()
     {

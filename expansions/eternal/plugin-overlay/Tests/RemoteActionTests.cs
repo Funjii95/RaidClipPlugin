@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -37,7 +37,7 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     private ActionEnvelope Envelope(RpgIntent intent)=>new("42","1001",Guid.NewGuid(),"synthetic-stream",DateTimeOffset.UtcNow.AddSeconds(8),intent,RpgIntents.Hash(intent));
     [Fact]public void Tides_requires_publisher_support_for_extended_stats_and_shields()
     {
-        Assert.Equal(7,SnapshotValidation.RpgProjectionVersion);
+        Assert.Equal(9,SnapshotValidation.RpgProjectionVersion);
     }
     [Fact]public async Task Large_inventory_status_keeps_authoritative_stats_and_profile()
     {

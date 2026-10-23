@@ -11,6 +11,7 @@ public static class RpgHealthService
     public static void Refresh(RpgProfile p, RpgHealthConfig c, DateTimeOffset now)
     {
         c.Validate(); p.Health ??= new();
+        RpgWeaponService.RefreshMana(p,now);
         var h=p.Health; var max=Maximum(p,c);
         if(h.CurrentHp is null) { h.CurrentHp=max; h.AppliedMaximumHp=max; h.LastPassiveRegen=now; }
         var baseMax=BaseMaximum(p,c);

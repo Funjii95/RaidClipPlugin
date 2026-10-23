@@ -81,12 +81,14 @@ public static class CharacterStatService
         if(activity==RpgActivity.Boss)result.BossDamage+=RpgTalentService.Bonus(profile,"boss");
         if(activity==RpgActivity.Boss && RpgSetCombatService.Active(profile,config.Sets,"abyss_hunter",6) && RpgSetCombatService.Until(profile,"hunter-haste",now??DateTimeOffset.UtcNow)) {result.BossDamage+=18;result.AttackSpeed+=28;}
         if(activity==RpgActivity.Boss && RpgSetCombatService.Active(profile,config.Sets,"coral_oracle",6) && RpgSetCombatService.Until(profile,"coral-damage",now??DateTimeOffset.UtcNow))result.BossDamage+=20;
+        result.Damage+=RpgWeaponService.DamageBonus(profile,now??DateTimeOffset.UtcNow);
         RpgEternalCombat.Dynamic(profile,config,result,now??DateTimeOffset.UtcNow);
         return result;
     }
 
     private static void Add(RpgAttributes a, RpgAttributes b, int count = 1)
     {
+        a.Attack+=b.Attack*count;a.MagicPower+=b.MagicPower*count;a.ManaRegeneration+=b.ManaRegeneration*count;a.WaterDamage+=b.WaterDamage*count;a.ElementalDamage+=b.ElementalDamage*count;a.AbyssDamage+=b.AbyssDamage*count;a.LightDamage+=b.LightDamage*count;
         a.EnemyEncounterChance+=b.EnemyEncounterChance*count;a.MaterialFind+=b.MaterialFind*count;a.AttackPercent+=b.AttackPercent*count;a.ExperienceBonus+=b.ExperienceBonus*count;a.DivineDamage+=b.DivineDamage*count;
         a.MovementSpeed+=b.MovementSpeed*count;a.BossLifeleech+=b.BossLifeleech*count;a.Armor+=b.Armor*count;a.ArmorPercent+=b.ArmorPercent*count;a.MaximumHpPercent+=b.MaximumHpPercent*count;
         a.AttackSpeed+=b.AttackSpeed*count;a.HealingPower+=b.HealingPower*count;
@@ -105,7 +107,7 @@ public static class CharacterStatService
     {
         if (baseDamage < 0 || rollPercent is < 0 or >= 100) throw new ArgumentOutOfRangeException();
         critical = rollPercent < stats.CritChance;
-        var damage = baseDamage * (1+stats.AttackPercent/100) * (1 + stats.Damage / 100) * (1 + stats.BossDamage / 100);
+        var damage = (baseDamage+Math.Clamp(stats.Attack,0,1000000)) * (1+stats.AttackPercent/100) * (1 + stats.Damage / 100) * (1 + stats.BossDamage / 100);
         if (critical) damage *= Math.Clamp(baseCritMultiplier, 1, 10) + stats.CritDamage / 100;
         return (int)Math.Min(int.MaxValue,decimal.Floor(damage));
     }

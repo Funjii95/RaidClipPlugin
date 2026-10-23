@@ -30,7 +30,7 @@ public static class RpgChatPresentation
     public static string KindName(RpgItem item) => item.Slot.HasValue ? "Ausrüstung" :
         item.Kind == RpgItemKind.Consumable ? "Verbrauchsgegenstand" : "Schatz";
     public static RpgAttributes Snapshot(RpgAttributes a, decimal levels = 1) => new()
-    { MovementSpeed=a.MovementSpeed*levels,BossLifeleech=a.BossLifeleech*levels,Armor=a.Armor*levels,ArmorPercent=a.ArmorPercent*levels,MaximumHpPercent=a.MaximumHpPercent*levels,AttackSpeed=a.AttackSpeed*levels,HealingPower=a.HealingPower*levels,
+    { Attack=a.Attack*levels,MagicPower=a.MagicPower*levels,ManaRegeneration=a.ManaRegeneration*levels,WaterDamage=a.WaterDamage*levels,ElementalDamage=a.ElementalDamage*levels,AbyssDamage=a.AbyssDamage*levels,LightDamage=a.LightDamage*levels,MovementSpeed=a.MovementSpeed*levels,BossLifeleech=a.BossLifeleech*levels,Armor=a.Armor*levels,ArmorPercent=a.ArmorPercent*levels,MaximumHpPercent=a.MaximumHpPercent*levels,AttackSpeed=a.AttackSpeed*levels,HealingPower=a.HealingPower*levels,
         BossDamageReduction=a.BossDamageReduction*levels,BossDodgeChance=a.BossDodgeChance*levels,CriticalHealing=a.CriticalHealing*levels,RareEquipmentLuck=a.RareEquipmentLuck*levels,
         Power=a.Power*levels,Stamina=a.Stamina*levels,MaximumHp=a.MaximumHp*levels, Damage = a.Damage * levels, CritChance = a.CritChance * levels, CritDamage = a.CritDamage * levels, Luck = a.Luck * levels,
         BossDamage = a.BossDamage * levels, PearlBonus = a.PearlBonus * levels, FishingLuck = a.FishingLuck * levels, DiveLuck = a.DiveLuck * levels,
@@ -42,6 +42,7 @@ public static class RpgChatPresentation
         var values = new List<string>();
         void Add(decimal value, string label, bool percent = false)
         { if (value != 0) values.Add((value > 0 ? "+" : "") + Number(value) + (percent ? " % " : " ") + label); }
+        Add(a.Attack,"Angriff");Add(a.MagicPower,"Magiekraft");Add(a.ManaRegeneration,"Manaregeneration",true);Add(a.WaterDamage,"Wasserschaden",true);Add(a.ElementalDamage,"Elementarschaden",true);Add(a.AbyssDamage,"Abgrundschaden",true);Add(a.LightDamage,"Lichtschaden",true);
         Add(a.Damage, "Schaden", true); Add(a.CritChance, "Kritische Trefferchance", true); Add(a.CritDamage, "Kritischer Schaden", true);
         Add(a.BossDamageReduction,"Boss-Gegenschadensreduktion",true);Add(a.BossDodgeChance,"Boss-Ausweichen",true);
         Add(a.CriticalHealing,"Heilung aus tatsächlichem kritischem Boss-Schaden",true);Add(a.RareEquipmentLuck,"relative seltene Ausrüstungs-Lootchance",true);

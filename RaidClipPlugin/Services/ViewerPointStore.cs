@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Config;
 
@@ -25,8 +25,12 @@ public sealed partial class ViewerPointStore
     private long _jackpot;
     public RpgHotTimeService HotTime { get; }
     private RpgHotTimeConfig _hotTimeConfig = new() { Enabled=false };
-    public void ConfigureHotTime(RpgConfig config)
+    private RpgSalvageConfig _collectionSalvage = new();
+    private long _collectionMaximumBalance = long.MaxValue;
+    public void ConfigureHotTime(RpgConfig config, long maximumBalance = long.MaxValue)
     {
+        _collectionMaximumBalance=maximumBalance;
+        _collectionSalvage=JsonSerializer.Deserialize<RpgSalvageConfig>(JsonSerializer.Serialize(config.Salvage))!;
         var copy=JsonSerializer.Deserialize<RpgHotTimeConfig>(JsonSerializer.Serialize(config.HotTime))!;
         copy.Enabled &= config.Enabled;copy.Validate();_hotTimeConfig=copy;
     }
@@ -1154,7 +1158,7 @@ public sealed partial class ViewerPointStore
             await using var stream = File.OpenRead(_filePath);
             using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
             ValidatePersistedInventories(document.RootElement);
-            var entries = document.RootElement.Deserialize<Dictionary<string, ViewerPointEntry>>(JsonOptions);
+            var entries = ReadAccounts(document.RootElement);
             if (entries is null || entries.Any(p => p.Value is null || p.Value.Rpg is { SchemaVersion: not 1 }))
                 throw new InvalidDataException("Die Punktedatei enthält keine gültigen Konten.");
             foreach(var entry in entries.Values)if(entry.Rpg is not null)SnapshotProtocol.TalentRules.Validate(entry.Rpg.PlayerLevel,entry.Rpg.TalentRanks);
@@ -1188,7 +1192,7 @@ public sealed partial class ViewerPointStore
             if(_entries!.Keys.Any(IsPrivacyBlocked))throw new InvalidOperationException("Import/Speicherung würde einen gesperrten Spieler wiederherstellen.");
             await using (var stream = File.Create(temporaryPath))
             {
-                await JsonSerializer.SerializeAsync(stream, _entries, JsonOptions, cancellationToken);
+                await JsonSerializer.SerializeAsync(stream, AccountsWithBoss(), JsonOptions, cancellationToken);
                 await stream.FlushAsync(cancellationToken);
                 stream.Flush(true);
             }
@@ -1206,9 +1210,9 @@ public sealed partial class ViewerPointStore
         {
             // Some legacy callers mutate entries directly. Restore from the committed file,
             // so rejected/offline mutations cannot leak into a later successful save.
-            _entries = File.Exists(_filePath)
-                ? JsonSerializer.Deserialize<Dictionary<string, ViewerPointEntry>>(await File.ReadAllTextAsync(_filePath), JsonOptions)!
-                : new(StringComparer.Ordinal);
+            if(File.Exists(_filePath)){
+                using var committed=JsonDocument.Parse(await File.ReadAllTextAsync(_filePath));_entries=ReadAccounts(committed.RootElement);
+            }else{_entries=new(StringComparer.Ordinal);_globalBoss=null;}
             _commitChecked=false;
             throw;
         }
@@ -1223,4 +1227,3 @@ public sealed partial class ViewerPointStore
     }
 
 }
-

@@ -35,7 +35,7 @@ export class LiveRpgClient {
  async submit(kind:string,args:Record<string,string>,actionId?:string):Promise<Receipt>{
   if(this.submitting)throw Error('Eine Aktion läuft bereits.');this.submitting=true;try{
   if(this.load())throw Error('Vorherige Aktion zuerst klären.');
-  if(Object.entries(args).some(([key,v])=>!v||v.length>(kind==='adminGrant'&&key==='stats'?1500:150)))throw Error('Aktionsparameter fehlen oder sind zu lang.');
+  if(Object.entries(args).some(([key,v])=>!v||v.length>(kind==='adminConfigSave'&&key==='changes'?6000:kind==='adminGrant'&&key==='stats'?1500:150)))throw Error('Aktionsparameter fehlen oder sind zu lang.');
   if((kind==='fish'||kind==='dive')&&(!/^(0|[1-9]\d*)$/.test(args.stake??'')||BigInt(args.stake)>9223372036854775807n))throw Error('Einsatz als gültige ganze Zahl eingeben.');
   const ready=await this.state();if(!ready.available||!ready.sessionId)throw Error('Plugin nicht spielbereit.');
   if(actionId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actionId))throw Error('Ungültige Aktions-ID.');

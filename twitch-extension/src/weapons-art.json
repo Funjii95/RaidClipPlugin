@@ -1,0 +1,170 @@
+{
+  "weapon_tide_crown": {
+    "src": "./items/weapons/weapon_tide_crown.webp",
+    "name": "Sturmkrone der Gezeiten",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "bc089bb0caeb1789842cf1597f7b024c4e48a1433e23879a5da8eb4e927e833d",
+    "crop": [
+      17,
+      79,
+      386,
+      232
+    ]
+  },
+  "weapon_leviathan_call": {
+    "src": "./items/weapons/weapon_leviathan_call.webp",
+    "name": "Leviathans Ruf",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "b4e7b18d1bb21b4e7daab2db57a5e0722a45baf0f8f9767bd3d5095679b9e1f5",
+    "crop": [
+      583,
+      79,
+      920,
+      232
+    ]
+  },
+  "weapon_sunken_kings": {
+    "src": "./items/weapons/weapon_sunken_kings.webp",
+    "name": "Klingen der Versunkenen K\u00F6nige",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "146d7ff58a83969ab314eede92475420f6aa807a0b75c8521d21c00804277869",
+    "crop": [
+      1120,
+      79,
+      1440,
+      232
+    ]
+  },
+  "weapon_eternal_coral": {
+    "src": "./items/weapons/weapon_eternal_coral.webp",
+    "name": "Korallenschrei der Ewigkeit",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "6e00a3fd812e3c002bf6d037d324071c7291af673c9e420ba614733e99bfc971",
+    "crop": [
+      17,
+      320,
+      386,
+      480
+    ]
+  },
+  "weapon_origin_current": {
+    "src": "./items/weapons/weapon_origin_current.webp",
+    "name": "Herz der Ursprungsstr\u00F6mung",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "8206ac6d6c33954854d9315b80ec18e492bf0e011e33d11e0793cc6edf61e9e1",
+    "crop": [
+      583,
+      320,
+      920,
+      480
+    ]
+  },
+  "weapon_reef_wardens": {
+    "src": "./items/weapons/weapon_reef_wardens.webp",
+    "name": "W\u00E4chterklingen des Riffs",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "884f780f0df46af59072206c9c4403dfb10f1a85857079a6d768b20902f24432",
+    "crop": [
+      1120,
+      320,
+      1440,
+      480
+    ]
+  },
+  "weapon_abyss_claw": {
+    "src": "./items/weapons/weapon_abyss_claw.webp",
+    "name": "Schattenklaue des Abgrunds",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "ebfc2e98bc5909a91da2a254b5e1fceb6e7bb21dffea279aca9c78df16302d8f",
+    "crop": [
+      17,
+      563,
+      386,
+      721
+    ]
+  },
+  "weapon_despair_staff": {
+    "src": "./items/weapons/weapon_despair_staff.webp",
+    "name": "Leerenstab der Verzweiflung",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "de50c31eceadfdae55dcfeede65f6f7aece97e1fc0d283f998de58367c659e31",
+    "crop": [
+      583,
+      563,
+      920,
+      721
+    ]
+  },
+  "weapon_void_devourer": {
+    "src": "./items/weapons/weapon_void_devourer.webp",
+    "name": "Verschlingerklinge der Leere",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "3c31e6b45b8177a28722301c2edb89da68ac1cb9dfc83a247810c2d97744f482",
+    "crop": [
+      1120,
+      563,
+      1440,
+      721
+    ]
+  },
+  "weapon_star_tide": {
+    "src": "./items/weapons/weapon_star_tide.webp",
+    "name": "Sternenflut des Urmeers",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "0cbbb8f9deb724d529cdf441ed8fcae15b52f4ca6c0350dfddfab40d5f23c8ed",
+    "crop": [
+      17,
+      794,
+      386,
+      930
+    ]
+  },
+  "weapon_infinite_tides": {
+    "src": "./items/weapons/weapon_infinite_tides.webp",
+    "name": "Stab der Unendlichen Gezeiten",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "954c43412fe81b2a4562859e705a719df6a57208bdbcb85b5cc7cf6054bc25ac",
+    "crop": [
+      583,
+      794,
+      920,
+      930
+    ]
+  },
+  "weapon_worldbreaker": {
+    "src": "./items/weapons/weapon_worldbreaker.webp",
+    "name": "Weltenbrecher der Urtiefe",
+    "width": 256,
+    "height": 256,
+    "sourceSha256": "ded4551f53268c59819aa7706d1aa17befe675a833b57d95fe747b12e95e243b",
+    "assetSha256": "13a05e91dcd4dee2c7bdb005f7d2b088c2c0426786ae170276d359e33454da2a",
+    "crop": [
+      1120,
+      794,
+      1440,
+      930
+    ]
+  }
+}

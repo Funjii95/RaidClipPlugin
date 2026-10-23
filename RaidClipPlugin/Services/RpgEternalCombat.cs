@@ -19,9 +19,10 @@ public static class RpgEternalCombat
         else {var slot=Enumerable.Range(1,maximum).FirstOrDefault(i=>Ready(p,id+":stack"+i,now));if(slot==0)slot=Enumerable.Range(1,maximum).MinBy(i=>p.Cooldowns[Prefix+id+":stack"+i]);Set(p,id+":stack"+slot,now,seconds);}
     }
     public static void Healed(RpgProfile p,RpgHealthConfig c,int actual,DateTimeOffset now)
-    {if(actual>0&&Has(p,c.EquipmentSets,"eternal_tide_blessing",5))Stack(p,"eternal_tide_blessing",now,5,10,true);}
+    {if(actual>0&&Has(p,c.EquipmentSets,"eternal_tide_blessing",5))Stack(p,"eternal_tide_blessing",now,5,10,true);RpgEternalEightCombat.Healed(p,c,actual,now);}
     public static void Refresh(RpgProfile p,RpgHealthConfig c,DateTimeOffset now)
     {
+        RpgEternalEightCombat.Refresh(p,c);
         foreach(var key in p.Cooldowns.Keys.Where(k=>k.StartsWith(Prefix)&&!k.Contains(":used:")).ToArray()) {
             var id=key[Prefix.Length..].Split(':')[0];
             var required=key.Contains(":stack")?(id=="eternal_tide_blessing"?5:5):key.EndsWith(":regen5")?1:key.EndsWith(":crit")?3:key.EndsWith(":low")?4:6;
@@ -37,6 +38,7 @@ public static class RpgEternalCombat
     }
     public static void Dynamic(RpgProfile p,RpgConfig c,RpgAttributes a,DateTimeOffset now)
     {
+        RpgEternalEightCombat.Dynamic(p,c,a,now);
         if(Has(p,c,"eternal_tide_blessing",5))a.Damage+=5*Stacks(p,"eternal_tide_blessing",now,5);
         if(Has(p,c,"eternal_tide_blessing",6)&&!Ready(p,"eternal_tide_blessing:rescue",now))a.BossDamage+=50;
         if(Has(p,c,"eternal_primordial_wrath",5)){var stacks=Stacks(p,"eternal_primordial_wrath",now,10);a.Damage+=8*stacks;if(stacks==10)a.AttackSpeed+=30;}

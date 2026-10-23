@@ -1,0 +1,194 @@
+{
+  "eternal_cosmic_forge_helmet": {
+    "src": "./items/eternal-eight/eternal_cosmic_forge_helmet.png",
+    "name": "Krone des Sternenschmieds",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "bd72f79a631aa10c1840b6ab312189931b72646e39268c4527fb57c3b992ce92",
+    "assetSha256": "bd72f79a631aa10c1840b6ab312189931b72646e39268c4527fb57c3b992ce92"
+  },
+  "eternal_cosmic_forge_chest": {
+    "src": "./items/eternal-eight/eternal_cosmic_forge_chest.png",
+    "name": "Panzer des Urkosmos",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "f96698c54e7ed5b1bbfdf5214de17dffdf831bc74fe7573c9d1c5e7cb2198cfe",
+    "assetSha256": "f96698c54e7ed5b1bbfdf5214de17dffdf831bc74fe7573c9d1c5e7cb2198cfe"
+  },
+  "eternal_cosmic_forge_gloves": {
+    "src": "./items/eternal-eight/eternal_cosmic_forge_gloves.png",
+    "name": "F\u00E4uste der Sternensch\u00F6pfung",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "7873e38d3b94e0678d85c118a86410e941d55fbf577d539d3c901feca6fa14c5",
+    "assetSha256": "7873e38d3b94e0678d85c118a86410e941d55fbf577d539d3c901feca6fa14c5"
+  },
+  "eternal_cosmic_forge_boots": {
+    "src": "./items/eternal-eight/eternal_cosmic_forge_boots.png",
+    "name": "Schritte der Galaxien",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "1d3a506e12029ea4ed7613bb26ea825bdc5da822d677f06dfdc8eee867fb07e5",
+    "assetSha256": "1d3a506e12029ea4ed7613bb26ea825bdc5da822d677f06dfdc8eee867fb07e5"
+  },
+  "eternal_cosmic_forge_weapon": {
+    "src": "./items/eternal-eight/eternal_cosmic_forge_weapon.png",
+    "name": "Sternenbrecher der Unendlichkeit",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "2be029d8d72aa79d2619a5a666acd986e1562a9c98fc1e9d1451799d9bf68c25",
+    "assetSha256": "2be029d8d72aa79d2619a5a666acd986e1562a9c98fc1e9d1451799d9bf68c25"
+  },
+  "eternal_cosmic_forge_ring_1": {
+    "src": "./items/eternal-eight/eternal_cosmic_forge_ring_1.png",
+    "name": "Ring der aufgehenden Sterne",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "4ac7dd7bff0df2e12bd3b120ea54921d2a4dfc571460734bcc3f847d52f3fbc0",
+    "assetSha256": "4ac7dd7bff0df2e12bd3b120ea54921d2a4dfc571460734bcc3f847d52f3fbc0"
+  },
+  "eternal_cosmic_forge_ring_2": {
+    "src": "./items/eternal-eight/eternal_cosmic_forge_ring_2.png",
+    "name": "Ring der fallenden Sterne",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "8134a7af84752b71aba00320ee84991a389e024dde4c341d22a6730d0a9d399c",
+    "assetSha256": "8134a7af84752b71aba00320ee84991a389e024dde4c341d22a6730d0a9d399c"
+  },
+  "eternal_cosmic_forge_amulet": {
+    "src": "./items/eternal-eight/eternal_cosmic_forge_amulet.png",
+    "name": "Herz des Urkosmos",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "6324a3797f5a7a6a714c96878121e72eda3a152da2892a843d3879e78bb565b3",
+    "assetSha256": "6324a3797f5a7a6a714c96878121e72eda3a152da2892a843d3879e78bb565b3"
+  },
+  "eternal_soul_devourer_helmet": {
+    "src": "./items/eternal-eight/eternal_soul_devourer_helmet.png",
+    "name": "Maske des Seelenverschlingers",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "07479031cd61784ad95ce39abe32a57ad6364f332150a600fe034c0baca8b658",
+    "assetSha256": "07479031cd61784ad95ce39abe32a57ad6364f332150a600fe034c0baca8b658"
+  },
+  "eternal_soul_devourer_chest": {
+    "src": "./items/eternal-eight/eternal_soul_devourer_chest.png",
+    "name": "Gewand der ewigen Seelen",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "bb3693f49013d17bdc9fe19491f9c403071b58ce0597c8dd53705af4054a22bc",
+    "assetSha256": "bb3693f49013d17bdc9fe19491f9c403071b58ce0597c8dd53705af4054a22bc"
+  },
+  "eternal_soul_devourer_gloves": {
+    "src": "./items/eternal-eight/eternal_soul_devourer_gloves.png",
+    "name": "Klauen des Seelenraubs",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "094b7014ec42e4fa875c26f3fae45d46ff674ddb56b140aecc44450edb68619d",
+    "assetSha256": "094b7014ec42e4fa875c26f3fae45d46ff674ddb56b140aecc44450edb68619d"
+  },
+  "eternal_soul_devourer_boots": {
+    "src": "./items/eternal-eight/eternal_soul_devourer_boots.png",
+    "name": "Schritte der Seelenlosen",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "712a7d3dedf16318b48d9321c864fe579178f2e57624ca78bf374e72629721d5",
+    "assetSha256": "712a7d3dedf16318b48d9321c864fe579178f2e57624ca78bf374e72629721d5"
+  },
+  "eternal_soul_devourer_weapon": {
+    "src": "./items/eternal-eight/eternal_soul_devourer_weapon.png",
+    "name": "Seelenernter der Urtiefe",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "3fc63ef5507dc678c16862f3ab2638b8cd32fd4cf0dab6986b47501f4f898c5a",
+    "assetSha256": "3fc63ef5507dc678c16862f3ab2638b8cd32fd4cf0dab6986b47501f4f898c5a"
+  },
+  "eternal_soul_devourer_ring_1": {
+    "src": "./items/eternal-eight/eternal_soul_devourer_ring_1.png",
+    "name": "Siegel des Lebenshungers",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "19dd73e7262339c488b11f8f341e529ae3a073102eb159ae87ed843b3c78e3a7",
+    "assetSha256": "19dd73e7262339c488b11f8f341e529ae3a073102eb159ae87ed843b3c78e3a7"
+  },
+  "eternal_soul_devourer_ring_2": {
+    "src": "./items/eternal-eight/eternal_soul_devourer_ring_2.png",
+    "name": "Siegel des Todeshungers",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "39b9a4e2d7c65c56ef0f3595fc3d930f43c81f81d537fb7dc55aa1fe5091def2",
+    "assetSha256": "39b9a4e2d7c65c56ef0f3595fc3d930f43c81f81d537fb7dc55aa1fe5091def2"
+  },
+  "eternal_soul_devourer_amulet": {
+    "src": "./items/eternal-eight/eternal_soul_devourer_amulet.png",
+    "name": "Herz der verschlungenen Seelen",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "d4c5af30ef7306ffa99da2adfa41902a345ebe56db178f3bb13bfa5ad366b8be",
+    "assetSha256": "d4c5af30ef7306ffa99da2adfa41902a345ebe56db178f3bb13bfa5ad366b8be"
+  },
+  "eternal_ten_seas_treasure_helmet": {
+    "src": "./items/eternal-eight/eternal_ten_seas_treasure_helmet.png",
+    "name": "Krone der Zehn Meere",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "cb3497ce697ed2e828d23e196db20fa6955fca1be5e6bef6d0132a66ff4a0ff2",
+    "assetSha256": "cb3497ce697ed2e828d23e196db20fa6955fca1be5e6bef6d0132a66ff4a0ff2"
+  },
+  "eternal_ten_seas_treasure_chest": {
+    "src": "./items/eternal-eight/eternal_ten_seas_treasure_chest.png",
+    "name": "Gewand des Schatzherrschers",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "f1c54ba4e0df6640a14365a5ed7304fcd47b24a077e521392b516ef405d93ae4",
+    "assetSha256": "f1c54ba4e0df6640a14365a5ed7304fcd47b24a077e521392b516ef405d93ae4"
+  },
+  "eternal_ten_seas_treasure_gloves": {
+    "src": "./items/eternal-eight/eternal_ten_seas_treasure_gloves.png",
+    "name": "Greifer des Ewigen Fischers",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "881bba0127ebfbb2b2b19f867db562ff548d8181c5a35769f7c6769dc10652dd",
+    "assetSha256": "881bba0127ebfbb2b2b19f867db562ff548d8181c5a35769f7c6769dc10652dd"
+  },
+  "eternal_ten_seas_treasure_boots": {
+    "src": "./items/eternal-eight/eternal_ten_seas_treasure_boots.png",
+    "name": "Pfade der Meeressch\u00E4tze",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "733bc4caf38dfb1cd0ec5c69772880ee0709435c46592c6790204393b6441e1f",
+    "assetSha256": "733bc4caf38dfb1cd0ec5c69772880ee0709435c46592c6790204393b6441e1f"
+  },
+  "eternal_ten_seas_treasure_weapon": {
+    "src": "./items/eternal-eight/eternal_ten_seas_treasure_weapon.png",
+    "name": "Dreizack des Schatzk\u00F6nigs",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "19aca4adcd1f7462959660be8ca7cfe9da92ddefaea6ed5b0d92233cc7cbeaef",
+    "assetSha256": "19aca4adcd1f7462959660be8ca7cfe9da92ddefaea6ed5b0d92233cc7cbeaef"
+  },
+  "eternal_ten_seas_treasure_ring_1": {
+    "src": "./items/eternal-eight/eternal_ten_seas_treasure_ring_1.png",
+    "name": "Ring der Gl\u00FCcksflut",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "b9beb5e547048bced8e7eb7b25f66c36a0ee3b7011360b524a362b9592066bbb",
+    "assetSha256": "b9beb5e547048bced8e7eb7b25f66c36a0ee3b7011360b524a362b9592066bbb"
+  },
+  "eternal_ten_seas_treasure_ring_2": {
+    "src": "./items/eternal-eight/eternal_ten_seas_treasure_ring_2.png",
+    "name": "Ring des Perlenregens",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "05a7a40d515d7c152dec68551d87425a26e5e8da538cb4771211161fafc811db",
+    "assetSha256": "05a7a40d515d7c152dec68551d87425a26e5e8da538cb4771211161fafc811db"
+  },
+  "eternal_ten_seas_treasure_amulet": {
+    "src": "./items/eternal-eight/eternal_ten_seas_treasure_amulet.png",
+    "name": "Ursprung der Zehn Meere",
+    "width": 1254,
+    "height": 1254,
+    "sourceSha256": "4fd1a7a1bc828f398c8c6bd128a9717b476d47451867e83bb61a8e1ffd4b2482",
+    "assetSha256": "4fd1a7a1bc828f398c8c6bd128a9717b476d47451867e83bb61a8e1ffd4b2482"
+  }
+}

@@ -1,4 +1,4 @@
-using RaidClipPlugin.Models;
+﻿using RaidClipPlugin.Models;
 using RaidClipPlugin.Config;
 namespace RaidClipPlugin.Services;
 public static class RpgZoneService
@@ -23,7 +23,7 @@ public static class RpgZoneService
         var awards=new Dictionary<string,int>();
         foreach(var id in z.Materials) {
             var chance=c.Upgrades.Drops[source].GetValueOrDefault(id)?.Chance??(source=="enemy"?8m:15m);
-            if(guaranteed||rng.NextInclusive(0,999999)<Math.Clamp(chance*(1+(stats.MaterialFind+(source=="fish"?0:RpgPerkCatalog.Combined(p,"diveMaterials")))/100),0,100)*10000)awards[id]=rng.NextInclusive(1,3)*RpgEternalCombat.NormalLootMultiplier(p,c);
+            if(guaranteed||rng.NextInclusive(0,999999)<Math.Clamp(chance*(1+(stats.MaterialFind+(source=="fish"?0:RpgPerkCatalog.Combined(p,"diveMaterials")))/100),0,100)*10000)awards[id]=(rng.NextInclusive(1,3)+RpgEternalEightLoot.ExtraMaterial(p,c,rng))*RpgEternalCombat.NormalLootMultiplier(p,c);
         }
         foreach(var pair in awards)RpgUpgradeCatalog.Add(p.Materials,pair.Key,pair.Value);
         return awards;

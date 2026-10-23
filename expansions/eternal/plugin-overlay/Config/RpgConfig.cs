@@ -1,13 +1,16 @@
-using RaidClipPlugin.Models;
+﻿using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 
 namespace RaidClipPlugin.Config;
 
 public sealed class RpgConfig
 {
+    public RpgAreaBossConfig AreaBosses {get;set;}=new();
+    public Dictionary<string,RpgItemSettings> ItemSettings {get;set;}=[];
+    public RpgAdminAccess AdminAccess {get;set;}=new();
     public RpgZoneConfig Zones {get;set;}=new();
     public RpgUpgradeConfig Upgrades {get;set;}=new();
-    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); RpgZoneService.AddMissing(this); }
+    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); RpgZoneService.AddMissing(this); RpgWeaponCatalog.AddMissing(DiveLoot); }
     public long FreeFishingReward { get; set; } = 40;
     public decimal PowerDamagePerPoint { get; set; } = 1;
     private RpgHealthConfig _health = new();
@@ -16,7 +19,7 @@ public sealed class RpgConfig
     public RpgEnemyConfig Enemies { get; set; } = new();
     public RpgHotTimeConfig HotTime { get; set; } = new();
     public RpgSalvageConfig Salvage { get; set; } = new();
-    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).Concat(RpgTidesExpansion.Sets()).Concat(RpgDepthsExpansion.Sets()).Concat(RpgEternalCatalog.Sets()).ToList();
+    public List<RpgItemSet> Sets { get; set; } = Services.RpgEquipmentCatalog.Sets().Concat(RpgLootExpansionCatalog.Sets()).Concat(RpgTidesExpansion.Sets()).Concat(RpgDepthsExpansion.Sets()).Concat(RpgEternalCatalog.Sets()).Concat(RpgEternalEightCatalog.Sets()).ToList();
     public decimal BossLootChance { get; set; } = 2;
     public bool BossLegendaryEnabled { get; set; }
     public int BossLegendaryMinimumHp { get; set; } = 1000;
@@ -24,6 +27,8 @@ public sealed class RpgConfig
     public decimal FishingEquipmentChance { get; set; } = 0.5m;
     public void Validate()
     {
+        AreaBosses.Validate();
+        AdminAccess.Validate();
         Upgrades.Validate();
         Zones.Validate();
         if(PowerDamagePerPoint is <0 or >10)throw new InvalidOperationException("Kraft-Schadensbonus muss zwischen 0 und 10 Prozent je Punkt liegen.");

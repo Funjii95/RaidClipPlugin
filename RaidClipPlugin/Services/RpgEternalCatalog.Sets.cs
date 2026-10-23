@@ -1,13 +1,17 @@
-using RaidClipPlugin.Models;
+﻿using RaidClipPlugin.Models;
 using RaidClipPlugin.Config;
 namespace RaidClipPlugin.Services;
 public static partial class RpgEternalCatalog
 {
     public static void AddMissing(RpgConfig c)
     {
+        if(c.AreaBosses.SchemaVersion==0){c.AreaBosses.SchemaVersion=1;c.AreaBosses.Enabled=true;}
         AddMissing(c.DiveLoot);
+        RpgWeaponCatalog.AddMissing(c.DiveLoot);
+        foreach(var item in RpgEternalEightCatalog.Items()){c.DiveLoot.Items.RemoveAll(old=>old.ItemId==item.ItemId);c.DiveLoot.Items.Add(item);}
         RpgZoneService.AddMissing(c);
-        foreach(var s in Sets()) {c.Sets.RemoveAll(old=>old.Id==s.Id);c.Sets.Add(s);}
+        foreach(var s in Sets().Concat(RpgEternalEightCatalog.Sets())) {c.Sets.RemoveAll(old=>old.Id==s.Id);c.Sets.Add(s);}
+        RpgItemSettings.Apply(c);
         foreach(var r in new[]{ItemRarity.Eternal,ItemRarity.Divine}) {
             c.Salvage.Values.TryAdd(r,new RpgSalvageConfig().Values[r]);
             c.Upgrades.RarityCosts.TryAdd(r.ToString(),[2,3,5]);
@@ -15,7 +19,7 @@ public static partial class RpgEternalCatalog
     }
     public static void AddMissing(RpgLootConfig c)
     {
-        foreach(var item in Items()) {c.Items.RemoveAll(old=>old.ItemId==item.ItemId);c.Items.Add(item);}
+        foreach(var item in Items().Concat(RpgEternalEightCatalog.Items())) {c.Items.RemoveAll(old=>old.ItemId==item.ItemId);c.Items.Add(item);}
     }
     public static List<RpgItemSet> Sets()
     {

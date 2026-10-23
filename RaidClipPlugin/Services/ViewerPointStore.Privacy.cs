@@ -48,6 +48,16 @@ public sealed partial class ViewerPointStore
             }))await RedactJsonFileAsync(file,id,ct);
             var receipts=Path.Combine(Path.GetDirectoryName(directory)!,"action-receipts");
             if(Directory.Exists(receipts))foreach(var file in Directory.GetFiles(receipts,"*.json*")){
+                if(file.EndsWith(".jsonl",StringComparison.OrdinalIgnoreCase)){
+                    var retained=new List<string>();
+                    foreach(var line in await File.ReadAllLinesAsync(file,ct)){
+                        if(string.IsNullOrWhiteSpace(line))continue;
+                        using var audit=JsonDocument.Parse(line);
+                        if(audit.RootElement.EnumerateObject().Any(p=>(p.Name is "actor" or "target")&&p.Value.ValueKind==JsonValueKind.String&&p.Value.GetString()==id))continue;
+                        retained.Add(line);
+                    }
+                    var temporary=file+".tmp";await File.WriteAllLinesAsync(temporary,retained,ct);File.Move(temporary,file,true);continue;
+                }
                 using var doc=JsonDocument.Parse(await File.ReadAllTextAsync(file,ct));
                 if(doc.RootElement.TryGetProperty("UserId",out var owner)&&owner.GetString()==id)File.Delete(file);
             }

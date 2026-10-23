@@ -8,7 +8,7 @@ internal sealed partial class RemoteRpgExecutor
 {
  private async Task<ActionOutcome> InvokeEternalAdminAsync(ActionEnvelope e,CancellationToken ct)
  {
-  if(e.UserId!=channel)return new(false,"admin_required","Nur der Kanalinhaber hat Adminzugriff.");
+  if(!StaffAllowed(e))return new(false,"admin_required","Keine Freigabe für diese Verwaltungsaktion.");
   string Arg(string key)=>e.Intent.Arguments.GetProperty(key).GetString()!;
   var c=configuration().Adventures.Rpg;
   if(e.Intent.Kind=="adminZoneDebug") {
@@ -24,7 +24,7 @@ internal sealed partial class RemoteRpgExecutor
    }
    // All debug rewards are generated on a detached copy and discarded. No normal player write.
    var owner=(await points.GetProfileAsync(channel,ct)).Entry;
-   var draft=JsonSerializer.Deserialize<RpgProfile>(JsonSerializer.Serialize(owner.Rpg))!;
+   var draft=e.UserId==channel?JsonSerializer.Deserialize<RpgProfile>(JsonSerializer.Serialize(owner.Rpg))!:new RpgProfile{PlayerLevel=zone.Level};
    draft.SelectedDivingZone=zone.Id;draft.Health.CurrentHp=RpgHealthService.Maximum(draft,c.Health);
    var rng=new CryptoDuelRandom();object result;
    if(operation=="chest")result=new{materials=RpgZoneService.Materials(draft,c,zone,"chest",rng),equipment=Array.Empty<string>()};

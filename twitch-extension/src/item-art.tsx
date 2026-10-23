@@ -4,8 +4,10 @@ import tidesArtwork from './tides-art.json';
 import depthsArtwork from './depths-art.json';
 import eternalArtwork from './eternal-art.json';
 import cuisineArtwork from './cuisine-art.json';
+import weaponArtwork from './weapons-art.json';
+import eternalEightArtwork from './eternal-eight-art.json';
 type Entry={src:string;name:string;width:number;height:number;sourceSha256:string;assetSha256:string};
-export const itemArt:Readonly<Record<string,Entry>>={...artwork.entries,...tidesArtwork,...depthsArtwork,...eternalArtwork,...cuisineArtwork};
+export const itemArt:Readonly<Record<string,Entry>>={...artwork.entries,...tidesArtwork,...depthsArtwork,...eternalArtwork,...cuisineArtwork,...weaponArtwork,...eternalEightArtwork};
 export function ItemArtwork({id,name,fallback='✧',small=false}:{id:string;name?:string;fallback?:string;small?:boolean}){
  const [failedId,setFailedId]=useState<string>();const entry=itemArt[id];
  if(!entry||failedId===id)return <span className="item-art-fallback" aria-hidden="true">{fallback}</span>;

@@ -1,4 +1,6 @@
 import {createRoot} from 'react-dom/client';
+import {useEffect,useState} from 'react';
+import {AdminControlCenter} from './AdminControlCenter';
 import {App} from './GraphicalApp';
 import {DesktopAdmin,isDesktopAdmin} from './DesktopAdmin';
 import {BackendRpgDataSource} from './remote/BackendRpgDataSource';
@@ -13,6 +15,14 @@ declare global {interface Window {
 const identity=window.otterDesktopIdentity;
 const bridge=window.chrome?.webview;
 const notice=document.getElementById('desktop-notice')!;
+function DesktopApplication({source}:{source:BackendRpgDataSource}){
+ const [state,setState]=useState(()=>source.getSnapshot());
+ useEffect(()=>source.subscribe(()=>setState(source.getSnapshot())),[source]);
+ const access=state.remote?.staffAccess;
+ const owner=isDesktopAdmin(identity);
+ const moderator=!!identity?.connected&&access?.channelId===identity.channelId&&access?.moderators?.includes(identity.userId);
+ return <App desktop source={source} minigameClient={source.minigames} desktopAdmin={(owner||moderator)&&identity?<AdminControlCenter source={source} identity={identity} owner={owner}/>:undefined}/>;
+}
 notice.textContent=`FUNJII OTTER RPG · ${identity?.displayName??'Nicht angemeldet'} · ${identity?.backendStatus??'Backend-Verbindung wird vorbereitet'}`;
 try{
  if(!bridge)throw Error('Bitte Funjii Otter RPG über die Windows-Anwendung starten.');
@@ -22,5 +32,5 @@ try{
  }});
  source.start();window.otterFlush=()=>{};window.otterCanRestart=()=>source.getSnapshot().remote?.pending!==true;
  window.addEventListener('pagehide',()=>source.dispose());
- createRoot(document.getElementById('root')!).render(<App desktop source={source} minigameClient={source.minigames} desktopAdmin={isDesktopAdmin(identity)?<DesktopAdmin source={source} identity={identity}/>:undefined}/>);
+ createRoot(document.getElementById('root')!).render(<DesktopApplication source={source}/>);
 }catch(error){notice.textContent=error instanceof Error?error.message:'Backend-Verbindung konnte nicht gestartet werden.';notice.setAttribute('role','alert');}

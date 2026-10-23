@@ -1,4 +1,4 @@
-using RaidClipPlugin.Config;
+﻿using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 using System.Text.Json;
@@ -39,7 +39,7 @@ public sealed class EternalZoneTests:IDisposable
  }
  [Fact]public void EightPiecesMultiplyRegularEquipmentButNeverTheEternalDrop()
  {
-  var c=Config();c.BossLootChance=100;c.DiveLoot.MaximumDropChance=100;c.Zones.EternalChances["normal"]=100;
+  var c=Config();c.BossLootChance=100;c.DiveLoot.MaximumDropChance=100;c.Zones.EternalChances["normal"]=100;c.Zones.EternalEightChances["normal"]=0;
   var p=Equipped("divine_infinity",8);var r=new RpgEnemyService(new Low()).Fight(p,c,c.Zones.Get("primordial_throne"),"normal",0,Now);
   Assert.True(r.Victory);Assert.Equal(6000,r.Experience);Assert.Single(p.Inventory.Where(i=>i.Rarity==ItemRarity.Eternal));
   Assert.Equal(6,p.Inventory.Count(i=>i.Rarity<ItemRarity.Eternal));
@@ -70,7 +70,7 @@ public sealed class EternalZoneTests:IDisposable
  }
  [Fact]public void DivineImmunityAndJudgmentUseRealAuthoritativeVictoryAndKeepRewards()
  {
-  var c=Config();c.BossLootChance=100;c.DiveLoot.MaximumDropChance=100;c.Zones.EternalChances["normal"]=100;var p=Equipped("divine_infinity");
+  var c=Config();c.BossLootChance=100;c.DiveLoot.MaximumDropChance=100;c.Zones.EternalChances["normal"]=100;c.Zones.EternalEightChances["normal"]=0;var p=Equipped("divine_infinity");
   Assert.Equal(0,RpgEternalCombat.Receive(1000000,p,c,"fight",Now));
   var r=new RpgEnemyService(new Low()).Fight(p,c,c.Zones.Get("primordial_throne"),"normal",0,Now);Assert.True(r.Victory);Assert.Equal(1,r.Rounds);Assert.Equal(0,r.DamageTaken);Assert.True(r.Experience>0);Assert.NotEmpty(r.Materials);Assert.Contains(p.Inventory,i=>i.Rarity==ItemRarity.Eternal);Assert.True(p.Inventory.Count>7);
  }

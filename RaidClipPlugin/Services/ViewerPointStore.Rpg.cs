@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
@@ -97,7 +97,8 @@ public sealed partial class ViewerPointStore
     /// <summary>Authoritative local gameplay transaction. The callback only receives a detached
     /// account; it must have no external side effects. Currency and inventory commit together.</summary>
     internal async Task<RpgTransactionResult> ApplyRpgAsync(string userId, string displayName,
-        string actionId, Func<ViewerPointEntry, RpgMutation> mutate, CancellationToken token, bool backupBeforeCommit = false)
+        string actionId, Func<ViewerPointEntry, RpgMutation> mutate, CancellationToken token, bool backupBeforeCommit = false,
+        Func<RpgGlobalBossState?,RpgGlobalBossState?>? mutateGlobalBoss = null)
     {
         using var operationAdmission = Admission?.EnterOperation();
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(actionId) || actionId.Length > 200)
@@ -116,8 +117,11 @@ public sealed partial class ViewerPointStore
                 return new(false, "Aktion wurde bereits verarbeitet.", draft.Points, true);
             var result = mutate(draft);
             if (!result.Success) return new(false, result.Error, original?.Points ?? 0);
+            RpgCollectionInventory.SalvageOverflow(draft, _collectionSalvage, _collectionMaximumBalance);
             if (draft.Points < 0 || draft.UserId != userId)
                 throw new InvalidOperationException("Ungültiger RPG-Kontozustand.");
+            var previousBoss=_globalBoss;
+            if(mutateGlobalBoss is not null){var nextBoss=mutateGlobalBoss(_globalBoss is null?null:JsonSerializer.Deserialize<RpgGlobalBossState>(JsonSerializer.Serialize(_globalBoss))!);_globalBoss=nextBoss is null?null:JsonSerializer.Deserialize<RpgGlobalBossState>(JsonSerializer.Serialize(nextBoss))!;}
             draft.DisplayName = displayName;
             draft.UpdatedAt = DateTimeOffset.UtcNow;
             draft.Rpg.CompletedActions.Add(actionId);
@@ -131,6 +135,7 @@ public sealed partial class ViewerPointStore
             try { await SaveAsync(token); }
             catch
             {
+                _globalBoss=previousBoss;
                 if (existed) _entries[userId] = original!;
                 else _entries.Remove(userId);
                 throw;

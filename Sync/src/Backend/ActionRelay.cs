@@ -103,12 +103,13 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     public async Task<ActionReceipt> EnqueueAsync(string user,RpgIntent intent,Guid expectedSession,CancellationToken ct)
     {
         Scope(user);
-        if(RpgIntents.IsAdmin(intent.Kind)&&user!=settings.Twitch.ChannelId)throw new RelayDenied(403,"admin_required");
+
         // This feature is intentionally chat-only; never queue browser requests.
         if(intent.Kind=="openShells")throw new RelayDenied(403,"chat_only");
         if(settings.Actions.AutomaticPlayerEnrollment && (players is null || await players.GetAsync(user,ct) is null))throw new RelayDenied(403,"profile_not_enrolled");
         var hash=RpgIntents.Hash(intent);
         return await store.TransactionAsync<ActionReceipt>(intent.ActionId,false,(s,a)=>{
+            if(RpgIntents.IsAdmin(intent.Kind)&&user!=settings.Twitch.ChannelId&&!(Ready(s)&&AdminPermissions.IsModerator(s.CatalogJson,user)&&AdminPermissions.ModeratorMay(intent)))throw new RelayDenied(403,"admin_required");
             if(s.PrivacyBlockedUsers.Contains(user)||s.DeletionRequests.ContainsKey(user))throw new RelayDenied(403,"privacy_blocked");
             if(a is not null){if(a.Envelope.UserId!=user || a.Envelope.IntentHash!=hash)throw new RelayDenied(409,"action_id_conflict");return new(Receipt(a));}
             if(expectedSession!=s.SessionId || !Ready(s) || s.Sequence<=0){

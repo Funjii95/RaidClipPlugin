@@ -1,0 +1,242 @@
+[
+  {
+    "id": "eternal_cosmic_forge_helmet",
+    "name": "Krone des Sternenschmieds",
+    "set": "eternal_cosmic_forge",
+    "slot": "Helmet",
+    "attributes": {
+      "MaximumHp": 280,
+      "CritChance": 38
+    }
+  },
+  {
+    "id": "eternal_cosmic_forge_chest",
+    "name": "Panzer des Urkosmos",
+    "set": "eternal_cosmic_forge",
+    "slot": "Chest",
+    "attributes": {
+      "MaximumHp": 560,
+      "BossDamage": 55
+    }
+  },
+  {
+    "id": "eternal_cosmic_forge_gloves",
+    "name": "Fäuste der Sternenschöpfung",
+    "set": "eternal_cosmic_forge",
+    "slot": "Gloves",
+    "attributes": {
+      "Attack": 260,
+      "CritDamage": 65
+    }
+  },
+  {
+    "id": "eternal_cosmic_forge_boots",
+    "name": "Schritte der Galaxien",
+    "set": "eternal_cosmic_forge",
+    "slot": "Boots",
+    "attributes": {
+      "MaximumHp": 280,
+      "AttackSpeed": 40
+    }
+  },
+  {
+    "id": "eternal_cosmic_forge_weapon",
+    "name": "Sternenbrecher der Unendlichkeit",
+    "set": "eternal_cosmic_forge",
+    "slot": "Weapon",
+    "attributes": {
+      "Attack": 1650,
+      "CritDamage": 50
+    }
+  },
+  {
+    "id": "eternal_cosmic_forge_ring_1",
+    "name": "Ring der aufgehenden Sterne",
+    "set": "eternal_cosmic_forge",
+    "slot": "Ring1",
+    "attributes": {
+      "Attack": 180,
+      "CritChance": 35
+    }
+  },
+  {
+    "id": "eternal_cosmic_forge_ring_2",
+    "name": "Ring der fallenden Sterne",
+    "set": "eternal_cosmic_forge",
+    "slot": "Ring1",
+    "attributes": {
+      "Attack": 190,
+      "CritDamage": 45
+    }
+  },
+  {
+    "id": "eternal_cosmic_forge_amulet",
+    "name": "Herz des Urkosmos",
+    "set": "eternal_cosmic_forge",
+    "slot": "Amulet",
+    "attributes": {
+      "MaximumHp": 350,
+      "BossDamage": 65
+    }
+  },
+  {
+    "id": "eternal_soul_devourer_helmet",
+    "name": "Maske des Seelenverschlingers",
+    "set": "eternal_soul_devourer",
+    "slot": "Helmet",
+    "attributes": {
+      "MaximumHp": 320,
+      "CritChance": 35
+    }
+  },
+  {
+    "id": "eternal_soul_devourer_chest",
+    "name": "Gewand der ewigen Seelen",
+    "set": "eternal_soul_devourer",
+    "slot": "Chest",
+    "attributes": {
+      "MaximumHp": 650,
+      "BossDamageReduction": 30
+    }
+  },
+  {
+    "id": "eternal_soul_devourer_gloves",
+    "name": "Klauen des Seelenraubs",
+    "set": "eternal_soul_devourer",
+    "slot": "Gloves",
+    "attributes": {
+      "Attack": 240,
+      "BossLifeleech": 30
+    }
+  },
+  {
+    "id": "eternal_soul_devourer_boots",
+    "name": "Schritte der Seelenlosen",
+    "set": "eternal_soul_devourer",
+    "slot": "Boots",
+    "attributes": {
+      "MaximumHp": 350,
+      "BossDodgeChance": 30
+    }
+  },
+  {
+    "id": "eternal_soul_devourer_weapon",
+    "name": "Seelenernter der Urtiefe",
+    "set": "eternal_soul_devourer",
+    "slot": "Weapon",
+    "attributes": {
+      "Attack": 1550,
+      "BossLifeleech": 35
+    }
+  },
+  {
+    "id": "eternal_soul_devourer_ring_1",
+    "name": "Siegel des Lebenshungers",
+    "set": "eternal_soul_devourer",
+    "slot": "Ring1",
+    "attributes": {
+      "Attack": 200,
+      "AttackSpeed": 35
+    }
+  },
+  {
+    "id": "eternal_soul_devourer_ring_2",
+    "name": "Siegel des Todeshungers",
+    "set": "eternal_soul_devourer",
+    "slot": "Ring1",
+    "attributes": {
+      "Attack": 220,
+      "CritDamage": 50
+    }
+  },
+  {
+    "id": "eternal_soul_devourer_amulet",
+    "name": "Herz der verschlungenen Seelen",
+    "set": "eternal_soul_devourer",
+    "slot": "Amulet",
+    "attributes": {
+      "MaximumHp": 450,
+      "HealingPower": 45
+    }
+  },
+  {
+    "id": "eternal_ten_seas_treasure_helmet",
+    "name": "Krone der Zehn Meere",
+    "set": "eternal_ten_seas_treasure",
+    "slot": "Helmet",
+    "attributes": {
+      "MaximumHp": 300,
+      "Luck": 65
+    }
+  },
+  {
+    "id": "eternal_ten_seas_treasure_chest",
+    "name": "Gewand des Schatzherrschers",
+    "set": "eternal_ten_seas_treasure",
+    "slot": "Chest",
+    "attributes": {
+      "MaximumHp": 550,
+      "PearlBonus": 60
+    }
+  },
+  {
+    "id": "eternal_ten_seas_treasure_gloves",
+    "name": "Greifer des Ewigen Fischers",
+    "set": "eternal_ten_seas_treasure",
+    "slot": "Gloves",
+    "attributes": {
+      "Attack": 210,
+      "FishingLuck": 55
+    }
+  },
+  {
+    "id": "eternal_ten_seas_treasure_boots",
+    "name": "Pfade der Meeresschätze",
+    "set": "eternal_ten_seas_treasure",
+    "slot": "Boots",
+    "attributes": {
+      "MaximumHp": 300,
+      "DiveLuck": 50
+    }
+  },
+  {
+    "id": "eternal_ten_seas_treasure_weapon",
+    "name": "Dreizack des Schatzkönigs",
+    "set": "eternal_ten_seas_treasure",
+    "slot": "Weapon",
+    "attributes": {
+      "Attack": 1450,
+      "BossDamage": 45
+    }
+  },
+  {
+    "id": "eternal_ten_seas_treasure_ring_1",
+    "name": "Ring der Glücksflut",
+    "set": "eternal_ten_seas_treasure",
+    "slot": "Ring1",
+    "attributes": {
+      "Attack": 160,
+      "Luck": 60
+    }
+  },
+  {
+    "id": "eternal_ten_seas_treasure_ring_2",
+    "name": "Ring des Perlenregens",
+    "set": "eternal_ten_seas_treasure",
+    "slot": "Ring1",
+    "attributes": {
+      "Attack": 170,
+      "PearlBonus": 70
+    }
+  },
+  {
+    "id": "eternal_ten_seas_treasure_amulet",
+    "name": "Ursprung der Zehn Meere",
+    "set": "eternal_ten_seas_treasure",
+    "slot": "Amulet",
+    "attributes": {
+      "MaximumHp": 400,
+      "MaterialFind": 50
+    }
+  }
+]

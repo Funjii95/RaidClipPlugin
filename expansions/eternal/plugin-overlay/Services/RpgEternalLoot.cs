@@ -10,10 +10,9 @@ public static class RpgEternalLoot
         if(!victory||area!=Throne||level!=100)return null;
         var chance=c.Zones.EternalChances.GetValueOrDefault(source)*10000;
         if(chance==0||random.NextInclusive(0,999999)>=chance)return null;
-        // Two independent uniform choices; no Luck, Hot-Time, passive or rarity multiplier.
-        var set=new[]{"eternal_star_hunter","eternal_tide_blessing","eternal_primordial_wrath"}[random.NextInclusive(0,2)];
-        var id=set+"_"+new[]{"helmet","chest","gloves","boots","ring","amulet"}[random.NextInclusive(0,5)];
-        var item=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(RpgEternalCatalog.Items().Single(i=>i.ItemId==id)))!;
+        // One successful Eternal roll selects one of 18 armor pieces or 3 weapons uniformly.
+        var pool=RpgEternalCatalog.Items().Where(i=>i.Rarity==ItemRarity.Eternal).Concat(RpgWeaponCatalog.Items().Where(i=>i.Rarity==ItemRarity.Eternal)).ToArray();
+        var item=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(pool[random.NextInclusive(0,pool.Length-1)]))!;
         item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=now;p.Inventory.Add(item);return item;
     }
     public static int FishRolls(RpgProfile p,RpgConfig c,IDuelRandom random)

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using RaidClipPlugin.Models;
 using SnapshotProtocol;
 
@@ -10,8 +10,12 @@ internal sealed partial class RemoteRpgExecutor
     {
         string Arg(string name)=>e.Intent.Arguments.GetProperty(name).GetString()!;
         ActionOutcome Reply(bool success,string message,object? data=null)=>new(success,success?"applied":"rule_rejected",message,data is null?null:JsonSerializer.Serialize(data));
-        if(e.Intent.Kind is "bossStatus" or "bossAttack"){
+        if(e.Intent.Kind is "selectBoss" or "bossStatus" or "bossAttack"){
             if(minigames is null)return Reply(false,"Laufender Spieldienst fehlt.");
+            if(e.Intent.Kind=="selectBoss"){
+                var selected=await minigames.RemoteAdventures.SelectAreaBossAsync(e.UserId,account.DisplayName,request,Arg("bossId"),ct);
+                return Reply(selected.Success,selected.Error,new{boss=await minigames.ReadRemoteBossAsync((await points.GetProfileAsync(e.UserId,ct)).Entry,ct)});
+            }
             if(e.Intent.Kind=="bossStatus")return Reply(true,"Aktueller Bossstatus.",await minigames.ReadRemoteBossAsync(account,ct));
             var attack=await minigames.ExecuteRemoteBossAsync(e.UserId,account.DisplayName,request,ct);
             return Reply(attack.Success,attack.Error,new{attack,boss=await minigames.ReadRemoteBossAsync((await points.GetProfileAsync(e.UserId,ct)).Entry,ct)});

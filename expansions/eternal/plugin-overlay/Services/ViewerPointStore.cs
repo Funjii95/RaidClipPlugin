@@ -1,0 +1,1229 @@
+﻿using System.Text.Json;
+using RaidClipPlugin.Models;
+using RaidClipPlugin.Config;
+
+namespace RaidClipPlugin.Services;
+
+public sealed partial class ViewerPointStore
+{
+    internal StreamAdmission? Admission { get; set; }
+    internal event Action? Persisted;
+    private SaveCommitMarker? _commitMarker;
+    private bool _commitChecked;
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true
+    };
+
+    private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly string _filePath;
+    private readonly string _historyPath;
+    private readonly string _statePath;
+    private Dictionary<string, ViewerPointEntry>? _entries;
+    private List<MinigameHistoryEntry> _history = new();
+    private long _jackpot;
+    public RpgHotTimeService HotTime { get; }
+    private RpgHotTimeConfig _hotTimeConfig = new() { Enabled=false };
+    private RpgSalvageConfig _collectionSalvage = new();
+    private long _collectionMaximumBalance = long.MaxValue;
+    public void ConfigureHotTime(RpgConfig config, long maximumBalance = long.MaxValue)
+    {
+        _collectionMaximumBalance=maximumBalance;
+        _collectionSalvage=JsonSerializer.Deserialize<RpgSalvageConfig>(JsonSerializer.Serialize(config.Salvage))!;
+        var copy=JsonSerializer.Deserialize<RpgHotTimeConfig>(JsonSerializer.Serialize(config.HotTime))!;
+        copy.Enabled &= config.Enabled;copy.Validate();_hotTimeConfig=copy;
+    }
+    public long RewardAmount(long amount,RpgRewardSource source)=>HotTime.Apply(new(amount,source),_hotTimeConfig).Amount;
+
+    public ViewerPointStore(string? storageDirectory = null, Func<DateTimeOffset>? hotTimeClock = null)
+    {
+        var directory = storageDirectory ?? Path.Combine(
+            TestDataPaths.LocalAppData,
+            "RaidClipPlugin",
+            "minigame");
+        Directory.CreateDirectory(directory);
+        HotTime = new(directory,hotTimeClock);
+        _filePath = Path.Combine(directory, "viewer-points.json");
+        _historyPath = Path.Combine(directory, "history.json");
+        _statePath = Path.Combine(directory, "state.json");
+        try
+        {
+            if (File.Exists(_historyPath))
+                _history = JsonSerializer.Deserialize<List<MinigameHistoryEntry>>(
+                    File.ReadAllText(_historyPath), JsonOptions) ?? new();
+            if (File.Exists(_statePath))
+                _jackpot = JsonSerializer.Deserialize<long>(
+                    File.ReadAllText(_statePath), JsonOptions);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine("Minigame-Zusatzdaten konnten nicht geladen werden: " + exception.Message);
+            _history = new(); _jackpot = 0;
+        }
+    }
+
+    public async Task<long> GetPointsAsync(
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            return _entries!.TryGetValue(userId, out var entry)
+                ? Math.Max(0, entry.Points)
+                : 0;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public Task<long> AddPointsAsync(
+        string userId,
+        string displayName,
+        long amount,
+        long minimumPoints,
+        CancellationToken cancellationToken,
+        long maximumPoints = long.MaxValue, RpgRewardSource source = RpgRewardSource.Administrative) =>
+        ChangePointsAsync(
+            userId, displayName, current => { var reward=RewardAmount(amount,source);return reward>0&&current>long.MaxValue-reward?long.MaxValue:current+reward; },
+            minimumPoints, maximumPoints, cancellationToken);
+
+    public Task<long> RemovePointsAsync(
+        string userId,
+        string displayName,
+        long amount,
+        long minimumPoints,
+        CancellationToken cancellationToken,
+        long maximumPoints = long.MaxValue) =>
+        ChangePointsAsync(
+            userId, displayName,
+            current => current - Math.Max(0, amount),
+            minimumPoints, maximumPoints, cancellationToken);
+
+    public Task<long> SetPointsAsync(
+        string userId,
+        string displayName,
+        long amount,
+        long minimumPoints,
+        CancellationToken cancellationToken,
+        long maximumPoints = long.MaxValue) =>
+        ChangePointsAsync(
+            userId, displayName, _ => amount,
+            minimumPoints, maximumPoints, cancellationToken);
+
+    public async Task<PointTransferResult> TransferPointsAsync(
+        string senderId,
+        string senderDisplayName,
+        string recipientId,
+        string recipientDisplayName,
+        long amount,
+        long minimumPoints,
+        long maximumPoints,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        if (string.IsNullOrWhiteSpace(senderId) ||
+            string.IsNullOrWhiteSpace(recipientId))
+        {
+            throw new ArgumentException("Die Twitch-User-ID fehlt.");
+        }
+
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var ceiling = Math.Max(floor, maximumPoints);
+            var sender = GetOrCreateEntry(
+                senderId, senderDisplayName, floor);
+
+            if (senderId.Equals(recipientId, StringComparison.Ordinal))
+            {
+                return new PointTransferResult(false,
+                    "Du kannst dir nicht selbst Punkte schenken",
+                    sender.Points, sender.Points);
+            }
+
+            var recipientPoints = _entries!.TryGetValue(
+                recipientId, out var existingRecipient)
+                ? existingRecipient.Points
+                : floor;
+
+            if (amount <= 0)
+            {
+                return new PointTransferResult(false,
+                    "Der Betrag muss größer als 0 sein",
+                    sender.Points, recipientPoints);
+            }
+
+            if (sender.Points - amount < floor)
+            {
+                return new PointTransferResult(false,
+                    "Du hast nicht genug verfügbare Punkte",
+                    sender.Points, recipientPoints);
+            }
+
+            if (amount > ceiling - recipientPoints)
+            {
+                return new PointTransferResult(false,
+                    "Das Punktekonto des Empfängers würde das Maximum überschreiten",
+                    sender.Points, recipientPoints);
+            }
+
+            var recipient = existingRecipient ?? GetOrCreateEntry(
+                recipientId, recipientDisplayName, floor);
+            sender.Points = checked(sender.Points - amount);
+            recipient.Points = checked(recipient.Points + amount);
+            sender.DisplayName = senderDisplayName;
+            recipient.DisplayName = recipientDisplayName;
+            sender.UpdatedAt = DateTimeOffset.Now;
+            recipient.UpdatedAt = DateTimeOffset.Now;
+            await SaveAsync(cancellationToken);
+
+            return new PointTransferResult(true, "",
+                sender.Points, recipient.Points);
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task<DuelReserveResult> ReserveDuelStakeAsync(
+        string userId,
+        string displayName,
+        long amount,
+        long minimumPoints,
+        int historyLimit,
+        CancellationToken cancellationToken, string? reservationId=null)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var entry = GetOrCreateEntry(userId, displayName, floor);
+            var reservation=reservationId is null?null:DuelReservation(reservationId,amount);
+            if(reservationId is not null && entry.Rpg.CompletedActions.Contains(DuelFinished(reservationId)))return new(false,"Duell bereits abgeschlossen",entry.Points);
+            if(reservation is not null && entry.Rpg.CompletedActions.Contains(reservation))return new(true,"",entry.Points);
+            if (amount <= 0 || entry.Points - amount < floor)
+                return new DuelReserveResult(false, "Nicht genug verfügbare Punkte", entry.Points);
+
+            var previous = entry.Points;
+            var historyBefore = _history.ToList();
+            entry.Points -= amount;
+            if(reservation is not null)entry.Rpg.CompletedActions.Add(reservation);
+            entry.DisplayName = displayName;
+            entry.UpdatedAt = DateTimeOffset.Now;
+            AddDuelHistory(userId, displayName, "Einsatz reserviert", -amount, entry.Points, historyLimit);
+            try { if(reservationId is null)await SaveAllAsync(cancellationToken);else await SaveDuelCommitAsync(cancellationToken); }
+            catch { entry.Points = previous;if(reservation is not null)entry.Rpg.CompletedActions.Remove(reservation); _history = historyBefore; throw; }
+            return new DuelReserveResult(true, "", entry.Points);
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<long> RefundDuelStakeAsync(
+        string userId,
+        string displayName,
+        long amount,
+        int historyLimit,
+        CancellationToken cancellationToken, string? reservationId=null)
+    {
+        using var rollback = Admission?.EnterRollback();
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var entry = GetOrCreateEntry(userId, displayName, 0);
+            var finish=reservationId is null?null:DuelFinished(reservationId);
+            if(finish is not null && (entry.Rpg.CompletedActions.Contains(finish) || !entry.Rpg.CompletedActions.Contains(DuelReservation(reservationId!,amount))))return entry.Points;
+            if(finish is not null && amount>long.MaxValue-entry.Points)throw new InvalidOperationException("Gesicherte Duell-Rückgabe überschreitet das technische Limit; manuelle Prüfung erforderlich.");
+            var previous = entry.Points;
+            var historyBefore = _history.ToList();
+            entry.Points = entry.Points > long.MaxValue - Math.Max(0, amount)
+                ? long.MaxValue
+                : entry.Points + Math.Max(0, amount);
+            if(finish is not null)entry.Rpg.CompletedActions.Add(finish);
+            entry.DisplayName = displayName;
+            entry.UpdatedAt = DateTimeOffset.Now;
+            AddDuelHistory(userId, displayName, "Einsatz zurückgegeben", amount, entry.Points, historyLimit);
+            try { if(reservationId is null)await SaveAllAsync(cancellationToken);else await SaveDuelCommitAsync(cancellationToken); }
+            catch { entry.Points = previous;if(finish is not null)entry.Rpg.CompletedActions.Remove(finish); _history = historyBefore; throw; }
+            return entry.Points;
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<DuelResolutionResult> ResolveDuelAsync(
+        string challengerId,
+        string challengerName,
+        string targetId,
+        string targetName,
+        string winnerId,
+        long stake,
+        long minimumPoints,
+        long maximumPoints,
+        int historyLimit,
+        CancellationToken cancellationToken, string? reservationId=null)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var ceiling = Math.Max(floor, maximumPoints);
+            var challenger = GetOrCreateEntry(challengerId, challengerName, floor);
+            var target = GetOrCreateEntry(targetId, targetName, floor);
+            var finish=reservationId is null?null:DuelFinished(reservationId);
+            if(finish is not null && challenger.Rpg.CompletedActions.Contains(finish))return new(false,"Duell bereits abgeschlossen",challenger.Points,target.Points,0);
+            if(reservationId is not null && !challenger.Rpg.CompletedActions.Contains(DuelReservation(reservationId,stake)))return new(false,"Gesicherter Einsatz fehlt",challenger.Points,target.Points,0);
+            if (stake <= 0 || target.Points - stake < floor)
+                return new DuelResolutionResult(false, "Zielspieler hat nicht genug Punkte", challenger.Points, target.Points, stake * 2);
+
+            if (stake > long.MaxValue / 2)
+                return new DuelResolutionResult(false,
+                    "Der Duel-Pot überschreitet das technische Punktelimit",
+                    challenger.Points, target.Points, 0);
+            var pot = stake * 2;
+            var challengerBefore = challenger.Points;
+            var targetBefore = target.Points;
+            var historyBefore = _history.ToList();
+            var challengerAfter = challengerBefore;
+            var targetAfter = targetBefore - stake;
+            if (winnerId.Equals(challengerId, StringComparison.Ordinal))
+            {
+                if (challengerAfter > long.MaxValue - pot)
+                    return new DuelResolutionResult(false,
+                        "Die Auszahlung überschreitet das technische Punktelimit",
+                        challengerBefore, targetBefore, pot);
+                challengerAfter += pot;
+            }
+            else if (winnerId.Equals(targetId, StringComparison.Ordinal))
+            {
+                if (targetAfter > long.MaxValue - pot)
+                    return new DuelResolutionResult(false,
+                        "Die Auszahlung überschreitet das technische Punktelimit",
+                        challengerBefore, targetBefore, pot);
+                targetAfter += pot;
+            }
+            else
+                throw new ArgumentException("Der Duel-Gewinner ist kein Teilnehmer.", nameof(winnerId));
+
+            if (challengerAfter > ceiling || targetAfter > ceiling)
+                return new DuelResolutionResult(false, "Die Auszahlung würde das technische Punktelimit überschreiten", challengerBefore, targetBefore, pot);
+
+            if(finish is not null)challenger.Rpg.CompletedActions.Add(finish);
+            challenger.Points = challengerAfter;
+            target.Points = targetAfter;
+            challenger.DisplayName = challengerName;
+            target.DisplayName = targetName;
+            challenger.UpdatedAt = target.UpdatedAt = DateTimeOffset.Now;
+            var challengerChange = winnerId.Equals(challengerId, StringComparison.Ordinal) ? pot : 0;
+            var targetChange = winnerId.Equals(targetId, StringComparison.Ordinal) ? pot - stake : -stake;
+            AddDuelHistory(challengerId, challengerName, winnerId == challengerId ? "Duel gewonnen" : "Duel verloren", challengerChange, challengerAfter, historyLimit);
+            AddDuelHistory(targetId, targetName, winnerId == targetId ? "Duel gewonnen" : "Duel verloren", targetChange, targetAfter, historyLimit);
+            try { if(reservationId is null)await SaveAllAsync(cancellationToken);else await SaveDuelCommitAsync(cancellationToken); }
+            catch { challenger.Points = challengerBefore; target.Points = targetBefore;if(finish is not null)challenger.Rpg.CompletedActions.Remove(finish); _history = historyBefore; throw; }
+            return new DuelResolutionResult(true, "", challengerAfter, targetAfter, pot);
+        }
+        finally { _lock.Release(); }
+    }
+
+    private void AddDuelHistory(string userId, string displayName, string action,
+        long change, long balance, int historyLimit)
+    {
+        _history.Insert(0, new MinigameHistoryEntry
+        {
+            Timestamp = DateTimeOffset.Now,
+            UserId = userId,
+            DisplayName = displayName,
+            Game = "Duel",
+            Action = action,
+            Change = change,
+            Balance = balance
+        });
+        var limit = Math.Max(1, historyLimit);
+        if (_history.Count > limit) _history.RemoveRange(limit, _history.Count - limit);
+    }
+
+    public async Task<int> AddPointsToAllAsync(
+        long amount,
+        long minimumPoints,
+        long maximumPoints,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        if (amount <= 0) return 0;
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var ceiling = Math.Max(floor, maximumPoints);
+            foreach (var entry in _entries!.Values)
+            {
+                var increased = entry.Points > long.MaxValue - amount
+                    ? long.MaxValue : entry.Points + amount;
+                entry.Points = Math.Clamp(increased, floor, ceiling);
+                entry.UpdatedAt = DateTimeOffset.Now;
+            }
+            await SaveAsync(cancellationToken);
+            return _entries.Count;
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<int> AddPointsToUsersAsync(
+        IEnumerable<(string UserId, string DisplayName)> users,
+        long amount,
+        long minimumPoints,
+        long maximumPoints,
+        CancellationToken cancellationToken, string? historyGame = null, int historyLimit = 500, RpgRewardSource source = RpgRewardSource.Administrative, IDictionary<string,long>? creditedAmounts = null)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        if (amount <= 0 && historyGame is null)
+        {
+            return 0;
+        }
+
+        var recipients = users
+            .Where(user => !string.IsNullOrWhiteSpace(user.UserId))
+            .GroupBy(user => user.UserId, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToArray();
+        if (recipients.Length == 0)
+        {
+            return 0;
+        }
+
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var ceiling = Math.Max(floor, maximumPoints);
+            amount=RewardAmount(amount,source);
+            var credits=new Dictionary<string,long>();
+            foreach (var recipient in recipients)
+            {
+                var entry = GetOrCreateEntry(
+                    recipient.UserId, recipient.DisplayName, floor);
+                var before = entry.Points;
+                var increased = entry.Points > long.MaxValue - amount
+                    ? long.MaxValue
+                    : entry.Points + amount;
+                entry.Points = Math.Clamp(increased, floor, ceiling);
+                credits[recipient.UserId]=entry.Points-before;
+                entry.DisplayName = recipient.DisplayName;
+                entry.UpdatedAt = DateTimeOffset.Now;
+                if (historyGame is not null)
+                {
+                    if (historyGame == "Bosskampf") entry.BossDefeats = SaturatingIncrement(entry.BossDefeats);
+                    _history.Insert(0, new MinigameHistoryEntry { UserId = entry.UserId,
+                        DisplayName = recipient.DisplayName, Game = historyGame, Action = "Gemeinsame Belohnung",
+                        Change = entry.Points - before, Balance = entry.Points });
+                }
+            }
+
+            if (historyGame is null) await SaveAsync(cancellationToken);
+            else
+            {
+                var limit = Math.Max(1, historyLimit);
+                if (_history.Count > limit) _history.RemoveRange(limit, _history.Count - limit);
+                await SaveAllAsync(cancellationToken);
+            }
+            if(creditedAmounts is not null)foreach(var credit in credits)creditedAmounts[credit.Key]=credit.Value;
+            return recipients.Length;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task<int> AwardAttendanceAsync(
+        IEnumerable<(string UserId, string DisplayName, long Points)> awards,
+        int minutes,
+        long minimumPoints,
+        long maximumPoints,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        var recipients = awards
+            .Where(award => !string.IsNullOrWhiteSpace(award.UserId))
+            .GroupBy(award => award.UserId, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToArray();
+        if (recipients.Length == 0)
+        {
+            return 0;
+        }
+
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var ceiling = Math.Max(floor, maximumPoints);
+            foreach (var recipient in recipients)
+            {
+                var entry = GetOrCreateEntry(
+                    recipient.UserId, recipient.DisplayName, floor);
+                entry.WatchMinutes = (int)Math.Min(
+                    int.MaxValue,
+                    (long)entry.WatchMinutes + Math.Max(0, minutes));
+                entry.Points = Math.Clamp(
+                    (long)Math.Min(long.MaxValue,(decimal)entry.Points + Math.Max(0, RewardAmount(recipient.Points,RpgRewardSource.Activity))),
+                    floor,
+                    ceiling);
+                entry.DisplayName = recipient.DisplayName;
+                entry.UpdatedAt = DateTimeOffset.Now;
+            }
+
+            await SaveAsync(cancellationToken);
+            return recipients.Length;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task<GambleBalanceResult> ApplyGambleAsync(
+        string userId,
+        string displayName,
+        long stake,
+        long payout,
+        long minimumPoints,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var entry = GetOrCreateEntry(userId, displayName, floor);
+
+            if (stake < 0 || entry.Points - stake < floor)
+            {
+                return new GambleBalanceResult(false, entry.Points);
+            }
+
+            var gambleChange = (long)Math.Max(0, payout) - stake;
+            entry.Points = gambleChange > 0 &&
+                entry.Points > long.MaxValue - gambleChange
+                    ? long.MaxValue
+                    : Math.Max(floor, entry.Points + gambleChange);
+            entry.DisplayName = displayName;
+            entry.UpdatedAt = DateTimeOffset.Now;
+            await SaveAsync(cancellationToken);
+            return new GambleBalanceResult(true, entry.Points);
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task ResetAsync(CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            _entries = new Dictionary<string, ViewerPointEntry>(
+                StringComparer.Ordinal);
+            _history.Clear();
+            _jackpot = 0;
+            await SaveAllAsync(cancellationToken);
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task<int> CountAsync(CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            return _entries!.Count;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    public async Task AddWatchtimeAsync(string userId, string name, int minutes,
+        long points, long minimum, CancellationToken cancellationToken,
+        long maximum = long.MaxValue)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var entry = GetOrCreateEntry(userId, name, minimum);
+            entry.WatchMinutes = (int)Math.Min(
+                int.MaxValue,
+                (long)Math.Max(0, entry.WatchMinutes) +
+                Math.Max(0, minutes));
+            points=RewardAmount(points,RpgRewardSource.Activity);
+            entry.Points = Math.Clamp(
+                points > 0 && entry.Points > long.MaxValue - points
+                    ? long.MaxValue
+                    : entry.Points + points,
+                minimum, maximum);
+            entry.DisplayName = name;
+            entry.UpdatedAt = DateTimeOffset.Now;
+            await SaveAsync(cancellationToken);
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<DailyClaimResult> ClaimDailyAsync(string userId, string name,
+        long bonus, long minimum, CancellationToken cancellationToken,
+        long maximum = long.MaxValue)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var entry = GetOrCreateEntry(userId, name, minimum);
+            var now = DateTimeOffset.UtcNow;
+            if (entry.LastDailyUtc is { } last && now - last < TimeSpan.FromHours(24))
+                return new DailyClaimResult(false, entry.Points,
+                    TimeSpan.FromHours(24) - (now - last));
+            entry.LastDailyUtc = now;
+            var before=entry.Points;bonus=RewardAmount(bonus,RpgRewardSource.Activity);
+            entry.Points = Math.Clamp(
+                bonus > 0 && entry.Points > long.MaxValue - bonus
+                    ? long.MaxValue
+                    : entry.Points + bonus,
+                minimum, maximum);
+            entry.UpdatedAt = DateTimeOffset.Now;
+            await SaveAsync(cancellationToken);
+            return new DailyClaimResult(true, entry.Points, TimeSpan.Zero) { ActualAward=entry.Points-before };
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<IReadOnlyList<ViewerPointEntry>> GetTopAsync(int count,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            return _entries!.Values.OrderByDescending(x => x.Points)
+                .ThenBy(x => x.DisplayName).Take(Math.Clamp(count, 1, int.MaxValue))
+                .Select(CloneEntry).ToArray();
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<ViewerProfileResult> GetProfileAsync(string userId,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            // Dictionary keys are the authoritative Twitch IDs. An old/missing
+            // duplicate UserId field must not hide an otherwise existing inventory.
+            var ordered = _entries!.OrderByDescending(x => x.Value.Points)
+                .ThenBy(x => x.Key).ToArray();
+            var index = Array.FindIndex(ordered, x => x.Key == userId);
+            var entry = index >= 0 ? CloneEntry(ordered[index].Value) : new ViewerPointEntry
+            { UserId = userId, Points = 0 };
+            entry.Rpg.Materials ??= new();entry.Rpg.Materials.Validate();
+            RpgCoreStatService.Upgrade(entry.Rpg);
+            RpgSushiService.Upgrade(entry.Rpg);
+            return new ViewerProfileResult(entry, index >= 0 ? index + 1 : 0);
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<CasinoApplyResult> ApplyCasinoAsync(string userId, string name,
+        string game, long stake, long payout, long minimum, long maximum,
+        int dailyGames, long dailyLoss, long dailyWin, long jackpotContribution,
+        bool jackpotHit, long jackpotStart, int historyLimit,
+        CancellationToken cancellationToken, string? fishName = null, int fishGrams = 0,
+        Func<ViewerPointEntry, RpgMutation>? rpgMutation = null,
+        Func<ViewerPointEntry, long, long>? rpgPayout = null, RpgRewardSource rewardSource = RpgRewardSource.MinigameNetWin,Func<string?>? rpgFishName=null)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        ViewerPointEntry? previousEntry = null;
+        var hadEntry = false;
+        var savedJackpot = _jackpot;
+        var savedHistory = _history.ToList();
+        var committing = false;
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            RequireNotPrivacyBlocked(userId);
+            hadEntry = _entries!.TryGetValue(userId, out previousEntry);
+            var entry = previousEntry is null ? new ViewerPointEntry { UserId = userId, DisplayName = name, Points = Math.Max(0, minimum) } : CloneEntry(previousEntry);
+            ResetDaily(entry);
+
+            var safeStake = Math.Max(0, stake);
+            if (rpgMutation is not null) PrepareRpg(entry);
+            var safePayout = Math.Max(0, rpgPayout?.Invoke(entry, payout) ?? payout);
+            var netReward=Math.Max(0,safePayout-safeStake);
+            safePayout=(long)Math.Min(long.MaxValue,(decimal)safePayout-netReward+RewardAmount(netReward,rewardSource));
+            var safeMinimum = Math.Max(0, minimum);
+            var safeMaximum = maximum > 0
+                ? Math.Max(safeMinimum, maximum)
+                : long.MaxValue;
+            if ((long)entry.Points - safeStake < safeMinimum)
+                return new CasinoApplyResult(false, "Nicht genug Punkte", entry.Points, 0);
+            if (dailyGames > 0 && entry.DailyGambles >= dailyGames)
+                return new CasinoApplyResult(false, "Tägliches Spielelimit erreicht", entry.Points, 0);
+
+            var loss = Math.Max(0L, (long)safeStake - safePayout);
+            var win = Math.Max(0L, (long)safePayout - safeStake);
+            if (dailyLoss > 0 && (long)Math.Max(0, entry.DailyLoss) + loss > dailyLoss)
+                return new CasinoApplyResult(false, "Tägliches Verlustlimit erreicht", entry.Points, 0);
+
+            var jackpotCandidate = jackpotHit
+                ? Math.Max(_jackpot, Math.Max(0, jackpotStart))
+                : 0;
+            if (dailyWin > 0 &&
+                (long)Math.Max(0, entry.DailyWin) + win + jackpotCandidate > dailyWin)
+                return new CasinoApplyResult(false,
+                    "Tägliches Gewinnlimit erreicht", entry.Points, 0);
+
+            if(safePayout>long.MaxValue-jackpotCandidate)return new CasinoApplyResult(false,"Die Auszahlung überschreitet das technische Punktelimit",entry.Points,0);
+            var totalPayout = safePayout + jackpotCandidate;
+            var balanceChange = totalPayout - safeStake;
+            if (balanceChange > 0 && entry.Points > long.MaxValue - balanceChange)
+                return new CasinoApplyResult(false,
+                    "Die Auszahlung überschreitet das technische Punktelimit",
+                    entry.Points, 0);
+            var projectedBalance = entry.Points + balanceChange;
+
+            if (rpgMutation is not null)
+            {
+                var mutation = rpgMutation(entry);
+                if (!mutation.Success) return new(false, mutation.Error, previousEntry?.Points ?? Math.Max(0, minimum), 0);
+                if (File.Exists(_filePath) && !File.Exists(_filePath + ".pre-rpg.bak"))
+                    File.Copy(_filePath, _filePath + ".pre-rpg.bak");
+                EnsureItemSystemBackup();
+            }
+            committing = true;
+
+            var jackpotWon = 0L;
+            if (jackpotHit)
+            {
+                jackpotWon = jackpotCandidate;
+                _jackpot = Math.Max(0, jackpotStart);
+                safePayout = totalPayout;
+            }
+            else if (loss > 0)
+            {
+                var updatedJackpot = (long)Math.Max(_jackpot, Math.Max(0, jackpotStart)) +
+                    Math.Max(0, jackpotContribution);
+                _jackpot = updatedJackpot >= long.MaxValue ? long.MaxValue : updatedJackpot;
+            }
+
+            var balanceMaximum = jackpotHit ? long.MaxValue : safeMaximum;
+            entry.Points = Math.Clamp(
+                projectedBalance, safeMinimum, balanceMaximum);
+            entry.GamesPlayed = SaturatingIncrement(entry.GamesPlayed);
+            entry.DailyGambles = SaturatingIncrement(entry.DailyGambles);
+            entry.DailyLoss = entry.DailyLoss > long.MaxValue - loss
+                ? long.MaxValue
+                : Math.Max(0L, entry.DailyLoss) + loss;
+            var totalWin = win > long.MaxValue - jackpotWon
+                ? long.MaxValue
+                : win + jackpotWon;
+            entry.DailyWin = Math.Max(0L, entry.DailyWin) > long.MaxValue - totalWin
+                ? long.MaxValue
+                : Math.Max(0L, entry.DailyWin) + totalWin;
+            if (safePayout > safeStake)
+                entry.Wins = SaturatingIncrement(entry.Wins);
+            else if (safePayout < safeStake)
+                entry.Losses = SaturatingIncrement(entry.Losses);
+            entry.BiggestWin = Math.Max(entry.BiggestWin, safePayout);
+            entry.DisplayName = name;
+            entry.UpdatedAt = DateTimeOffset.Now;
+            fishName=rpgFishName?.Invoke()??fishName;
+            if (!string.IsNullOrWhiteSpace(fishName) && fishGrams > 0)
+            {
+                entry.FishCollection ??= new();
+                entry.FishCollection[fishName] = SaturatingIncrement(entry.FishCollection.GetValueOrDefault(fishName));
+                if (fishGrams > entry.BiggestFishGrams) { entry.BiggestFishGrams = fishGrams; entry.BiggestFishName = fishName; }
+            }
+            _history.Insert(0, new MinigameHistoryEntry
+            {
+                UserId = userId, DisplayName = name, Game = game,
+                Action = $"Einsatz {safeStake}, Auszahlung {safePayout}",
+                Change = safePayout - safeStake, Balance = entry.Points
+            });
+            var safeHistoryLimit = Math.Max(1, historyLimit);
+            if (_history.Count > safeHistoryLimit)
+                _history.RemoveRange(safeHistoryLimit, _history.Count - safeHistoryLimit);
+            _entries![userId] = entry;
+            if (rpgMutation is null)
+            {
+                // Preserve the established jackpot/history persistence path for existing games.
+                await SaveAllAsync(cancellationToken);
+                committing = false;
+                return new CasinoApplyResult(true, "", entry.Points, jackpotWon) { ActualPayout=safePayout-jackpotWon };
+            }
+            // Currency and RPG are committed in the same authoritative file. History
+            // is ancillary: a history write failure must not turn a committed award into a retry.
+            await SaveAsync(cancellationToken);
+            committing = false;
+            try
+            {
+                await File.WriteAllTextAsync(_historyPath, JsonSerializer.Serialize(_history, JsonOptions), cancellationToken);
+            }
+            catch (Exception ex) { Console.WriteLine("Minigame-Zusatzdaten konnten nicht gespeichert werden: " + ex.Message); }
+            return new CasinoApplyResult(true, "", entry.Points, jackpotWon) { ActualPayout=safePayout-jackpotWon };
+        }
+        catch
+        {
+            if (committing && rpgMutation is not null)
+            {
+                if (hadEntry) _entries![userId] = previousEntry!; else _entries!.Remove(userId);
+                _jackpot = savedJackpot; _history = savedHistory;
+            }
+            throw;
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<CasinoApplyResult> ResolveRaceAsync(
+        IReadOnlyList<(string UserId, string DisplayName)> players, int winnerIndex, long stake,
+        MinigameConfig config, CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        if (players.Count < 2 || players.Select(p => p.UserId).Distinct().Count() != players.Count ||
+            winnerIndex < 0 || winnerIndex >= players.Count || stake <= 0)
+            return new(false, "Ungültige Rennrunde", 0, 0);
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            if (stake > long.MaxValue / players.Count) return new(false, "Renntopf zu groß", 0, 0);
+            var pot = stake * players.Count;
+            var entries = players.Select(p => GetOrCreateEntry(p.UserId, p.DisplayName, config.MinimumPoints)).ToArray();
+            for (var i = 0; i < entries.Length; i++)
+            {
+                var entry = entries[i];
+                ResetDaily(entry);
+                var win = i == winnerIndex ? pot - stake : 0;
+                var loss = i == winnerIndex ? 0 : stake;
+                if (entry.Points < stake || entry.Points - stake < config.MinimumPoints ||
+                    (config.DailyGambleLimitEnabled && entry.DailyGambles >= config.DailyGambleLimit) ||
+                    (config.DailyLossLimitEnabled && loss > Math.Max(0, config.DailyLossLimit - entry.DailyLoss)) ||
+                    (config.DailyWinLimitEnabled && win > Math.Max(0, config.DailyWinLimit - entry.DailyWin)) ||
+                    win > long.MaxValue - entry.Points ||
+                    (config.MaximumAccountEnabled && win > config.MaximumAccountPoints - entry.Points))
+                    return new(false, "Punktestand oder Tages-/Kontolimit eines Teilnehmers reicht nicht mehr aus. Keine Einsätze abgebucht.", 0, 0);
+            }
+            for (var i = 0; i < entries.Length; i++)
+            {
+                var entry = entries[i];
+                var change = i == winnerIndex ? pot - stake : -stake;
+                entry.Points += change;
+                entry.GamesPlayed = SaturatingIncrement(entry.GamesPlayed);
+                entry.DailyGambles = SaturatingIncrement(entry.DailyGambles);
+                if (change > 0)
+                {
+                    entry.RaceWins = SaturatingIncrement(entry.RaceWins);
+                    entry.Wins = SaturatingIncrement(entry.Wins);
+                    entry.DailyWin = entry.DailyWin > long.MaxValue - change ? long.MaxValue : entry.DailyWin + change;
+                    entry.BiggestWin = Math.Max(entry.BiggestWin, pot);
+                }
+                else
+                {
+                    entry.Losses = SaturatingIncrement(entry.Losses);
+                    entry.DailyLoss = entry.DailyLoss > long.MaxValue - stake ? long.MaxValue : entry.DailyLoss + stake;
+                }
+                entry.UpdatedAt = DateTimeOffset.Now;
+                _history.Insert(0, new MinigameHistoryEntry { UserId = entry.UserId,
+                    DisplayName = players[i].DisplayName, Game = "Rennen", Action = i == winnerIndex ? "Rennen gewonnen" : "Rennen verloren",
+                    Change = change, Balance = entry.Points });
+            }
+            var limit = Math.Max(1, config.HistoryLimit);
+            if (_history.Count > limit) _history.RemoveRange(limit, _history.Count - limit);
+            await SaveAllAsync(cancellationToken);
+            return new(true, "", entries[winnerIndex].Points, 0);
+        }
+        finally { _lock.Release(); }
+    }
+
+    private static int SaturatingIncrement(int value) =>
+        value >= int.MaxValue ? int.MaxValue : Math.Max(0, value) + 1;
+
+    public async Task<HeistPayoutResult> PayoutHeistJackpotAsync(
+        IReadOnlyList<(string UserId, string DisplayName)> participants,
+        IReadOnlyCollection<int> remainderRecipients,
+        long jackpotStart,
+        bool resetToStart,
+        int historyLimit,
+        CancellationToken cancellationToken,string? roundId=null)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        if (participants.Count == 0 || participants.Select(p=>p.UserId).Distinct().Count()!=participants.Count)
+            throw new ArgumentException("Mindestens ein Teilnehmer wird benötigt.", nameof(participants));
+
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            roundId??=Guid.NewGuid().ToString("N");
+            if(!Guid.TryParseExact(roundId,"N",out _))throw new ArgumentException("Ungültige Heist-Runde.");
+            var marker="heist-paid:"+roundId;
+            if(participants.Any(p=>_entries!.TryGetValue(p.UserId,out var a)&&a.Rpg.CompletedActions.Contains(marker)))throw new InvalidOperationException("Heist bereits ausgezahlt.");
+            var jackpot = Math.Max(_jackpot, Math.Max(0, jackpotStart));
+            var baseShare = jackpot / participants.Count;
+            var remainder = jackpot % participants.Count;
+            var extras = remainderRecipients.Distinct().Take((int)remainder).ToHashSet();
+            if (extras.Count != remainder || extras.Any(index => index < 0 || index >= participants.Count))
+                throw new InvalidOperationException("Die Restpunktverteilung ist ungültig.");
+
+            var payouts = new List<HeistParticipantPayout>(participants.Count);
+            for (var index = 0; index < participants.Count; index++)
+            {
+                var participant = participants[index];
+                var payout = checked(baseShare + (extras.Contains(index) ? 1 : 0));
+                var entry = GetOrCreateEntry(participant.UserId, participant.DisplayName, 0);
+                if (entry.Points > long.MaxValue - payout)
+                    throw new InvalidOperationException("Eine Heist-Auszahlung überschreitet das technische Punktelimit.");
+                payouts.Add(new HeistParticipantPayout(participant.UserId, participant.DisplayName, payout, entry.Points + payout));
+            }
+
+            await PrepareHeistCommitAsync(new(marker,participants.Select(p=>p.UserId).ToArray(),resetToStart?Math.Max(0,jackpotStart):0),cancellationToken);
+            foreach (var payout in payouts)
+            {
+                var entry = GetOrCreateEntry(payout.UserId, payout.DisplayName, 0);
+                entry.Rpg.CompletedActions.Add(marker);
+                entry.Points = payout.NewBalance;
+                entry.DisplayName = payout.DisplayName;
+                entry.UpdatedAt = DateTimeOffset.Now;
+                _history.Insert(0, new MinigameHistoryEntry
+                {
+                    UserId = payout.UserId,
+                    DisplayName = payout.DisplayName,
+                    Game = "Heist",
+                    Action = $"Jackpot-Anteil {payout.Payout}",
+                    Change = payout.Payout,
+                    Balance = payout.NewBalance
+                });
+            }
+
+            if (_history.Count > Math.Max(1, historyLimit))
+                _history.RemoveRange(Math.Max(1, historyLimit), _history.Count - Math.Max(1, historyLimit));
+            _jackpot = resetToStart ? Math.Max(0, jackpotStart) : 0;
+            await SaveAllAsync(cancellationToken);
+            File.Delete(HeistCommitPath);
+            return new HeistPayoutResult(jackpot, _jackpot, payouts);
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<(long Previous, long Current)> ResetJackpotAsync(
+        long startValue,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var previous = Math.Max(0, _jackpot);
+            _jackpot = Math.Max(0, startValue);
+            await SaveAllAsync(cancellationToken);
+            return (previous, _jackpot);
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<(long Previous, long Current)> AddJackpotAsync(
+        long amount,
+        long startValue,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        if (amount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(amount));
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var previous = Math.Max(_jackpot, Math.Max(0, startValue));
+            _jackpot = previous > long.MaxValue - amount
+                ? long.MaxValue
+                : previous + amount;
+            await SaveAllAsync(cancellationToken);
+            return (previous, _jackpot);
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<long> GetJackpotAsync(long startValue,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try { await EnsureLoadedAsync(cancellationToken); return Math.Max(_jackpot, startValue); }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<IReadOnlyList<MinigameHistoryEntry>> GetHistoryAsync(int count,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try { await EnsureLoadedAsync(cancellationToken); return _history.Take(count).ToArray(); }
+        finally { _lock.Release(); }
+    }
+
+    public async Task ExportAsync(string path, MinigameConfig settings,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var package = new MinigameExportPackage
+            { Users = _entries!, History = _history, Jackpot = _jackpot, Settings = settings };
+            await File.WriteAllTextAsync(path,
+                JsonSerializer.Serialize(package, JsonOptions), cancellationToken);
+        }
+        finally { _lock.Release(); }
+    }
+
+    public async Task<MinigameConfig> ImportAsync(string path,
+        MinigameConfig currentSettings, CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        var json = await File.ReadAllTextAsync(path, cancellationToken);
+        var package = JsonSerializer.Deserialize<MinigameExportPackage>(json, JsonOptions)
+            ?? throw new InvalidOperationException("Die Importdatei ist ungültig.");
+        if (package.Users is null || package.Settings is null)
+            throw new InvalidOperationException("Die Importdatei ist unvollständig.");
+        ConfigurationService.ValidateMinigameSettings(package.Settings);
+        if (package.Users.Any(pair => string.IsNullOrWhiteSpace(pair.Key) ||
+            pair.Value is null || pair.Value.Points < 0))
+            throw new InvalidOperationException(
+                "Die Importdatei enthält ungültige Punktedaten.");
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var backupDirectory = Path.GetDirectoryName(_filePath)!;
+            var backupPath = Path.Combine(backupDirectory,
+                $"backup-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+            var backupPackage = new MinigameExportPackage
+            { Users = _entries!, History = _history, Jackpot = _jackpot,
+              Settings = currentSettings };
+            await File.WriteAllTextAsync(backupPath,
+                JsonSerializer.Serialize(backupPackage, JsonOptions),
+                cancellationToken);
+            _entries = new Dictionary<string, ViewerPointEntry>(package.Users,
+                StringComparer.Ordinal);
+            _history = package.History ?? new();
+            _jackpot = Math.Max(0, package.Jackpot);
+            await SaveAllAsync(cancellationToken);
+            return package.Settings;
+        }
+        finally { _lock.Release(); }
+    }
+
+    private static void ResetDaily(ViewerPointEntry entry)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (entry.DailyLimitDate == today) return;
+        entry.DailyLimitDate = today;
+        entry.DailyGambles = 0; entry.DailyLoss = 0; entry.DailyWin = 0;
+    }
+
+    private static ViewerPointEntry CloneEntry(ViewerPointEntry x) => new()
+    {
+        UserId=x.UserId, DisplayName=x.DisplayName, Points=x.Points,
+        Rpg = x.Rpg is null ? throw new InvalidDataException("Das gespeicherte RPG-Profil ist null.") :
+            JsonSerializer.Deserialize<RpgProfile>(JsonSerializer.Serialize(x.Rpg, JsonOptions), JsonOptions)!,
+        RaceWins=x.RaceWins, BossDefeats=x.BossDefeats,
+        FishCollection = x.FishCollection is null ? new() : new(x.FishCollection),
+        BiggestFishGrams=x.BiggestFishGrams, BiggestFishName=x.BiggestFishName,
+        UpdatedAt=x.UpdatedAt, WatchMinutes=x.WatchMinutes,
+        GamesPlayed=x.GamesPlayed, Wins=x.Wins, Losses=x.Losses,
+        BiggestWin=x.BiggestWin, LastDailyUtc=x.LastDailyUtc,
+        DailyLimitDate=x.DailyLimitDate, DailyGambles=x.DailyGambles,
+        DailyLoss=x.DailyLoss, DailyWin=x.DailyWin
+    };
+
+    private async Task<long> ChangePointsAsync(
+        string userId,
+        string displayName,
+        Func<long, long> change,
+        long minimumPoints,
+        long maximumPoints,
+        CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            throw new ArgumentException("Die Twitch-User-ID fehlt.", nameof(userId));
+        }
+
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureLoadedAsync(cancellationToken);
+            var floor = Math.Max(0, minimumPoints);
+            var entry = GetOrCreateEntry(userId, displayName, floor);
+            entry.Points = Math.Clamp(change(entry.Points), floor,
+                Math.Max(floor, maximumPoints));
+            entry.DisplayName = displayName;
+            entry.UpdatedAt = DateTimeOffset.Now;
+            await SaveAsync(cancellationToken);
+            return entry.Points;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    private ViewerPointEntry GetOrCreateEntry(
+        string userId,
+        string displayName,
+        long minimumPoints)
+    {
+        RequireNotPrivacyBlocked(userId);
+        if (_entries!.TryGetValue(userId, out var entry))
+        {
+            return entry;
+        }
+
+        entry = new ViewerPointEntry
+        {
+            UserId = userId,
+            DisplayName = displayName,
+            Points = Math.Max(0, minimumPoints),
+            UpdatedAt = DateTimeOffset.Now
+        };
+        _entries[userId] = entry;
+        return entry;
+    }
+
+    private async Task EnsureLoadedAsync(CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        if (!_commitChecked)
+        {
+            try { _commitMarker = new SaveCommitMarker(_filePath); await _commitMarker.RecoverAsync(cancellationToken); _commitChecked=true; }
+            catch(InvalidDataException error){throw new InvalidOperationException("Spielstand oder Commit-Marker widersprüchlich; keine automatische Wiederherstellung.",error);}
+        }
+        if (_entries is not null)
+        {
+            await ReconcileHeistCommitAsync(cancellationToken);
+            return;
+        }
+
+        if (!File.Exists(_filePath))
+        {
+            _entries = new Dictionary<string, ViewerPointEntry>(
+                StringComparer.Ordinal);
+            await ReconcileHeistCommitAsync(cancellationToken);
+            return;
+        }
+
+        try
+        {
+            await using var stream = File.OpenRead(_filePath);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+            ValidatePersistedInventories(document.RootElement);
+            var entries = ReadAccounts(document.RootElement);
+            if (entries is null || entries.Any(p => p.Value is null || p.Value.Rpg is { SchemaVersion: not 1 }))
+                throw new InvalidDataException("Die Punktedatei enthält keine gültigen Konten.");
+            foreach(var entry in entries.Values)if(entry.Rpg is not null)SnapshotProtocol.TalentRules.Validate(entry.Rpg.PlayerLevel,entry.Rpg.TalentRanks);
+            _entries = new Dictionary<string, ViewerPointEntry>(entries, StringComparer.Ordinal);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            throw new InvalidOperationException(
+                "Minigame-Punktedatei konnte nicht geladen werden. Zum Schutz der Spielstände werden keine Konten überschrieben.", exception);
+        }
+        await ReconcileHeistCommitAsync(cancellationToken);
+    }
+
+    private async Task SaveAllAsync(CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        await SaveAsync(cancellationToken);
+        await File.WriteAllTextAsync(_historyPath,
+            JsonSerializer.Serialize(_history, JsonOptions), cancellationToken);
+        await File.WriteAllTextAsync(_statePath,
+            JsonSerializer.Serialize(_jackpot, JsonOptions), cancellationToken);
+    }
+
+    private async Task SaveAsync(CancellationToken cancellationToken)
+    {
+        using var operationAdmission = Admission?.EnterOperation();
+        var temporaryPath = _filePath + ".tmp";
+        await using var persistenceLease=await SaveCommitMarker.AcquireAsync(_filePath,cancellationToken);
+        try
+        {
+            if(_entries!.Keys.Any(IsPrivacyBlocked))throw new InvalidOperationException("Import/Speicherung würde einen gesperrten Spieler wiederherstellen.");
+            await using (var stream = File.Create(temporaryPath))
+            {
+                await JsonSerializer.SerializeAsync(stream, AccountsWithBoss(), JsonOptions, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+                stream.Flush(true);
+            }
+            await _commitMarker!.PrepareAsync(temporaryPath, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (Admission is null) File.Move(temporaryPath, _filePath, true);
+            else Admission.Commit(() => File.Move(temporaryPath, _filePath, true));
+            // Complete is recoverable from the hash-only intent if interrupted after rename.
+            try { await _commitMarker.CompleteAsync(CancellationToken.None); }
+            catch { _commitChecked=false; }
+            if (Persisted is { } listeners)
+                foreach (Action listener in listeners.GetInvocationList()) try { listener(); } catch { }
+        }
+        catch
+        {
+            // Some legacy callers mutate entries directly. Restore from the committed file,
+            // so rejected/offline mutations cannot leak into a later successful save.
+            if(File.Exists(_filePath)){
+                using var committed=JsonDocument.Parse(await File.ReadAllTextAsync(_filePath));_entries=ReadAccounts(committed.RootElement);
+            }else{_entries=new(StringComparer.Ordinal);_globalBoss=null;}
+            _commitChecked=false;
+            throw;
+        }
+        finally { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
+    }
+    private sealed class MinigameExportPackage
+    {
+        public Dictionary<string, ViewerPointEntry>? Users { get; set; }
+        public List<MinigameHistoryEntry>? History { get; set; }
+        public long Jackpot { get; set; }
+        public MinigameConfig? Settings { get; set; }
+    }
+
+}

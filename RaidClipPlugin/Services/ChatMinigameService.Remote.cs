@@ -1,4 +1,4 @@
-using RaidClipPlugin.Models;
+﻿using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
@@ -25,7 +25,7 @@ public sealed partial class ChatMinigameService
     internal async Task<object> ReadRemoteBossAsync(ViewerPointEntry account,CancellationToken ct){
         var status=await _adventures.ReadRemoteStateAsync(account.UserId,ct);
         var hot=_points.HotTime.Status;
-        return new{status=status.Status,damage=account.Rpg.Health.BossId==status.Status.BossEventId?account.Rpg.Health.BossDamage:0,
+        return new{area=await _adventures.ReadAreaBossAsync(account.UserId,ct),status=status.Status,damage=account.Rpg.Health.BossId==status.Status.BossEventId?account.Rpg.Health.BossDamage:0,
             hotTime=new{active=_config.Adventures.Rpg.HotTime.Enabled&&hot.Active,endsAt=hot.Event?.End.ToUnixTimeMilliseconds()??0}};
     }
     internal Task<BossAttackResult> ExecuteRemoteBossAsync(string user,string name,string request,CancellationToken ct)=>

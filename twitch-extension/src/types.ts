@@ -4,6 +4,7 @@ export type Slot = typeof slots[number];
 export type Activity = 'Dive' | 'Fishing' | 'Boss';
 export type SushiCategory = 'Offensive' | 'Defensive';
 export interface CharacterStats {
+    attack?:number;magicPower?:number;manaRegeneration?:number;waterDamage?:number;elementalDamage?:number;abyssDamage?:number;lightDamage?:number;
     enemyEncounterChance?:number;materialFind?:number;attackPercent?:number;experienceBonus?:number;divineDamage?:number;
     movementSpeed?: number;
     bossLifeleech?: number;
@@ -101,6 +102,7 @@ export interface ActiveBuff {
     bossLifeleech: number;
 }
 export interface PlayerProfile {
+    mana?:number;maxMana?:number;manaShieldHp?:number;
     id: string;
     username: string;
     avatarUrl: string;
@@ -239,7 +241,7 @@ export interface DemoState {
     salvageQuote?: SalvageQuote;
     effectCooldowns: Record<string, number>;
 }
-export type Action = {type:'selectZone';activity:'dive'|'fish';zoneId:string;} | {type:'refine';id:string;expectedLevel:number;} | {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
+export type Action = {type:'selectBoss';id:string;} | {type:'selectZone';activity:'dive'|'fish';zoneId:string;} | {type:'refine';id:string;expectedLevel:number;} | {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
     type: 'dive';
     stake: number;
 } | {
