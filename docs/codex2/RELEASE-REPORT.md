@@ -36,3 +36,8 @@
 - Nhar'Zuls Lebensentzug erzeugt einen begrenzten persönlichen Schutz gegen den nächsten eigenen Treffer; er erhöht niemals die globalen Event-HP.
 - Moderklaues Fluch tickt bei persönlichen Angriffszyklen; es gibt keinen zusätzlichen globalen Polling-Timer.
 - Alle Kämpfe benutzen die vorhandenen autoritativen Dienste. Es wurden keine echten Spieler, Belohnungen oder produktiven Bossereignisse zum Test verändert.
+
+## Nachprüfung und lokale Installation
+- Windows 0.5.0 und Plugin 2.5.0 wurden veröffentlicht; die lokalen älteren Windows-Dateien 0.4.2 wurden auf 0.5.0 aktualisiert. Alle 24 Eternal-8er-Icons sind im installierten Web-Paket vorhanden.
+- Plugin 2.5.1 korrigiert die Empfangsgrenze für bestätigte Aktionsantworten: Der neue Admin-Katalog überschreitet 100.000 Bytes. Die Grenze folgt nun dem gemeinsamen Protokolllimit und bleibt beschränkt. Zwei Regressionstests; insgesamt 1.117 Plugin-Tests bestanden.
+- Bestehende Einstellungen und Spielstände wurden vor der lokalen Installation gesichert und beim Dateiaustausch per Hash unverändert bestätigt.

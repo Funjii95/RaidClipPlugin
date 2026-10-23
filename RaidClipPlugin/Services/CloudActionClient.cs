@@ -40,8 +40,13 @@ internal sealed class CloudActionClient : IDisposable
         using var response=await http.SendAsync(request,HttpCompletionOption.ResponseHeadersRead,ct);
         response.EnsureSuccessStatusCode();
         if(response.StatusCode==HttpStatusCode.NoContent)return default;
-        await using var input=await response.Content.ReadAsStreamAsync(ct);using var buffer=new MemoryStream();var chunk=new byte[4096];
-        int n;while((n=await input.ReadAsync(chunk,ct))>0){buffer.Write(chunk,0,n);if(buffer.Length>100000)throw new InvalidDataException("Oversized relay response.");}
+        await using var input=await response.Content.ReadAsStreamAsync(ct);
+        return await ReadResponseAsync<T>(input,ct);
+    }
+    internal static async Task<T?> ReadResponseAsync<T>(Stream input,CancellationToken ct)
+    {
+        using var buffer=new MemoryStream();var chunk=new byte[4096];
+        int n;while((n=await input.ReadAsync(chunk,ct))>0){buffer.Write(chunk,0,n);if(buffer.Length>ActionResultLimits.MaximumCompletionBodyBytes)throw new InvalidDataException("Oversized relay response.");}
         return JsonSerializer.Deserialize<T>(buffer.ToArray(),Json);
     }
     internal async Task RunAsync(CancellationToken ct)

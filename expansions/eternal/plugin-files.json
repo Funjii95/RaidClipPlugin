@@ -83,5 +83,6 @@
   "Tests/AreaBossTests.cs",
   "Tests/EternalEightTests.cs",
   "Tests/RpgCollectionInventoryTests.cs",
-  "Tests/RpgWeaponTests.cs"
+  "Tests/RpgWeaponTests.cs",
+  "Tests/CloudActionResponseTests.cs"
 ]
