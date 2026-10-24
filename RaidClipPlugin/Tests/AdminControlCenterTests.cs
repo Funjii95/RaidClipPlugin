@@ -36,6 +36,25 @@ public sealed class AdminControlCenterTests:IDisposable
         Assert.False(AdminPermissions.IsModerator("{\"isModerator\":true}","1001"));
         Assert.True(AdminPermissions.IsModerator("{\"staffAccess\":{\"moderators\":[\"1001\"]}}","1001"));
     }
+    [Fact]public async Task EveryAdvertisedSetGrantsItsActualEquipmentToTheSelectedRecipient()
+    {
+        var executor=Executor();
+        var catalog=await executor.ExecuteAsync(Envelope("adminCatalog",new{}),default);
+        using var json=JsonDocument.Parse(catalog.DataJson!);
+        var target=2000;
+        foreach(var entry in json.RootElement.GetProperty("grantableSets").EnumerateArray()){
+            var id=entry.GetProperty("Id").GetString()!;var user=(target++).ToString();
+            await points.SetPointsAsync(user,"Recipient",100,0,default);
+            var outcome=await executor.ExecuteAsync(Envelope("adminGrantSet",new{setId=id,targetUserId=user}),default);
+            Assert.True(outcome.Success,outcome.Message);
+            var inventory=(await points.GetProfileAsync(user,default)).Entry.Rpg.Inventory;
+            Assert.Equal(config.Adventures.Rpg.Sets.Single(s=>s.Id==id).ItemIds.Order(),inventory.Select(i=>i.ItemId).Order());
+            Assert.Equal(entry.GetProperty("Count").GetInt32(),inventory.Count);
+            Assert.All(inventory,i=>{Assert.NotNull(i.Slot);Assert.NotEqual("shell",i.ItemId);});
+            Assert.False((await executor.ExecuteAsync(Envelope("adminGrantSet",new{setId=id,targetUserId=user},"1001"),default)).Success);
+        }
+        Assert.Empty((await points.GetProfileAsync("42",default)).Entry.Rpg.Inventory);
+    }
     [Fact]public async Task ReadConfigurationCanonicalValidationAcceptsPageAfterParsingArguments()
     {
         var outcome=await Executor().ExecuteAsync(Envelope("adminConfigRead",new{section="zones",filter="EternalEightChances",page="0"}),default);

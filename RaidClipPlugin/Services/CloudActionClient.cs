@@ -85,6 +85,7 @@ internal sealed class CloudActionClient : IDisposable
                         pending=null;outcome=null;
                     }
                     // Drain accepted work promptly; keep bounded polling when no work exists.
+                    if(failures>0)log("Aktionskanal wieder verbunden.");
                     failures=0;
                     await Task.Delay(handled?100:500,ct);
                 } catch(OperationCanceledException) when(ct.IsCancellationRequested){throw;}

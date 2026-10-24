@@ -23,7 +23,7 @@ internal sealed partial class RemoteRpgExecutor
         string Arg(string key)=>e.Intent.Arguments.GetProperty(key).GetString()!;
         if(e.Intent.Kind=="adminGrantSet"){
             var set=rpg.Sets.SingleOrDefault(s=>s.Id==Arg("setId"));
-            if(set is null||!RpgEternalEightCatalog.Sets().Any(s=>s.Id==set.Id))return new(false,"invalid_set","Unbekanntes Eternal-8er-Set.");
+            if(set is null||set.ItemIds.Count is <1 or >20||set.ItemIds.Any(id=>!rpg.DiveLoot.Items.Any(i=>i.ItemId==id&&i.Slot.HasValue&&i.Kind!=RpgItemKind.Consumable)))return new(false,"invalid_set","Unbekanntes oder unvollständig konfiguriertes Ausrüstungsset.");
             var targetUser=Arg("targetUserId");
             if(!System.Text.RegularExpressions.Regex.IsMatch(targetUser,"^[0-9]{1,25}$"))return new(false,"invalid_player","Ungültige Twitch-ID.");
             var saved=await points.ReadCommittedFileAsync(ct);using var existing=JsonDocument.Parse(saved??"{}"u8.ToArray());
@@ -33,16 +33,20 @@ internal sealed partial class RemoteRpgExecutor
                 foreach(var id in set.ItemIds){
                     if(a.Rpg.Inventory.Any(i=>i.ItemId==id))continue;
                     var item=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(rpg.DiveLoot.Items.Single(i=>i.ItemId==id)))!;
-                    item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=DateTimeOffset.UtcNow;a.Rpg.Inventory.Add(item);added.Add(item.InstanceId);
+                    item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=DateTimeOffset.UtcNow;
+                    RpgItemGenerationService.Generate(item,rpg.DiveLoot,new CryptoDuelRandom());
+                    RpgCoreStatService.Apply(item);a.Rpg.Inventory.Add(item);added.Add(item.InstanceId);
                 }
                 try{SnapshotValidation.Validate(new(1,channel,targetUser,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(a)),channel);}catch(InvalidDataException){return new(false,"Inventar überschreitet Cloud-Größenlimit.");}
                 return new(true);
             },ct);
-            return new(result.Success,result.Success?"applied":"rule_rejected",result.Success?"Fehlende Setteile gespeichert.":result.Error,JsonSerializer.Serialize(new{setId=set.Id,targetUserId=targetUser,added=result.Success?added:[],audit=new{setId=set.Id,targetUserId=targetUser,count=result.Success?added.Count:0}}));
+            var setMessage=result.Success?$"{set.Name} ({set.ItemIds.Count} Teile) für Twitch-ID {targetUser}: {added.Count} fehlende Teile gespeichert. Vorhandene Teile bleiben erhalten.":result.Error;
+            return new(result.Success,result.Success?"applied":"rule_rejected",setMessage,JsonSerializer.Serialize(new{message=setMessage,setId=set.Id,targetUserId=targetUser,added=result.Success?added:[],audit=new{setId=set.Id,targetUserId=targetUser,count=result.Success?added.Count:0}}));
         }
         if(e.Intent.Kind is "adminMaterialGrant" or "adminBalance")return await InvokeMaterialAdminAsync(e,ct);
         if(e.Intent.Kind=="adminCatalog")return new(true,"read","Adminbereich bereit.",JsonSerializer.Serialize(new{
             settings=rpg.Upgrades, materials=RpgUpgradeCatalog.Materials,eternalEightSets=RpgEternalEightCatalog.Sets().Select(s=>new{s.Id,s.Name}),
+            grantableSets=rpg.Sets.Where(s=>s.ItemIds.Count is >0 and <=20&&s.ItemIds.All(id=>rpg.DiveLoot.Items.Any(i=>i.ItemId==id&&i.Slot.HasValue&&i.Kind!=RpgItemKind.Consumable))).Select(s=>new{s.Id,s.Name,Count=s.ItemIds.Count}),
             items=rpg.DiveLoot.Items.Where(i=>i.Slot.HasValue&&i.Kind!=RpgItemKind.Consumable).OrderByDescending(i=>i.Rarity).ThenBy(i=>i.DisplayName,StringComparer.Ordinal).Select(i=>new{id=i.ItemId,name=i.DisplayName,rarity=i.Rarity.ToString(),slot=i.Slot!.Value.ToString()}),
             attributes=typeof(RpgAttributes).GetProperties().Select(p=>p.Name),events=new[]{"boss","mimic","race","heist","hotTime"}}));
         if(e.Intent.Kind=="adminStart")
