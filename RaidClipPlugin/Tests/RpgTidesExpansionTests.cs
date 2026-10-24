@@ -78,11 +78,11 @@ public sealed class RpgTidesExpansionTests
         {
             var rules=definition.Generation!;var instance=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(definition))!;
             RpgItemGenerationService.Generate(instance,c.DiveLoot,rng);
-            Assert.Null(instance.Generation);Assert.Equal(instance.Slot is EquipmentSlot.Helmet or EquipmentSlot.Chest or EquipmentSlot.Gloves or EquipmentSlot.Boots?2:1,instance.CoreStatsVersion);
-            foreach(var range in rules.BaseAttributes)Assert.InRange((decimal)typeof(RpgAttributes).GetProperty(range.Attribute)!.GetValue(instance.Attributes)!,range.Minimum,range.Maximum);
+            Assert.Null(instance.Generation);Assert.Equal(3,instance.CoreStatsVersion);
+            foreach(var range in rules.BaseAttributes)Assert.InRange((decimal)typeof(RpgAttributes).GetProperty(range.Attribute)!.GetValue(instance.Attributes)!,range.Minimum*(range.Attribute is "Power" or "Stamina" or "Armor"?1.5m:1),range.Maximum*(range.Attribute is "Power" or "Stamina" or "Armor"?1.5m:1));
             var secondary=rules.Attributes.Where(a=>(decimal)typeof(RpgAttributes).GetProperty(a.Attribute)!.GetValue(instance.Attributes)!>0).ToList();
             Assert.InRange(secondary.Count,rules.MinimumAttributes!.Value,rules.MaximumAttributes!.Value);
-            foreach(var range in secondary)Assert.InRange((decimal)typeof(RpgAttributes).GetProperty(range.Attribute)!.GetValue(instance.Attributes)!,range.Minimum,range.Maximum);
+            foreach(var range in secondary)Assert.InRange((decimal)typeof(RpgAttributes).GetProperty(range.Attribute)!.GetValue(instance.Attributes)!,range.Minimum*(range.Attribute is "Power" or "Stamina" or "Armor"?1.5m:1),range.Maximum*(range.Attribute is "Power" or "Stamina" or "Armor"?1.5m:1));
             var json=JsonSerializer.Serialize(instance);var restored=JsonSerializer.Deserialize<RpgItem>(json)!;
             RpgCoreStatService.Apply(restored);Assert.Equal(json,JsonSerializer.Serialize(restored));
         }

@@ -46,7 +46,7 @@ public sealed class RemoteAdminTests:IDisposable
         Assert.Equal(first,await Executor().ExecuteAsync(e,default));
         var restored=(await new ViewerPointStore(root).GetProfileAsync("1001",default)).Entry;
         Assert.Equal(1234,restored.Points);Assert.Equal(2,restored.Rpg.Inventory.Count);Assert.Equal(2,restored.Rpg.Inventory.Select(i=>i.InstanceId).Distinct().Count());
-        Assert.All(restored.Rpg.Inventory,i=>{Assert.Null(i.Generation);Assert.Equal("tide_king_regalia",i.SetId);if(roll=="custom"){Assert.Equal(321,i.Attributes.MaximumHp);Assert.Equal(42,i.Attributes.CritChance);Assert.True(i.Attributes.Armor>0);Assert.Equal(50,i.Attributes.ArmorPercent);}});
+        Assert.All(restored.Rpg.Inventory,i=>{Assert.Null(i.Generation);Assert.Equal("tide_king_regalia",i.SetId);if(roll=="custom"){Assert.Equal(321,i.Attributes.MaximumHp);Assert.Equal(42,i.Attributes.CritChance);Assert.True(i.Attributes.Armor>0);Assert.Equal(0,i.Attributes.ArmorPercent);}});
     }
     [Fact] public async Task ViewerCannotReadAdminCatalogOrGrantEvenWithOwnerDisplayName()
     {

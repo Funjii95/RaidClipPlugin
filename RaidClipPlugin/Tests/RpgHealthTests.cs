@@ -26,7 +26,7 @@ public sealed class RpgHealthTests : IDisposable
     public void Dispose(){if(Directory.Exists(_dir))Directory.Delete(_dir,true);}
 
     [Theory]
-    [InlineData(1,100)] [InlineData(10,118)] [InlineData(25,148)] [InlineData(50,198)] [InlineData(100,298)]
+    [InlineData(1,100)] [InlineData(10,343)] [InlineData(25,748)] [InlineData(50,1423)] [InlineData(100,2773)]
     public void LegacyInitializationAndMaximum(int level,int expected)
     {
         var p=new RpgProfile{PlayerLevel=level};RpgHealthService.Refresh(p,new(),_now);
@@ -36,10 +36,10 @@ public sealed class RpgHealthTests : IDisposable
     public void LevelGainHealsOnlyNewMaximumAndRegenKeepsRemainder()
     {
         var p=new RpgProfile();var c=new RpgHealthConfig();RpgHealthService.Refresh(p,c,_now);p.Health.CurrentHp=50;
-        RpgHealthService.Experience(p,c,1000,_now);Assert.Equal(2,p.PlayerLevel);Assert.Equal(52,p.Health.CurrentHp);
-        RpgHealthService.Refresh(p,c,_now.AddSeconds(119));Assert.Equal(54,p.Health.CurrentHp);
-        RpgHealthService.Refresh(p,c,_now.AddSeconds(120));Assert.Equal(56,p.Health.CurrentHp);
-        RpgHealthService.Refresh(p,c,_now.AddYears(1));Assert.Equal(102,p.Health.CurrentHp);
+        RpgHealthService.Experience(p,c,1000,_now);Assert.Equal(2,p.PlayerLevel);Assert.Equal(77,p.Health.CurrentHp);
+        RpgHealthService.Refresh(p,c,_now.AddSeconds(119));Assert.Equal(79,p.Health.CurrentHp);
+        RpgHealthService.Refresh(p,c,_now.AddSeconds(120));Assert.Equal(81,p.Health.CurrentHp);
+        RpgHealthService.Refresh(p,c,_now.AddYears(1));Assert.Equal(127,p.Health.CurrentHp);
     }
     [Fact]
     public async Task RestartKeepsWoundsAndAppliesOnlyElapsedRegen()
@@ -97,7 +97,7 @@ public sealed class RpgHealthTests : IDisposable
         Assert.Equal(0,dead.Points);Assert.Equal(0,dead.Rpg.Experience);Assert.Empty(dead.Rpg.Inventory);
         Assert.Equal(100,live.Points);Assert.Equal(1200,live.Rpg.Experience);Assert.Equal(2,live.Rpg.Inventory.Count);Assert.Single(live.Rpg.Inventory,i=>i.Rarity==ItemRarity.Legendary);
         // Last hit kills the boss: only one counterattack against the survivor.
-        Assert.Equal(92,live.Rpg.Health.CurrentHp); // 90 HP +2 on level-up.
+        Assert.Equal(117,live.Rpg.Health.CurrentHp); // 90 HP +2 on level-up.
         game=Game(new(_dir),c);await game.TickAsync(default);
         Assert.Equal(100,(await s.GetProfileAsync("live",default)).Entry.Points);
     }

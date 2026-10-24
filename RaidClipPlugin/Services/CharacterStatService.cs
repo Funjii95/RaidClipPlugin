@@ -24,7 +24,8 @@ public static class CharacterStatService
     public static RpgAttributes Calculate(RpgProfile profile, RpgConfig config, RpgActivity activity, bool includeEffects = true,
         DateTimeOffset? now = null, long stake = 0)
     {
-        var result = new RpgAttributes();
+        var levelBonus=RpgLevelStats.Bonus(profile,config.Health.MaximumLevel);
+        var result = new RpgAttributes{Power=levelBonus,Stamina=levelBonus};
         var enhanced=RpgEternalCombat.Enhanced(profile);
         foreach (var pair in profile.Perks)
         {

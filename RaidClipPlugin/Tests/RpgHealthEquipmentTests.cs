@@ -15,8 +15,8 @@ public sealed class RpgHealthEquipmentTests
         RpgHealthService.Refresh(p,c,now);p.Health.CurrentHp=70;
         var item=RpgHealthEquipmentCatalog.Items().Last();p.Inventory.Add(item);p.Equipment[EquipmentSlot.Amulet]=item.InstanceId;
         RpgHealthService.Refresh(p,c,now);Assert.Equal(150,RpgHealthService.Maximum(p,c));Assert.Equal(70,p.Health.CurrentHp);
-        RpgHealthService.Experience(p,c,1000,now);Assert.Equal(152,RpgHealthService.Maximum(p,c));Assert.Equal(72,p.Health.CurrentHp);
-        p.Equipment.Clear();RpgHealthService.Refresh(p,c,now);Assert.Equal(102,RpgHealthService.Maximum(p,c));Assert.Equal(72,p.Health.CurrentHp);
+        RpgHealthService.Experience(p,c,1000,now);Assert.Equal(177,RpgHealthService.Maximum(p,c));Assert.Equal(97,p.Health.CurrentHp);
+        p.Equipment.Clear();RpgHealthService.Refresh(p,c,now);Assert.Equal(127,RpgHealthService.Maximum(p,c));Assert.Equal(97,p.Health.CurrentHp);
     }
     [Fact]
     public void OnlyEquippedDistinctInstancesCountAndBonusIsCapped()
@@ -61,7 +61,7 @@ public sealed class RpgHealthEquipmentTests
             var service=new RpgProgressionService(store,c);
             Assert.True((await service.EquipAsync("u","U","equip",item.InstanceId,EquipmentSlot.Amulet,default)).Success);
             var p=(await new ViewerPointStore(dir).GetProfileAsync("u",default)).Entry.Rpg;
-            Assert.Equal(200,RpgHealthService.Maximum(p,c.Health));Assert.Equal(80,p.Health.CurrentHp);
+            Assert.Equal(225,RpgHealthService.Maximum(p,c.Health));Assert.Equal(80,p.Health.CurrentHp);
             Assert.True((await service.UnequipAsync("u","U","off",EquipmentSlot.Amulet,default)).Success);
             p=(await store.GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(100,RpgHealthService.Maximum(p,c.Health));Assert.Equal(80,p.Health.CurrentHp);
         }

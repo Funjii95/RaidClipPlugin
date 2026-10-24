@@ -30,7 +30,7 @@ public sealed partial class ViewerPointStore
             File.Copy(_filePath,_filePath+".pre-materials-v1.bak",overwrite:false);
         if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-sushi-2.bak"))
             File.Copy(_filePath,_filePath+".pre-sushi-2.bak",overwrite:false);
-        if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-armor-foundation.bak"))File.Copy(_filePath,_filePath+".pre-armor-foundation.bak",overwrite:false);
+        if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-armor-correction.bak"))File.Copy(_filePath,_filePath+".pre-armor-correction.bak",overwrite:false);
         if(File.Exists(_filePath) && !File.Exists(_filePath+".pre-core-stats.bak"))
             File.Copy(_filePath,_filePath+".pre-core-stats.bak",overwrite:false);
         if (File.Exists(_filePath) && !File.Exists(_filePath + ".pre-items-v2.bak"))

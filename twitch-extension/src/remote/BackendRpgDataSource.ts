@@ -13,7 +13,7 @@ const signature=(v:any)=>JSON.stringify(canonical([field(v,'UserId'),field(v,'Po
 // response travels through the cloud. They are not inputs to CharacterStatService.
 const statTimes=(value:any):any=>Array.isArray(value)?value.map(statTimes):value&&typeof value==='object'
  ? Object.fromEntries(Object.entries(value).map(([key,item])=>[key,
-   ['activatedat','expiresat'].includes(key.toLowerCase())&&typeof item==='string'&&Number.isFinite(Date.parse(item))
+   ['activatedat','expiresat','foundat'].includes(key.toLowerCase())&&typeof item==='string'&&Number.isFinite(Date.parse(item))
     ? new Date(item).toISOString():statTimes(item)])):value;
 const statsSignature=(profile:any)=>{
  const rpg=field(profile,'Rpg');

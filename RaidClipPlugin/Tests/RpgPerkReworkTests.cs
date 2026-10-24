@@ -86,7 +86,7 @@ public sealed class RpgPerkReworkTests:IDisposable
     {
         var config=Config().Adventures.Rpg;var p=new RpgProfile{PlayerLevel=100};
         p.Perks=new(){{"iron-skin",5},{"battle-rush",5},{"life-steal",5},{"quick-reel",5},{"safe-ascent",5},{"deep-diver",5},{"protective-bubble",5}};
-        Assert.Equal(357,RpgHealthService.Maximum(p,config.Health));
+        Assert.Equal(3327,RpgHealthService.Maximum(p,config.Health));
         Assert.Equal(85,RpgPerkCatalog.Cooldown(p,100,"attackCooldown"));Assert.Equal(85,RpgPerkCatalog.Cooldown(p,100,"fishCooldown"));
         Assert.Equal(5,RpgPerkCatalog.Combined(p,"lifeleech"));Assert.Equal(20,RpgPerkCatalog.Combined(p,"underwaterDodge"));
         Assert.Equal(15,CharacterStatService.Calculate(p,config,RpgActivity.Dive).ExtraLootChance);

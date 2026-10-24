@@ -41,7 +41,8 @@ public static class RpgLootLocations
   var count=rules.AttributeCount??rules.MinimumAttributes??RpgItemGenerationService.Counts(item.Rarity).Min;
   foreach(var r in rules.Attributes){var optional=count<rules.Attributes.Count&&!ranges.ContainsKey(r.Attribute);ranges[r.Attribute]=new(r.Attribute,r.Minimum,r.Maximum,optional);}
   if(rules.BaseAttributes.Count==0){var baseline=RpgCoreStatService.Baseline(item.Rarity);ranges.TryAdd("Power",new("Power",baseline.Power,baseline.Power));ranges.TryAdd("Stamina",new("Stamina",baseline.Stamina,baseline.Stamina));}
-  if(item.Slot is EquipmentSlot.Helmet or EquipmentSlot.Chest or EquipmentSlot.Gloves or EquipmentSlot.Boots){var core=RpgCoreStatService.Baseline(item.Rarity);ranges.TryAdd("Power",new("Power",core.Power,core.Power));ranges.TryAdd("Stamina",new("Stamina",core.Stamina,core.Stamina));ranges.TryAdd("Armor",new("Armor",core.Stamina*2,core.Stamina*2));var armor=ranges.GetValueOrDefault("ArmorPercent");ranges["ArmorPercent"]=new("ArmorPercent",50+(armor?.Min??0),50+(armor?.Max??0));}
+  if(item.Slot is EquipmentSlot.Helmet or EquipmentSlot.Chest or EquipmentSlot.Gloves or EquipmentSlot.Boots){var core=RpgCoreStatService.Baseline(item.Rarity);ranges.TryAdd("Power",new("Power",core.Power,core.Power));ranges.TryAdd("Stamina",new("Stamina",core.Stamina,core.Stamina));ranges.TryAdd("Armor",new("Armor",core.Stamina*2,core.Stamina*2));}
+  foreach(var stat in new[]{"Armor","Power","Stamina"})if(ranges.TryGetValue(stat,out var range))ranges[stat]=range with{Min=range.Min>0?range.Min*1.5m:range.Min,Max=range.Max>0?range.Max*1.5m:range.Max};
   return ranges.Values.ToArray();
  }
 }
