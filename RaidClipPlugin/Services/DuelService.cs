@@ -319,7 +319,7 @@ public sealed partial class DuelService : IAsyncDisposable
 
 
             var chance = DuelRules.ChallengerChance(_config.FairMode, _config.ChallengerWinChancePercent);
-            var roll = _random.NextInclusive(1, 100);
+            var roll = _minigame.Adventures.Rpg.Enabled?1:_random.NextInclusive(1, 100);
             var challengerWins = DuelRules.ChallengerWins(_config.FairMode, _config.ChallengerWinChancePercent, roll);
             var winnerId = challengerWins ? duel.Challenger.UserId : duel.Target.Id;
             var winnerName = challengerWins ? duel.Challenger.UserName : duel.Target.DisplayName;
@@ -329,7 +329,7 @@ public sealed partial class DuelService : IAsyncDisposable
                 duel.Challenger.UserName, duel.Target.Id, duel.Target.DisplayName,
                 winnerId, duel.Stake, _minigame.MinimumPoints,
                 _minigame.MaximumAccountEnabled ? _minigame.MaximumAccountPoints : long.MaxValue,
-                _minigame.HistoryLimit, cancellationToken,duel.Id);
+                _minigame.HistoryLimit, cancellationToken,duel.Id,_minigame.Adventures.Rpg.Enabled?_minigame.Adventures.Rpg:null);
             if (!result.Success)
             {
                 Console.WriteLine($"Duel-Annahme abgelehnt: {result.Error}; Ziel {duel.Target.DisplayName}.");
@@ -339,9 +339,13 @@ public sealed partial class DuelService : IAsyncDisposable
             }
 
 
+            if(result.Draw){
+                if(_remoteAccepted.Value is {} drawn)drawn.Accepted=true;duel.State=DuelState.Cancelled;duel.TimeoutCts.Cancel();RecordRemoteResult(duel,null,result.Error);Remove(duel);PublishStatus(duel);await SendAsync($"@{duel.Challenger.UserName} gegen @{duel.Target.DisplayName}: {result.Error}",cancellationToken);return;
+            }
+            if(!string.IsNullOrEmpty(result.WinnerId)){winnerId=result.WinnerId;challengerWins=winnerId==duel.Challenger.UserId;winnerName=challengerWins?duel.Challenger.UserName:duel.Target.DisplayName;loserName=challengerWins?duel.Target.DisplayName:duel.Challenger.UserName;loserId=challengerWins?duel.Target.Id:duel.Challenger.UserId;}
             if(_remoteAccepted.Value is {} capture)capture.Accepted=true;
             duel.State = DuelState.Paid;
-            RecordRemoteResult(duel,winnerId);
+            RecordRemoteResult(duel,winnerId,_minigame.Adventures.Rpg.Enabled?$"Ausrüstungs-PvP: {result.ChallengerPower:N0} gegen {result.TargetPower:N0}. Stärkere Ausrüstung gewinnt.":null);
             duel.TimeoutCts.Cancel();
             Remove(duel);
             Console.WriteLine($"Duel ausgezahlt: Gewinner {winnerName}; Verlierer {loserName}; Pot {result.Pot}; Zufallswert {roll}; Chance Herausforderer {chance}%.");
@@ -457,7 +461,7 @@ public sealed partial class DuelService : IAsyncDisposable
     public async Task RunTestAsync(CancellationToken cancellationToken)
     {
         var chance = DuelRules.ChallengerChance(_config.FairMode, _config.ChallengerWinChancePercent);
-        var roll = _random.NextInclusive(1, 100);
+        var roll = _minigame.Adventures.Rpg.Enabled?1:_random.NextInclusive(1, 100);
         var winner = DuelRules.ChallengerWins(_config.FairMode, _config.ChallengerWinChancePercent, roll) ? "TestChallenger" : "TestTarget";
         var loser = winner == "TestChallenger" ? "TestTarget" : "TestChallenger";
         var target = new TwitchUser("test-target", "testtarget", "TestTarget");

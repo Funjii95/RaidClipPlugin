@@ -1,4 +1,4 @@
-﻿using RaidClipPlugin.Models;
+using RaidClipPlugin.Models;
 using RaidClipPlugin.Config;
 namespace RaidClipPlugin.Services;
 public static class RpgZoneService
@@ -23,6 +23,7 @@ public static class RpgZoneService
         var awards=new Dictionary<string,int>();
         foreach(var id in z.Materials) {
             var chance=c.Upgrades.Drops[source].GetValueOrDefault(id)?.Chance??(source=="enemy"?8m:15m);
+            if(source=="enemy")chance=RpgCombatDropRules.Chance(chance);
             if(guaranteed||rng.NextInclusive(0,999999)<Math.Clamp(chance*(1+(stats.MaterialFind+(source=="fish"?0:RpgPerkCatalog.Combined(p,"diveMaterials")))/100),0,100)*10000)awards[id]=(rng.NextInclusive(1,3)+RpgEternalEightLoot.ExtraMaterial(p,c,rng))*RpgEternalCombat.NormalLootMultiplier(p,c);
         }
         foreach(var pair in awards)RpgUpgradeCatalog.Add(p.Materials,pair.Key,pair.Value);
@@ -39,13 +40,13 @@ public static class RpgZoneService
         if(z.Level>=80)allowed.Add(ItemRarity.True);
         if(z.Level>=90)allowed.Add(ItemRarity.Abyss);
         foreach(var rarity in new[]{ItemRarity.Abyss,ItemRarity.True,ItemRarity.Cursed}) {
-            if(!allowed.Contains(rarity)||rng.NextInclusive(0,999999)>=c.Upgrades.EquipmentDropChances[rarity.ToString()]*10000)continue;
+            if(!allowed.Contains(rarity)||rng.NextInclusive(0,999999)>=RpgCombatDropRules.Chance(c.Upgrades.EquipmentDropChances[rarity.ToString()])*10000)continue;
             var pool=c.DiveLoot.Items.Where(i=>i.Rarity==rarity&&i.Slot.HasValue).ToArray();
             if(pool.Length>0)return Instance(pool[rng.NextInclusive(0,pool.Length-1)],c,rng,now);
         }
         var combatPool=System.Text.Json.JsonSerializer.Deserialize<RpgLootConfig>(System.Text.Json.JsonSerializer.Serialize(c.DiveLoot))!;
         combatPool.Items=combatPool.Items.Where(i=>i.Slot.HasValue&&i.Rarity<=ItemRarity.Legendary).ToList();
-        var normal=new RpgLootService(rng).RollReward(combatPool,now,RpgActivity.Boss,c.BossLootChance,(ItemRarity)Math.Min((int)ItemRarity.Legendary,(int)z.MaximumRarity)).Item;
+        var normal=new RpgLootService(rng).RollCombatReward(combatPool,now,RpgActivity.Boss,c.BossLootChance,(ItemRarity)Math.Min((int)ItemRarity.Legendary,(int)z.MaximumRarity)).Item;
         return normal?.Slot is not null?normal:null;
     }
     private static RpgItem Instance(RpgItem definition,RpgConfig c,IDuelRandom rng,DateTimeOffset now)

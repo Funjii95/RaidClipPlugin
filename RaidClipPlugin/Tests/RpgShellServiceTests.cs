@@ -22,21 +22,21 @@ public sealed class RpgShellServiceTests : IDisposable
     {
         private int next;
         public int Calls;
-        public int NextInclusive(int min,int max){Calls++;return min==10?10:++next;}
+        public int NextInclusive(int min,int max){Calls++;return min==100?100:++next;}
     }
-    private sealed class Fixed(int roll,int pearls=10) : IDuelRandom
+    private sealed class Fixed(int roll,int pearls=100) : IDuelRandom
     {
         public int Calls;
-        public int NextInclusive(int min,int max){Calls++;return min==10?pearls:roll;}
+        public int NextInclusive(int min,int max){Calls++;return min==100?pearls:roll;}
     }
     [Fact]
     public async Task Hundred_openings_follow_exact_weights_and_survive_restart_and_projection()
     {
         var store=await Seed(100);var result=await new RpgShellService(store,Config(),new Rolls()).OpenAsync("1001","SYNTHETIC","open",100,default);
         Assert.True(result.Success);
-        Assert.Equal(new ShellRewards(3,2,1,47,470),result.Rewards);
+        Assert.Equal(new ShellRewards(3,2,1,47,4700),result.Rewards);
         var account=(await Store().GetProfileAsync("1001",default)).Entry;
-        Assert.Equal(570,account.Points);
+        Assert.Equal(4800,account.Points);
         var m=account.Rpg.Materials;
         Assert.Equal((0,3,2,1,47),(m.Shells,m.WhitePearls,m.BluePearls,m.RedPearls,m.StoneChips));
         var projected=SnapshotValidation.Validate(new(1,"42","1001",1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account)),"42");
@@ -45,8 +45,8 @@ public sealed class RpgShellServiceTests : IDisposable
         Assert.False(document.RootElement.GetProperty("Rpg").TryGetProperty("CompletedActions",out _));
     }
     [Theory]
-    [InlineData(10)]
-    [InlineData(50)]
+    [InlineData(100)]
+    [InlineData(10000)]
     public async Task Normal_pearl_reward_includes_both_range_endpoints(int reward)
     {
         var store=await Seed(1);

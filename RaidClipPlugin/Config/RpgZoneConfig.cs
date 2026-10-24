@@ -19,6 +19,7 @@ public sealed class RpgZoneDefinition
 }
 public sealed class RpgZoneConfig
 {
+    public int FishBiomesVersion {get;set;}
     public List<RpgZoneDefinition> Areas {get;set;}=Defaults();
     public Dictionary<string,decimal> EternalChances {get;set;}=new(){["normal"]=.03m,["elite"]=.12m,["mimic"]=.20m,["endgame"]=.35m};
     public Dictionary<string,decimal> EternalEightChances {get;set;}=new(){["normal"]=.01m,["elite"]=.04m,["mimic"]=.08m,["eonath"]=.10m};

@@ -55,6 +55,12 @@ public sealed class RpgLootService(IDuelRandom? random = null)
         var second=Roll(paidStake,luck,config,now,sushi,equipment,hotTimePercent,collectors,rareEquipmentLuck,talentDropBonus);
         return first.Item is null || second.Item is not null && second.Item.Rarity>first.Item.Rarity ? second : first;
     }
+    public RpgLootResult RollCombatReward(RpgLootConfig config,DateTimeOffset now,RpgActivity activity,decimal chance,ItemRarity maximum,decimal hotTimePercent=0)
+    {
+        config.Validate();
+        var original=Math.Min(Math.Min(100,config.MaximumDropChance),chance*(1+Math.Clamp(hotTimePercent,0,200)/100));
+        return Select(config,now,new(chance,0,0,0,RpgCombatDropRules.Chance(original),maximum),activity);
+    }
     private RpgLootResult Select(RpgLootConfig config, DateTimeOffset now, LootChanceBreakdown chances, RpgActivity activity, RpgCollectorBonuses? collectors=null,decimal rareEquipmentLuck=0)
     {
         var pool = config.Items.Where(i => i.Rarity<=ItemRarity.Legendary && i.DropActivities.Contains(activity) && (i.Collector is null || config.CollectorPoolChance>0)).ToArray();

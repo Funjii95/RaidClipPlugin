@@ -137,7 +137,7 @@ public sealed class RpgLootExpansionTests : IDisposable
         foreach(var f in c.Adventures.Rpg.FishSpecies)if(f.Id!="vampire_squid")f.Weight=0;
         c.Adventures.Fishing.LossChance=0;c.Adventures.Fishing.SmallChance=100;c.Adventures.Fishing.LargeChance=c.Adventures.Fishing.RareChance=0;
         var store=new ViewerPointStore(_dir);
-        await store.ApplyRpgAsync("u","U","seed",a=>{a.Rpg.Inventory.Add(Item("pearl-compass"));return new(true);},default);
+        await store.ApplyRpgAsync("u","U","seed",a=>{a.Rpg.Inventory.Add(Item("pearl-compass"));a.Rpg.SelectedFishingZone="cursed_depths";return new(true);},default);
         var result=await new RpgAdventureService(store,c,new Low(),()=>_now).ExecuteAsync("u","U","fish",RpgActivity.Fishing,0,default);
         Assert.True(result.Success);Assert.Equal(306,result.Payout);
         await store.AddPointsAsync("u","U",100,0,default);
@@ -168,7 +168,7 @@ public sealed class RpgLootExpansionTests : IDisposable
         await game.ControlAsync("boss",0,default);var result=await game.ExecuteBossAttackAsync("u","U","attack",default);
         Assert.True(result.Success);Assert.True(result.Critical);
         var p=(await store.GetProfileAsync("u",default)).Entry.Rpg;
-        var counter=(int)decimal.Ceiling(RpgHealthService.CounterDamage(1000,rpg.Health,new Low())*0.88m);
+        var counter=RpgBossDefenseService.Counter(RpgHealthService.CounterDamage(1000,rpg.Health,new Low()),p,rpg,new Low(),_now);
         Assert.Equal(50+(int)decimal.Floor(result.Damage*0.05m)-counter,p.Health.CurrentHp);
         Assert.Equal(result.Damage,p.Health.BossDamage);
         var hp=p.Health.CurrentHp;

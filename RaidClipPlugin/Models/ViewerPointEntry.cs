@@ -81,4 +81,4 @@ public sealed record DuelResolutionResult(
     string Error,
     long ChallengerBalance,
     long TargetBalance,
-    long Pot);
+    long Pot){public string WinnerId {get;init;}="";public bool Draw {get;init;}public decimal ChallengerPower {get;init;}public decimal TargetPower {get;init;}};

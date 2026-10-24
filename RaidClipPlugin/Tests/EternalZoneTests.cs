@@ -18,7 +18,7 @@ public sealed class EternalZoneTests:IDisposable
  [Theory][MemberData(nameof(Areas))]
  public async Task EveryAreaHasFixedRealPoolsFreePersistentSelectionAndASeparateFishingChoice(string id,string name,int level,string[] materials,ItemRarity rarity)
  {
-  var c=Config();c.Validate();var z=c.Zones.Get(id);Assert.Equal(name,z.Name);Assert.Equal(level,z.Level);Assert.Equal(3,z.Enemies.Length);Assert.Equal(materials,z.Materials);Assert.Equal(rarity,z.MaximumRarity);Assert.True(z.Fish.Distinct().Count()>=3);
+  var c=Config();c.Validate();var z=c.Zones.Get(id);Assert.Equal(name,z.Name);Assert.Equal(level,z.Level);Assert.Equal(3,z.Enemies.Length);Assert.Equal(materials,z.Materials);Assert.Equal(rarity,z.MaximumRarity);Assert.Equal(RpgFishBiomes.Pools[level/10-1],z.Fish);
   var store=new ViewerPointStore(root);await store.SetPointsAsync("42","Synthetic",0,0,default);
   Assert.True((await RpgZoneService.SelectAsync(store,c,"42","Synthetic","select", "dive",id,default)).Success);
   var saved=(await new ViewerPointStore(root).GetProfileAsync("42",default)).Entry;Assert.Equal(1,saved.Rpg.PlayerLevel);Assert.Equal(0,saved.Points);Assert.Equal(id,saved.Rpg.SelectedDivingZone);Assert.Equal("sunny_lagoon",saved.Rpg.SelectedFishingZone);
@@ -56,6 +56,7 @@ public sealed class EternalZoneTests:IDisposable
  [Theory][InlineData("normal",300)][InlineData("elite",1200)][InlineData("mimic",2000)][InlineData("endgame",3500)]
  public void EternalRatesHaveExactIndependentBoundaries(string source,int threshold)
  {
+  threshold+=50000;
   var c=Config();Assert.NotNull(RpgEternalLoot.Victory(new(),c,"primordial_throne",100,source,true,new First(threshold-1),Now));Assert.Null(RpgEternalLoot.Victory(new(),c,"primordial_throne",100,source,true,new First(threshold),Now));
  }
  [Fact]public void WeakLevelOneLosesInAbyssWithoutAnyEnemyLootOrExperience()

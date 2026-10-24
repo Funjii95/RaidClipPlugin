@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 namespace RaidClipPlugin.Services;
@@ -33,7 +33,7 @@ public sealed partial class AdventureGameService
    var state=await _points.ReadGlobalBossAsync(ct);
    if(_boss?.AreaState is not null&&state?.Id==_boss.Id){_boss.AreaState=state;_boss.Players=state.Participants.ToDictionary(p=>p.Key,p=>p.Value.Name);}
    var personal=state?.Participants.GetValueOrDefault(user);
-   return new{enabled=_config.Adventures.Rpg.AreaBosses.Enabled,bosses=_boss?.AreaState?.Bosses??_config.Adventures.Rpg.AreaBosses.Bosses,selectedBossId=personal is not null&&!state!.RewardsSettled?personal.BossId:a.Rpg.SelectedBossId,
+   return new{enabled=_config.Adventures.Rpg.AreaBosses.Enabled,bosses=RpgCombatDropRules.PreviewBosses(_boss?.AreaState?.Bosses??_config.Adventures.Rpg.AreaBosses.Bosses),selectedBossId=personal is not null&&!state!.RewardsSettled?personal.BossId:a.Rpg.SelectedBossId,
     locked=_boss?.AreaState?.Participants.ContainsKey(user)==true,remaining=state?.Remaining??1,active=_boss?.AreaState is not null,eventId=state?.Id,endsAt=state?.End,nextStart=_config.Adventures.Boss.AutoStartEnabled?_nextAutoBoss:(DateTimeOffset?)null,participants=state?.Participants.Count??0,personal,log=state?.Log??[],victory=state?.Victory??false,settled=state?.RewardsSettled??false};
   }finally{_gate.Release();}
  }
@@ -132,9 +132,8 @@ public sealed partial class AdventureGameService
     pearls=_points.RewardAmount(pearls,RpgRewardSource.Boss);a.Points+=Math.Min(pearls,Math.Max(0,Maximum-a.Points));
     RpgHealthService.Experience(a.Rpg,cfg.Health,(int)Math.Min(int.MaxValue,RpgCollectorService.Reward(boss.Experience,collectors.BossExperience)),_now());
     foreach(var material in boss.Materials)if(RpgUpgradeCatalog.Materials.Any(m=>m.Id==material))RpgUpgradeCatalog.Add(a.Rpg.Materials,material,_random.NextInclusive(1,3));
-    if(_random.NextInclusive(0,999999)<boss.ItemChance*10000){
-     var pool=cfg.DiveLoot.Items.Where(i=>i.Rarity.ToString()==boss.Rarity&&i.Slot.HasValue&&i.DropWeight>0).Where(i=>i.Slot!=EquipmentSlot.Weapon||boss.Level>=80||boss.Id=="boss_vortexion"&&i.ItemId=="weapon_tide_crown"||boss.Id=="boss_krysalith"&&i.ItemId=="weapon_leviathan_call").ToArray();
-     if(boss.Rarity=="Eternal")pool=pool.Where(i=>!i.SetId.StartsWith("eternal_cosmic_forge")&&!i.SetId.StartsWith("eternal_soul_devourer")&&!i.SetId.StartsWith("eternal_ten_seas_treasure")).ToArray();
+    if(_random.NextInclusive(0,999999)<RpgCombatDropRules.Chance(boss.ItemChance)*10000){
+     var pool=RpgLootLocations.BossPool(cfg,boss);
      if(pool.Length>0){var total=pool.Sum(i=>i.DropWeight);var roll=_random.NextInclusive(1,total);var definition=pool[^1];foreach(var candidate in pool){roll-=candidate.DropWeight;if(roll<=0){definition=candidate;break;}}var item=Copy(definition);item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=_now();a.Rpg.Inventory.Add(item);}
     }
     if(boss.Id=="boss_eonath")RpgEternalEightLoot.Victory(a.Rpg,cfg,boss.AreaId,boss.Level,"eonath",true,_random,_now(),boss.Id);

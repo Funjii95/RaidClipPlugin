@@ -16,7 +16,7 @@ public static class RpgDepthsLootService
             if(rarity==ItemRarity.True&&area.Level<80||rarity==ItemRarity.Cursed&&area.Level<70||rarity==ItemRarity.Abyss&&area.Level<90)continue;
             if(rarity==ItemRarity.Abyss&&(!endgame||source is not ("boss" or "mimic")))continue;
             var key=rarity.ToString();var baseChance=c.Upgrades.EquipmentDropChances[key];
-            var chance=Math.Clamp(baseChance*(1+Math.Clamp(hotTime,0,200)/100),0,100);
+            var chance=RpgCombatDropRules.Chance(Math.Clamp(baseChance*(1+Math.Clamp(hotTime,0,200)/100),0,100));
             if(chance<=0||rng.NextInclusive(0,999999)>=chance*10000)continue;
             var activity=source=="fish"?RpgActivity.Fishing:source is "boss" or "mimic"?RpgActivity.Boss:RpgActivity.Dive;
             var pool=c.DiveLoot.Items.Where(i=>i.Rarity==rarity&&i.Slot.HasValue&&i.DropActivities.Contains(activity)&&i.DropWeight>0).ToArray();

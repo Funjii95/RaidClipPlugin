@@ -8,13 +8,13 @@ public static class RpgEternalEightLoot
     {
         if(!victory||p.Health.CurrentHp is <=0||area!="primordial_throne"||level!=100)return null;
         if(source=="eonath"&&personalBossId!="boss_eonath")return null;
-        var chance=c.Zones.EternalEightChances.GetValueOrDefault(source);
+        var chance=RpgCombatDropRules.Chance(c.Zones.EternalEightChances.GetValueOrDefault(source));
         if(chance<=0||rng.NextInclusive(0,999999)>=chance*10000)return null;
         var sets=RpgEternalEightCatalog.Sets();var set=sets[rng.NextInclusive(0,sets.Count-1)];
         var id=set.ItemIds[rng.NextInclusive(0,set.ItemIds.Count-1)];
         var definition=c.DiveLoot.Items.Single(i=>i.ItemId==id);
         var item=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(definition))!;
-        item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=now;
+        RpgCoreStatService.Apply(item);item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=now;
         p.Inventory.Add(item);return item;
     }
     private static bool Has(RpgProfile p,RpgConfig c,int n)=>RpgEternalCombat.Has(p,c,"eternal_ten_seas_treasure",n);

@@ -65,6 +65,7 @@ public sealed class RpgVampirMakiTests : IDisposable
         foreach(var f in c.Adventures.Rpg.FishSpecies)if(f.Id!=id)f.Weight=0;
         c.Adventures.Fishing.LossChance=0;c.Adventures.Fishing.SmallChance=100;c.Adventures.Fishing.LargeChance=c.Adventures.Fishing.RareChance=0;
         var store=new ViewerPointStore(_dir);
+        await store.ApplyRpgAsync("u","U","biome",a=>{a.Rpg.SelectedFishingZone=c.Adventures.Rpg.FishSpecies.Single(f=>f.Id==id).Zone;return new(true);},default);
         var result=await new RpgAdventureService(store,c,new Low(),()=>_now).ExecuteAsync("u","U","catch",RpgActivity.Fishing,0,default);
         Assert.True(result.Success);Assert.Equal(id,result.Item!.ItemId);Assert.Equal(reward,result.Balance);
         Assert.Equal(1,(await new ViewerPointStore(_dir).GetProfileAsync("u",default)).Entry.Rpg.Fish[id].Quantity);

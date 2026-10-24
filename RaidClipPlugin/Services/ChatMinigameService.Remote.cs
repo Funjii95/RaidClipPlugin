@@ -1,4 +1,4 @@
-﻿using RaidClipPlugin.Models;
+using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
 
@@ -37,7 +37,7 @@ public sealed partial class ChatMinigameService
         var heistState=new{game="heist",name="Otter-Heist",eventId=heist?.EventId??"-",version,
             phase=active?"joining":heist?.State==HeistState.Evaluating?"running":heist is null?"inactive":"result",
             startedAt=heist?.StartedAt.ToUnixTimeMilliseconds(),joinEndsAt=heist?.JoinEndsAt.ToUnixTimeMilliseconds(),
-            participants=Array.Empty<object>(),participantCount=heist?.Players.Count??0,joined=me is not null,personalStake=0,jackpot=heist?.Jackpot??0,
+            participants=Array.Empty<object>(),participantCount=heist?.Players.Count??0,joined=me is not null,personalStake=0,jackpot=await _points.GetJackpotAsync(_config.JackpotStartValue,ct),
             result=heist is not null && heist.State is HeistState.Successful or HeistState.Failed or HeistState.Cancelled?new {
                 outcome=heist.State==HeistState.Successful?"success":heist.State==HeistState.Cancelled?"cancelled":"failure",
                 personalNet=me?.Payout??0,personalPayout=me?.Payout??0,personalLoss=0,totalPayout=heist.TotalPayout,totalLoss=0,message="Ergebnis des gemeinsamen Plugin-Heists."}:null};

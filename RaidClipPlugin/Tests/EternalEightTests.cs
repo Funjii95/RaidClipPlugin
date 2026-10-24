@@ -103,7 +103,7 @@ public sealed class EternalEightTests
     [Theory][InlineData("normal",100)][InlineData("elite",400)][InlineData("mimic",800)][InlineData("eonath",1000)]
     public void RareRollBoundaryIsForWholeGroupAndRequiresAuthorizedVictory(string source,int boundary)
     {
-        var c=Config();var p=new RpgProfile();p.Health.CurrentHp=100;
+        boundary+=50000;var c=Config();var p=new RpgProfile();p.Health.CurrentHp=100;
         Assert.NotNull(RpgEternalEightLoot.Victory(p,c,"primordial_throne",100,source,true,new Boundary(boundary-1),Now,"boss_eonath"));
         Assert.Null(RpgEternalEightLoot.Victory(p,c,"primordial_throne",100,source,true,new Boundary(boundary),Now,"boss_eonath"));
         Assert.Null(RpgEternalEightLoot.Victory(p,c,"sunny_lagoon",100,source,true,new Low(),Now,"boss_eonath"));

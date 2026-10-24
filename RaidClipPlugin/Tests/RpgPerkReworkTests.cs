@@ -50,7 +50,7 @@ public sealed class RpgPerkReworkTests:IDisposable
         p.Perks.Clear();Assert.Equal(.5m,RpgPerkCatalog.MimicChance(p,c));Assert.True(RpgPerkCatalog.DiscoverMimic(p,c,new Fixed(49)));Assert.False(RpgPerkCatalog.DiscoverMimic(p,c,new Fixed(50)));
         c.Mimic.Enabled=false;Assert.False(RpgPerkCatalog.DiscoverMimic(p,c,new Low()));
     }
-    [Theory] [InlineData(false,499,true)] [InlineData(false,500,false)] [InlineData(true,4999,true)] [InlineData(true,5000,false)]
+    [Theory] [InlineData(false,999,true)] [InlineData(false,1000,false)] [InlineData(true,5499,true)] [InlineData(true,5500,false)]
     public void LegendaryRollUsesExactBossChanceAndOnlyLegendaryBossItems(bool mimic,int roll,bool expected)
     {
         var config=Config().Adventures.Rpg;var result=RpgBossLootService.RollLegendary(config,new Fixed(roll),DateTimeOffset.UtcNow,mimic);

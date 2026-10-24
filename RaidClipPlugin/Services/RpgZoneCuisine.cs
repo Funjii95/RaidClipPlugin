@@ -16,5 +16,6 @@ public static class RpgZoneCuisine
    if(!c.Recipes.Any(r=>r.Id==RecipeIds[n]))c.Recipes.Add(new(){Id=RecipeIds[n],DisplayName=names[n],FishId=FishIds[n],FishQuantity=1,PearlCost=0,Category=n is 0 or 5 or 6?SushiCategory.Defensive:SushiCategory.Offensive,Activity=n==7?RpgActivity.Dive:RpgActivity.Boss,AllActivities=true,Attributes=attributes[n],PassiveHealing=n==0?3:0});
    var zone=c.Zones.Get(zones[n].Id);if(!zone.Fish.Contains(FishIds[n]))zone.Fish=zone.Fish.Append(FishIds[n]).ToArray();
   }
+  RpgFishBiomes.Apply(c);
  }
 }

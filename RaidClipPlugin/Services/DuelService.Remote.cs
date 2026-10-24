@@ -6,10 +6,10 @@ public sealed partial class DuelService
 {
     private sealed record RemoteDuelResult(string EventId,long Stake,bool Won,bool Paid,string Message);
     private readonly Dictionary<string,RemoteDuelResult> _remoteResults=new(StringComparer.Ordinal);
-    private void RecordRemoteResult(PendingDuel duel,string? winner=null){
+    private void RecordRemoteResult(PendingDuel duel,string? winner=null,string? detail=null){
         var paid=duel.State==DuelState.Paid;
-        _remoteResults[duel.Challenger.UserId]=new(duel.Id,duel.Stake,winner==duel.Challenger.UserId,paid,paid?"Originale Plugin-Duellabrechnung.":"Duell beendet; reservierter Einsatz zurückgegeben.");
-        _remoteResults[duel.Target.Id]=new(duel.Id,duel.Stake,winner==duel.Target.Id,paid,paid?"Originale Plugin-Duellabrechnung.":"Duell beendet; kein Einsatz abgebucht.");
+        _remoteResults[duel.Challenger.UserId]=new(duel.Id,duel.Stake,winner==duel.Challenger.UserId,paid,detail??(paid?"Originale Plugin-Duellabrechnung.":"Duell beendet; reservierter Einsatz zurückgegeben."));
+        _remoteResults[duel.Target.Id]=new(duel.Id,duel.Stake,winner==duel.Target.Id,paid,detail??(paid?"Originale Plugin-Duellabrechnung.":"Duell beendet; kein Einsatz abgebucht."));
     }
     private readonly AsyncLocal<string?> _remoteExpected=new();
     private readonly AsyncLocal<IReadOnlySet<string>?> _remoteUsers=new();
@@ -18,7 +18,7 @@ public sealed partial class DuelService
     internal string RemoteCommand(string operation)=>operation switch{"challenge"=>_config.DuelCommand,"accept"=>_config.AcceptCommand,"deny"=>_config.DenyCommand,_=>""};
     internal object RemoteRules=>new{id="duel",name="Duell",enabled=_config.Enabled,canStart=false,canJoin=false,usesStake=true,
         minimumStake=_config.MinimumBet,maximumStake=_config.MaximumBet,cooldownSeconds=_config.UserCooldownSeconds,joinSeconds=_config.RequestTimeoutSeconds,
-        minimumParticipants=2,maximumParticipants=2,startCommand=_config.DuelCommand,joinCommand=_config.AcceptCommand,choices=Array.Empty<string>(),description="Bestehendes Duell mit serverseitig aufgelöstem Gegner und gesicherter Einsatzrückgabe."};
+        minimumParticipants=2,maximumParticipants=2,startCommand=_config.DuelCommand,joinCommand=_config.AcceptCommand,choices=Array.Empty<string>(),description="Ausrüstungs-PvP: Die höhere serverseitig berechnete Ausrüstungsstärke gewinnt. Bei Gleichstand wird der Einsatz zurückgegeben."};
     internal async Task<object> ReadRemoteAsync(string user,long version,CancellationToken ct)
     {
         await _gate.WaitAsync(ct);

@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using SnapshotProtocol;
@@ -72,7 +72,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
         RpgTransactionResult? mutation=null;
         if(e.Intent.Kind is "selectBoss" or "bossStatus" or "bossAttack" or "itemlock" or "favorite" or "salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel" or "community")
             return await InvokeExtendedAsync(e,account,request,ct);
-        if(e.Intent.Kind=="preview")return new(true,"read","Aktuelle primäre Ausrüstungs-Lootchance.",JsonSerializer.Serialize(new{profile=JsonDocument.Parse(SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account)),channel).AccountJson!).RootElement.Clone(),dive=AdventurePreview(account,"dive",long.Parse(Arg("stake"))),fish=AdventurePreview(account,"fish",long.Parse(Arg("fishingStake")))}));
+        if(e.Intent.Kind=="preview")return new(true,"read","Aktuelle primäre Ausrüstungs-Lootchance.",JsonSerializer.Serialize(new{profile=JsonDocument.Parse(SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account)),channel).AccountJson!).RootElement.Clone(),dive=AdventurePreview(account,"dive",long.Parse(Arg("stake"))),fish=AdventurePreview(account,"fish",long.Parse(Arg("fishingStake"))),lootLocations=RpgLootLocations.Wire(rpg)}));
         if(e.Intent.Kind=="minigames")return new(true,"read","Spielhallenstatus.",JsonSerializer.Serialize(await MinigameDataAsync(account,ct)));
         if(e.Intent.Kind=="casino"){
             if(minigames is null)return new(false,"unavailable","Laufender Chat-Spieldienst fehlt.");
@@ -138,7 +138,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             talentCatalogVersion=TalentRules.CatalogVersion,talents=TalentRules.Catalog,
             perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Presentation=RpgPerkCatalog.Find(p.Id) is {} presentation?new{presentation.Category,presentation.Symbol,presentation.Value,presentation.Label}:null,Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),
             recipes=rpg.Recipes.Select(r=>new{r.Id,Name=RpgChatPresentation.RecipeName(r),r.PearlCost,r.Category,r.Activity,r.AllActivities,DurationSeconds=RpgSushiService.DurationSeconds,BossUses=RpgSushiService.Uses(r,rpg),r.Attributes,r.PassiveHealing,r.ChatHealing,r.BossDamageReduction,r.BossLifeleech,Ingredients=RpgSushiService.Ingredients(r),Effects=RpgSushiService.Effects(r)}),
-            fish=rpg.FishSpecies.Select(f=>new{f.Id,f.Name,f.Rarity}),sets=rpg.Sets,blocked=new[]{"bossStart","heistStart","moderatorCommands","give","reset"}},new JsonSerializerOptions{Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,Converters={new CatalogAttributesConverter()}});
+            fish=rpg.FishSpecies.Select(f=>new{f.Id,f.Name,f.Rarity,f.Zone}),sets=rpg.Sets,blocked=new[]{"bossStart","heistStart","moderatorCommands","give","reset"}},new JsonSerializerOptions{Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,Converters={new CatalogAttributesConverter()}});
     }
     private sealed class CatalogAttributesConverter:System.Text.Json.Serialization.JsonConverter<RpgAttributes>
     {

@@ -54,7 +54,7 @@ public sealed class RpgCoreStatTests
             await store.ApplyRpgAsync("u","U","save",a=>{RpgHealthService.Refresh(a.Rpg,new(),DateTimeOffset.UtcNow);return new(true);},default);
             profile=(await new ViewerPointStore(dir).GetProfileAsync("u",default)).Entry.Rpg;
             Assert.Equal(50,profile.Health.CurrentHp);Assert.Equal(120,RpgHealthService.Maximum(profile,new()));
-            Assert.Equal(1,profile.Inventory[0].CoreStatsVersion);Assert.True(File.Exists(Path.Combine(dir,"viewer-points.json.pre-core-stats.bak")));
+            Assert.Equal(2,profile.Inventory[0].CoreStatsVersion);Assert.True(File.Exists(Path.Combine(dir,"viewer-points.json.pre-core-stats.bak")));
         }
         finally {if(Directory.Exists(dir))Directory.Delete(dir,true);}
     }

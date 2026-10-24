@@ -78,7 +78,7 @@ public sealed class RpgTidesExpansionTests
         {
             var rules=definition.Generation!;var instance=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(definition))!;
             RpgItemGenerationService.Generate(instance,c.DiveLoot,rng);
-            Assert.Null(instance.Generation);Assert.Equal(1,instance.CoreStatsVersion);
+            Assert.Null(instance.Generation);Assert.Equal(instance.Slot is EquipmentSlot.Helmet or EquipmentSlot.Chest or EquipmentSlot.Gloves or EquipmentSlot.Boots?2:1,instance.CoreStatsVersion);
             foreach(var range in rules.BaseAttributes)Assert.InRange((decimal)typeof(RpgAttributes).GetProperty(range.Attribute)!.GetValue(instance.Attributes)!,range.Minimum,range.Maximum);
             var secondary=rules.Attributes.Where(a=>(decimal)typeof(RpgAttributes).GetProperty(a.Attribute)!.GetValue(instance.Attributes)!>0).ToList();
             Assert.InRange(secondary.Count,rules.MinimumAttributes!.Value,rules.MaximumAttributes!.Value);

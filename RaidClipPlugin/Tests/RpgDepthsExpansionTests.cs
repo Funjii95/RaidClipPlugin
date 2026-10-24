@@ -30,7 +30,7 @@ public sealed class RpgDepthsExpansionTests:IDisposable
     {
         var before=new RpgConfig();var enabled=RpgItemGenerationService.EnableForFutureDrops(before);
         foreach(var original in RpgDepthsExpansion.Items().Where(i=>i.Generation is null)){
-            var current=enabled.DiveLoot.Items.Single(i=>i.ItemId==original.ItemId);Assert.Null(current.Generation);
+            RpgCoreStatService.Apply(original);var current=enabled.DiveLoot.Items.Single(i=>i.ItemId==original.ItemId);Assert.Null(current.Generation);
             Assert.Equal(JsonSerializer.Serialize(original.Attributes),JsonSerializer.Serialize(current.Attributes));}
     }
     [Theory][InlineData("dive")][InlineData("fish")][InlineData("boss")][InlineData("enemy")][InlineData("chest")][InlineData("rareChest")][InlineData("legendaryChest")]
@@ -41,8 +41,8 @@ public sealed class RpgDepthsExpansionTests:IDisposable
         foreach(var a in awards){Assert.Equal(c.Drops[source][a.Key].Minimum,a.Value);Assert.Equal(a.Value,RpgUpgradeCatalog.Count(p.Materials,a.Key));}
         Assert.Empty(RpgMaterialLootService.Award(new(),c,source,new High()));
     }
-    [Theory][InlineData(4999,true)][InlineData(5000,false)][InlineData(9999,false)]
-    public void MimicGateIsExactlyFiftyPercentAndIgnoresHotTime(int gate,bool granted)
+    [Theory][InlineData(5499,true)][InlineData(5500,false)][InlineData(9999,false)]
+    public void MimicGateIsExactlyFiftyFivePercentAndIgnoresHotTime(int gate,bool granted)
     {
         var c=new RpgUpgradeConfig();var a=RpgMaterialLootService.Award(new(),c,"mimic",new Gate(gate),200);Assert.Equal(granted,a.Count==1);
     }
@@ -55,7 +55,7 @@ public sealed class RpgDepthsExpansionTests:IDisposable
     }
     [Fact] public async Task NineGuaranteedStepsAndRefinementPersistWithoutRerollAndReplayCannotDebitTwice()
     {
-        var store=new ViewerPointStore(root);var c=new RpgConfig{Enabled=true};var item=RpgDepthsExpansion.Items().Single(i=>i.ItemId=="cursed_greed_crown");var original=JsonSerializer.Serialize(item.Attributes);
+        var store=new ViewerPointStore(root);var c=new RpgConfig{Enabled=true};var item=RpgDepthsExpansion.Items().Single(i=>i.ItemId=="cursed_greed_crown");RpgCoreStatService.Apply(item);var original=JsonSerializer.Serialize(item.Attributes);
         await store.ApplyRpgAsync("42","Synthetic","seed",a=>{a.Points=100000;foreach(var m in RpgUpgradeCatalog.Materials)RpgUpgradeCatalog.Add(a.Rpg.Materials,m.Id,100);a.Rpg.Inventory.Add(item);return new(true);},default);
         var service=new RpgUpgradeService(store,c);
         for(int level=0;level<9;level++){var request="upgrade:"+level;Assert.True((await service.ApplyAsync("42","Synthetic",request,item.InstanceId,level,false,default)).Success);var replay=await service.ApplyAsync("42","Synthetic",request,item.InstanceId,level,false,default);Assert.True(replay.Duplicate);}

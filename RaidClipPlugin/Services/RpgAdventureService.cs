@@ -23,6 +23,7 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
    var p=a.Rpg;var zone=c.Zones.Get(fishing?p.SelectedFishingZone:p.SelectedDivingZone);zoneId=zone.Id;zoneName=zone.Name;
    if(p.Cooldowns.TryGetValue(command,out var until)&&until>time){remaining=(int)Math.Ceiling((until-time).TotalSeconds);return new(false,$"Cooldown: noch {remaining} Sekunden.");}
    RpgHealthService.Refresh(p,c.Health,time);if(!fishing&&p.Health.CurrentHp<=0)return new(false,"Du hast 0 HP. Erst heilen, dann tauchen.");
+   var ownedBefore=p.Inventory.Select(i=>i.InstanceId).ToHashSet();
    applied=p.Buffs.Where(b=>b.Activity==activity&&RpgSushiService.Active(b,time)).Select(b=>b.RecipeId).ToArray();var stats=CharacterStatService.Calculate(p,c,activity,now:time);
    void Merge(IReadOnlyDictionary<string,int> found){foreach(var pair in found)material[pair.Key]=checked(material.GetValueOrDefault(pair.Key)+pair.Value);}
    void PassiveRoll(){
@@ -63,6 +64,7 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
    payout=RpgEternalCombat.Enhanced(p)?RpgCollectorService.Reward(payout,stats.PearlBonus):RpgPassiveService.RewardPayout(payout,0,stats.PearlBonus);payout=checked(payout*RpgEternalCombat.NormalLootMultiplier(p,c));
    var collector=RpgCollectorService.Calculate(p,c.DiveLoot);payout=RpgCollectorService.Reward(payout,fishing?collector.FishingPearls:collector.DivePearls);
    payout=points.RewardAmount(payout,fishing?RpgRewardSource.Fishing:RpgRewardSource.DiveNetWin);if(config.MaximumAccountEnabled)payout=Math.Min(payout,Math.Max(0,config.MaximumAccountPoints-a.Points));a.Points=checked(a.Points+payout);
+   foreach(var found in p.Inventory.Where(i=>!ownedBefore.Contains(i.InstanceId)&&i.InstanceId!=item?.InstanceId&&!additional.Any(a=>a.InstanceId==i.InstanceId)))additional.Add(found);
    a.GamesPlayed=checked(a.GamesPlayed+1);
    RpgPassiveService.ConsumeBuffs(p,activity,c,rng,time,0);p.Cooldowns[command]=time.AddSeconds(RpgPerkCatalog.Cooldown(p,game.CooldownSeconds,fishing?"fishCooldown":"diveCooldown")/(1+(double)Math.Clamp(stats.MovementSpeed,-90,200)/100));return new(true);
   },token);

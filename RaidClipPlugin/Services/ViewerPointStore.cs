@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Config;
 
@@ -272,7 +272,7 @@ public sealed partial class ViewerPointStore
         long minimumPoints,
         long maximumPoints,
         int historyLimit,
-        CancellationToken cancellationToken, string? reservationId=null)
+        CancellationToken cancellationToken, string? reservationId=null,RpgConfig? pvpConfig=null)
     {
         using var operationAdmission = Admission?.EnterOperation();
         await _lock.WaitAsync(cancellationToken);
@@ -293,6 +293,17 @@ public sealed partial class ViewerPointStore
                 return new DuelResolutionResult(false,
                     "Der Duel-Pot überschreitet das technische Punktelimit",
                     challenger.Points, target.Points, 0);
+            decimal challengerPower=0,targetPower=0;
+            if(pvpConfig is not null){
+                challengerPower=RpgPvpRules.EquipmentPower(challenger.Rpg,pvpConfig);targetPower=RpgPvpRules.EquipmentPower(target.Rpg,pvpConfig);
+                if(challengerPower==targetPower){
+                    if(challenger.Points>ceiling-stake)return new(false,"Rückzahlung überschreitet das Punktelimit",challenger.Points,target.Points,0);
+                    var previous=challenger.Points;challenger.Points=checked(challenger.Points+stake);if(finish is not null)challenger.Rpg.CompletedActions.Add(finish);
+                    try{await SaveDuelCommitAsync(cancellationToken);}catch{challenger.Points=previous;if(finish is not null)challenger.Rpg.CompletedActions.Remove(finish);throw;}
+                    return new(true,"Unentschieden – gleich starke Ausrüstung, Einsatz zurückgegeben.",challenger.Points,target.Points,0){Draw=true,ChallengerPower=challengerPower,TargetPower=targetPower};
+                }
+                winnerId=challengerPower>targetPower?challengerId:targetId;
+            }
             var pot = stake * 2;
             var challengerBefore = challenger.Points;
             var targetBefore = target.Points;
@@ -333,7 +344,7 @@ public sealed partial class ViewerPointStore
             AddDuelHistory(targetId, targetName, winnerId == targetId ? "Duel gewonnen" : "Duel verloren", targetChange, targetAfter, historyLimit);
             try { if(reservationId is null)await SaveAllAsync(cancellationToken);else await SaveDuelCommitAsync(cancellationToken); }
             catch { challenger.Points = challengerBefore; target.Points = targetBefore;if(finish is not null)challenger.Rpg.CompletedActions.Remove(finish); _history = historyBefore; throw; }
-            return new DuelResolutionResult(true, "", challengerAfter, targetAfter, pot);
+            return new DuelResolutionResult(true, "", challengerAfter, targetAfter, pot){WinnerId=winnerId,ChallengerPower=challengerPower,TargetPower=targetPower};
         }
         finally { _lock.Release(); }
     }

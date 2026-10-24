@@ -27,6 +27,7 @@ public sealed class RpgConfig
     public decimal FishingEquipmentChance { get; set; } = 0.5m;
     public void Validate()
     {
+        foreach(var item in DiveLoot.Items.Where(i=>i.Generation is null))RpgCoreStatService.Apply(item);
         AreaBosses.Validate();
         AdminAccess.Validate();
         Upgrades.Validate();

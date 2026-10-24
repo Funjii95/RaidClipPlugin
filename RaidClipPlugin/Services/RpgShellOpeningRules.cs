@@ -6,8 +6,8 @@ internal enum ShellRewardKind { WhitePearl, BluePearl, RedPearl, Pearls, StoneCh
 internal static class RpgShellOpeningRules
 {
     internal const int MaximumBatchSize = 100;
-    internal const int MinimumPearlReward = 10;
-    internal const int MaximumPearlReward = 50;
+    internal const int MinimumPearlReward = 100;
+    internal const int MaximumPearlReward = 10000;
 
     internal static ShellRewardKind Reward(int roll) => roll switch
     {
