@@ -65,6 +65,20 @@ public sealed class RpgCoreStatTests
         var stats=CharacterStatService.Calculate(p,cfg,RpgActivity.Boss);Assert.Equal(9,stats.Damage);Assert.Equal(130,RpgHealthService.Maximum(p,cfg.Health));
         var text=RpgChatPresentation.Bonuses(RpgChatPresentation.Snapshot(ring.Attributes));Assert.Contains("4,5 Kraft",text);Assert.Contains("6 Ausdauer",text);
     }
+    [Fact] public async Task StartupMigrationPersistsAllGearOnceAndPreservesWoundsAndCurrency()
+    {
+        var dir=Path.Combine(Path.GetTempPath(),"otter-stat-migration-"+Guid.NewGuid().ToString("N"));
+        try{
+            var store=new ViewerPointStore(dir);var health=new RpgHealthConfig{PassiveHealing=false};var now=DateTimeOffset.UtcNow;
+            await store.ApplyRpgAsync("42","Owner","seed",a=>{a.Points=123;a.Rpg.PlayerLevel=10;a.Rpg.Health.CurrentHp=50;a.Rpg.Health.AppliedBaseMaximumHp=118;a.Rpg.Inventory.Add(new(){Slot=EquipmentSlot.Chest,CoreStatsVersion=2,Attributes=new(){Armor=42,ArmorPercent=62,Power=17,Stamina=16}});return new(true);},default);
+            Assert.Equal(1,await store.UpgradeEquipmentCoreStatsAsync(health,default));
+            Assert.Equal(0,await store.UpgradeEquipmentCoreStatsAsync(health,default));
+            var profile=(await new ViewerPointStore(dir).GetProfileAsync("42",default)).Entry;
+            Assert.Equal(123,profile.Points);Assert.Equal(3,profile.Rpg.Inventory[0].CoreStatsVersion);Assert.Equal(63,profile.Rpg.Inventory[0].Attributes.Armor);
+            RpgHealthService.Refresh(profile.Rpg,health,now);Assert.Equal(50,profile.Rpg.Health.CurrentHp);
+            Assert.True(File.Exists(Path.Combine(dir,"viewer-points.json.pre-armor-correction.bak")));
+        }finally{if(Directory.Exists(dir))Directory.Delete(dir,true);}
+    }
     [Fact]
     public async Task LegacyReadAndCommitUpgradePersistWithoutHealingOrChangingSecondaryRolls()
     {

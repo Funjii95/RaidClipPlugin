@@ -2574,6 +2574,12 @@ private enum CloseChoice
         SetOverallStatus("Wird gestartet …", WaitingColor);
         AppendLog("Plugin wird gestartet …");
 
+        try{
+            var migration=_configurationService.LoadForEditing().Minigame.Adventures.Rpg;migration.Validate();
+            var upgraded=await _viewerPoints.UpgradeEquipmentCoreStatsAsync(migration.Health,CancellationToken.None);
+            if(upgraded>0)AppendLog($"Ausrüstungswerte für {upgraded} Spielstände einmalig aktualisiert; Backup erhalten.");
+        }catch(Exception error){_startButton.Enabled=true;SetOverallStatus("Datenumstellung fehlgeschlagen",ErrorColor);AppendLog("Ausrüstungsumstellung angehalten: "+error.Message);return;}
+
         _shutdown = new CancellationTokenSource();
         BeginStreamSession();
         var gameEpoch=_streamEpoch;

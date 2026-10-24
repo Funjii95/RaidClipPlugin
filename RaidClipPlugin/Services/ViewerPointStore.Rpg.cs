@@ -9,6 +9,25 @@ public sealed record RpgTransactionResult(bool Success, string Error, long Balan
 
 public sealed partial class ViewerPointStore
 {
+    internal async Task<int> UpgradeEquipmentCoreStatsAsync(RaidClipPlugin.Config.RpgHealthConfig health,CancellationToken ct)
+    {
+        using var maintenance=Admission?.EnterMaintenance();
+        await _lock.WaitAsync(ct);
+        try{
+            await EnsureLoadedAsync(ct);var original=_entries!;
+            var draft=JsonSerializer.Deserialize<Dictionary<string,ViewerPointEntry>>(JsonSerializer.Serialize(original,JsonOptions),JsonOptions)!;
+            var changed=0;
+            foreach(var (id,entry) in draft){
+                if(IsPrivacyBlocked(id)||!entry.Rpg.Inventory.Any(i=>i.Slot.HasValue&&i.Kind!=RpgItemKind.Consumable&&i.CoreStatsVersion<3)&&!RpgHealthService.NeedsLevelStatMigration(entry.Rpg,health))continue;
+                RpgCoreStatService.Upgrade(entry.Rpg);RpgHealthService.ApplyStatMigration(entry.Rpg,health);
+                entry.UpdatedAt=DateTimeOffset.UtcNow;changed++;
+            }
+            if(changed==0)return 0;
+            EnsureItemSystemBackup();_entries=draft;
+            try{await SaveAsync(ct);}catch{_entries=original;throw;}
+            return changed;
+        }finally{_lock.Release();}
+    }
     internal string BossRoundPath => Path.Combine(Path.GetDirectoryName(_filePath)!,"rpg-boss-round.json");
     internal async Task<IReadOnlyList<(string Id,string Name,int BossHp)>> BossParticipantsAsync(string bossId,CancellationToken token)
     {
