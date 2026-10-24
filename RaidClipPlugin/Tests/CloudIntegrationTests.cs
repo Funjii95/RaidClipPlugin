@@ -64,6 +64,23 @@ public sealed class CloudIntegrationTests : IDisposable
     }
 
     [Fact]
+    public async Task LargeIndentedSaveUsesCompactTransportWithoutDroppingItemsOrChangingTheSave()
+    {
+        var store=await SeedAsync();await Worker(store).SynchronizeOnceAsync();
+        await store.ApplyRpgAsync("1001","SYNTHETIC","large-indented",a=>{
+            while(JsonSerializer.SerializeToUtf8Bytes(new SnapshotMessage(1,"42","1001",1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(a,new JsonSerializerOptions{WriteIndented=true}))).Length<=SnapshotValidation.MaxMessageBytes)
+                a.Rpg.Inventory.Add(new(){ItemId="synthetic-gear",DisplayName="Synthetische Rüstung",Slot=EquipmentSlot.Chest,Attributes=new(){Armor=42,Power=12,Stamina=16}});
+            return new(true);
+        },default);
+        var saved=await File.ReadAllBytesAsync(FilePath);
+        using var before=JsonDocument.Parse(saved);var count=before.RootElement.GetProperty("1001").GetProperty("Rpg").GetProperty("Inventory").GetArrayLength();
+        await Worker(store).SynchronizeOnceAsync();
+        Assert.Equal(saved,await File.ReadAllBytesAsync(FilePath));
+        using var sent=JsonDocument.Parse(cloud.Head!.AccountJson!);
+        Assert.Equal(count,sent.RootElement.GetProperty("Rpg").GetProperty("Inventory").GetArrayLength());
+        Assert.Empty((await Outbox().ReadAsync("1001"))!.Pending);
+    }
+    [Fact]
     public async Task Lost_ack_and_restart_resend_identical_message_without_double_booking()
     {
         var store=await SeedAsync();await Worker(store).SynchronizeOnceAsync();

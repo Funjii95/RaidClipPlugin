@@ -158,7 +158,10 @@ internal sealed class IntegratedSnapshotWorker
                 if(state is not null)throw new InvalidDataException("Account disappeared; explicit deletion/restore required.");
                 return;
             }
-            var candidate=new SnapshotMessage(1,channel,id,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,account.GetRawText());
+            // The save file is indented. Transport the same complete account compactly;
+            // otherwise whitespace can exceed the envelope budget after a valid grant.
+            var compact=JsonSerializer.Serialize(account,new JsonSerializerOptions{Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping});
+            var candidate=new SnapshotMessage(1,channel,id,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,compact);
             var clean=SnapshotValidation.Validate(candidate,channel).AccountJson!;
             var head=await read(id,ct);
             if(head is null){
