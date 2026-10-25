@@ -91,8 +91,8 @@ app.UseAuthorization();
 app.UseRateLimiter();
 app.MapGet("/health/live", () => Results.Ok(new { status = "ok" }));
 // Browser frontend and API share an origin. No wildcard CORS or new gameplay endpoints.
-app.MapGet("/browser", () => Results.Redirect("/browser/"));
-app.MapGet("/browser/", () => {
+app.MapGet("/browser", (HttpContext context) => {
+    if(!context.Request.Path.Value!.EndsWith("/"))return Results.Redirect("/browser/");
     var file=Path.Combine(app.Environment.WebRootPath??Path.Combine(app.Environment.ContentRootPath,"wwwroot"),"browser","browser.html");
     return File.Exists(file)?Results.File(file,"text/html; charset=utf-8"):Results.NotFound();
 });
