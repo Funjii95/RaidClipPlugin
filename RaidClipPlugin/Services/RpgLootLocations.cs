@@ -44,6 +44,7 @@ public static class RpgLootLocations
   if(rules.BaseAttributes.Count==0){var baseline=RpgCoreStatService.Baseline(item.Rarity);ranges.TryAdd("Power",new("Power",baseline.Power,baseline.Power));ranges.TryAdd("Stamina",new("Stamina",baseline.Stamina,baseline.Stamina));}
   if(item.Slot is EquipmentSlot.Helmet or EquipmentSlot.Chest or EquipmentSlot.Gloves or EquipmentSlot.Boots){var core=RpgCoreStatService.Baseline(item.Rarity);ranges.TryAdd("Power",new("Power",core.Power,core.Power));ranges.TryAdd("Stamina",new("Stamina",core.Stamina,core.Stamina));ranges.TryAdd("Armor",new("Armor",core.Stamina*2,core.Stamina*2));}
   foreach(var stat in new[]{"Armor","Power","Stamina"})if(ranges.TryGetValue(stat,out var range))ranges[stat]=range with{Min=range.Min>0?range.Min*1.5m:range.Min,Max=range.Max>0?range.Max*1.5m:range.Max};
+  if(item.Slot==EquipmentSlot.Weapon){var attack=RpgCoreStatService.WeaponAttack(item.Rarity);if(!ranges.TryGetValue("Attack",out var weaponRange))ranges["Attack"]=new("Attack",attack,attack);else if(weaponRange.Optional||weaponRange.Min<=0)ranges["Attack"]=weaponRange with{Min=Math.Min(attack,weaponRange.Min>0?weaponRange.Min:attack),Max=Math.Max(attack,weaponRange.Max),Optional=false};}
   return ranges.Values.ToArray();
  }
 }

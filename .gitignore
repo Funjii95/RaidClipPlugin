@@ -19,3 +19,5 @@ twitch-extension/dist-demo/
 twitch-extension/dist-desktop/
 twitch-extension/dist-hosted-test/
 /work/
+
+/Sync/src/Backend/wwwroot/browser/

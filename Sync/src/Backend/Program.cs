@@ -81,13 +81,22 @@ app.Use(async (context, next) =>
 {
     context.Response.Headers.CacheControl = "no-store";
     context.Response.Headers.XContentTypeOptions = "nosniff";
+    if(context.Request.Path.StartsWithSegments("/browser")){context.Response.Headers["X-Frame-Options"]="DENY";context.Response.Headers["Referrer-Policy"]="no-referrer";}
     await next();
 });
+app.UseStaticFiles();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.MapGet("/health/live", () => Results.Ok(new { status = "ok" }));
+// Browser frontend and API share an origin. No wildcard CORS or new gameplay endpoints.
+app.MapGet("/browser", () => Results.Redirect("/browser/"));
+app.MapGet("/browser/", () => {
+    var file=Path.Combine(app.Environment.WebRootPath??Path.Combine(app.Environment.ContentRootPath,"wwwroot"),"browser","browser.html");
+    return File.Exists(file)?Results.File(file,"text/html; charset=utf-8"):Results.NotFound();
+});
+
 app.MapGet("/api/v1/desktop/config", () => Results.Ok(new {
     enabled=settings.Desktop.Enabled, clientId=settings.Desktop.Enabled?settings.Desktop.ClientId:null,
     channelId=settings.Twitch.ChannelId, protocolVersion=1

@@ -40,7 +40,7 @@ public sealed class RpgQuestService(ViewerPointStore points,MinigameConfig confi
   if(p.Sushi.Values.Any(n=>n>0))p.Quests.Counters["tutorial:craft"]=1;
   if(p.Buffs.Any(b=>RpgSushiService.Active(b,DateTimeOffset.UtcNow)))p.Quests.Counters["tutorial:eat"]=1;
   if(!Fits(a,user))return new(false,"Inventar zu groß. Bitte zuerst Platz schaffen; Starthilfe wurde nicht gebucht.");
-  return new(true,"Rundführung gestartet. Anfängerwaffe bei Bedarf sowie Verstärkungsmaterialien und nötige Startperlen wurden bereitgestellt.");
+  return new(true,"Rundführung gestartet. Anfängerwaffe bei Bedarf sowie Aufwertungsmaterialien und nötige Startperlen wurden bereitgestellt.");
  },ct);
  public Task<RpgTransactionResult> ClaimAsync(string user,string name,string action,string id,CancellationToken ct)=>points.ApplyRpgAsync(user,name,action,a=>{
   if(!config.Enabled||!config.PointsEnabled||!config.Adventures.Rpg.Enabled)return new(false,"RPG ist deaktiviert.");
