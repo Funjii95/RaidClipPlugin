@@ -238,7 +238,7 @@ public sealed class AdventureGameTests
         await f.Send("owner", "!start mimic");
         Assert.True(f.Service.Status.BossActive);
         Assert.True(f.Service.Status.BossIsMimic);
-        Assert.Equal(777,f.Service.Status.BossHp);
+        Assert.Equal(1000000,f.Service.Status.BossHp); // shared progress is normalized, actual regional HP are in the event definition
         var id=f.Service.Status.BossEventId;
         await f.Send("owner", "!start mimic");
         Assert.Equal(id,f.Service.Status.BossEventId);

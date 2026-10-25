@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 
@@ -50,7 +50,7 @@ public sealed partial class AdventureGameService
         var current=new AdventureStatus(
         _boss is not null, _boss?.Hp ?? 0, _boss?.MaximumHp ?? 0,
         _boss?.Players.Count ?? 0, _boss?.End, _race is not null, _race?.Players.Count ?? 0, _race?.Stake ?? 0, _race?.End,
-        _boss?.Id??"",_boss?.End.AddSeconds(-Math.Clamp(_boss.Config.DurationSeconds,10,1800)),_race?.Id??"",_race?.End.AddSeconds(-Math.Clamp(_race.Config.Adventures.Race.JoinSeconds,5,600)),_boss?.Config.DisplayName??"Perlenwächter",_boss?.Config.IsMimic??false,_boss?.Config.IsMimic==true?_config.Adventures.Rpg.Mimic.LegendaryChance:_config.Adventures.Rpg.Mimic.NormalBossLegendaryChance);
+        _boss?.Id??"",_boss?.End.AddSeconds(-Math.Clamp(_boss.Config.DurationSeconds,10,1800)),_race?.Id??"",_race?.End.AddSeconds(-Math.Clamp(_race.Config.Adventures.Race.JoinSeconds,5,600)),_boss?.Config.DisplayName??"Perlenwächter",_boss?.Config.IsMimic??false,_boss?.Config.IsMimic==true?(_boss.AreaState is not null?RpgRegionalMimics.EquipmentChance:_config.Adventures.Rpg.Mimic.LegendaryChance):_config.Adventures.Rpg.Mimic.NormalBossLegendaryChance);
         Volatile.Write(ref _status,current);
         if(current.BossActive && current.BossEventId!=previous.BossEventId)NotifyOverlayStart(CommunityEventType.Boss,current.BossEventId);
         if(current.RaceActive && current.RaceEventId!=previous.RaceEventId)NotifyOverlayStart(CommunityEventType.Race,current.RaceEventId);
@@ -218,7 +218,7 @@ public sealed partial class AdventureGameService
                 var rpgResult = await new RpgAdventureService(_points, _config, _random, _now).ExecuteAsync(
                     message.UserId, message.UserName, actionId, command == "!fish" ? RpgActivity.Fishing : RpgActivity.Dive, rpgStake, token);
                 if (rpgResult.Success) DataChanged?.Invoke();
-                if(rpgResult.BossDiscovered)await StartDiscoveredBossCoreAsync(message.UserName,token);
+                if(rpgResult.BossDiscovered&&!await StartDiscoveredBossCoreAsync(message.UserName,token,rpgResult.ZoneId))rpgResult=rpgResult with{BossDiscovered=false,Outcome="Eine Mimic-Spur gefunden. Es läuft bereits ein Kampf oder eine Rundenpause; kein neues Ereignis gestartet."};
                 await Say(rpgResult.Success ? Format(gameConfig.ResultMessage, ("user", message.UserName),
                     ("outcome", RpgChatPresentation.AdventureOutcome(rpgResult, command == "!fish" ? RpgActivity.Fishing : RpgActivity.Dive)), ("stake", rpgStake), ("payout", rpgResult.Payout),
                     ("currency", Currency), ("balance", rpgResult.Balance)) : $"@{message.UserName}, {rpgResult.Error}", token);
@@ -250,7 +250,8 @@ public sealed partial class AdventureGameService
                 if (!settings.Boss.Enabled || !settings.Rpg.Enabled || !settings.Rpg.Mimic.Enabled)
                 { await Say("Mimic oder RPG-Bosskämpfe sind deaktiviert.", token); return; }
                 if (_boss is not null) { await Say("Es läuft bereits ein Bosskampf. Mit !attack teilnehmen!", token); return; }
-                await SpawnBossAsync(token, mimic:true);
+                var mimicArea=(await _points.GetProfileAsync(message.UserId,token)).Entry.Rpg.SelectedDivingZone;
+                await SpawnBossAsync(token, mimic:true,zoneId:mimicArea);
                 return;
             }
             if (command is "!boss" or "!start boss" or "!attack")
@@ -362,7 +363,7 @@ public sealed partial class AdventureGameService
         if(remote && _points.Admission is {} admission)admission.Commit(AddParticipant);else AddParticipant();
         await Say(Format(_race.Config.Adventures.Race.JoinMessage, ("user", user.UserName), ("count", _race.Players.Count), ("stake", stake), ("currency", Currency)), token);
     }
-    private async Task SpawnBossAsync(CancellationToken token,bool mimic=false)
+    private async Task SpawnBossAsync(CancellationToken token,bool mimic=false,string zoneId="sunny_lagoon")
     {
         if (_boss is null)
         {
@@ -371,11 +372,13 @@ public sealed partial class AdventureGameService
             c.IsMimic=mimic;
             c.DisplayName=mimic?_config.Adventures.Rpg.Mimic.Name:"Perlenwächter";
             if(mimic){var rules=_config.Adventures.Rpg.Mimic;c.HpMode=BossHpMode.Fixed;c.HitPoints=rules.HitPoints;c.DurationSeconds=rules.DurationSeconds;c.AttackCooldownSeconds=rules.AttackCooldownSeconds;c.RewardPool=rules.RewardPool;}
-            if(mimic)c.StartMessage="Eine Schatztruhe schnappt zu: MIMIC! {hp} LP, {seconds} Sekunden. Alle greifen mit !attack an! Legendary-Chance nach Sieg: "+_config.Adventures.Rpg.Mimic.LegendaryChance+" % je Überlebendem.";
+            RpgAreaBossDefinition? regional=null;
+            if(mimic&&_config.Adventures.Rpg.Health.Enabled){regional=RpgRegionalMimics.ForZone(_config.Adventures.Rpg,zoneId);c.DisplayName=regional.Name;c.AreaId=regional.AreaId;c.EnemyLevel=regional.Level;c.DurationSeconds=Math.Max(300,c.DurationSeconds);}
+            if(mimic)c.StartMessage="Eine Schatztruhe schnappt zu: "+c.DisplayName+"! "+(regional?.BaseHp??c.HitPoints)+" gemeinsame LP, {seconds} Sekunden. Alle greifen mit !attack an! 50 % Chance auf Gebietsbeute je berechtigtem Überlebenden.";
             if(c.HpMode == BossHpMode.Dynamic)c.HitPoints=100;
             _boss = new() { Config = c, DynamicScaling=c.HpMode == BossHpMode.Dynamic, Hp = Math.Clamp(c.HitPoints, 10, 1000000), End = _now().AddSeconds(Math.Clamp(c.DurationSeconds, 10, 1800)) };
-            if(!mimic&&_config.Adventures.Rpg.Enabled&&_config.Adventures.Rpg.Health.Enabled&&_config.Adventures.Rpg.AreaBosses.Enabled){
-                _boss.AreaState=new(){Id=_boss.Id,Active=true,Remaining=1,End=_boss.End,EventConfig=c,Bosses=System.Text.Json.JsonSerializer.Deserialize<List<RpgAreaBossDefinition>>(System.Text.Json.JsonSerializer.Serialize(_config.Adventures.Rpg.AreaBosses.Bosses))!};
+            if(_config.Adventures.Rpg.Enabled&&_config.Adventures.Rpg.Health.Enabled&&(mimic||_config.Adventures.Rpg.AreaBosses.Enabled)){
+                _boss.AreaState=new(){Id=_boss.Id,Active=true,Remaining=1,End=_boss.End,EventConfig=c,Bosses=regional is not null?[regional]:System.Text.Json.JsonSerializer.Deserialize<List<RpgAreaBossDefinition>>(System.Text.Json.JsonSerializer.Serialize(_config.Adventures.Rpg.AreaBosses.Bosses))!};
                 _boss.DynamicScaling=false;_boss.Hp=1000000;
             }
             await SaveHealthBossAsync(_boss);
@@ -384,20 +387,21 @@ public sealed partial class AdventureGameService
             await Say(Format(c.StartMessage, ("hp", _boss.Hp), ("seconds", Math.Clamp(c.DurationSeconds, 10, 1800)), ("reward", Math.Clamp(c.RewardPool, 0, 1000000000)), ("currency", Currency)), token);
         }
     }
-    private async Task<bool> StartDiscoveredBossCoreAsync(string finder,CancellationToken token)
+    private async Task<bool> StartDiscoveredBossCoreAsync(string finder,CancellationToken token,string zoneId="sunny_lagoon")
     {
+        await RecoverAreaBossAsync(token);
         if(GameplayAllowed?.Invoke()==false || !_config.Enabled || !_config.PointsEnabled || !_config.Adventures.Rpg.Enabled || !_config.Adventures.Rpg.Mimic.Enabled || !_config.Adventures.Boss.Enabled || _boss is not null || _now()<_nextBoss)return false;
-        await SpawnBossAsync(token,mimic:true);
+        await SpawnBossAsync(token,mimic:true,zoneId:zoneId);
         PublishStatus();
         if(_boss is null)return false;
         DataChanged?.Invoke();
         await Say($"@{finder} hat beim Tauchen eine Mimic entdeckt! Alle können mit !attack teilnehmen.",token);
         return true;
     }
-    public async Task<bool> StartDiscoveredBossAsync(string finder,CancellationToken token)
+    public async Task<bool> StartDiscoveredBossAsync(string finder,CancellationToken token,string zoneId="sunny_lagoon")
     {
         await _gate.WaitAsync(token);
-        try{return await StartDiscoveredBossCoreAsync(finder,token);}
+        try{return await StartDiscoveredBossCoreAsync(finder,token,zoneId);}
         finally{PublishStatus();_gate.Release();}
     }
     public async Task<BossAttackResult> ExecuteBossAttackAsync(string verifiedUserId, string displayName, string requestId, CancellationToken token, bool communityVictory=false)

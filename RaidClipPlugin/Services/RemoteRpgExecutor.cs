@@ -118,7 +118,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
         if(e.Intent.Kind=="eat")mutation=await progression.ActivateSushiAsync(e.UserId,account.DisplayName,request,Arg("recipeId"),ct);
         if(e.Intent.Kind is "dive" or "fish"){
             var adventure=await new RpgAdventureService(points,config).ExecuteAsync(e.UserId,account.DisplayName,request,e.Intent.Kind=="fish"?RpgActivity.Fishing:RpgActivity.Dive,long.Parse(Arg("stake"),System.Globalization.CultureInfo.InvariantCulture),ct);
-            if(adventure.BossDiscovered && minigames is not null)await minigames.StartDiscoveredBossAsync(account.DisplayName,ct);
+            if(adventure.BossDiscovered&&(minigames is null||!await minigames.StartDiscoveredBossAsync(account.DisplayName,ct,adventure.ZoneId)))adventure=adventure with{BossDiscovered=false,Outcome="Eine Mimic-Spur gefunden. Es läuft bereits ein Kampf oder eine Rundenpause; kein neues Ereignis gestartet."};
             return new(adventure.Success,adventure.Success?"applied":"rule_rejected",adventure.Error,JsonSerializer.Serialize(adventure));
         }
         if(e.Intent.Kind is "buyPerk" or "learnTalent" or "upgradeItem" or "refineItem" or "selectZone" && mutation?.Success==true){

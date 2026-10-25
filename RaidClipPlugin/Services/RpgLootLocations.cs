@@ -24,6 +24,7 @@ public static class RpgLootLocations
      if(possible)locations.Add(new(z.Id,"eternal"));
     }
    }
+   foreach(var mimic in RpgRegionalMimics.Catalog(c))if(RpgRegionalMimics.Pool(c,mimic).Any(i=>i.ItemId==item.ItemId))locations.Add(new(mimic.AreaId,"mimic",mimic.Id));
    foreach(var boss in c.AreaBosses.Bosses.Where(b=>b.Enabled&&b.ItemChance>0))if(BossPool(c,boss).Any(i=>i.ItemId==item.ItemId))locations.Add(new(boss.AreaId,"boss",boss.Id));
    if(eight.Contains(item.ItemId)&&c.AreaBosses.Bosses.Any(b=>b.Id=="boss_eonath"&&b.Enabled)&&c.Zones.EternalEightChances.GetValueOrDefault("eonath")>0)locations.Add(new("primordial_throne","boss","boss_eonath"));
    var effects=item.Effects.Select(e=>$"{e.Name}: {e.Chance} % Chance · {e.CooldownSeconds} s Abklingzeit").Where(s=>!string.IsNullOrWhiteSpace(s)).ToList();

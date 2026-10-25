@@ -64,7 +64,7 @@ public sealed class RpgPerkReworkTests:IDisposable
         var game=new RpgAdventureService(store,config,new Low(),()=>now);
         Assert.False((await game.ExecuteAsync("u","U","bad",RpgActivity.Dive,-1,default)).BossDiscovered);
         Assert.False((await game.ExecuteAsync("u","U","fish",RpgActivity.Fishing,0,default)).BossDiscovered);
-        var dive=await game.ExecuteAsync("u","U","dive",RpgActivity.Dive,100,default);Assert.True(dive.Success);Assert.False(dive.BossDiscovered);Assert.Equal("mimic",dive.Enemy!.Source);
+        var dive=await game.ExecuteAsync("u","U","dive",RpgActivity.Dive,100,default);Assert.True(dive.Success);Assert.True(dive.BossDiscovered);Assert.Null(dive.Enemy);
         now=now.AddHours(1);var replay=await game.ExecuteAsync("u","U","dive",RpgActivity.Dive,100,default);Assert.False(replay.Success);Assert.False(replay.BossDiscovered);
     }
     [Fact] public async Task SharedMimicSurvivesRestartCannotReplaceBossAndPaysOnce()
@@ -72,15 +72,16 @@ public sealed class RpgPerkReworkTests:IDisposable
         var config=Config();config.Adventures.Boss.HitPoints=10;config.Adventures.Rpg.Mimic.HitPoints=10;config.Adventures.Rpg.Mimic.RewardPool=100;config.Adventures.Boss.RewardPool=100;config.Adventures.Rpg.BossLootChance=0;
         var store=new ViewerPointStore(dir);var messages=new List<string>();var now=DateTimeOffset.UtcNow;
         AdventureGameService Make(ViewerPointStore s)=>new(s,config,(text,_)=>{messages.Add(text);return Task.CompletedTask;},new Low(),()=>now);
+        await store.ApplyRpgAsync("1001","U","mimic-test-gear",a=>{a.Rpg.PlayerLevel=50;var item=new RpgItem{Slot=EquipmentSlot.Weapon,Attributes=new(){Attack=100000}};a.Rpg.Inventory.Add(item);a.Rpg.Equipment[EquipmentSlot.Weapon]=item.InstanceId;return new(true);},default);
         var game=Make(store);Assert.True(await game.StartDiscoveredBossAsync("Finder",default));
         var id=game.Status.BossEventId;Assert.True(game.Status.BossIsMimic);Assert.Contains("Mimic",game.Status.BossName);
         Assert.False(await game.StartDiscoveredBossAsync("Other",default));Assert.Equal(id,game.Status.BossEventId);
         game=Make(new ViewerPointStore(dir));await game.TickAsync(default);Assert.True(game.Status.BossIsMimic);Assert.Equal(id,game.Status.BossEventId);
-        Assert.True((await game.ExecuteBossAttackAsync("u","U","hit",default)).Success);
-        var won=(await store.GetProfileAsync("u",default)).Entry;Assert.Single(won.Rpg.Inventory,i=>i.Rarity==ItemRarity.Legendary);Assert.Equal(100,won.Points);
-        Assert.False((await game.ExecuteBossAttackAsync("u","U","hit",default)).Success);
+        Assert.True((await game.ExecuteBossAttackAsync("1001","U","hit",default)).Success);
+        var won=(await new ViewerPointStore(dir).GetProfileAsync("1001",default)).Entry;Assert.Single(won.Rpg.Inventory,i=>i.Rarity==ItemRarity.Uncommon);Assert.Equal(200,won.Points);
+        Assert.False((await game.ExecuteBossAttackAsync("1001","U","hit",default)).Success);
         Assert.False(await game.StartDiscoveredBossAsync("Other",default));
-        var saved=(await new ViewerPointStore(dir).GetProfileAsync("u",default)).Entry;Assert.Equal(won.Points,saved.Points);Assert.Single(saved.Rpg.Inventory);
+        var saved=(await new ViewerPointStore(dir).GetProfileAsync("1001",default)).Entry;Assert.Equal(won.Points,saved.Points);Assert.Equal(2,saved.Rpg.Inventory.Count);
     }
     [Fact] public void PersonalPerksApplyWithTalentBonusesAndStayBounded()
     {

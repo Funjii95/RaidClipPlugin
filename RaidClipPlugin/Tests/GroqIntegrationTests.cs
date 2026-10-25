@@ -88,6 +88,7 @@ public sealed class GroqIntegrationTests:IDisposable
     {
         var store=new ViewerPointStore(root);var events=new List<GroqStoryEvent>();store.StoryCommitted+=events.Add;var config=Config();config.Adventures.Rpg.Mimic.Enabled=true;config.Adventures.Rpg.Mimic.HitPoints=10;config.Adventures.Boss.HpMode=BossHpMode.Fixed;config.Adventures.Boss.HitPoints=10;config.Adventures.Rpg.Health.VictoryExperience=0;config.Adventures.Rpg.Health.TopExperience=0;
         var game=new AdventureGameService(store,config,(_,_)=>Task.CompletedTask,new Low());
+        if(mimic){await store.ApplyRpgAsync("1001","Otter","mimic-test-gear",a=>{a.Rpg.PlayerLevel=99;var item=new RpgItem{Slot=EquipmentSlot.Weapon,Attributes=new(){Attack=100000}};a.Rpg.Inventory.Add(item);a.Rpg.Equipment[EquipmentSlot.Weapon]=item.InstanceId;return new(true);},default);events.Clear();}
         if(mimic)Assert.True(await game.StartDiscoveredBossAsync("Otter",default));else await game.ControlAsync("boss",0,default);
         Assert.Equal(scene,Assert.Single(events).Scene);var hit=await game.ExecuteBossAttackAsync("1001","Otter","attack",default);Assert.True(hit.Defeated);
         Assert.Equal(2,events.Count);Assert.All(events,e=>Assert.Equal(scene,e.Scene));Assert.Equal("Kampf gewonnen",events.Last().Outcome);

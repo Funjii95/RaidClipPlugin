@@ -33,7 +33,8 @@ public sealed partial class AdventureGameService
    var state=await _points.ReadGlobalBossAsync(ct);
    if(_boss?.AreaState is not null&&state?.Id==_boss.Id){_boss.AreaState=state;_boss.Players=state.Participants.ToDictionary(p=>p.Key,p=>p.Value.Name);}
    var personal=state?.Participants.GetValueOrDefault(user);
-   return new{enabled=_config.Adventures.Rpg.AreaBosses.Enabled,bosses=RpgCombatDropRules.PreviewBosses(_boss?.AreaState?.Bosses??_config.Adventures.Rpg.AreaBosses.Bosses),selectedBossId=personal is not null&&!state!.RewardsSettled?personal.BossId:a.Rpg.SelectedBossId,
+   var mimic=_boss?.AreaState?.EventConfig.IsMimic==true;
+   return new{enabled=mimic||_config.Adventures.Rpg.AreaBosses.Enabled,isMimic=mimic,bosses=RpgCombatDropRules.PreviewBosses(_boss?.AreaState?.Bosses??_config.Adventures.Rpg.AreaBosses.Bosses,mimic),selectedBossId=mimic?_boss!.AreaState!.Bosses[0].Id:personal is not null&&!state!.RewardsSettled?personal.BossId:a.Rpg.SelectedBossId,
     locked=_boss?.AreaState?.Participants.ContainsKey(user)==true,remaining=state?.Remaining??1,active=_boss?.AreaState is not null,eventId=state?.Id,endsAt=state?.End,nextStart=_config.Adventures.Boss.AutoStartEnabled?_nextAutoBoss:(DateTimeOffset?)null,participants=state?.Participants.Count??0,personal,log=state?.Log??[],victory=state?.Victory??false,settled=state?.RewardsSettled??false};
   }finally{_gate.Release();}
  }
@@ -57,12 +58,12 @@ public sealed partial class AdventureGameService
    if(p.Health.CurrentHp<=0||p.Health.BossId==round.Id&&p.Health.Defeated||next.Participants.GetValueOrDefault(user.UserId)?.Defeated==true)return new(false,"Für dieses Bossereignis bist du besiegt.");
    if(p.Cooldowns.TryGetValue("!attack",out var until)&&clock<until)return new(false,$"Angriff in {Math.Ceiling((until-clock).TotalSeconds)} Sekunden möglich.");
    var joined=next.Participants.TryGetValue(user.UserId,out var participant);
-   var definition=next.Bosses.SingleOrDefault(b=>b.Id==(participant?.BossId??p.SelectedBossId)&&b.Enabled);
+   var definition=next.EventConfig.IsMimic?next.Bosses.SingleOrDefault(b=>b.Enabled):next.Bosses.SingleOrDefault(b=>b.Id==(participant?.BossId??p.SelectedBossId)&&b.Enabled);
    if(definition is null)return new(false,"Persönlicher Boss ist nicht verfügbar.");
    participant??=new(){UserId=user.UserId,Name=user.UserName,BossId=definition.Id};
    var hit=RpgPassiveService.BossAttack(_random.NextInclusive(10,30),p,cfg,_random,clock);
    critical=hit.Critical;
-   var reduction=definition.Id=="boss_korallus"&&participant.Cycles<3||definition.Id=="boss_luminara"?20m:0;
+   var reduction=!next.EventConfig.IsMimic&&(definition.Id=="boss_korallus"&&participant.Cycles<3||definition.Id=="boss_luminara")?20m:0;
    var damage=RpgDepthsCombatService.MitigateBoss(hit.Damage,reduction,hit.Critical,p,cfg);
    damage=Math.Max(0,damage-participant.PersonalShield);participant.PersonalShield=0;
    var available=(int)Math.Min(int.MaxValue,decimal.Ceiling(next.Remaining*definition.BaseHp));
@@ -87,13 +88,13 @@ public sealed partial class AdventureGameService
      counter=RpgWeaponService.Counter(counter,p,hit.Spell,clock);counter=RpgEternalCombat.Receive(counter,p,cfg,round.Id,clock);counter=RpgEternalEightCombat.Receive(counter,p,cfg,round.Id,true,clock);
      var taken=Math.Min(p.Health.CurrentHp!.Value,counter);p.Health.CurrentHp-=taken;received+=taken;
     }
-    var factor=definition.AttackFactor*(definition.Id=="boss_maledictus"&&participant.Cycles>1?1.1m:1);
-    for(var n=0;n<definition.Hits;n++)Counter(definition.Attack*factor,definition.Id=="boss_eonath"&&n==definition.Hits-1?30:definition.ArmorIgnore,definition.ReductionIgnore);
-    if(definition.Id=="boss_moderklaue"){
+    var factor=definition.AttackFactor*(!next.EventConfig.IsMimic&&definition.Id=="boss_maledictus"&&participant.Cycles>1?1.1m:1);
+    for(var n=0;n<definition.Hits;n++)Counter(definition.Attack*factor,!next.EventConfig.IsMimic&&definition.Id=="boss_eonath"&&n==definition.Hits-1?30:definition.ArmorIgnore,definition.ReductionIgnore);
+    if(!next.EventConfig.IsMimic&&definition.Id=="boss_moderklaue"){
      if(participant.CurseIntervals>0){Counter(definition.Attack*.1m);participant.CurseIntervals--;}
      participant.CurseIntervals=3;
     }
-    if(definition.Id=="boss_nharzul"&&received>0){
+    if(!next.EventConfig.IsMimic&&definition.Id=="boss_nharzul"&&received>0){
      var drain=Math.Min(p.Health.CurrentHp!.Value,(int)decimal.Floor(received*.1m));p.Health.CurrentHp-=drain;received+=drain;
      participant.PersonalShield=Math.Min(definition.BaseHp/100,drain);
     }
@@ -132,18 +133,21 @@ public sealed partial class AdventureGameService
     pearls=_points.RewardAmount(pearls,RpgRewardSource.Boss);a.Points+=Math.Min(pearls,Math.Max(0,Maximum-a.Points));
     RpgHealthService.Experience(a.Rpg,cfg.Health,(int)Math.Min(int.MaxValue,RpgCollectorService.Reward(boss.Experience,collectors.BossExperience)),_now());
     foreach(var material in boss.Materials)if(RpgUpgradeCatalog.Materials.Any(m=>m.Id==material))RpgUpgradeCatalog.Add(a.Rpg.Materials,material,_random.NextInclusive(1,3));
-    if(_random.NextInclusive(0,999999)<RpgCombatDropRules.Chance(boss.ItemChance)*10000){
+    if(state.EventConfig.IsMimic){var found=RpgRegionalMimics.Roll(cfg,boss,_random,_now());if(found is not null)a.Rpg.Inventory.Add(found);}
+    else if(_random.NextInclusive(0,999999)<RpgCombatDropRules.Chance(boss.ItemChance)*10000){
      var pool=RpgLootLocations.BossPool(cfg,boss);
      if(pool.Length>0){var total=pool.Sum(i=>i.DropWeight);var roll=_random.NextInclusive(1,total);var definition=pool[^1];foreach(var candidate in pool){roll-=candidate.DropWeight;if(roll<=0){definition=candidate;break;}}var item=Copy(definition);item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=_now();a.Rpg.Inventory.Add(item);}
     }
-    if(boss.Id=="boss_eonath")RpgEternalEightLoot.Victory(a.Rpg,cfg,boss.AreaId,boss.Level,"eonath",true,_random,_now(),boss.Id);
+    if(!state.EventConfig.IsMimic&&boss.Id=="boss_eonath")RpgEternalEightLoot.Victory(a.Rpg,cfg,boss.AreaId,boss.Level,"eonath",true,_random,_now(),boss.Id);
+    if(state.EventConfig.IsMimic)RpgQuestService.Record(a.Rpg,"kills",boss.AreaId);
     RpgPerkCatalog.Victory(a.Rpg,_now());return new(true);
    },ct);
   }
   state.Active=false;state.Victory=victory;state.RewardsSettled=true;
-  state.Log.Add(victory?"Globaler Boss besiegt. Persönliche Belohnungen wurden abgerechnet.":"Bossereignis beendet. Keine Siegesbelohnungen.");
+  state.Log.Add(victory?(state.EventConfig.IsMimic?"Gemeinsame Mimic besiegt.":"Globaler Boss besiegt.")+" Persönliche Belohnungen wurden abgerechnet.":"Bossereignis beendet. Keine Siegesbelohnungen.");
   await SaveHealthBossAsync(null);_boss=null;_nextBoss=_now().AddSeconds(Math.Clamp(round.Config.RoundCooldownSeconds,1,86400));
   if(victory&&communityVictory)_points.HotTime.StartAfterBoss(state.Id,cfg.HotTime,true);
+  if(victory)_points.PublishStory(new(state.EventConfig.IsMimic?GroqScene.Mimic:GroqScene.Boss,"boss-win:"+state.Id,"Kampf gewonnen"));
   await Say(state.Log.Last(),ct);DataChanged?.Invoke();
  }
 }

@@ -1,4 +1,4 @@
-﻿using RaidClipPlugin.Config;
+using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 namespace RaidClipPlugin.Services;
 public sealed record RpgAdventureResult(bool Success,string PlayerId,long Stake,long Payout,long Balance,string Error,string Outcome,RpgItem? Item,int RemainingCooldown,IReadOnlyList<string> AppliedBuffs)
@@ -18,7 +18,7 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
   // Legacy adapters may send a stake; all zone excursions are free and never debit it.
   c.Validate();points.ConfigureHotTime(c,config.MaximumAccountEnabled?config.MaximumAccountPoints:long.MaxValue);var time=clock();var command=fishing?"!fish":"!dive";
   RpgItem? item=null;RpgEnemyResult? enemy=null;var additional=new List<RpgItem>();var material=new Dictionary<string,int>();var applied=Array.Empty<string>();
-  string eventType="",outcome="",zoneId="",zoneName="";long payout=0;int remaining=0,shells=0;
+  string eventType="",outcome="",zoneId="",zoneName="";long payout=0;int remaining=0,shells=0;bool mimicDiscovered=false;
   var result=await points.ApplyRpgAsync(userId,name,requestId,a=>{
    var p=a.Rpg;var zone=c.Zones.Get(fishing?p.SelectedFishingZone:p.SelectedDivingZone);zoneId=zone.Id;zoneName=zone.Name;
    if(p.Cooldowns.TryGetValue(command,out var until)&&until>time){remaining=(int)Math.Ceiling((until-time).TotalSeconds);return new(false,$"Cooldown: noch {remaining} Sekunden.");}
@@ -50,13 +50,16 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
     var roll=rng.NextInclusive(0,999999)/10000m;
     var enemyChance=EnemyChance(zone,stats);
     if(roll<zone.MimicChance+enemyChance){
-     var source=roll<zone.MimicChance?"mimic":rng.NextInclusive(0,9999)<zone.EliteChance*100?"elite":"normal";
+     var source=roll<zone.MimicChance&&c.Mimic.Enabled?"mimic":rng.NextInclusive(0,9999)<zone.EliteChance*100?"elite":"normal";
      if(zone.Level==100&&source=="elite"&&rng.NextInclusive(0,9)==0)source="endgame";
+     if(source=="mimic"&&c.Mimic.Enabled&&c.Health.Enabled){mimicDiscovered=true;eventType="mimic";outcome=RpgRegionalMimics.ForZone(c,zone.Id).Name+" entdeckt! Gemeinsam im Boss-Reiter oder mit !attack angreifen.";}
+     else{
      enemy=new RpgEnemyService(rng).Fight(p,c,zone,source,rng.NextInclusive(0,2),time);eventType=source;
      if(enemy.Victory){item=enemy.Loot;if(enemy.ExtraLoot is not null)additional.Add(enemy.ExtraLoot);Merge(enemy.Materials);payout=zone.Level*2;}outcome=$"{enemy.Name} · Level {enemy.Level}: "+(enemy.Victory?"Besiegt":"Nicht besiegt");
+     }
     }else if(roll<zone.MimicChance+enemyChance+zone.ChestChance){eventType="chest";outcome="Schatztruhe geöffnet";Merge(RpgZoneService.Materials(p,c,zone,"chest",rng));PassiveRoll();payout=zone.Level;}
     else{eventType="materials";outcome="Die Tiefe erkundet";Merge(RpgZoneService.Materials(p,c,zone,"dive",rng));payout=zone.Level/2;}
-    if(enemy is null||enemy.Victory){
+    if(!mimicDiscovered&&(enemy is null||enemy.Victory)){
      if(RpgPassiveService.TryProc(p,c,RpgActivity.Dive,RpgEffectTrigger.ExtraLoot,rng,time,0)>0)PassiveRoll();
      for(int i=0;i<RpgEternalLoot.DiveRolls(p,c,rng)+RpgEternalEightLoot.DiveRolls(p,c,rng);i++)PassiveRoll();
     }
@@ -71,7 +74,7 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
    RpgPassiveService.ConsumeBuffs(p,activity,c,rng,time,0);p.Cooldowns[command]=time.AddSeconds(RpgPerkCatalog.Cooldown(p,game.CooldownSeconds,fishing?"fishCooldown":"diveCooldown")/(1+(double)Math.Clamp(stats.MovementSpeed,-90,200)/100));return new(true);
   },token);
   if(result.Success&&!result.Duplicate)points.PublishStory(new(fishing?GroqScene.Fishing:GroqScene.Dive,"adventure:"+userId+":"+requestId,outcome,name));
-  return new(result.Success,userId,0,result.Success?payout:0,result.Balance,result.Error,outcome,result.Success?item:null,remaining,result.Success?applied:[]){AdditionalItems=result.Success?additional:[],Enemy=result.Success?enemy:null,MaterialRewards=result.Success?material:new Dictionary<string,int>(),ShellsAwarded=result.Success?shells:0,ZoneId=zoneId,ZoneName=zoneName,EventType=eventType};
+  return new(result.Success,userId,0,result.Success?payout:0,result.Balance,result.Error,outcome,result.Success?item:null,remaining,result.Success?applied:[]){AdditionalItems=result.Success?additional:[],Enemy=result.Success?enemy:null,MaterialRewards=result.Success?material:new Dictionary<string,int>(),ShellsAwarded=result.Success?shells:0,ZoneId=zoneId,ZoneName=zoneName,EventType=eventType,BossDiscovered=result.Success&&!result.Duplicate&&mimicDiscovered};
  }
  public static decimal EnemyChance(RpgZoneDefinition zone,RpgAttributes stats)=>Math.Clamp(zone.EnemyChance*(1+stats.EnemyEncounterChance/100),0,100-zone.MimicChance);
 }
