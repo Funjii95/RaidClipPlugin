@@ -241,7 +241,7 @@ export interface DemoState {
     salvageQuote?: SalvageQuote;
     effectCooldowns: Record<string, number>;
 }
-export type Action = {type:'selectBoss';id:string;} | {type:'selectZone';activity:'dive'|'fish';zoneId:string;} | {type:'refine';id:string;expectedLevel:number;} | {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
+export type Action = {type:'startQuest'|'claimQuest';id:string;} | {type:'selectBoss';id:string;} | {type:'selectZone';activity:'dive'|'fish';zoneId:string;} | {type:'refine';id:string;expectedLevel:number;} | {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
     type: 'dive';
     stake: number;
 } | {

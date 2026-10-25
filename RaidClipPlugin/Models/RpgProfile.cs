@@ -123,6 +123,7 @@ public sealed class RpgBuff
 
 public sealed class RpgProfile
 {
+    public SnapshotProtocol.QuestProgress Quests {get;set;}=new();
     public string SelectedDivingZone {get;set;}="sunny_lagoon";
     public string SelectedBossId {get;set;}="boss_korallus";
     public string SelectedFishingZone {get;set;}="sunny_lagoon";

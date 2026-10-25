@@ -2517,7 +2517,7 @@ private enum CloseChoice
                 obs = temporaryObs;
             }
 
-            var idleUrl = $"http://127.0.0.1:{config.Player.Port}/";
+            var idleUrl = ObsBrowserUrl();
             var result = await Task.Run(() =>
                 obs.EnsureBrowserSourceInCurrentScene(idleUrl));
 

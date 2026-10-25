@@ -10,7 +10,7 @@ public sealed class RpgConfig
     public RpgAdminAccess AdminAccess {get;set;}=new();
     public RpgZoneConfig Zones {get;set;}=new();
     public RpgUpgradeConfig Upgrades {get;set;}=new();
-    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); RpgZoneService.AddMissing(this); RpgWeaponCatalog.AddMissing(DiveLoot); }
+    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); RpgZoneService.AddMissing(this); RpgWeaponCatalog.AddMissing(DiveLoot); RpgQuestCatalog.AddMissing(this); }
     public long FreeFishingReward { get; set; } = 40;
     public decimal PowerDamagePerPoint { get; set; } = 1;
     private RpgHealthConfig _health = new();
@@ -27,6 +27,7 @@ public sealed class RpgConfig
     public decimal FishingEquipmentChance { get; set; } = 0.5m;
     public void Validate()
     {
+        RpgQuestCatalog.AddMissing(this);
         foreach(var item in DiveLoot.Items.Where(i=>i.Generation is null))RpgCoreStatService.Apply(item);
         AreaBosses.Validate();
         AdminAccess.Validate();

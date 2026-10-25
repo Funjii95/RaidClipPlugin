@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -35,9 +35,17 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     }
     private RemoteRpgExecutor Executor()=>new(points!,()=>config,gate,epoch,"42",new HashSet<string>{"1001"},Path.Combine(root,"receipts"),(_,_)=>true);
     private ActionEnvelope Envelope(RpgIntent intent)=>new("42","1001",Guid.NewGuid(),"synthetic-stream",DateTimeOffset.UtcNow.AddSeconds(8),intent,RpgIntents.Hash(intent));
+    [Fact]public async Task Quest_status_start_and_replays_use_authoritative_receipts()
+    {
+        var executor=await SeedAsync();
+        var view=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("questStatus","{}")),default);Assert.True(view.Success);using var data=JsonDocument.Parse(view.DataJson!);Assert.Equal(11,data.RootElement.GetProperty("quests").GetArrayLength());
+        var start=Envelope(ActionApiFixture.Intent("startQuest","{\"questId\":\"tutorial\"}"));var result=await executor.ExecuteAsync(start,default);Assert.True(result.Success);Assert.Equal(result,await Executor().ExecuteAsync(start,default));
+        var forged=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("claimQuest","{\"questId\":\"tutorial\"}")),default);Assert.False(forged.Success);
+        Assert.InRange(System.Text.Encoding.UTF8.GetByteCount(executor.CatalogJson()),1,48000);
+    }
     [Fact]public void Tides_requires_publisher_support_for_extended_stats_and_shields()
     {
-        Assert.Equal(9,SnapshotValidation.RpgProjectionVersion);
+        Assert.Equal(10,SnapshotValidation.RpgProjectionVersion);
     }
     [Fact]public async Task Large_inventory_status_keeps_authoritative_stats_and_profile()
     {

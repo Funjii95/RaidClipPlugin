@@ -6,7 +6,7 @@ import {RemoteMinigameClient} from '../minigames/remote-client';
 export type TwitchHelper={onAuthorized:(callback:(auth:Authorization)=>void)=>void;actions?:{requestIdShare:()=>void}};
 import {PluginRuleError} from './errors';
 import {materialKeys,materialNames} from '../UpgradePanel';
-const actionKinds:Partial<Record<Action['type'],string>>={selectBoss:'selectBoss',selectZone:'selectZone',refine:'refineItem',upgrade:'upgradeItem',learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
+const actionKinds:Partial<Record<Action['type'],string>>={startQuest:'startQuest',claimQuest:'claimQuest',selectBoss:'selectBoss',selectZone:'selectZone',refine:'refineItem',upgrade:'upgradeItem',learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
 const canonical=(v:any):any=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k[0].toLowerCase()+k.slice(1),canonical(v)])):v;
 const signature=(v:any)=>JSON.stringify(canonical([field(v,'UserId'),field(v,'Points'),field(v,'Rpg')]));
 // Pearls, fishing stocks and regenerating HP can change while the read-only status
@@ -23,6 +23,7 @@ const statsSignature=(profile:any)=>{
 };
 export class BackendRpgDataSource implements RpgDataSource {
  readonly minigames=new RemoteMinigameClient(this);
+ private questSets:any[]=[];
  private previewCache?:{key:string;value:NonNullable<DemoState['remote']>['adventurePreview']};
  readonly mode='remote' as const;
  private state=emptyRemoteState();private authorization?:Authorization;private generation=0;private refreshing?:Promise<DemoState>;private mutating=false;
@@ -39,7 +40,7 @@ export class BackendRpgDataSource implements RpgDataSource {
  private authorize(auth:Authorization){
   const scope=(a?:Authorization)=>a?`${a.channelId}:${a.userId}`:'';
   if(scope(auth)!==scope(this.authorization)){
-   this.generation++;this.deleting=false;this.deletionCompleted=false;this.state=emptyRemoteState();this.profile=undefined;this.confirmedProfile=undefined;this.catalog={};this.statusSeen='';this.statusPayload=undefined;this.availability=undefined;this.availabilityAt=-Infinity;this.lastRead=-Infinity;
+   this.generation++;this.deleting=false;this.deletionCompleted=false;this.state=emptyRemoteState();this.profile=undefined;this.confirmedProfile=undefined;this.catalog={};this.questSets=[];this.statusSeen='';this.statusPayload=undefined;this.availability=undefined;this.availabilityAt=-Infinity;this.lastRead=-Infinity;
   }
   this.authorization=auth?.token&&auth.channelId&&auth.userId?auth:undefined;
   if(!this.authorization){this.state.remote!.connection='unauthorized';this.state.remote!.message='Bitte deine Twitch-Identität freigeben.';this.emit();return;}
@@ -85,7 +86,7 @@ export class BackendRpgDataSource implements RpgDataSource {
   this.availabilityAt=availability.status==='fulfilled'?performance.now():-Infinity;
   let metadataError=false;
   if(availability.status==='fulfilled'){
-   try{const c=parseWire(availability.value.catalogJson??'{}');if(!c||typeof c!=='object'||Array.isArray(c))throw Error();this.catalog=c;}catch{metadataError=true;this.catalog={};this.availability=undefined;}
+   try{const c=parseWire(availability.value.catalogJson??'{}');if(!c||typeof c!=='object'||Array.isArray(c))throw Error();this.catalog={...c,sets:[...(c.sets??[]),...this.questSets]};}catch{metadataError=true;this.catalog={};this.availability=undefined;}
   }
   if(profile.status==='fulfilled'){
    try{
@@ -126,7 +127,8 @@ export class BackendRpgDataSource implements RpgDataSource {
   try {
    let args:Record<string,string>={};
    if(action.type==='dive'||action.type==='fishing'){const n=action.stake??0;if(!Number.isSafeInteger(n)||n<0)throw Error('Ungültiger Einsatz.');args={stake:String(n)};}
-   if(action.type==='selectBoss')args={bossId:action.id};
+   if(action.type==='startQuest'||action.type==='claimQuest')args={questId:action.id};
+     if(action.type==='selectBoss')args={bossId:action.id};
    if(action.type==='selectZone')args={activity:action.activity,zoneId:action.zoneId};
    if(action.type==='openShells'){if(!Number.isSafeInteger(action.count)||action.count<1||action.count>100)throw Error('Bitte 1 bis 100 Muscheln auswählen.');args={count:String(action.count)};}
    if(action.type==='equip')args={instanceId:action.id,slot:action.slot};
@@ -236,6 +238,7 @@ export class BackendRpgDataSource implements RpgDataSource {
    }catch{} // Character status failures must not suppress the independent live boss read.
    }
    if(generation!==this.generation)return;
+   if(this.questSets.length===0&&this.state.remote!.supported.includes('questStatus')){try{await this.readPlugin('questStatus');}catch{}}
    if(this.state.remote!.supported.includes('bossStatus')&&!this.state.remote!.pending){
     const boss=await this.readPlugin('bossStatus');if(generation===this.generation)this.acceptBoss(boss);
    }
@@ -262,7 +265,9 @@ export class BackendRpgDataSource implements RpgDataSource {
    if(receipt.state==='rejected'||receipt.outcome?.success===false)throw new PluginRuleError(receipt.outcome?.message||'Auftrag abgelehnt.');
    if(receipt.state!=='applied'||receipt.outcome?.success!==true)throw Error(receipt.outcome?.message||'Auftrag nicht bestätigt.');
    if(!receipt.outcome.dataJson)throw Error('Bestätigte Spieldaten fehlen.');
-   return parseWire(receipt.outcome.dataJson);
+   const data=parseWire(receipt.outcome.dataJson);
+   if(kind==='questStatus'&&Array.isArray(data.rewardSets)){this.questSets=data.rewardSets;this.catalog={...this.catalog,sets:[...(this.catalog.sets??[]).filter((s:any)=>!String(field(s,'Id')).startsWith('quest_')),...this.questSets]};if(this.profile){const mapped=mapProfile(this.profile,this.catalog);this.state.remote!.sets=mapped.remote!.sets;this.emit();}}
+   return data;
   }finally{this.mutating=false;this.markPending();this.emit();}
  }
  private readObservation(kind:string,args:Record<string,string>):Promise<any>{
@@ -284,7 +289,9 @@ export class BackendRpgDataSource implements RpgDataSource {
    }
    if(generation!==this.generation)throw Error('Twitch-Identität gewechselt.');
    if(receipt.state!=='applied'||receipt.outcome?.success!==true||!receipt.outcome.dataJson)throw Error(receipt.outcome?.message||'Status nicht bestätigt.');
-   return parseWire(receipt.outcome.dataJson);
+   const data=parseWire(receipt.outcome.dataJson);
+   if(kind==='questStatus'&&Array.isArray(data.rewardSets)){this.questSets=data.rewardSets;this.catalog={...this.catalog,sets:[...(this.catalog.sets??[]).filter((s:any)=>!String(field(s,'Id')).startsWith('quest_')),...this.questSets]};if(this.profile){const mapped=mapProfile(this.profile,this.catalog);this.state.remote!.sets=mapped.remote!.sets;this.emit();}}
+   return data;
   })();
   this.reads.set(key,work);
   void work.finally(()=>{if(this.reads.get(key)===work)this.reads.delete(key);}).catch(()=>{});

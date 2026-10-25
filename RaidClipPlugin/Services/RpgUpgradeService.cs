@@ -18,6 +18,7 @@ public sealed class RpgUpgradeService(ViewerPointStore points,RpgConfig config)
         foreach(var pair in cost.Materials)RpgUpgradeCatalog.Add(a.Rpg.Materials,pair.Key,-pair.Value);
         a.Points-=cost.Pearls;
         if(refine)item.IsRefined=true;else item.UpgradeLevel++;
+        RpgQuestService.Record(a.Rpg,"upgrade");
         if(config.Health.Enabled)RpgHealthService.Refresh(a.Rpg,config.Health,DateTimeOffset.UtcNow);
         return new(true,refine?"Gegenstand veredelt: +50 % positive Grundwerte.":$"Garantiert auf +{item.UpgradeLevel} aufgewertet.");
     },ct);

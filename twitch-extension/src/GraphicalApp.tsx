@@ -1,3 +1,4 @@
+import {QuestsPanel} from './QuestsPanel';
 import {BossGallery} from './BossGallery';
 import {isCollectionItem} from './collectionInventory';
 import {CodexCharacter} from './CodexCharacter';
@@ -28,6 +29,7 @@ const buffActive=(b:any,now:number)=>b.expiresAt!==undefined?b.expiresAt>now:b.r
 const tabs = [
     "Charakter",
     "Abenteuer",
+    "Quests",
     "Inventar",
     "Ausrüstung",
     "Itemsets",
@@ -41,6 +43,7 @@ const tabs = [
 const symbols = [
     "otter",
     "compass",
+    "sets",
     "bag",
     "swords",
     "sets",
@@ -53,7 +56,7 @@ const symbols = [
 ] as const;
 const time = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{source:RpgDataSource;demo?:DemoPresentation;minigameClient?:MinigameClient;desktop?:boolean;desktopAdmin?:ReactNode}) {
-    const desktopTabs=["Abenteuer","Charakter","Waffen","Ausrüstung","Inventar","Aufwertung","Materialien","Sammlungen","Itemsets","Boss","Sushi-Küche","Talente & Perks","Minispiele","Werte & Statistiken","RPG-Verwaltung"];
+    const desktopTabs=["Abenteuer","Quests","Charakter","Waffen","Ausrüstung","Inventar","Aufwertung","Materialien","Sammlungen","Itemsets","Boss","Sushi-Küche","Talente & Perks","Minispiele","Werte & Statistiken","RPG-Verwaltung"];
     const isDemo=source.mode==="demo";
     const allowed=(type:Action["type"])=>isDemo || source.canDispatch?.(type)===true;
     const clickLock=useRef(false);
@@ -249,7 +252,7 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
                     setTab(name);
                     setMessage("");
                 }}>
-              <Icon name={desktop?(["compass","otter","swords","swords","bag","sets","pearl","bag","sets","boss","cook","perk","pearl","sets","perk"] as const)[n]:symbols[n]}/>
+              <Icon name={desktop?(["compass","sets","otter","swords","swords","bag","sets","pearl","bag","sets","boss","cook","perk","pearl","sets","perk"] as const)[n]:symbols[n]}/>
               {name}
             </button>))}
 
@@ -326,13 +329,8 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
                       </p>))}
                   {!state.player.buffs.some((b) => buffActive(b, now)) && (<p>Keine aktiven Buffs.</p>)}
                   <h3>🪸 Aktive Setboni</h3>
-                  {sets.map((set) => (<p key={set.id}>
-                      {set.name}:{" "}
-                      {set.bonuses
-                        .filter((b) => setCount(state, set.id) >= b.pieces)
-                        .map((b) => b.description)
-                        .join(", ") || "Noch kein Bonus"}
-                    </p>))}
+                  {sets.filter(set=>setCount(state,set.id)>0).map(set=><article className="equipped-set-summary" key={set.id}><h4>{set.name} · {setCount(state,set.id)}/{set.itemIds.length} Teile</h4><progress value={setCount(state,set.id)} max={set.itemIds.length} aria-label={set.name}/><ul>{set.bonuses.filter(b=>setCount(state,set.id)>=b.pieces).map(b=><li key={b.pieces}><strong>{b.pieces} Teile:</strong> {b.description||statsText(b.attributes).join(' · ')}</li>)}</ul>{!set.bonuses.some(b=>setCount(state,set.id)>=b.pieces)&&<p>Noch kein Setbonus aktiv.</p>}</article>)}
+                  {!sets.some(set=>setCount(state,set.id)>0)&&<p>Aktuell kein Set ausgerüstet.</p>}
                   <small>
                     {isDemo?"Buffs gelten nur für ihre Aktivität; Werte oben ohne temporäre Buffs. Sets: v2.1.21.":"Effektive Werte werden ausschließlich aus dem verbundenen Spiel übernommen. Nicht übermittelte Werte stehen als –."}
                   </small>
@@ -460,6 +458,7 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
               </>)}
             {(tab === "Talente"||tab==="Talente & Perks") && <TalentTree state={state} demo={isDemo} busy={busy} canLearn={allowed("learnTalent")} onLearn={id=>void run({type:"learnTalent",id})}/>}
             {(tab === "Perks"||tab==="Talente & Perks") && <PerkPanel perks={state.perks} price={perkPrice} affordable={affordable} canBuy={allowed("perk")} busy={busy} demo={isDemo} pearls={isDemo?format(state.player.pearls):state.remote?.pointsExact?BigInt(state.remote.pointsExact).toLocaleString('de-DE'):'–'} canBuyMax={!isDemo&&state.remote?.perkMaxPurchase===true} onBuy={(id,maximum)=>void run({type:"perk",id,maximum})}/>}
+            {tab==="Quests"&&<QuestsPanel source={source} updatedAt={state.remote?.updatedAt} busy={busy||state.remote?.connection!=="ready"} onAction={(type,id)=>run({type,id})}/>}
             {tab === "Boss"&&state.remote?.areaBoss?.enabled&&!state.boss.isMimic&&<BossGallery view={state.remote.areaBoss} hp={state.player.hp} maxHp={state.player.maxHp} buffs={state.player.buffs.filter(b=>buffActive(b,now)).map(b=>b.recipeId)} busy={busy} canAttack={allowed("boss")} canSelect={allowed("selectBoss")} cooldown={remaining(state.cooldowns.boss,now)} onAttack={()=>void run({type:"boss"})} onSelect={id=>void run({type:"selectBoss",id})}/>}
             {tab === "Boss"&&(!state.remote?.areaBoss?.enabled||state.boss.isMimic) && (<article className="boss">
                 <div className="boss-art">

@@ -75,6 +75,7 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             account.Rpg.Equipment[slot] = instanceId;
             RpgSetCombatService.Refresh(account.Rpg,config.Health,clock?.Invoke()??DateTimeOffset.UtcNow);
             if(config.Health.Enabled) RpgHealthService.Refresh(account.Rpg,config.Health,DateTimeOffset.UtcNow);
+            RpgQuestService.Record(account.Rpg,"equip");
             return new(true, Details: new(RpgActionKind.Equip, RpgChatPresentation.ItemName(item),
                 Bonuses: RpgChatPresentation.Snapshot(RpgEquipmentUpgradeRules.Effective(item)), Slot: slot,
                 Effects: JsonSerializer.Deserialize<List<RpgItemEffect>>(JsonSerializer.Serialize(item.Effects)),
@@ -95,6 +96,7 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             account.Points -= recipe.PearlCost;
             foreach(var ingredient in ingredients)account.Rpg.Fish[ingredient.Key].Quantity-=ingredient.Value;
             account.Rpg.Sushi[recipeId] = checked(account.Rpg.Sushi.GetValueOrDefault(recipeId) + 1);
+            RpgQuestService.Record(account.Rpg,"craft",recipe:recipe);
             return new(true, Details: new(RpgActionKind.Craft, RpgChatPresentation.RecipeName(recipe), Cost: recipe.PearlCost,
                 FishName: config.FishSpecies.SingleOrDefault(f => f.Id == recipe.FishId)?.Name is { Length: > 0 } fishName && !string.IsNullOrWhiteSpace(fishName) ? fishName : recipe.FishId,
                 FishQuantity: recipe.FishQuantity, Quantity: 1, Bonuses: RpgChatPresentation.Snapshot(recipe.Attributes),
@@ -120,6 +122,7 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             buff.Attributes=RpgChatPresentation.Snapshot(buff.Attributes,factor);
             buff.PassiveHealing*=factor;buff.ChatHealing=(int)decimal.Floor(buff.ChatHealing*factor);
             buff.BossDamageReduction=Math.Min(80,buff.BossDamageReduction*factor);buff.BossLifeleech=Math.Min(100,buff.BossLifeleech*factor);
+            RpgQuestService.Record(account.Rpg,"eat",recipe:recipe);
             return new(true, Details: new(RpgActionKind.ActivateSushi, RpgChatPresentation.RecipeName(recipe),
                 Bonuses: RpgChatPresentation.Snapshot(buff.Attributes), Activity: buff.Activity, RemainingUses: buff.RemainingUses,EffectDescription:RpgSushiService.Effects(recipe),EncounterBased:false,DurationSeconds:RpgSushiService.DurationSeconds));
         }, token);

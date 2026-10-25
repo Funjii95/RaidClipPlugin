@@ -42,6 +42,7 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
      if(RpgDepthsCombatService.Has(p,c,"true_eternal_reef",4)&&rng.NextInclusive(0,9999)<1500)quantity++;
      quantity=checked(quantity*RpgEternalCombat.NormalLootMultiplier(p,c));
      if(!p.Fish.TryGetValue(fish.Id,out var stack))p.Fish[fish.Id]=stack=new(){FishId=fish.Id,FirstCaughtAt=time};stack.Quantity=checked(stack.Quantity+quantity);stack.LastCaughtAt=time;
+     RpgQuestService.Record(p,"fish",zone.Id,quantity,fish.Id);
      a.FishCollection[fish.Name]=checked(a.FishCollection.GetValueOrDefault(fish.Name)+quantity);
      item=new(){ItemId=fish.Id,DisplayName=fish.Name,IconId=fish.IconId,Rarity=fish.Rarity,FoundAt=time};payout=Math.Max(0,fish.PearlReward??c.FreeFishingReward);outcome=$"{quantity} × {fish.Name}";Merge(RpgZoneService.Materials(p,c,zone,"fish",rng));
     }else{p.Materials.Shells=checked(p.Materials.Shells+1);shells=1;outcome="Eine Muschel gefunden!";}
@@ -61,6 +62,7 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
     }
     if(RpgEternalCombat.Has(p,c,"eternal_star_hunter",6)&&rng.NextInclusive(0,9999)<3000&&(enemy is null||enemy.Victory))Merge(RpgZoneService.Materials(p,c,zone,"dive",rng));
    }
+   if(!fishing){RpgQuestService.Record(p,"dive",zone.Id);if(p.Buffs.Any(b=>RpgSushiService.Active(b,time)))RpgQuestService.Record(p,"buffedDive",zone.Id);if(enemy?.Victory==true)RpgQuestService.Record(p,"kills",zone.Id);}
    payout=RpgEternalCombat.Enhanced(p)?RpgCollectorService.Reward(payout,stats.PearlBonus):RpgPassiveService.RewardPayout(payout,0,stats.PearlBonus);payout=checked(payout*RpgEternalCombat.NormalLootMultiplier(p,c));
    var collector=RpgCollectorService.Calculate(p,c.DiveLoot);payout=RpgCollectorService.Reward(payout,fishing?collector.FishingPearls:collector.DivePearls);
    payout=points.RewardAmount(payout,fishing?RpgRewardSource.Fishing:RpgRewardSource.DiveNetWin);if(config.MaximumAccountEnabled)payout=Math.Min(payout,Math.Max(0,config.MaximumAccountPoints-a.Points));a.Points=checked(a.Points+payout);

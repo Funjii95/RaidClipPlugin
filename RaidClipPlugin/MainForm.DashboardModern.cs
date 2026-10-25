@@ -179,7 +179,7 @@ public sealed partial class MainForm
 
     private Control CreateDashboardActionBar(Control actions)
     {
-        var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 4, 0, 0) };
+        var host = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 7, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = new Padding(0, 4, 0, 0) };
         host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         host.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         for (var i = 0; i < 5; i++) host.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
@@ -197,6 +197,8 @@ public sealed partial class MainForm
         _createObsSourceButton.Font = new Font("Segoe UI", 9.6F);
         _createObsSourceButton.Margin = new Padding(0, 4, 0, 4);
         host.Controls.Add(_createObsSourceButton, 0, 5);
+        host.RowStyles.Add(new RowStyle(SizeType.Absolute,62));
+        host.Controls.Add(CreateObsBrowserUrlControl(),0,6);
         return CreateDashboardSection("Schnellaktionen", host);
     }
 

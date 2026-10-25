@@ -100,6 +100,7 @@ public sealed partial class ViewerPointStore
         account.Rpg ??= new();
         if (account.Rpg.SchemaVersion != 1) throw new InvalidOperationException("Unbekannte RPG-Datenversion.");
         SnapshotProtocol.TalentRules.Validate(account.Rpg.PlayerLevel,account.Rpg.TalentRanks);
+        account.Rpg.Quests??=new();SnapshotProtocol.QuestProgressRules.Validate(account.Rpg.Quests);
         account.Rpg.Materials ??= new();
         account.Rpg.Materials.Validate();
         RpgCoreStatService.Upgrade(account.Rpg);
