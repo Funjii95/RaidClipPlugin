@@ -10,7 +10,9 @@ public sealed record RpgAdventureResult(bool Success,string PlayerId,long Stake,
 public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig config,IDuelRandom? random=null,Func<DateTimeOffset>? now=null)
 {
  private readonly IDuelRandom rng=random??new CryptoDuelRandom();private readonly Func<DateTimeOffset> clock=now??(()=>DateTimeOffset.UtcNow);
- public async Task<RpgAdventureResult> ExecuteAsync(string userId,string name,string requestId,RpgActivity activity,long stake,CancellationToken token,string? seriesId=null,int? seriesIndex=null)
+ public Task<RpgAdventureResult> ExecuteAsync(string userId,string name,string requestId,RpgActivity activity,long stake,CancellationToken token,string? seriesId=null,int? seriesIndex=null)=>ExecuteCoreAsync(userId,name,requestId,activity,stake,token,seriesId,seriesIndex,false);
+ internal Task<RpgAdventureResult> ExecuteSeriesAsync(string userId,string name,string requestId,CancellationToken token,string seriesId,int seriesIndex)=>ExecuteCoreAsync(userId,name,requestId,RpgActivity.Dive,0,token,seriesId,seriesIndex,true);
+ private async Task<RpgAdventureResult> ExecuteCoreAsync(string userId,string name,string requestId,RpgActivity activity,long stake,CancellationToken token,string? seriesId,int? seriesIndex,bool batch)
  {
   var c=config.Adventures.Rpg;var fishing=activity==RpgActivity.Fishing;var game=fishing?config.Adventures.Fishing:config.Adventures.Treasure;
   if(!config.Enabled||!config.PointsEnabled||!c.Enabled||!game.Enabled||activity==RpgActivity.Boss)return new(false,userId,0,0,0,"RPG-Aktion ist deaktiviert.","",null,0,[]);
@@ -19,13 +21,14 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
   c.Validate();points.ConfigureHotTime(c,config.MaximumAccountEnabled?config.MaximumAccountPoints:long.MaxValue);var time=clock();var command=fishing?"!fish":"!dive";
   RpgItem? item=null;RpgEnemyResult? enemy=null;var additional=new List<RpgItem>();var material=new Dictionary<string,int>();var applied=Array.Empty<string>();
   string eventType="",outcome="",zoneId="",zoneName="";long payout=0;int remaining=0,shells=0;bool mimicDiscovered=false;
-  var result=await points.ApplyRpgAsync(userId,name,requestId,a=>{
+  RpgMutation Resolve(ViewerPointEntry a){
+   item=null;enemy=null;additional.Clear();material.Clear();payout=0;remaining=0;shells=0;mimicDiscovered=false;
    if(points.HasActivePartyCombatUnsafe(userId,time))return new(false,"Beende zuerst die laufende Gruppen- oder Dungeoninstanz.");
    var p=a.Rpg;
    if(seriesId is not null&&(p.DiveSeries is not {Status:"active"} series||series.Id!=seriesId||series.Completed!=seriesIndex||series.ZoneId!=p.SelectedDivingZone))return new(false,"Tauchserie ist nicht mehr aktuell.");
    if(!fishing&&seriesId is null&&p.DiveSeries is {Status:"active"})return new(false,"Beende zuerst die laufende Tauchserie.");
    var experienceBefore=p.Experience;var zone=c.Zones.Get(fishing?p.SelectedFishingZone:p.SelectedDivingZone);zoneId=zone.Id;zoneName=zone.Name;
-   if(p.Cooldowns.TryGetValue(command,out var until)&&until>time){remaining=(int)Math.Ceiling((until-time).TotalSeconds);return new(false,$"Cooldown: noch {remaining} Sekunden.");}
+   if(!batch&&p.Cooldowns.TryGetValue(command,out var until)&&until>time){remaining=(int)Math.Ceiling((until-time).TotalSeconds);return new(false,$"Cooldown: noch {remaining} Sekunden.");}
    RpgHealthService.Refresh(p,c.Health,time);if(!fishing&&p.Health.CurrentHp<=0)return new(false,"Du hast 0 HP. Erst heilen, dann tauchen.");
    var ownedBefore=p.Inventory.Select(i=>i.InstanceId).ToHashSet();
    applied=p.Buffs.Where(b=>b.Activity==activity&&RpgSushiService.Active(b,time)).Select(b=>b.RecipeId).ToArray();var stats=CharacterStatService.Calculate(p,c,activity,now:time);
@@ -87,6 +90,23 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
     try{var clean=SnapshotProtocol.SnapshotValidation.ValidateLocalSource(snapshot,userId);if(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(snapshot with{AccountJson=clean.AccountJson}).Length>SnapshotProtocol.SnapshotValidation.MaxMessageBytes-2048)return new(false,"Inventar voll. Bisherige Tauchbeute bleibt erhalten.");}
     catch(InvalidDataException){return new(false,"Inventar voll. Bisherige Tauchbeute bleibt erhalten.");}
    }return new(true);
+  }
+  var result=await points.ApplyRpgAsync(userId,name,requestId,a=>{
+   if(!batch)return Resolve(a);
+   if(a.Rpg.DiveSeries is not {Status:"active"} pending||pending.Id!=seriesId||pending.Completed!=seriesIndex)return new(false,"Tauchserie ist nicht mehr aktuell.");
+   SnapshotProtocol.DiveSeriesState.Validate(pending);
+   var discovered=false;var earnedBefore=pending.Pearls;
+   // All rolls use the same simulation time and one persisted transaction.
+   // Damage, HP, buffs and rewards carry forward between rolls; never clone fresh starting HP.
+   while(a.Rpg.DiveSeries!.Status=="active"){
+    token.ThrowIfCancellationRequested();seriesIndex=a.Rpg.DiveSeries.Completed;
+    var candidate=System.Text.Json.JsonSerializer.Deserialize<ViewerPointEntry>(System.Text.Json.JsonSerializer.Serialize(a))!;
+    var step=Resolve(candidate);
+    if(!step.Success){a.Rpg.DiveSeries.Status=a.Rpg.Health.CurrentHp<=0?"defeated":"stopped";a.Rpg.DiveSeries.Reason=step.Error.Length>200?step.Error[..200]:step.Error;break;}
+    a.Rpg=candidate.Rpg;a.Points=candidate.Points;a.GamesPlayed=candidate.GamesPlayed;discovered|=mimicDiscovered;
+   }
+   mimicDiscovered=discovered;payout=a.Rpg.DiveSeries.Pearls-earnedBefore;
+   return new(true);
   },token);
   if(result.Success&&!result.Duplicate)points.PublishStory(new(fishing?GroqScene.Fishing:GroqScene.Dive,"adventure:"+userId+":"+requestId,outcome,name));
   return new(result.Success,userId,0,result.Success?payout:0,result.Balance,result.Error,outcome,result.Success?item:null,remaining,result.Success?applied:[]){AdditionalItems=result.Success?additional:[],Enemy=result.Success?enemy:null,MaterialRewards=result.Success?material:new Dictionary<string,int>(),ShellsAwarded=result.Success?shells:0,ZoneId=zoneId,ZoneName=zoneName,EventType=eventType,BossDiscovered=result.Success&&!result.Duplicate&&mimicDiscovered};

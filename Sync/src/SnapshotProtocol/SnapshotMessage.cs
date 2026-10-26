@@ -16,7 +16,7 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 13;
+    public const int RpgProjectionVersion = 14;
     public const int MaxMessageBytes = 256 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 

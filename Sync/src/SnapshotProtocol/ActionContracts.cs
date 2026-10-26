@@ -67,7 +67,7 @@ public static class RpgIntents
         if(intent.Kind=="party"&&values.TryGetValue("targetUserId",out var targetId)&&!PartySnapshot.User(targetId))throw new ArgumentException("Invalid party target.");
         if(intent.Kind=="party"&&values.TryGetValue("invitationId",out var invitation)&&!PartySnapshot.Id(invitation))throw new ArgumentException("Invalid invitation.");
         if(intent.Kind=="selectRole"&&(!values.TryGetValue("role",out var selectedRole)||selectedRole is not ("tank" or "healer" or "damage")))throw new ArgumentException("Invalid combat role.");
-        if(intent.Kind=="diveSeries"&&values.TryGetValue("count",out var seriesCount)&&seriesCount is not ("10" or "20" or "100"))throw new ArgumentException("Invalid dive count.");
+        if(intent.Kind=="diveSeries"&&values.TryGetValue("count",out var seriesCount)&&seriesCount is not ("10" or "25" or "50" or "100"))throw new ArgumentException("Invalid dive count.");
         if(required.Any(p=>!values.ContainsKey(p)))throw new ArgumentException("Missing action arguments.");
         if(intent.Kind=="partyCombat"){
             if(values.TryGetValue("targetUserId",out var combatTarget)&&combatTarget!="auto"&&!PartySnapshot.User(combatTarget))throw new ArgumentException("Invalid combat target.");

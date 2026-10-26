@@ -5,20 +5,21 @@ namespace RaidClipPlugin.Services;
 public sealed partial class ViewerPointStore
 {
  internal async Task<List<(string Id,string Name,DiveSeriesState Series)>> DueDiveSeriesAsync(DateTimeOffset now,CancellationToken ct){
-  await _lock.WaitAsync(ct);try{await EnsureLoadedAsync(ct);return _entries!.Values.Where(a=>a.Rpg.DiveSeries is {Status:"active"} s&&s.NextAt<=now).Select(a=>(a.UserId,a.DisplayName,System.Text.Json.JsonSerializer.Deserialize<DiveSeriesState>(System.Text.Json.JsonSerializer.Serialize(a.Rpg.DiveSeries))!)).ToList();}finally{_lock.Release();}
+  await _lock.WaitAsync(ct);try{await EnsureLoadedAsync(ct);return _entries!.Values.Where(a=>a.Rpg.DiveSeries is {Status:"active"} s).Select(a=>(a.UserId,a.DisplayName,System.Text.Json.JsonSerializer.Deserialize<DiveSeriesState>(System.Text.Json.JsonSerializer.Serialize(a.Rpg.DiveSeries))!)).ToList();}finally{_lock.Release();}
  }
 }
 internal sealed class RpgDiveSeriesService(ViewerPointStore points,MinigameConfig config,IDuelRandom? random=null,Func<DateTimeOffset>? clock=null)
 {
  private DateTimeOffset Now=>clock?.Invoke()??DateTimeOffset.UtcNow;
  internal Task<RpgTransactionResult> StartAsync(string user,string name,string request,int count,CancellationToken ct){
-  if(count is not (10 or 20 or 100))throw new ArgumentException("Ungültige Anzahl.");
+  if(count is not (10 or 25 or 50 or 100))throw new ArgumentException("Ungültige Anzahl.");
   var now=Now;return points.ApplyRpgAsync(user,name,request,a=>{
    if(!config.Enabled||!config.PointsEnabled||!config.Adventures.Rpg.Enabled||!config.Adventures.Treasure.Enabled)return new(false,"Tauchen ist deaktiviert.");
    if(a.Rpg.DiveSeries is {Status:"active"})return new(false,"Eine Tauchserie läuft bereits.");
    if(points.HasActivePartyCombatUnsafe(user,now))return new(false,"Beende zuerst den Gruppenkampf.");
    RpgHealthService.Refresh(a.Rpg,config.Adventures.Rpg.Health,now);if(a.Rpg.Health.CurrentHp<=0)return new(false,"Du hast 0 HP. Erst heilen, dann tauchen.");
-   a.Rpg.DiveSeries=new(){Id=Guid.NewGuid().ToString("N"),ZoneId=a.Rpg.SelectedDivingZone,Count=count,NextAt=a.Rpg.Cooldowns.GetValueOrDefault("!dive",now)};return new(true);
+   if(a.Rpg.Cooldowns.TryGetValue("!dive",out var until)&&until>now)return new(false,"Dein Tauchgang hat noch Abklingzeit.");
+   a.Rpg.DiveSeries=new(){Id=Guid.NewGuid().ToString("N"),ZoneId=a.Rpg.SelectedDivingZone,Count=count,NextAt=now};return new(true);
   },ct);
  }
  internal Task<RpgTransactionResult> StopAsync(string user,string name,string request,CancellationToken ct)=>points.ApplyRpgAsync(user,name,request,a=>{if(a.Rpg.DiveSeries is not {Status:"active"} s)return new(false,"Keine laufende Tauchserie.");s.Status="stopped";s.Reason="Manuell beendet";return new(true);},ct);
@@ -28,7 +29,7 @@ internal sealed class RpgDiveSeriesService(ViewerPointStore points,MinigameConfi
   foreach(var entry in await points.DueDiveSeriesAsync(now,ct)){
    var s=entry.Series;
    if(config.PointsBlacklist.Any(n=>n.Equals(entry.Name,StringComparison.OrdinalIgnoreCase))){await StopAsync(entry.Id,entry.Name,"series-blocked:"+s.Id,ct);continue;}
-   var result=await new RpgAdventureService(points,config,random,()=>now).ExecuteAsync(entry.Id,entry.Name,"series:"+s.Id+":"+s.Completed,RpgActivity.Dive,0,ct,s.Id,s.Completed);
+   var result=await new RpgAdventureService(points,config,random,()=>now).ExecuteSeriesAsync(entry.Id,entry.Name,"series-batch:"+s.Id+":"+s.Completed,ct,s.Id,s.Completed);
    if(result.Success){changed++;if(result.BossDiscovered&&discovered is not null)await discovered(entry.Name,result.ZoneId,ct);}
    else if(result.RemainingCooldown==0)await points.ApplyRpgAsync(entry.Id,entry.Name,"series-end:"+s.Id+":"+s.Completed,a=>{if(a.Rpg.DiveSeries is {Status:"active"} current&&current.Id==s.Id&&current.Completed==s.Completed){current.Status=a.Rpg.Health.CurrentHp<=0?"defeated":"stopped";current.Reason=result.Error.Length>200?result.Error[..200]:result.Error;}return new(true);},ct);
   }return changed;
