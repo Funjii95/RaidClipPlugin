@@ -11,6 +11,8 @@ public static class ActionEndpoints
         app.Use(async(context,next)=>{
             try {await next();}
             catch(RelayDenied denied){context.Response.StatusCode=denied.Status;await context.Response.WriteAsJsonAsync(new{error=denied.Code});}
+            catch(Grpc.Core.RpcException error) when(error.StatusCode is Grpc.Core.StatusCode.Aborted or Grpc.Core.StatusCode.Unavailable or Grpc.Core.StatusCode.DeadlineExceeded)
+            {context.Response.StatusCode=503;await context.Response.WriteAsJsonAsync(new{error="relay_busy"});}
             catch(ArgumentException) when(context.Request.Path.StartsWithSegments("/api/v1/play") || context.Request.Path.StartsWithSegments("/api/v1/plugin/actions"))
             {context.Response.StatusCode=400;await context.Response.WriteAsJsonAsync(new{error="invalid_request"});}
             catch(JsonException) {context.Response.StatusCode=400;await context.Response.WriteAsJsonAsync(new{error="invalid_json"});}

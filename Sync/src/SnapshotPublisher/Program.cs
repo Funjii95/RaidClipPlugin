@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
@@ -32,7 +32,9 @@ public partial class PublisherProgram
             });
             options.AddFixedWindowLimiter("snapshots", limiter =>
             {
-                limiter.PermitLimit = 60;
+                // Four player snapshots per automatic group turn, plus normal
+                // account updates. Access still requires the publisher credential.
+                limiter.PermitLimit = 600;
                 limiter.Window = TimeSpan.FromMinutes(1);
                 limiter.QueueLimit = 0;
             });
@@ -69,7 +71,7 @@ public partial class PublisherProgram
         });
         app.UseRateLimiter();
         app.MapGet("/health/live", () => Results.Ok(new { status = "ok" }));
-        app.MapGet("/api/v1/snapshots/capabilities", () => Results.Json(new { rpgProjectionVersion = 2, supportedRpgProjectionVersions = new[] { 2, 3, 4, 5, 6, 7, 8, 9, 10, SnapshotValidation.RpgProjectionVersion }, channelId = channel, automaticPlayerEnrollment = settings.AutomaticPlayerEnrollment, allowedUserIds = settings.AllowedUserIds, maxMessageBytes = SnapshotValidation.MaxMessageBytes }));
+        app.MapGet("/api/v1/snapshots/capabilities", () => Results.Json(new { rpgProjectionVersion = 2, supportedRpgProjectionVersions = new[] { 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, SnapshotValidation.RpgProjectionVersion }, channelId = channel, automaticPlayerEnrollment = settings.AutomaticPlayerEnrollment, allowedUserIds = settings.AllowedUserIds, maxMessageBytes = SnapshotValidation.MaxMessageBytes }));
         app.MapGet("/api/v1/snapshots/{userId}/head", async (string userId, CancellationToken ct) =>
         {
             if (settings.Mode is not ("FirestoreProfilesTest" or "FirestoreTest")) return Results.NotFound();

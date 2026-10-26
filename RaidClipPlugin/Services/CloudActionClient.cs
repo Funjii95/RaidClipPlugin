@@ -90,6 +90,13 @@ internal sealed class CloudActionClient : IDisposable
                     await Task.Delay(handled?100:500,ct);
                 } catch(OperationCanceledException) when(ct.IsCancellationRequested){throw;}
                 catch(HttpRequestException error) when(error.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden){log("Aktionskanal gesperrt: geschützten Zugang prüfen.");return;}
+                catch(Exception error) when(IsTransient(error)) {
+                    // Keep the same session, ActionId and already persisted outcome.
+                    // Opening a new session while the old one is alive causes 409 loops.
+                    failures=Math.Min(failures+1,4);
+                    log("RPG-Server kurzzeitig beschäftigt; bestehende Sitzung und Aktionsbeleg bleiben erhalten.");
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Min(8,failures)),ct);
+                }
                 catch(Exception error) {
                     // A pending outcome is already durable. Never invoke a second action to compensate.
                     log("Aktionskanal unterbrochen ("+(error is HttpRequestException network?"HTTP "+(int?)network.StatusCode:error.GetType().Name)+"); unklare Aktionen werden nicht erneut gebucht.");
@@ -103,5 +110,6 @@ internal sealed class CloudActionClient : IDisposable
         finally{await Close();}
     }
     private async Task Close(){if(session==Guid.Empty)return;using var timeout=new CancellationTokenSource(TimeSpan.FromSeconds(3));try{await Request<bool>(HttpMethod.Delete,"/api/v1/plugin/actions/session/"+session,null,timeout.Token);}catch{}}
+    internal static bool IsTransient(Exception error)=>error is OperationCanceledException||error is HttpRequestException network&&(network.StatusCode is null or HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests||(int)network.StatusCode>=500);
     public void Dispose()=>http.Dispose();
 }

@@ -7,8 +7,9 @@ internal sealed class RpgPartyCombatService(ViewerPointStore points,MinigameConf
  private RpgConfig C=>settings.Adventures.Rpg;private IDuelRandom Rng=>random??new CryptoDuelRandom();private DateTimeOffset Now=>clock?.Invoke()??DateTimeOffset.UtcNow;
  internal static void Log(PartyInstance i,string actor,string target,string action,int amount=0){i.Log.Add(new(){Turn=i.Turn,ActorId=actor,TargetId=target,Action=action,Amount=Math.Max(0,amount)});if(i.Log.Count>60)i.Log.RemoveRange(0,i.Log.Count-60);}
  internal static void AddThreat(PartyInstance i,string actor,decimal value)=>i.Threat[actor]=Math.Min(RpgStatistics.Maximum,i.Threat.GetValueOrDefault(actor)+Math.Max(0,value));
- internal Task<RpgTransactionResult> ExecuteAsync(string actor,string name,string request,string operation,string zoneId,string dungeonId,string difficulty,string target,CancellationToken ct)=>points.ApplyPartyAsync(actor,name,request,(world,get)=>{
+ internal Task<RpgTransactionResult> ExecuteAsync(string actor,string name,string request,string operation,string zoneId,string dungeonId,string difficulty,string target,CancellationToken ct,string? expectedInstance=null,long? expectedRevision=null)=>points.ApplyPartyAsync(actor,name,request,(world,get)=>{
   var c=C;var now=Now;if(!settings.Enabled||!settings.PointsEnabled||!c.Enabled||!c.Multiplayer.Enabled)return new(false,"Gemeinsame Abenteuer sind nicht freigegeben.");var self=get(actor);var party=world.For(actor);
+  if(expectedInstance is not null){if(party?.Instance is not {Status:"active",AutomaticCombat:true} automatic||automatic.Id!=expectedInstance||party.Revision!=expectedRevision||automatic.NextAutomaticAt>now)return new(false,"Automatischer Kampfstand hat sich geändert.");automatic.NextAutomaticAt=now.AddSeconds(2);}
   if(operation=="recover"){
    var camp=party?.Instance is {Status:"active",WaveCleared:true} campInstance&&campInstance.ExpiresAt>now;
    if(points.HasActivePartyCombatUnsafe(actor,now)&&!camp||points.HasGlobalBossParticipantsUnsafe([actor]))return new(false,"Ausruhen ist erst nach dem Kampf möglich.");
@@ -33,13 +34,14 @@ internal sealed class RpgPartyCombatService(ViewerPointStore points,MinigameConf
    var zone=c.Zones.Get(zoneId);var hits=party.Members.ToDictionary(id=>id,id=>RpgCombatPowerService.Evaluate(get(id).Rpg,c,now).ExpectedHit);var weakest=hits.Values.Min();
    var instance=new PartyInstance{Id=Guid.NewGuid().ToString("N"),Kind=dungeon is not null?"dungeon":boss is not null?"boss":"dive",DungeonId=dungeon?.Id??"",Difficulty=difficulty,ZoneId=zone.Id,ExpiresAt=now.AddMinutes(c.Multiplayer.InstanceMinutes)};
    foreach(var id in party.Members){instance.Threat[id]=0;instance.DamageScale[id]=Math.Min(1,weakest*4/Math.Max(1,hits[id]));}
-   party.Instance=instance;InitializeEnemy(party,get,c,boss,now);party.Revision++;
+   instance.AutomaticCombat=instance.Kind=="dungeon";instance.NextAutomaticAt=now.AddSeconds(2);party.Instance=instance;InitializeEnemy(party,get,c,boss,now);party.Revision++;
    if(instance.Kind=="dive")foreach(var id in party.Members)RpgStatisticsService.Add(get(id).Rpg,"groupDives");
    Log(instance,actor,"",instance.Kind+"-start");return new(true);
   }
   if(party.Instance is not {} i)return new(false,"Keine gemeinsame Instanz aktiv.");
   if(i.Status!="active")return new(false,"Diese Instanz ist bereits abgeschlossen.");
   if(i.ExpiresAt<=now){i.Status="expired";Log(i,actor,"","expired");party.Revision++;return new(true);}
+  if(operation is "pauseAutomatic" or "resumeAutomatic"){if(party.LeaderId!=actor)return new(false,"Nur die Gruppenleitung steuert den Autokampf.");i.AutomaticCombat=operation=="resumeAutomatic";i.NextAutomaticAt=now.AddSeconds(2);party.Revision++;Log(i,actor,"",i.AutomaticCombat?"automatic-resumed":"automatic-paused");return new(true);}
   if(operation=="abandon"){i.Status="aborted";Log(i,actor,"","aborted");party.Revision++;return new(true);}
   if(operation=="advance"){
    if(party.LeaderId!=actor||!i.WaveCleared||i.Kind!="dungeon")return new(false,"Die nächste Begegnung ist noch nicht verfügbar.");
@@ -107,7 +109,7 @@ internal sealed class RpgPartyCombatService(ViewerPointStore points,MinigameConf
  private void Reward(PartyState party,Func<string,ViewerPointEntry> get,RpgConfig c,DateTimeOffset now)
  {
   var i=party.Instance!;var zone=c.Zones.Get(i.ZoneId);foreach(var id in party.Members){var a=get(id);var p=a.Rpg;if(i.Rewarded.Contains(id)||p.Health.CurrentHp<=0||i.Threat.GetValueOrDefault(id)<=0)continue;
-   var eligible=p.PlayerLevel+c.Multiplayer.MaximumLevelSpreadForRewards>=zone.Level;var rewardLevel=Math.Min(zone.Level,p.PlayerLevel+c.Multiplayer.MaximumLevelSpreadForRewards);var multiplier=i.Kind=="dungeon"?c.Dungeons.RewardMultipliers[i.Difficulty]*3:1;
+   var rewardReceipt=new RpgCombatRewardService(a);var eligible=p.PlayerLevel+c.Multiplayer.MaximumLevelSpreadForRewards>=zone.Level;var rewardLevel=Math.Min(zone.Level,p.PlayerLevel+c.Multiplayer.MaximumLevelSpreadForRewards);var multiplier=i.Kind=="dungeon"?c.Dungeons.RewardMultipliers[i.Difficulty]*3:1;
    var amount=(long)(rewardLevel*20*multiplier);if(settings.MaximumAccountEnabled)amount=Math.Min(amount,Math.Max(0,settings.MaximumAccountPoints-a.Points));a.Points=checked(a.Points+amount);RpgStatisticsService.Add(p,"pearlsEarned",amount);RpgHealthService.Experience(p,c.Health,(int)(rewardLevel*20*multiplier),now);
    var previous=p.Inventory.Select(x=>x.InstanceId).ToHashSet();
    if(eligible){var materials=RpgZoneService.Materials(p,c,zone,"enemy",Rng);RpgStatisticsService.Zone(p,zone.Id,"materials",materials.Values.Sum());RpgItem? item=null;
@@ -120,7 +122,7 @@ internal sealed class RpgPartyCombatService(ViewerPointStore points,MinigameConf
     if(item is not null)p.Inventory.Add(item);
    }
    RpgStatisticsService.Add(p,"enemyKills");RpgStatisticsService.Zone(p,zone.Id,"kills");if(i.Kind=="boss"){RpgStatisticsService.Add(p,"groupBossKills");RpgStatisticsService.BossKill(p,i.EnemyId);}if(i.Kind=="dungeon")p.Statistics.Dungeons[i.Difficulty]=Math.Min(SnapshotProtocol.RpgStatistics.Maximum,p.Statistics.Dungeons.GetValueOrDefault(i.Difficulty)+1);
-   var legendary=p.Inventory.Count(x=>!previous.Contains(x.InstanceId)&&x.Rarity==ItemRarity.Legendary);RpgStatisticsService.Add(p,"legendaryFinds",legendary);RpgStatisticsService.Zone(p,zone.Id,"legendary",legendary);i.Rewarded.Add(id);Log(i,id,"","reward",(int)Math.Min(int.MaxValue,amount));
+   var legendary=p.Inventory.Count(x=>!previous.Contains(x.InstanceId)&&x.Rarity==ItemRarity.Legendary);RpgStatisticsService.Add(p,"legendaryFinds",legendary);RpgStatisticsService.Zone(p,zone.Id,"legendary",legendary);rewardReceipt.Complete("party:"+i.Id,i.Kind=="dungeon"?"dungeon":i.Kind=="boss"?"groupBoss":"groupDive",i.EnemyId,i.EnemyName,i.ZoneId,now);i.Rewarded.Add(id);Log(i,id,"","reward",(int)Math.Min(int.MaxValue,amount));
   }
  }
 }

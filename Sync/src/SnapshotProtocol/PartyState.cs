@@ -10,6 +10,7 @@ public sealed class PartyCombatLog
 }
 public sealed class PartyInstance
 {
+ public bool AutomaticCombat {get;set;}public DateTimeOffset NextAutomaticAt {get;set;}
  public string Id {get;set;}="";public string Kind {get;set;}="dive";public string ZoneId {get;set;}="sunny_lagoon";public string Difficulty {get;set;}="normal";public string Status {get;set;}="active";
  public int AddsHp {get;set;}public int PendingTurn {get;set;}public string PendingAbility {get;set;}="";public bool WaveCleared {get;set;}public bool Enraged {get;set;}public string LastActorId {get;set;}="";public int RallyUntilTurn {get;set;}
  public Dictionary<string,decimal> DamageScale {get;set;}=[];

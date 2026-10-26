@@ -5,6 +5,17 @@ namespace Backend;
 public sealed class FirestoreRelayStore(FirestoreDb database,string channelId,string collection) : IRelayStore
 {
     private readonly SemaphoreSlim transactions = new(1,1);
+    public async Task<T> ObserveAsync<T>(Guid? id,Func<RelayChannel,RelayAction?,T> observation,CancellationToken ct)
+    {
+        RelayAction? action=null;
+        if(id is {} key){
+            var snapshot=await database.Collection(collection).Document(channelId).Collection("actions").Document(key.ToString("N")).GetSnapshotAsync(ct);
+            if(snapshot.Exists){if(snapshot.ContainsField("privacyErased"))throw new RelayDenied(410,"privacy_erased");action=JsonSerializer.Deserialize<RelayAction>(snapshot.GetValue<string>("actionJson"));}
+        }
+        // Observe the privacy fence after reading the receipt. A deletion that has
+        // already blocked the account must never expose an earlier saved result.
+        return observation(await ReadChannelAsync(ct),action);
+    }
     public async Task<RelayChannel> ReadChannelAsync(CancellationToken ct)
     {
         var snapshot=await database.Collection(collection).Document(channelId).GetSnapshotAsync(ct);

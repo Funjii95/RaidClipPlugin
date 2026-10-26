@@ -13,6 +13,7 @@ public partial class MainForm
     private Guid _streamEpoch;
     private Task? _cloudSyncTask;
     private Task? _actionChannelTask;
+    private Task? _automaticDungeonTask;
     private volatile bool _cloudSyncReady;
     private readonly CancellationTokenSource _cloudStop=new();
     private void InitializeCloudIntegration()
@@ -72,6 +73,16 @@ public partial class MainForm
     private void StartActionChannel(CancellationToken ct)
     {
         var epoch=_streamEpoch;var minigame=_minigame!;
+        _automaticDungeonTask=Task.Run(async()=>{
+            var automatic=new RpgAutomaticDungeons(_viewerPoints,()=>minigame.RemoteConfiguration);
+            while(!ct.IsCancellationRequested){
+                try{if(_streamAdmission.CanPlay(epoch)){using var scope=_streamAdmission.Enter(epoch);await automatic.TickAsync(ct);}}
+                catch(OperationCanceledException)when(ct.IsCancellationRequested){break;}
+                catch(GameplayUnavailableException){}
+                catch{CloudLog("Automatischer Dungeon pausiert kurz; gespeicherter Kampfstand bleibt erhalten.");}
+                try{await Task.Delay(1000,ct);}catch(OperationCanceledException){break;}
+            }
+        },ct);
         _actionChannelTask=Task.Run(async()=>{
             try {
                 var file=Path.Combine(TestDataPaths.Root,"action-channel.json");
@@ -85,7 +96,7 @@ public partial class MainForm
                 string key;try{if(secret.Length is <32 or >64)throw new InvalidDataException();key=Convert.ToBase64String(secret);}finally{CryptographicOperations.ZeroMemory(secret);}
                 var executor=new RemoteRpgExecutor(_viewerPoints,()=>minigame.RemoteConfiguration,_streamAdmission,epoch,options.ChannelId,
                     options.AllowedUserIds.ToHashSet(StringComparer.Ordinal),Path.Combine(TestDataPaths.Root,"action-receipts"),
-                    (command,name)=>_commandRegistry.Commands.Any(c=>c.CommandText==command && c.Enabled && c.RequiredRole==RaidClipPlugin.Models.CommandRole.Viewer),minigames:minigame,enrolled:options.AutomaticPlayerEnrollment?id=>IsAutomaticallyEnrolled(id):null,saveUpgrades:upgrades=>{var saved=_configurationService.LoadForEditing();saved.Minigame.Adventures.Rpg.Upgrades=upgrades;_configurationService.SaveGuiSettings(saved);},saveZones:zones=>{var saved=_configurationService.LoadForEditing();saved.Minigame.Adventures.Rpg.Zones=zones;_configurationService.SaveGuiSettings(saved);},readAdminConfiguration:()=>_configurationService.LoadForEditing(),saveAdminConfiguration:saved=>{_configurationService.SaveGuiSettings(saved);minigame.UpdateConfiguration(saved);});
+                    (command,name)=>_commandRegistry.Commands.Any(c=>c.CommandText==command && c.Enabled && c.RequiredRole==RaidClipPlugin.Models.CommandRole.Viewer),minigames:minigame,enrolled:options.AutomaticPlayerEnrollment?id=>IsAutomaticallyEnrolled(id):null,saveUpgrades:upgrades=>{var saved=_configurationService.LoadForEditing();saved.Minigame.Adventures.Rpg.Upgrades=upgrades;_configurationService.SaveGuiSettings(saved);},saveZones:zones=>{var saved=_configurationService.LoadForEditing();saved.Minigame.Adventures.Rpg.Zones=zones;_configurationService.SaveGuiSettings(saved);},readAdminConfiguration:()=>_configurationService.LoadForEditing(),saveAdminConfiguration:saved=>{_configurationService.SaveGuiSettings(saved);minigame.UpdateConfiguration(saved);},resolveTwitchUser:async(login,token)=>_twitch is {} twitch?await twitch.GetUserAsync(login,token):null);
                 using var client=new CloudActionClient(new Uri(options.BackendUrl),key,executor,()=>_streamAdmission.CanPlay(epoch)&&_cloudSyncReady,CloudLog);
                 await client.RunAsync(ct);
             }catch(OperationCanceledException)when(ct.IsCancellationRequested){}catch{CloudLog("Aktionskanal nicht gestartet: getrennte Konfiguration/Zugang prüfen.");}

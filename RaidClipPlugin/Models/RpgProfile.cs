@@ -125,6 +125,7 @@ public sealed class RpgBuff
 
 public sealed class RpgProfile
 {
+    public List<SnapshotProtocol.CombatRewardReceipt> CombatRewards {get;set;}=[];
     public SnapshotProtocol.PartySnapshot Party {get;set;}=new();
     public RpgRole Role {get;set;}
     public SnapshotProtocol.RpgStatistics Statistics {get;set;}=new();

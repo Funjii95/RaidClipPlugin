@@ -57,9 +57,25 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
         }
         var locked=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("selectRole","{\"role\":\"healer\"}")),default);Assert.False(locked.Success);
     }
+    [Fact]public async Task Party_invitation_resolves_a_Twitch_login_once_and_keeps_ID_ownership(){
+        await SeedAsync();await points!.AddPointsAsync("2002","Simoncat",100,0,default);var lookups=0;
+        var executor=new RemoteRpgExecutor(points,()=>config,gate,epoch,"42",new HashSet<string>{"1001"},Path.Combine(root,"receipts"),(_,_)=>true,resolveTwitchUser:(login,_)=>{lookups++;Assert.Equal("simoncat",login);return Task.FromResult<TwitchUser?>(new("2002","simoncat","Simoncat"));});
+        Assert.True((await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("party","{\"operation\":\"create\"}")),default)).Success);
+        var invitation=Envelope(ActionApiFixture.Intent("party","{\"operation\":\"invite\",\"targetLogin\":\"@Simoncat\"}"));var sent=await executor.ExecuteAsync(invitation,default);Assert.True(sent.Success,sent.Message);Assert.Contains("Simoncat",sent.DataJson);Assert.Equal(sent,await executor.ExecuteAsync(invitation,default));Assert.Equal(1,lookups);
+        Assert.Single((await points.GetProfileAsync("2002",default)).Entry.Rpg.Party.Invitations);Assert.Empty((await points.GetProfileAsync("1001",default)).Entry.Rpg.Party.Invitations);
+        Assert.Throws<ArgumentException>(()=>RpgIntents.Canonical(ActionApiFixture.Intent("party","{\"operation\":\"invite\",\"targetLogin\":\"simoncat\",\"targetUserId\":\"42\"}")));
+    }
+    private sealed class FlakyClaimHandler:DelegatingHandler{
+        public int Sessions;public bool Failed;
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken ct){if(request.RequestUri!.AbsolutePath.EndsWith("/session")&&request.Method==HttpMethod.Post)Sessions++;if(!Failed&&request.RequestUri.AbsolutePath.Contains("/claim/")){Failed=true;return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable){Content=new StringContent("{}")});}return base.SendAsync(request,ct);}
+    }
+    [Fact]public async Task Temporary_claim_failure_keeps_the_existing_session_and_executes_once(){
+        var executor=await SeedAsync();await using var api=new ActionApiFixture();var handler=new FlakyClaimHandler();var transport=api.Factory.CreateDefaultClient(handler);transport.DefaultRequestHeaders.Authorization=new("Bearer",ActionApiFixture.Key);using var stop=new CancellationTokenSource(TimeSpan.FromSeconds(20));using var pump=new CloudActionClient(transport,executor,()=>gate.CanPlay(epoch),_=>{});var running=pump.RunAsync(stop.Token);
+        try{RelayAvailability? ready;do{await Task.Delay(500,stop.Token);ready=await api.Viewer.GetFromJsonAsync<RelayAvailability>("/api/v1/play/state",stop.Token);}while(!ready!.Available);api.Viewer.DefaultRequestHeaders.Add("X-Rpg-Session",ready.SessionId!.Value.ToString());var intent=ActionApiFixture.Intent();(await api.Viewer.PostAsJsonAsync("/api/v1/play/actions",intent,stop.Token)).EnsureSuccessStatusCode();ActionReceipt? receipt;do{await Task.Delay(100,stop.Token);receipt=await api.Viewer.GetFromJsonAsync<ActionReceipt>("/api/v1/play/actions/"+intent.ActionId,stop.Token);}while(receipt!.State is "queued" or "executing");Assert.Equal("applied",receipt.State);Assert.Equal(1500,await points!.GetPointsAsync("1001",default));Assert.True(handler.Failed);Assert.Equal(1,handler.Sessions);}finally{stop.Cancel();await running;}
+    }
     [Fact]public void Tides_requires_publisher_support_for_extended_stats_and_shields()
     {
-        Assert.Equal(11,SnapshotValidation.RpgProjectionVersion);
+        Assert.Equal(12,SnapshotValidation.RpgProjectionVersion);
     }
     [Fact]public async Task Large_inventory_status_keeps_authoritative_stats_and_profile()
     {

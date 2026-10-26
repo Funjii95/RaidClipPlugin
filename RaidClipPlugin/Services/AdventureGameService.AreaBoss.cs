@@ -137,8 +137,8 @@ public sealed partial class AdventureGameService
     RpgSushiService.Close(a.Rpg,state.Id,_now()<state.End?_now():state.End,_now(),cfg.Health);
     if(!victory||participant.Defeated||participant.Cycles<1||!RpgHealthService.Eligible(a.Rpg,state.Id))return new(true);
     var boss=state.Bosses.Single(b=>b.Id==participant.BossId);
-    var personalWin=state.EventConfig.IsMimic||!cfg.BossAssignment.Automatic||participant.PersonalVictory;
-    if(!personalWin){var fraction=cfg.BossAssignment.ParticipationRewardFraction*Math.Clamp((decimal)participant.Damage/Math.Max(1,participant.PersonalMaximumHp),0,1);var partial=Math.Min((long)(boss.Pearls*fraction),Math.Max(0,Maximum-a.Points));a.Points+=partial;RpgStatisticsService.Add(a.Rpg,"pearlsEarned",partial);RpgHealthService.Experience(a.Rpg,cfg.Health,(int)(boss.Experience*fraction),_now());return new(true);}
+    var rewardReceipt=new RpgCombatRewardService(a);var personalWin=state.EventConfig.IsMimic||!cfg.BossAssignment.Automatic||participant.PersonalVictory;
+    if(!personalWin){var fraction=cfg.BossAssignment.ParticipationRewardFraction*Math.Clamp((decimal)participant.Damage/Math.Max(1,participant.PersonalMaximumHp),0,1);var partial=Math.Min((long)(boss.Pearls*fraction),Math.Max(0,Maximum-a.Points));a.Points+=partial;RpgStatisticsService.Add(a.Rpg,"pearlsEarned",partial);RpgHealthService.Experience(a.Rpg,cfg.Health,(int)(boss.Experience*fraction),_now());rewardReceipt.Complete("boss:"+state.Id,"participation",boss.Id,boss.Name,boss.AreaId,_now());return new(true);}
     var stats=CharacterStatService.Calculate(a.Rpg,cfg,RpgActivity.Boss,now:_now());
     var collectors=RpgCollectorService.Calculate(a.Rpg,cfg.DiveLoot);
     var pearls=RpgCollectorService.Reward(boss.Pearls,stats.PearlBonus+collectors.BossPearls+RpgPerkCatalog.Bonus(a.Rpg,"bossPearls"));
@@ -152,7 +152,7 @@ public sealed partial class AdventureGameService
     }
     if(!state.EventConfig.IsMimic&&boss.Id=="boss_eonath")RpgEternalEightLoot.Victory(a.Rpg,cfg,boss.AreaId,boss.Level,"eonath",true,_random,_now(),boss.Id);
     if(state.EventConfig.IsMimic)RpgQuestService.Record(a.Rpg,"kills",boss.AreaId);
-    RpgPerkCatalog.Victory(a.Rpg,_now());return new(true);
+    RpgPerkCatalog.Victory(a.Rpg,_now());rewardReceipt.Complete("boss:"+state.Id,state.EventConfig.IsMimic?"mimic":"boss",boss.Id,boss.Name,boss.AreaId,_now());return new(true);
    },ct);
   }
   state.Active=false;state.Victory=victory;state.RewardsSettled=true;

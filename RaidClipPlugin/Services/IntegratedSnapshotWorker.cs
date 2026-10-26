@@ -39,6 +39,7 @@ internal sealed class IntegratedSnapshotWorker
     private readonly Func<DateTimeOffset> now;
     private sealed record PrivacyRetry(int Failures, DateTimeOffset NextAttempt, string Reason);
     private readonly ConcurrentDictionary<string,PrivacyRetry> privacyRetries=new();
+    private readonly ConcurrentDictionary<string,DateTimeOffset> verifiedHeads=new();
     internal int PendingPrivacyCount=>privacyRetries.Count;
     internal string PrivacyStatus=>privacyRetries.IsEmpty ? "" :
         $"{privacyRetries.Count} Cloud-Löschauftrag/-aufträge ausstehend; nur betroffene Konten gesperrt. " +
@@ -163,6 +164,9 @@ internal sealed class IntegratedSnapshotWorker
             var compact=JsonSerializer.Serialize(account,new JsonSerializerOptions{Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping});
             var candidate=new SnapshotMessage(1,channel,id,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,compact);
             var clean=SnapshotValidation.Validate(candidate,channel).AccountJson!;
+            // A dungeon updates several members every turn. Unchanged bystanders
+            // need periodic reconciliation, not a remote head read on every hit.
+            if(state is not null&&state.Pending.Length==0&&state.PrivateAccountJson==clean&&verifiedHeads.TryGetValue(id,out var verified)&&now()-verified<TimeSpan.FromSeconds(30))return;
             var head=await read(id,ct);
             if(head is null){
                 if(!automaticPlayerEnrollment || state is not null)throw new InvalidDataException("Cloud account requires explicit initial provisioning.");
@@ -181,6 +185,7 @@ internal sealed class IntegratedSnapshotWorker
             if(head.ChannelId!=channel || head.UserId!=id || head.Revision!=state.Revision ||
                 head.SnapshotId!=state.CommitId || head.ContentHash!=last.ContentHash)
                 throw new InvalidDataException("Cloud and local revision diverged; automatic rebase forbidden.");
+            verifiedHeads[id]=now();
             if(state.PrivateAccountJson==clean)return;
             await outbox.CommitAsync(id,state.Revision,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,clean,ct:ct);
             await DrainAsync(id,ct);

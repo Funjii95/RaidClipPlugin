@@ -24,7 +24,7 @@ public class RpgCombatPowerTests:IDisposable
   var game=new AdventureGameService(points,config,(_,_)=>Task.CompletedTask,new Low(),()=>now,"42");await game.HandleAsync(new(){UserId="42",UserName="Owner",IsBroadcaster=true},"!start boss",["!start boss"],default);
   Assert.True((await game.ExecuteBossAttackAsync("1","Weak","first",default)).Success);Assert.True((await game.ExecuteBossAttackAsync("2","Strong","last",default)).Success);
   var state=(await points.ReadGlobalBossAsync(default))!;Assert.True(state.RewardsSettled);Assert.True(state.Participants["1"].PersonalRemainingHp>0);Assert.False(state.Participants["1"].PersonalVictory);Assert.True(state.Participants["2"].PersonalVictory);
-  var weak=(await points.GetProfileAsync("1",default)).Entry;Assert.Empty(weak.Rpg.Inventory);Assert.Equal(0,weak.Rpg.Statistics.Counters.GetValueOrDefault("bossKills"));
+  var weak=(await points.GetProfileAsync("1",default)).Entry;Assert.Empty(weak.Rpg.Inventory);Assert.Equal(0,weak.Rpg.Statistics.Counters.GetValueOrDefault("bossKills"));Assert.Equal("participation",Assert.Single(weak.Rpg.CombatRewards).Kind);var winner=(await points.GetProfileAsync("2",default)).Entry;Assert.Equal("boss",Assert.Single(winner.Rpg.CombatRewards).Kind);Assert.NotEmpty(winner.Rpg.CombatRewards[0].Items);
  }
 }
 

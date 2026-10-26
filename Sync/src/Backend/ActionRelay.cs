@@ -25,6 +25,7 @@ public sealed record RelayMutation<T>(T Value, RelayAction? Action = null, bool 
 public interface IRelayStore
 {
     Task<RelayChannel> ReadChannelAsync(CancellationToken ct);
+    Task<T> ObserveAsync<T>(Guid? id,Func<RelayChannel,RelayAction?,T> observation,CancellationToken ct)=>TransactionAsync<T>(id,false,(s,a)=>new(observation(s,a)),ct);
     Task PurgeUserActionsAsync(string user,CancellationToken ct);
     Task<T> TransactionAsync<T>(Guid? id, bool head, Func<RelayChannel,RelayAction?,RelayMutation<T>> operation,CancellationToken ct);
 }
@@ -125,8 +126,16 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     public async Task<ActionReceipt?> ReadAsync(string user,Guid id,CancellationToken ct)
     {
         Scope(user);
+        var observed=await store.ObserveAsync(id,(s,a)=>{
+            if(a is null || a.Envelope.UserId!=user)return (Receipt:(ActionReceipt?)null,Expire:false);
+            if(s.PrivacyBlockedUsers.Contains(user))throw new RelayDenied(410,"privacy_erased");
+            var expires=a.State=="queued"&&(a.QueuedUntil<=Now||a.Envelope.SessionId!=s.SessionId||s.ExpiresAt<=Now)||a.State=="executing"&&a.Envelope.ExecuteBefore<=Now;
+            return (Receipt:(ActionReceipt?)Receipt(a),Expire:expires);
+        },ct);
+        if(!observed.Expire)return observed.Receipt;
         return await store.TransactionAsync<ActionReceipt?>(id,false,(s,a)=>{
             if(a is null || a.Envelope.UserId!=user)return new(null);
+            if(s.PrivacyBlockedUsers.Contains(user))throw new RelayDenied(410,"privacy_erased");
             Expire(s,a);return new(Receipt(a),a,true);
         },ct);
     }
@@ -139,6 +148,10 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     }
     public async Task<ActionEnvelope?> ClaimAsync(Guid session,CancellationToken ct)
     {
+        // Idle polling must not acquire a pessimistic lock on the shared control document.
+        var observed=await store.ReadChannelAsync(ct);
+        if(observed.SessionId!=session||!Ready(observed)||observed.Sequence<=0)throw new RelayDenied(409,"plugin_disconnected");
+        if(observed.Queue.Count==0)return null;
         return await store.TransactionAsync<ActionEnvelope?>(null,true,(s,a)=>{
             if(s.SessionId!=session || !Ready(s) || s.Sequence<=0)throw new RelayDenied(409,"plugin_disconnected");
             if(a is null)return new(null);
