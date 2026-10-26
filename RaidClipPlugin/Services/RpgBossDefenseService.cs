@@ -14,6 +14,6 @@ public static class RpgBossDefenseService
         var armor=Math.Clamp(stats.Armor*(1+stats.ArmorPercent/100),0,10000)*(1-Math.Clamp(armorIgnore,0,100)/100);
         if(!dodged)RpgDepthsCombatService.BeforeCounter(profile,config,now);
         var reduced=dodged?0:(int)decimal.Ceiling(raw*(1-stats.BossDamageReduction*(1-Math.Clamp(reductionIgnore,0,100)/100)/100)*100/(100+armor));
-        return RpgSetCombatService.Defense(reduced,profile,config,now,dodged);
+        var final=RpgSetCombatService.Defense(reduced,profile,config,now,dodged);RpgStatisticsService.Add(profile,"damageBlocked",Math.Max(0,raw-final));return final;
     }
 }

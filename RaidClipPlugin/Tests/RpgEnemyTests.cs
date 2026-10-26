@@ -75,10 +75,10 @@ public sealed class RpgEnemyTests : IDisposable
         var store=new ViewerPointStore(_dir);await store.AddPointsAsync("u","U",1000,0,default);
         var service=new RpgAdventureService(store,c,new Low(),()=>_now);var r=await service.ExecuteAsync("u","U","one",RpgActivity.Dive,250,default);
         Assert.True(r.Success);Assert.True(r.Enemy!.Victory);Assert.Equal(1020,r.Balance);Assert.Equal(20,r.Payout);
-        var p=(await store.GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(100,p.Experience);Assert.Single(p.Inventory);
+        var p=(await store.GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(100,p.Experience);Assert.Equal(2,p.Inventory.Count);Assert.Single(p.Inventory,i=>i.ItemId.StartsWith("starter_"));
         r=await new RpgAdventureService(store,c,new Low(),()=>_now.AddHours(1)).ExecuteAsync("u","U","one",RpgActivity.Dive,250,default);
         Assert.False(r.Success);Assert.Null(r.Enemy);Assert.Equal(1020,await store.GetPointsAsync("u",default));
-        p=(await new ViewerPointStore(_dir).GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(100,p.Experience);Assert.Single(p.Inventory);
+        p=(await new ViewerPointStore(_dir).GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(100,p.Experience);Assert.Equal(2,p.Inventory.Count);Assert.Single(p.Inventory,i=>i.ItemId.StartsWith("starter_"));
     }
     [Fact]
     public async Task FailedSaveRollsBackCombatExperienceLootAndCurrency()

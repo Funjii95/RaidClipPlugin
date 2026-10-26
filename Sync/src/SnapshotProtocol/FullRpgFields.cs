@@ -11,6 +11,8 @@ internal static class FullRpgFields
         {
             case "IsLocked": case "IsFavorite": case "EncounterBased": case "AllActivities":
                 Require(node is JsonValue flag && flag.TryGetValue<bool>(out _)); return true;
+            case "MinimumLevel":
+                Require(node is JsonValue minLevel&&minLevel.TryGetValue<int>(out var level)&&level is >=1 and <=100);return true;
             case "CoreStatsVersion": case "DropWeight": case "SalvageValue":
                 Require(name=="SalvageValue" && node is null || node is JsonValue integer && integer.TryGetValue<long>(out var n) && n>=0); return true;
             case "Category":

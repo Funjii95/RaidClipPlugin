@@ -55,6 +55,7 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             var instanceId = numbered ? view![number - 1] : selection;
             var item = account.Rpg.Inventory.SingleOrDefault(i => i.InstanceId == instanceId);
             if (item is null) return new(false, "Dieser Gegenstand ist nicht in deinem Inventar.");
+            if(account.Rpg.PlayerLevel<item.MinimumLevel)return new(false,$"Benötigt Stufe {item.MinimumLevel}.");
             // Persisted slot remains authoritative for legacy items without Kind metadata.
             if (item.Slot is null)
                 return new(false, $"{RpgChatPresentation.ItemName(item)} ist " + (item.Kind == RpgItemKind.Consumable ? "ein Verbrauchsgegenstand" : "ein Schatz") + " und kann nicht ausgerüstet werden.");

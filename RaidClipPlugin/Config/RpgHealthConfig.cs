@@ -4,6 +4,8 @@ namespace RaidClipPlugin.Config;
 
 public sealed class RpgHealthConfig
 {
+    [System.Text.Json.Serialization.JsonIgnore, Browsable(false)] public RpgEarlyLegendaryConfig EarlyLegendaries {get;set;}=new();
+    [System.Text.Json.Serialization.JsonIgnore, Browsable(false)] public RpgRoleConfig Roles {get;set;}=new();
     [System.Text.Json.Serialization.JsonIgnore, Browsable(false)]
     public IReadOnlyList<RaidClipPlugin.Models.RpgItemSet> EquipmentSets { get; set; } = Array.Empty<RaidClipPlugin.Models.RpgItemSet>();
     [Category("Lebenspunkte"), DisplayName("HP-System aktiv")] public bool Enabled { get; set; } = true;
@@ -18,10 +20,10 @@ public sealed class RpgHealthConfig
     [Category("Level / EXP"), DisplayName("EXP Boss entkommen")] public int EscapeExperience { get; set; } = 100;
     [Category("Level / EXP"), DisplayName("Top-Schaden Zusatz-EXP")] public int TopExperience { get; set; } = 200;
     [Category("Chat-Heilung"), DisplayName("Aktiviert")] public bool ChatHealing { get; set; } = true;
-    [Category("Chat-Heilung"), DisplayName("HP je Nachricht")] public int ChatHp { get; set; } = 10;
+    [Category("Chat-Heilung"), DisplayName("MaxHP-Prozent je Nachricht")] public int ChatHp { get; set; } = 10;
     [Category("Chat-Heilung"), DisplayName("Cooldown (Sekunden)")] public int ChatCooldownSeconds { get; set; } = 30;
     [Category("Passive Heilung"), DisplayName("Aktiviert")] public bool PassiveHealing { get; set; } = true;
-    [Category("Passive Heilung"), DisplayName("HP pro Intervall")] public int PassiveHp { get; set; } = 2;
+    [Category("Passive Heilung"), DisplayName("MaxHP-Prozent pro Minute")] public int PassiveHp { get; set; } = 2;
     [Category("Passive Heilung"), DisplayName("Intervall (Sekunden)")] public int PassiveSeconds { get; set; } = 60;
     [Category("Passive Heilung"), DisplayName("Nachholgrenze (Minuten, 0 = bis MaxHP)")] public int CatchUpMinutes { get; set; }
     [Category("Boss-Gegenangriff"), DisplayName("Aktiviert")] public bool Counterattacks { get; set; } = true;
@@ -40,7 +42,7 @@ public sealed class RpgHealthConfig
     {
         if (BaseHp is < 1 or > 1000000 || HpPerStamina is <1 or >1000 || EquipmentHpCap is <0 or >1000000 || HpPerLevel is < 0 or > 10000 || MaximumLevel is < 1 or > 100 ||
             ExperiencePerLevel is < 1 or > 100000000 || VictoryExperience is < 0 or > 1000000000 || EscapeExperience is < 0 or > 1000000000 || TopExperience is < 0 or > 1000000000 ||
-            ChatHp is < 0 or > 1000000 || ChatCooldownSeconds is < 1 or > 86400 || PassiveHp is < 0 or > 1000000 || PassiveSeconds is < 1 or > 86400 || CatchUpMinutes is < 0 or > 525600 ||
+            ChatHp is < 0 or > 100 || ChatCooldownSeconds is < 1 or > 86400 || PassiveHp is < 0 or > 100 || PassiveSeconds is < 1 or > 86400 || CatchUpMinutes is < 0 or > 525600 ||
             StrongThreshold < 1 || EliteThreshold <= StrongThreshold || LegendaryThreshold <= EliteThreshold ||
             new[] { (CommonMinimum,CommonMaximum),(StrongMinimum,StrongMaximum),(EliteMinimum,EliteMaximum),(LegendaryMinimum,LegendaryMaximum) }
                 .Any(p => p.Item1 < 0 || p.Item2 < p.Item1 || p.Item2 > 1000000))

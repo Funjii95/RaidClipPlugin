@@ -3,7 +3,7 @@ export type Receipt={actionId:string;state:'queued'|'executing'|'applied'|'rejec
 export type Availability={available:boolean;reason:string;catalogJson?:string;sessionId?:string;selfDeletionEnabled?:boolean};
 export type Authorization={token:string;channelId:string;userId:string};
 export type SelfDeletionJob={userId:string;requestId:string;requestedAt:string;completed:boolean};
-export const readOnlyIntents=new Set(['questStatus','status','bossStatus','minigames','preview','adminCatalog']);
+export const readOnlyIntents=new Set(['dungeonStatus','partyStatus','questStatus','status','bossStatus','minigames','preview','adminCatalog']);
 export const backend=import.meta.env.MODE==='hosted-test'?'https://rc1---funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app':'https://funjii-otter-rpg-backend-test-cwzl75ajla-ey.a.run.app';
 // Preserve Int64 values as display strings. Never calculate game costs or rewards here.
 export function parseWire(text:string):any{return JSON.parse(text.replace(/"(?:[^"\\]|\\.)*"|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:e[+-]?\d+)?/gi,token=>token[0]!== '"' && /^-?\d+$/.test(token) && !Number.isSafeInteger(Number(token))?JSON.stringify(token):token));}

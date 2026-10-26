@@ -38,7 +38,7 @@ public sealed class RpgHealthTests : IDisposable
         var p=new RpgProfile();var c=new RpgHealthConfig();RpgHealthService.Refresh(p,c,_now);p.Health.CurrentHp=50;
         RpgHealthService.Experience(p,c,1000,_now);Assert.Equal(2,p.PlayerLevel);Assert.Equal(77,p.Health.CurrentHp);
         RpgHealthService.Refresh(p,c,_now.AddSeconds(119));Assert.Equal(79,p.Health.CurrentHp);
-        RpgHealthService.Refresh(p,c,_now.AddSeconds(120));Assert.Equal(81,p.Health.CurrentHp);
+        RpgHealthService.Refresh(p,c,_now.AddSeconds(120));Assert.Equal(82,p.Health.CurrentHp);
         RpgHealthService.Refresh(p,c,_now.AddYears(1));Assert.Equal(127,p.Health.CurrentHp);
     }
     [Fact]
@@ -81,7 +81,7 @@ public sealed class RpgHealthTests : IDisposable
         var p=(await s.GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(0,p.Health.CurrentHp);Assert.True(p.Health.Defeated);
         _now=_now.AddSeconds(2);
         await RpgHealthService.HealChatAsync(s,c.Adventures.Rpg,new(){UserId="u",Id="heal",Text="hello"},_now,default);
-        Assert.Equal(10,(await s.GetProfileAsync("u",default)).Entry.Rpg.Health.CurrentHp);
+        Assert.Equal(0,(await s.GetProfileAsync("u",default)).Entry.Rpg.Health.CurrentHp);
         game=Game(new(_dir),c);Assert.False((await game.ExecuteBossAttackAsync("u","U","two",default)).Success);
         Assert.Equal(190,game.Status.BossHp);
     }

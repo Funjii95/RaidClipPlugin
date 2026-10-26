@@ -31,8 +31,8 @@ public sealed class RpgEnemyService(IDuelRandom random)
    var ignore=critical&&RpgEternalCombat.Has(p,c,"eternal_primordial_wrath",6)?.30m:0m;
    int extra=stats.DoubleAttackChance>0&&random.NextInclusive(0,9999)<stats.DoubleAttackChance*100?1:0;
    var eight=RpgEternalEightCombat.Proc(attackBase,critical,extra,p,c,now);
-   var damage=(int)Math.Min(int.MaxValue,decimal.Floor((regular*(1+extra*.5m)+eight.Damage+(spell?.Damage??0)+RpgEternalCombat.Proc(regular,critical,extra,p,c,now)+RpgDepthsCombatService.AttackProc(regular,critical,extra,p,c,random,now))*100/(100+armor*(1-ignore))));
-   var actual=RpgEternalCombat.Judgment(p,c)?hp:Math.Min(hp,Math.Max(1,damage));hp-=actual;
+   var damage=(int)Math.Min(int.MaxValue,decimal.Floor((regular*(1+extra*.5m)+RpgEarlyLegendaryEffects.ExtraHit(regular,p,c,random)+eight.Damage+(spell?.Damage??0)+RpgEternalCombat.Proc(regular,critical,extra,p,c,now)+RpgDepthsCombatService.AttackProc(regular,critical,extra,p,c,random,now))*100/(100+armor*(1-ignore))));
+   var actual=RpgEternalCombat.Judgment(p,c)?hp:Math.Min(hp,Math.Max(1,damage));hp-=actual;RpgEarlyLegendaryEffects.AfterHit(actual,p,c,random,now);RpgStatisticsService.Hit(p,actual,critical);
    var directAfterArmor=(int)Math.Min(int.MaxValue,decimal.Floor(regular*(1+extra*.5m)*100/(100+armor*(1-ignore))));
    var soulAfterArmor=(int)Math.Min(int.MaxValue,decimal.Floor(eight.SoulDamage*100m/(100+armor*(1-ignore))));
    var confirmedDirect=damage>0?(int)Math.Min(actual,(decimal)actual*directAfterArmor/damage):0;
@@ -44,13 +44,15 @@ public sealed class RpgEnemyService(IDuelRandom random)
     var playerArmor=Math.Max(0,stats.Armor*(1+stats.ArmorPercent/100));var dodge=RpgPerkCatalog.Proc(p,"underwaterDodge",random)||(stats.BossDodgeChance>0&&random.NextInclusive(0,9999)<stats.BossDodgeChance*100);
     var raw=dodge?0:(int)decimal.Ceiling(attack*100/(100+playerArmor)*(1-Math.Clamp(stats.BossDamageReduction,-80,95)/100));
     var absorbed=Math.Min(p.Health.SetShieldHp,raw);p.Health.SetShieldHp-=absorbed;raw-=absorbed;
-    raw=RpgWeaponService.Counter(raw,p,spell,now);raw=RpgEternalCombat.Receive(raw,p,c,combatId,now);var received=Math.Min(p.Health.CurrentHp!.Value,raw);p.Health.CurrentHp-=received;taken+=received;
+    raw=RpgWeaponService.Counter(raw,p,spell,now);raw=RpgEternalCombat.Receive(raw,p,c,combatId,now);raw=RpgEarlyLegendaryEffects.Receive(raw,p,c,combatId,now);var received=Math.Min(p.Health.CurrentHp!.Value,raw);p.Health.CurrentHp-=received;taken+=received;RpgStatisticsService.Add(p,"damageTaken",received);RpgStatisticsService.Add(p,"damageBlocked",Math.Max(0,(int)decimal.Ceiling(attack)-received));
    }
   }
   if(p.Health.CurrentHp==0&&!string.IsNullOrEmpty(p.Health.BossId))p.Health.Defeated=true;
   bool victory=hp==0&&p.Health.CurrentHp>0;RpgItem? loot=null,eternal=null;IReadOnlyDictionary<string,int> materials=new Dictionary<string,int>();var experience=zone.Level*(elite?20:10);
+  RpgStatisticsService.Add(p,victory?"enemyKills":"lostFights");if(victory)RpgStatisticsService.Zone(p,zone.Id,"kills");
   if(victory) {
    RpgHealthService.Experience(p,c.Health,experience,now);RpgPerkCatalog.Victory(p,now);
+   var beginner=RpgEarlyLegendaryCatalog.Roll(p,c,zone,random,now);if(beginner is not null)p.Inventory.Add(beginner);
    materials=RpgZoneService.Materials(p,c,zone,source=="mimic"?"mimic":"enemy",random);
    loot=RpgZoneService.Equipment(p,c,zone,random,now);if(loot is not null)p.Inventory.Add(loot);
    eternal=RpgEternalLoot.Victory(p,c,zone.Id,zone.Level,source,true,random,now);

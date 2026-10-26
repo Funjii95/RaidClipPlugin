@@ -52,7 +52,7 @@ public static class RpgPassiveService
         if (hits == 0) { strength = TryProc(profile, config, RpgActivity.Boss, RpgEffectTrigger.DoubleAttack, random, now, critical: critical); if (strength > 0) hits = 1; }
         regular=RpgWeaponService.ElementDamage(regular,profile,stats);
         var attack=checked((int)decimal.Floor((baseDamage+stats.Attack)*(1+stats.AttackPercent/100)*(1+stats.Damage/100)*(1+stats.BossDamage/100)));
-        var direct=checked(regular+hits*(int)decimal.Floor(regular*strength));
+        var direct=(int)Math.Min(int.MaxValue,(long)regular+hits*(int)decimal.Floor(regular*strength)+RpgEarlyLegendaryEffects.ExtraHit(regular,profile,config,random));
         var spell=RpgWeaponService.Cast(profile,config,stats,attack,now);
         var eight=RpgEternalEightCombat.Proc(attack,critical,hits,profile,config,now);
         return new((int)Math.Min(int.MaxValue,(long)direct+eight.Damage+(spell?.Damage??0)+RpgSetCombatService.ProcDamage(attack,critical,hits,profile,config,now)+RpgDepthsCombatService.AttackProc(attack,critical,hits,profile,config,random,now)+RpgEternalCombat.Proc(attack,critical,hits,profile,config,now)),critical,hits){DirectDamage=direct,Spell=spell,SoulProcDamage=eight.SoulDamage};

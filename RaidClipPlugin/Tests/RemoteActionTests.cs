@@ -43,9 +43,23 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
         var forged=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("claimQuest","{\"questId\":\"tutorial\"}")),default);Assert.False(forged.Success);
         Assert.InRange(System.Text.Encoding.UTF8.GetByteCount(executor.CatalogJson()),1,48000);
     }
+    [Fact]public async Task Dungeon_intents_return_committed_party_hp_and_replay_without_a_second_attack()
+    {
+        var executor=await SeedAsync(level:30);
+        var overview=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("dungeonStatus","{}")),default);Assert.True(overview.Success);
+        using(var data=JsonDocument.Parse(overview.DataJson!))Assert.Equal(3,data.RootElement.GetProperty("dungeons").GetArrayLength());
+        var start=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("partyCombat","{\"operation\":\"startDungeon\",\"dungeonId\":\"runen_halls\",\"difficulty\":\"normal\"}")),default);Assert.True(start.Success,start.Message);
+        var intent=Envelope(ActionApiFixture.Intent("partyCombat","{\"operation\":\"attack\"}"));var hit=await executor.ExecuteAsync(intent,default);Assert.True(hit.Success,hit.Message);
+        Assert.Equal(hit,await Executor().ExecuteAsync(intent,default));
+        using(var data=JsonDocument.Parse(hit.DataJson!)){
+            var instance=data.RootElement.GetProperty("party").GetProperty("snapshot").GetProperty("Party").GetProperty("Instance");Assert.Equal(1,instance.GetProperty("Turn").GetInt32());Assert.True(instance.GetProperty("Hp").GetInt32()<instance.GetProperty("MaximumHp").GetInt32());
+            Assert.Equal("1001",data.RootElement.GetProperty("profile").GetProperty("UserId").GetString());Assert.True(data.RootElement.TryGetProperty("stats",out _));
+        }
+        var locked=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("selectRole","{\"role\":\"healer\"}")),default);Assert.False(locked.Success);
+    }
     [Fact]public void Tides_requires_publisher_support_for_extended_stats_and_shields()
     {
-        Assert.Equal(10,SnapshotValidation.RpgProjectionVersion);
+        Assert.Equal(11,SnapshotValidation.RpgProjectionVersion);
     }
     [Fact]public async Task Large_inventory_status_keeps_authoritative_stats_and_profile()
     {

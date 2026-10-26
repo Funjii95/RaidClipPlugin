@@ -1,3 +1,9 @@
+import {SharedAdventurePanel} from './SharedAdventurePanel';
+import {PartyPanel} from './PartyPanel';
+import {RolePanel} from './RolePanel';
+import {ExperienceProgress} from './ExperienceProgress';
+import {StatisticsPanel} from './StatisticsPanel';
+import packageInfo from '../package.json';
 import {QuestsPanel} from './QuestsPanel';
 import {BossGallery} from './BossGallery';
 import {isCollectionItem} from './collectionInventory';
@@ -30,6 +36,8 @@ const tabs = [
     "Charakter",
     "Abenteuer",
     "Quests",
+    "Gruppen",
+    "Dungeons",
     "Inventar",
     "Ausrüstung",
     "Itemsets",
@@ -39,6 +47,7 @@ const tabs = [
     "Kochen",
     "Perlen-Minispiele",
     "Aufwertungs-Materialien",
+    "Statistiken",
 ];
 const symbols = [
     "otter",
@@ -53,10 +62,12 @@ const symbols = [
     "cook",
     "pearl",
     "bag",
+    "sets",
 ] as const;
+const navIcons={Dungeons:'boss',Gruppen:'otter',Statistiken:'sets','Werte & Statistiken':'sets',Abenteuer:'compass',Quests:'sets',Charakter:'otter',Waffen:'swords',Ausrüstung:'swords',Inventar:'bag',Aufwertung:'sets',Materialien:'pearl',Sammlungen:'bag',Itemsets:'sets',Boss:'boss','Sushi-Küche':'cook','Talente & Perks':'perk',Minispiele:'pearl','RPG-Verwaltung':'perk'} as const;
 const time = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{source:RpgDataSource;demo?:DemoPresentation;minigameClient?:MinigameClient;desktop?:boolean;desktopAdmin?:ReactNode}) {
-    const desktopTabs=["Abenteuer","Quests","Charakter","Waffen","Ausrüstung","Inventar","Aufwertung","Materialien","Sammlungen","Itemsets","Boss","Sushi-Küche","Talente & Perks","Minispiele","Werte & Statistiken","RPG-Verwaltung"];
+    const desktopTabs=["Abenteuer","Quests","Gruppen","Dungeons","Charakter","Waffen","Ausrüstung","Inventar","Aufwertung","Materialien","Sammlungen","Itemsets","Boss","Sushi-Küche","Talente & Perks","Minispiele","Werte & Statistiken","RPG-Verwaltung"];
     const isDemo=source.mode==="demo";
     const allowed=(type:Action["type"])=>isDemo || source.canDispatch?.(type)===true;
     const clickLock=useRef(false);
@@ -72,6 +83,7 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
     const dialog = useRef<HTMLDialogElement>(null);
     const upgradeDialog=useRef<HTMLDialogElement>(null);
     const [upgradeItem,setUpgradeItem]=useState<string|null>(null);
+    const [materialTarget,setMaterialTarget]=useState<{item:string;material:string}>();
     const upgrading=state.inventory.find(i=>i.instanceId===upgradeItem);
     useEffect(()=>{if(upgradeItem){upgradeDialog.current?.showModal();upgradeDialog.current?.querySelector<HTMLElement>("h2")?.focus();}else upgradeDialog.current?.close();},[upgradeItem]);
     useEffect(() => { if (state.salvageQuote)
@@ -132,7 +144,7 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
     const preview=state.remote?.adventurePreview;
     const info=isDemo?demo!.diveInfo(state,stake,now):preview?.dive.stake===String(stake)?preview.dive:{chance:Number.NaN,rarities:[] as string[]};
     useEffect(()=>{
-        if(isDemo||tab!=="Abenteuer"||!source.previewAdventures)return;
+        if(isDemo||!["Abenteuer","Inventar","Ausrüstung","Aufwertung","Aufwertungs-Materialien"].includes(tab)||!source.previewAdventures)return;
         const timer=setTimeout(()=>void source.previewAdventures!(stake,fishStake).catch(()=>{}),300);
         return()=>clearTimeout(timer);
     },[source,isDemo,tab,stake,fishStake,state.remote?.updatedAt,state.remote?.connection,state.remote?.pending]);
@@ -146,14 +158,14 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
           </small>
         </div>
         <h3>{i.name}{(i.upgradeLevel??0)>0?` +${i.upgradeLevel}`:""}{i.isRefined?" · Veredelt":""}</h3>
-        <p>{i.description}</p>
+        <p>{i.description}</p>{(i.minimumLevel??1)>1&&<small>Benötigt Stufe {i.minimumLevel}</small>}
         <ul className="attributes">
           {statsText(i.attributes).map((t) => (<li key={t}>{t}</li>))}
         </ul>
         <p>
           {i.effects.length
                 ? i.effects.map((e) => e.description).join(" ")
-                : "Kein zusätzlicher Spezialeffekt."}
+                : i.itemId.startsWith("starter_")?"Legendäre Wirkung: siehe Beschreibung.":"Kein zusätzlicher Spezialeffekt."}
         </p>
         <ItemComparison source={source} item={i}/>{i.setId && (<small>Set: {sets.find((s) => s.id === i.setId)?.name}</small>)}
         {i.collector && <p>{collectorText(i.collector).join(" · ")}</p>}
@@ -168,14 +180,14 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
                     }} disabled={!allowed("unequip") || busy}>
                 Ablegen
               </button>) : (<>
-                <button onClick={() => void run({ type: "equip", id: i.instanceId, slot: i.slot! })} disabled={!allowed("equip") || busy}>
+                <button onClick={() => void run({ type: "equip", id: i.instanceId, slot: i.slot! })} disabled={!allowed("equip") || busy || state.player.level<(i.minimumLevel??1)}>
                   Ausrüsten{i.slot.startsWith("Ring") ? " · Ring1" : ""}
                 </button>
                 {i.slot.startsWith("Ring") && (<button onClick={() => void run({
                             type: "equip",
                             id: i.instanceId,
                             slot: "Ring2",
-                        })} disabled={!allowed("equip") || busy}>
+                        })} disabled={!allowed("equip") || busy || state.player.level<(i.minimumLevel??1)}>
                     Ring2
                   </button>)}
               </>))}
@@ -215,7 +227,7 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
           <h1>
             {desktop?"Funjii Otter RPG – Deep Sea Codex":"Otter RPG"} <span>{isDemo?"DEMO":"RPG"}</span>
           </h1>
-          <p>{desktop?state.player.username+" · Level "+format(state.player.level):"Dein Abenteuer unter den Wellen."}</p>{desktop&&<small>{state.remote?.experienceText??format(state.player.experience)} EXP</small>}
+          <p>{desktop?state.player.username+" · Level "+format(state.player.level):"Dein Abenteuer unter den Wellen."}</p><ExperienceProgress level={state.player.level} experience={state.remote?.experienceExact??state.player.experience} rules={state.remote?.progressionRules}/>
         </div>
       </header>
       <div className="statusbar">
@@ -252,7 +264,7 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
                     setTab(name);
                     setMessage("");
                 }}>
-              <Icon name={desktop?(["compass","sets","otter","swords","swords","bag","sets","pearl","bag","sets","boss","cook","perk","pearl","sets","perk"] as const)[n]:symbols[n]}/>
+              <Icon name={navIcons[name as keyof typeof navIcons]??symbols[n]??'sets'}/>
               {name}
             </button>))}
 
@@ -301,7 +313,7 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
               {(isDemo?minigameClient:source.minigames)?<PearlMinigames client={(isDemo?minigameClient:source.minigames)!}/>:<article><h3>Die Perlen-Spielhalle</h3><p>Für diese Spiele ist noch kein sicherer Backend-Aufruf freigegeben. Dein gespeicherter Perlenstand bleibt unverändert.</p></article>}
             </>}
             {(tab === "Aufwertungs-Materialien"||tab==="Materialien"||tab==="Aufwertung") && <>{state.materialFinds&&<p role="status">Materialien erhalten: {Object.entries(state.materialFinds).map(([id,n])=>`${n} × ${materialNames[id]??id}`).join(', ')}</p>}{tab!=="Aufwertung"&&<MaterialInventory stock={state.materials} catalog={state.remote?.materialCatalog}/>}<h3>Ausrüstung aufwerten</h3><div className="cards">{state.inventory.filter(i=>i.slot).map(itemCard)}</div></>}
-            {tab === "Charakter" && (<>
+            {tab==="Dungeons"&&<SharedAdventurePanel source={source} user={state.player.id} enabled={state.remote?.connection==='ready'&&state.remote?.supported.includes('partyCombat')===true}/>}{tab==="Gruppen"&&<><PartyPanel source={source} user={state.player.id} enabled={state.remote?.connection==='ready'&&state.remote?.supported.includes('party')===true}/><SharedAdventurePanel mode="group" zones={state.remote?.zones} source={source} user={state.player.id} enabled={state.remote?.connection==='ready'&&state.remote?.supported.includes('partyCombat')===true}/></>}{tab === "Charakter" && (<><RolePanel selected={state.remote?.role} busy={busy} allowed={allowed('selectRole')} onSelect={role=>void run({type:'selectRole',role})}/>
                 {desktop&&<CodexCharacter state={state} stats={stats} onItem={i=>setFocusedItem(i.instanceId)}/>}
                 <article className="hero" hidden={desktop}>
                   <img src={state.player.avatarUrl} alt="Otter-Magier als Spielillustration"/>
@@ -311,8 +323,8 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
                     <p>Dein nächster Schatz wartet schon.</p>
                   </div>
                 </article>
-                <article hidden={desktop}><h3>Level {format(state.player.level)}</h3><p>{state.remote?.experienceText??format(state.player.experience)} EXP{isDemo?` · nächstes Level: ${1000 * state.player.level * (state.player.level + 1) / 2} EXP`:""}</p>{isDemo&&(<button onClick={() => void run({ type: "healChat" })} disabled={!allowed("healChat") || busy}>Chat-Heilung testen</button>)}{isDemo&&(<button onClick={() => void run({ type: "demoWound" })} disabled={!allowed("demoWound") || busy}>Verletzung simulieren</button>)}</article><div className="stat-grid" hidden={desktop}>
-                  {Object.entries(stats).map(([key, value]) => (<div className="stat" key={key}>
+                <article hidden={desktop}><h3>Level {format(state.player.level)}</h3><p>{state.remote?.experienceText??format(state.player.experience)} EP{isDemo?` · nächstes Level: ${1000 * state.player.level * (state.player.level + 1) / 2} EXP`:""}</p>{isDemo&&(<button onClick={() => void run({ type: "healChat" })} disabled={!allowed("healChat") || busy}>Chat-Heilung testen</button>)}{isDemo&&(<button onClick={() => void run({ type: "demoWound" })} disabled={!allowed("demoWound") || busy}>Verletzung simulieren</button>)}</article><div className="stat-grid" hidden={desktop}>
+                  {Object.entries(stats).filter(([, value]) => value !== 0).map(([key, value]) => (<div className="stat" key={key}>
                       <strong>
                         {numberStat(key, value)}
                       </strong>
@@ -337,7 +349,7 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
                 </article>
               </>)}
             {tab === "Abenteuer" && (<>
-                {!isDemo&&state.remote?.zones&&source.readPlugin&&<ZonePanel zones={state.remote.zones} diving={state.remote.selectedDivingZone??"sunny_lagoon"} fishing={state.remote.selectedFishingZone??"sunny_lagoon"} busy={busy||state.remote.connection!=="ready"} cooldown={remaining(state.cooldowns.dive,now)} fishingCooldown={remaining(state.cooldowns.fishing,now)} onSelect={async(activity,zoneId)=>{setBusy(true);try{await source.dispatch({type:"selectZone",activity,zoneId});}finally{setBusy(false);}}} onStart={activity=>void run({type:activity==="dive"?"dive":"fishing",stake:0})}/>}
+                {materialTarget&&<section><strong>Suchziel: {materialNames[materialTarget.material]}</strong><button onClick={()=>{setUpgradeItem(materialTarget.item);setMaterialTarget(undefined);}}>Zurück zur Aufwertung</button></section>}{!isDemo&&state.remote?.zones&&source.readPlugin&&<ZonePanel targetMaterial={materialTarget?.material} zones={state.remote.zones} diving={state.remote.selectedDivingZone??"sunny_lagoon"} fishing={state.remote.selectedFishingZone??"sunny_lagoon"} busy={busy||state.remote.connection!=="ready"} cooldown={remaining(state.cooldowns.dive,now)} fishingCooldown={remaining(state.cooldowns.fishing,now)} onSelect={async(activity,zoneId)=>{setBusy(true);try{await source.dispatch({type:"selectZone",activity,zoneId});}finally{setBusy(false);}}} onStart={activity=>void run({type:activity==="dive"?"dive":"fishing",stake:0})}/>}
                 <article className="adventure">
                   <div className="sea-art">
                     <picture><source media="(min-width: 901px)" srcSet="./luminous-depths.png"/><img src="./luminous-depths-compact.webp" alt="Otter-Magier zwischen leuchtenden Quallen und einem Perlenschatz in versunkenen Ruinen" width="1536" height="1024"/></picture>
@@ -419,8 +431,8 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
               </>)}
             {desktop&&(tab==="Admin"||tab==="RPG-Verwaltung")&&desktopAdmin}
             {tab === "Einstellungen"&&<article><h3>Spiel &amp; Einstellungen</h3>{["Talente","Perks","Kochen","Perlen-Minispiele"].map(name=><button key={name} onClick={()=>setTab(name)}>{name}</button>)}<p>Animationen können am unteren Fensterrand ausgeschaltet werden. Anmeldung und Updates findest du im Windows-Fenster.</p></article>}
-            {tab==="Sammlungen"&&<><h3>Sammelinventar</h3><p>Sammelobjekte werden hier aufbewahrt. Überzählige Exemplare ab dem sechsten werden automatisch zum Zerlegewert in Perlen umgewandelt. Gesperrte und favorisierte Stücke bleiben geschützt.</p><div className="cards">{(state.remote?.collectorItems??[]).map(def=>{const quantity=state.inventory.filter(i=>isCollectionItem(i)&&i.itemId===def.Id).length;return <article key={def.Id}><ItemArtwork id={def.Id} name={def.Name}/><h3>{def.Name}</h3><p>{quantity}/5</p><progress value={quantity} max={5}/><p>Fundort: Gebietstruhen und berechtigte Kämpfe</p></article>;})}</div><p>{(state.remote?.collectorItems??[]).reduce((n,d)=>n+Math.min(5,state.inventory.filter(i=>i.itemId===d.Id).length),0)} / {(state.remote?.collectorItems?.length??0)*5} gesammelt</p></>}
-            {tab==="Werte & Statistiken"&&<><h3>Charakterwerte</h3><p>Aktuelle Werte aus deinem synchronisierten Spielstand.</p><div className="cards"><article>{statsText(state.remote?.stats??{}).map(text=><p key={text}>{text}</p>)}</article><article><h3>Sammlerboni</h3>{collectorText(collectors(state)).map(text=><p key={text}>{text}</p>)}<p>Weitere persönliche Kampfstatistiken: noch nicht erfasst.</p></article></div></>}
+            {tab==="Sammlungen"&&<><h3>Sammelinventar</h3><p>Sammelobjekte werden hier aufbewahrt. Überzählige Exemplare ab dem sechsten werden automatisch zum Zerlegewert in Perlen umgewandelt. Gesperrte und favorisierte Stücke bleiben geschützt.</p><div className="cards">{(state.remote?.collectorItems??[]).map(def=>{const quantity=state.inventory.filter(i=>isCollectionItem(i)&&i.itemId===def.Id).length;return <article key={def.Id}><ItemArtwork id={def.Id} name={def.Name}/><h3>{def.Name}</h3><p>{quantity}/5</p><progress value={quantity} max={5}/><details><summary>Fundorte anzeigen</summary><p>Gebietstruhen und berechtigte Kämpfe</p></details></article>;})}</div><p>{(state.remote?.collectorItems??[]).reduce((n,d)=>n+Math.min(5,state.inventory.filter(i=>i.itemId===d.Id).length),0)} / {(state.remote?.collectorItems?.length??0)*5} gesammelt</p></>}
+            {(tab==="Werte & Statistiken"||tab==="Statistiken")&&<><StatisticsPanel statistics={state.remote?.statistics} zones={state.remote?.zones}/><h3>Charakterwerte</h3><p>Aktuelle Werte aus deinem synchronisierten Spielstand.</p><div className="cards"><article>{statsText(state.remote?.stats??{}).map(text=><p key={text}>{text}</p>)}</article><article><h3>Sammlerboni</h3>{collectorText(collectors(state)).map(text=><p key={text}>{text}</p>)}</article></div></>}
             {tab==="Waffen"&&<><h3>Waffenverwaltung</h3><label>Waffen suchen<input value={search} onChange={e=>setSearch(e.target.value)}/></label><div className="cards">{state.inventory.filter(i=>i.slot==="Weapon"&&(i.name+" "+i.rarity).toLowerCase().includes(search.toLowerCase())).map(itemCard)}</div>{!state.inventory.some(i=>i.slot==="Weapon")&&<p>Noch keine Waffe im Inventar.</p>}</>}
             {tab === "Inventar" && (<>
                 <p className="muted">
@@ -595,12 +607,13 @@ export function App({source,demo,minigameClient,desktop=false,desktopAdmin}:{sou
       </main>
       <dialog ref={upgradeDialog} aria-labelledby="upgrade-heading" onCancel={()=>setUpgradeItem(null)}>
         <h2 id="upgrade-heading" tabIndex={-1}>Ausrüstung aufwerten</h2>
-        <EquipmentUpgrade item={upgrading} rules={state.remote?.itemUpgrade} stock={state.materials} points={state.remote?.pointsExact} busy={busy} allowed={allowed} onSubmit={a=>void run(a)}/>
+        <EquipmentUpgrade locations={preview?.materialLocations} onFind={(material,zone)=>{if(!upgrading)return;setMaterialTarget({item:upgrading.instanceId,material});setUpgradeItem(null);setTab("Abenteuer");void run({type:"selectZone",activity:"dive",zoneId:zone});}} item={upgrading} rules={state.remote?.itemUpgrade} stock={state.materials} points={state.remote?.pointsExact} busy={busy} allowed={allowed} onSubmit={a=>void run(a)}/>
         <p role="status">{message}</p>
         <button onClick={()=>setUpgradeItem(null)}>Schließen</button>
       </dialog>
       <dialog ref={dialog} onCancel={() => void run({ type: "cancelSalvage" })}><h2>Zerlegen bestätigen</h2>{state.salvageQuote && <><p>Gültig: {remaining(state.salvageQuote.expiresAt, now)} Sekunden</p><ul>{state.salvageQuote.items.map(i => <li key={i.id}>{i.name} · {i.value} Perlen {i.warning ? "· Set / Legendär" : ""}</li>)}</ul><strong>Gesamt: {state.salvageQuote.total} Perlen</strong><div className="actions"><button onClick={() => void run({ type: "confirmSalvage", token: state.salvageQuote!.token })} disabled={!allowed("confirmSalvage") || busy}>Jetzt zerlegen</button><button onClick={() => void run({ type: "cancelSalvage" })} disabled={!allowed("cancelSalvage") || busy}>Abbrechen</button></div></>}</dialog>
       <footer>
+        <small>Extension {packageInfo.version}</small>
         {!isDemo&&state.remote?.selfDeletionEnabled===true&&<SelfDeletion source={source}/>}
         <label>
           <input type="checkbox" checked={!motion} onChange={(e) => setMotion(!e.target.checked)}/>{" "}

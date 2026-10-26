@@ -55,6 +55,7 @@ public static class CharacterStatService
         foreach (var buff in profile.Buffs.Where(b => (b.Activity == activity || b.AllActivities) && RpgSushiService.Active(b,now??DateTimeOffset.UtcNow))) Add(result, buff.Attributes);
         foreach (var progress in RpgSetService.Progress(profile, config))
         foreach (var bonus in progress.Set.Bonuses.Where(b => progress.Equipped >= b.RequiredPieces)) Add(result, bonus.Attributes);
+        RpgRoleService.Apply(profile,config,result);
         result.CritChance = Math.Clamp(result.CritChance, 0, (enhanced?100:Math.Clamp(config.CritChanceCap, 0, 100)));
         result.CritDamage = Math.Clamp(result.CritDamage, 0, (enhanced?10000:Math.Clamp(config.CritDamageCap, 0, 1000)));
         result.Luck = Math.Clamp(result.Luck, 0, (enhanced?10000:Math.Clamp(config.LuckCap, 0, 1000)));

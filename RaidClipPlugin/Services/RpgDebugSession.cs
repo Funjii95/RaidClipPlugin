@@ -251,7 +251,7 @@ public sealed class RpgDebugSession
                     RpgHealthService.Refresh(a.Rpg,cfg,clock);break;
                 case "Chat-Heilung":
                     if(h.LastChatHeal is null || (clock-h.LastChatHeal.Value).TotalSeconds>=cfg.ChatCooldownSeconds)
-                    {h.CurrentHp=Math.Min(RpgHealthService.Maximum(a.Rpg,cfg),h.CurrentHp!.Value+cfg.ChatHp+RpgSushiService.ChatBonus(a.Rpg,clock));h.LastChatHeal=clock;}break;
+                    {h.CurrentHp=Math.Min(RpgHealthService.Maximum(a.Rpg,cfg),h.CurrentHp!.Value+(int)decimal.Floor(RpgHealthService.Maximum(a.Rpg,cfg)*cfg.ChatHp/100m)+RpgSushiService.ChatBonus(a.Rpg,clock));h.LastChatHeal=clock;}break;
             }
             return new(true);
         },token);

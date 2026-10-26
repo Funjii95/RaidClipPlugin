@@ -163,7 +163,7 @@ public sealed class RpgSalvageService(ViewerPointStore points, RpgConfig config,
                 return new(false,"Perlengutschrift würde das Kontolimit überschreiten. Nichts wurde zerlegt.");
             var ids=quote.Items.Select(i=>i.InstanceId).ToHashSet(StringComparer.Ordinal);
             account.Rpg.Inventory.RemoveAll(i=>ids.Contains(i.InstanceId));
-            account.Points=checked(account.Points+quote.Total);
+            account.Points=checked(account.Points+quote.Total);RpgStatisticsService.Add(account.Rpg,"salvagedItems",ids.Count);RpgStatisticsService.Add(account.Rpg,"pearlsEarned",quote.Total);
             return new(true);
         },token,backupBeforeCommit:true);
         if(!result.Success) return new(false,result.Error,Balance:result.Balance);

@@ -9,6 +9,7 @@ public sealed partial class ViewerPointStore
  private Dictionary<string,ViewerPointEntry> ReadAccounts(JsonElement root)
  {
   var node=JsonNode.Parse(root.GetRawText())!.AsObject();
+  ReadPartyWorld(node);
   _globalBoss=node[GlobalBossKey]?.Deserialize<RpgGlobalBossState>(JsonOptions);node.Remove(GlobalBossKey);
   if(_globalBoss is not null&&(_globalBoss.Remaining is <0 or >1||string.IsNullOrWhiteSpace(_globalBoss.Id)))throw new InvalidDataException("Ungültiger globaler Bossfortschritt.");
   return node.Deserialize<Dictionary<string,ViewerPointEntry>>(JsonOptions)??throw new InvalidDataException("Konten fehlen.");
@@ -21,7 +22,7 @@ public sealed partial class ViewerPointStore
   }
   var node=JsonSerializer.SerializeToNode(_entries,JsonOptions)!.AsObject();
   if(_globalBoss is not null)node[GlobalBossKey]=JsonSerializer.SerializeToNode(_globalBoss,JsonOptions);
-  return node;
+  WritePartyWorld(node);return node;
  }
  internal async Task<RpgGlobalBossState?> ReadGlobalBossAsync(CancellationToken ct)
  {

@@ -33,8 +33,9 @@ public sealed partial class AdventureGameService
    var state=await _points.ReadGlobalBossAsync(ct);
    if(_boss?.AreaState is not null&&state?.Id==_boss.Id){_boss.AreaState=state;_boss.Players=state.Participants.ToDictionary(p=>p.Key,p=>p.Value.Name);}
    var personal=state?.Participants.GetValueOrDefault(user);
-   var mimic=_boss?.AreaState?.EventConfig.IsMimic==true;
-   return new{enabled=mimic||_config.Adventures.Rpg.AreaBosses.Enabled,isMimic=mimic,bosses=RpgCombatDropRules.PreviewBosses(_boss?.AreaState?.Bosses??_config.Adventures.Rpg.AreaBosses.Bosses,mimic),selectedBossId=mimic?_boss!.AreaState!.Bosses[0].Id:personal is not null&&!state!.RewardsSettled?personal.BossId:a.Rpg.SelectedBossId,
+   var mimic=_boss?.AreaState?.EventConfig.IsMimic==true;var automatic=!mimic&&_config.Adventures.Rpg.BossAssignment.Automatic;
+   var assigned=automatic?RpgCombatPowerService.Choose(a.Rpg,_config.Adventures.Rpg,_boss?.AreaState?.Bosses??_config.Adventures.Rpg.AreaBosses.Bosses,_now()).Id:a.Rpg.SelectedBossId;
+   return new{automatic,enabled=mimic||_config.Adventures.Rpg.AreaBosses.Enabled,isMimic=mimic,bosses=RpgCombatDropRules.PreviewBosses(_boss?.AreaState?.Bosses??_config.Adventures.Rpg.AreaBosses.Bosses,mimic),selectedBossId=mimic?_boss!.AreaState!.Bosses[0].Id:personal is not null&&!state!.RewardsSettled?personal.BossId:assigned,
     locked=_boss?.AreaState?.Participants.ContainsKey(user)==true,remaining=state?.Remaining??1,active=_boss?.AreaState is not null,eventId=state?.Id,endsAt=state?.End,nextStart=_config.Adventures.Boss.AutoStartEnabled?_nextAutoBoss:(DateTimeOffset?)null,participants=state?.Participants.Count??0,personal,log=state?.Log??[],victory=state?.Victory??false,settled=state?.RewardsSettled??false};
   }finally{_gate.Release();}
  }
@@ -57,21 +58,28 @@ public sealed partial class AdventureGameService
    var p=a.Rpg;RpgHealthService.Refresh(p,cfg.Health,clock);
    if(p.Health.CurrentHp<=0||p.Health.BossId==round.Id&&p.Health.Defeated||next.Participants.GetValueOrDefault(user.UserId)?.Defeated==true)return new(false,"Für dieses Bossereignis bist du besiegt.");
    if(p.Cooldowns.TryGetValue("!attack",out var until)&&clock<until)return new(false,$"Angriff in {Math.Ceiling((until-clock).TotalSeconds)} Sekunden möglich.");
+   if(_points.HasActivePartyCombatUnsafe(user.UserId,clock))return new(false,"Beende zuerst deinen Gruppenkampf.");
+   var automatic=!next.EventConfig.IsMimic&&cfg.BossAssignment.Automatic;
    var joined=next.Participants.TryGetValue(user.UserId,out var participant);
-   var definition=next.EventConfig.IsMimic?next.Bosses.SingleOrDefault(b=>b.Enabled):next.Bosses.SingleOrDefault(b=>b.Id==(participant?.BossId??p.SelectedBossId)&&b.Enabled);
+   var definition=next.EventConfig.IsMimic?next.Bosses.SingleOrDefault(b=>b.Enabled):next.Bosses.SingleOrDefault(b=>b.Id==(participant?.BossId??(automatic?RpgCombatPowerService.Choose(p,cfg,next.Bosses,clock).Id:p.SelectedBossId))&&b.Enabled);
    if(definition is null)return new(false,"Persönlicher Boss ist nicht verfügbar.");
    participant??=new(){UserId=user.UserId,Name=user.UserName,BossId=definition.Id};
+   if(automatic&&!participant.HasAssignment){participant.HasAssignment=true;participant.PersonalMaximumHp=RpgCombatPowerService.PersonalHp(p,cfg,definition,clock);participant.PersonalRemainingHp=participant.PersonalMaximumHp;participant.AssignedPower=RpgCombatPowerService.Evaluate(p,cfg,clock).Rating;participant.AttackScale=RpgCombatPowerService.AttackScale(p,cfg,definition,clock);}
+   if(automatic&&participant.PersonalVictory)return new(false,"Dein persönlicher Boss ist bereits besiegt. Das globale Event läuft für andere Teilnehmer weiter.");
    var hit=RpgPassiveService.BossAttack(_random.NextInclusive(10,30),p,cfg,_random,clock);
    critical=hit.Critical;
    var reduction=!next.EventConfig.IsMimic&&(definition.Id=="boss_korallus"&&participant.Cycles<3||definition.Id=="boss_luminara")?20m:0;
    var damage=RpgDepthsCombatService.MitigateBoss(hit.Damage,reduction,hit.Critical,p,cfg);
    damage=Math.Max(0,damage-participant.PersonalShield);participant.PersonalShield=0;
-   var available=(int)Math.Min(int.MaxValue,decimal.Ceiling(next.Remaining*definition.BaseHp));
+   var available=automatic?participant.PersonalRemainingHp:(int)Math.Min(int.MaxValue,decimal.Ceiling(next.Remaining*definition.BaseHp));
    actual=RpgEternalCombat.Judgment(p,cfg)?available:Math.Min(available,damage);
    if(actual<=0&&!joined)return new(false,"Der Treffer hat keinen Schaden verursacht.");
-   var contribution=Math.Min(next.Remaining,(decimal)actual/definition.BaseHp);
+   var denominator=automatic?Math.Max(participant.PersonalMaximumHp,RpgCombatPowerService.PersonalHp(p,cfg,RpgCombatPowerService.Choose(p,cfg,next.Bosses,clock),clock)):definition.BaseHp;
+   var contribution=Math.Min(next.Remaining,(decimal)actual/denominator);
+   if(automatic){participant.PersonalRemainingHp=Math.Max(0,participant.PersonalRemainingHp-actual);participant.PersonalVictory=participant.PersonalRemainingHp==0;}
    next.Remaining=Math.Max(0,next.Remaining-contribution);
    if(next.Remaining==0){next.Active=false;next.Victory=true;}
+   RpgEarlyLegendaryEffects.AfterHit(actual,p,cfg,_random,clock);
    var direct=hit.Damage>0?(int)Math.Min(actual,(decimal)actual*hit.DirectDamage/hit.Damage):0;
    var soul=hit.Damage>0?(int)Math.Min(actual-direct,(decimal)actual*hit.SoulProcDamage/hit.Damage):0;
    var stats=CharacterStatService.Calculate(p,cfg,RpgActivity.Boss,now:clock);
@@ -80,15 +88,16 @@ public sealed partial class AdventureGameService
    RpgSushiService.HealFromBossAttack(direct,actual,p,cfg.Health,round.Id,clock,critical?stats.CriticalHealing:0);
    RpgEternalEightCombat.AfterDirect(p,cfg,direct,soul,critical,clock);RpgWeaponService.AfterHit(p,cfg,hit.Spell,actual,clock);RpgEternalCombat.AfterHit(p,cfg,direct,clock);
    if(!joined){p.Health.BossId=round.Id;p.Health.BossDamage=0;p.Health.Defeated=false;}
+   if(!joined)RpgStatisticsService.Add(p,"bossParticipations");RpgStatisticsService.Hit(p,actual,critical);RpgStatisticsService.Add(p,"bossDamage",actual);
    participant.Cycles++;participant.Damage=checked(participant.Damage+actual);participant.Contribution+=contribution;
-   if(next.Remaining>0&&cfg.Health.Counterattacks){
+   if(next.Remaining>0&&(!automatic||!participant.PersonalVictory)&&cfg.Health.Counterattacks){
     void Counter(decimal raw,decimal armorIgnore=0,decimal reductionIgnore=0){
      if(p.Health.CurrentHp<=0)return;
      var counter=RpgBossDefenseService.Counter((int)Math.Min(int.MaxValue,decimal.Ceiling(raw)),p,cfg,_random,clock,armorIgnore,reductionIgnore);
-     counter=RpgWeaponService.Counter(counter,p,hit.Spell,clock);counter=RpgEternalCombat.Receive(counter,p,cfg,round.Id,clock);counter=RpgEternalEightCombat.Receive(counter,p,cfg,round.Id,true,clock);
+     counter=RpgWeaponService.Counter(counter,p,hit.Spell,clock);counter=RpgEternalCombat.Receive(counter,p,cfg,round.Id,clock);counter=RpgEternalEightCombat.Receive(counter,p,cfg,round.Id,true,clock);counter=RpgEarlyLegendaryEffects.Receive(counter,p,cfg,round.Id,clock);
      var taken=Math.Min(p.Health.CurrentHp!.Value,counter);p.Health.CurrentHp-=taken;received+=taken;
     }
-    var factor=definition.AttackFactor*(!next.EventConfig.IsMimic&&definition.Id=="boss_maledictus"&&participant.Cycles>1?1.1m:1);
+    var factor=definition.AttackFactor*(automatic?participant.AttackScale:1)*(!next.EventConfig.IsMimic&&definition.Id=="boss_maledictus"&&participant.Cycles>1?1.1m:1);
     for(var n=0;n<definition.Hits;n++)Counter(definition.Attack*factor,!next.EventConfig.IsMimic&&definition.Id=="boss_eonath"&&n==definition.Hits-1?30:definition.ArmorIgnore,definition.ReductionIgnore);
     if(!next.EventConfig.IsMimic&&definition.Id=="boss_moderklaue"){
      if(participant.CurseIntervals>0){Counter(definition.Attack*.1m);participant.CurseIntervals--;}
@@ -100,7 +109,8 @@ public sealed partial class AdventureGameService
     }
     RpgDepthsCombatService.AfterCounter(p,cfg,round.Id,clock);
    }
-   p.Health.BossDamage=participant.Damage;p.Health.BossRemainingHp=AreaDisplayHp(next.Remaining);
+   RpgStatisticsService.Add(p,"damageTaken",received);RpgStatisticsService.Maximum(p,"highestBossDamage",participant.Damage);if(p.Health.CurrentHp==0&&!participant.Defeated)RpgStatisticsService.Add(p,"bossDefeats");
+   p.Health.BossDamage=participant.Damage;p.Health.BossRemainingHp=automatic?participant.PersonalRemainingHp:AreaDisplayHp(next.Remaining);
    participant.Defeated=p.Health.Defeated=p.Health.CurrentHp==0;
    next.Participants[user.UserId]=participant;next.Revision++;
    next.Log.Add($"{user.UserName} → {definition.Name}: {actual} Schaden{(critical?" · Krit":"")} · {received} Gegenschaden · {next.Remaining*100:0.0000} % HP{(participant.Defeated?" · besiegt":"")}");
@@ -127,10 +137,12 @@ public sealed partial class AdventureGameService
     RpgSushiService.Close(a.Rpg,state.Id,_now()<state.End?_now():state.End,_now(),cfg.Health);
     if(!victory||participant.Defeated||participant.Cycles<1||!RpgHealthService.Eligible(a.Rpg,state.Id))return new(true);
     var boss=state.Bosses.Single(b=>b.Id==participant.BossId);
+    var personalWin=state.EventConfig.IsMimic||!cfg.BossAssignment.Automatic||participant.PersonalVictory;
+    if(!personalWin){var fraction=cfg.BossAssignment.ParticipationRewardFraction*Math.Clamp((decimal)participant.Damage/Math.Max(1,participant.PersonalMaximumHp),0,1);var partial=Math.Min((long)(boss.Pearls*fraction),Math.Max(0,Maximum-a.Points));a.Points+=partial;RpgStatisticsService.Add(a.Rpg,"pearlsEarned",partial);RpgHealthService.Experience(a.Rpg,cfg.Health,(int)(boss.Experience*fraction),_now());return new(true);}
     var stats=CharacterStatService.Calculate(a.Rpg,cfg,RpgActivity.Boss,now:_now());
     var collectors=RpgCollectorService.Calculate(a.Rpg,cfg.DiveLoot);
     var pearls=RpgCollectorService.Reward(boss.Pearls,stats.PearlBonus+collectors.BossPearls+RpgPerkCatalog.Bonus(a.Rpg,"bossPearls"));
-    pearls=_points.RewardAmount(pearls,RpgRewardSource.Boss);a.Points+=Math.Min(pearls,Math.Max(0,Maximum-a.Points));
+    pearls=_points.RewardAmount(pearls,RpgRewardSource.Boss);var granted=Math.Min(pearls,Math.Max(0,Maximum-a.Points));a.Points+=granted;RpgStatisticsService.Add(a.Rpg,"pearlsEarned",granted);if(state.EventConfig.IsMimic||participant.PersonalVictory||participant.Damage>=boss.BaseHp)RpgStatisticsService.BossKill(a.Rpg,boss.Id);
     RpgHealthService.Experience(a.Rpg,cfg.Health,(int)Math.Min(int.MaxValue,RpgCollectorService.Reward(boss.Experience,collectors.BossExperience)),_now());
     foreach(var material in boss.Materials)if(RpgUpgradeCatalog.Materials.Any(m=>m.Id==material))RpgUpgradeCatalog.Add(a.Rpg.Materials,material,_random.NextInclusive(1,3));
     if(state.EventConfig.IsMimic){var found=RpgRegionalMimics.Roll(cfg,boss,_random,_now());if(found is not null)a.Rpg.Inventory.Add(found);}

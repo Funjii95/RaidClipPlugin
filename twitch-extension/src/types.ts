@@ -53,6 +53,7 @@ export interface ItemEffect {
     activity?: Activity | null;
 }
 export interface InventoryItem {
+    minimumLevel?:number;
     upgradeLevel?: number;
     isRefined?: boolean;
     instanceId: string;
@@ -217,7 +218,7 @@ export interface SalvageQuote {
     total: number;
     fingerprint: string;
 }
-export interface MaterialStock { pearlDust?:number; luminousScale?:number; runeShell?:number; eternalDepthCore?:number; trueCoralCore?:number; cursedSilk?:number; abyssShard?:number; reinforcementCore?:number; shells:number; whitePearls:number; bluePearls:number; redPearls:number; stoneChips:number; }
+export interface MaterialStock { dungeonRuneShard?:number;dungeonCoralHeart?:number;dungeonVoidSigil?:number; pearlDust?:number; luminousScale?:number; runeShell?:number; eternalDepthCore?:number; trueCoralCore?:number; cursedSilk?:number; abyssShard?:number; reinforcementCore?:number; shells:number; whitePearls:number; bluePearls:number; redPearls:number; stoneChips:number; }
 export interface DemoState {
     materialFinds?:Record<string,number>;
     talents?: import("./talents").TalentRanks;
@@ -241,7 +242,7 @@ export interface DemoState {
     salvageQuote?: SalvageQuote;
     effectCooldowns: Record<string, number>;
 }
-export type Action = {type:'startQuest'|'claimQuest';id:string;} | {type:'selectBoss';id:string;} | {type:'selectZone';activity:'dive'|'fish';zoneId:string;} | {type:'refine';id:string;expectedLevel:number;} | {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
+export type Action = {type:'selectRole';role:import('./RolePanel').CombatRole;} | {type:'startQuest'|'claimQuest';id:string;} | {type:'selectBoss';id:string;} | {type:'selectZone';activity:'dive'|'fish';zoneId:string;} | {type:'refine';id:string;expectedLevel:number;} | {type:'upgrade';id:string;expectedLevel:number;} | {type:'learnTalent';id:string;} | {type:'openShells';count:number;} | {
     type: 'dive';
     stake: number;
 } | {

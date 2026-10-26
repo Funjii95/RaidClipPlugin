@@ -1,6 +1,10 @@
+import {readStatistics,type PlayerStatistics} from '../StatisticsPanel';
 import type {Activity,CharacterStats,CollectorStats,DemoState,InventoryItem,ItemSet,Perk,Rarity,Slot,SushiCategory,SushiRecipe} from '../types';
 export type RecipeView=Omit<SushiRecipe,'activity'|'category'|'bossUses'|'attributes'|'passiveHealing'|'chatHealing'|'bossDamageReduction'|'bossLifeleech'> & Partial<Pick<SushiRecipe,'activity'|'category'|'bossUses'|'attributes'|'passiveHealing'|'chatHealing'|'bossDamageReduction'|'bossLifeleech'>> & {effectsText?:string;durationSeconds?:number;allActivities?:boolean};
 export interface RemoteView {
+ role?:import('../RolePanel').CombatRole;
+ progressionRules?:import('../ExperienceProgress').ProgressionRules;experienceExact?:string;
+ statistics?:PlayerStatistics;
  areaBoss?:import("../BossGallery").AreaBossView;
  staffAccess?:{channelId:string;moderators:string[]};
  zones?:import("../ZonePanel").Zone[];selectedDivingZone?:string;selectedFishingZone?:string;collectorItems?:{Id:string;Name:string;Rarity:number}[];
@@ -10,7 +14,7 @@ export interface RemoteView {
  updatedAt?:string; pointsText:string; pointsExact:string; experienceText?:string; sets:ItemSet[]; recipes:RecipeView[];
  stats?:CharacterStats; collectors?:CollectorStats; perkPrices:Record<string,number>;selfDeletionEnabled?:boolean;
  supported:string[]; pending:boolean; pendingState?:string; syncing:boolean; bossKnown:boolean; hotKnown:boolean;
- adventurePreview?:{dive:{stake:string;chance:number;rarities:string[]};fish:{stake:string;chance:number;rarities:string[]}};
+ adventurePreview?:{materialLocations?:import('../UpgradePanel').MaterialLocation[];dive:{stake:string;chance:number;rarities:string[]};fish:{stake:string;chance:number;rarities:string[]}};
 }
 export const unknown=()=>Number.NaN;
 export const field=(obj:any,name:string):any=>obj?.[name]??obj?.[name[0].toLowerCase()+name.slice(1)];
@@ -31,7 +35,7 @@ export function inventoryItem(v:any):InventoryItem {
  const effects=field(v,'Effects');if(!Array.isArray(effects))throw Error('Itemeffekte fehlen.');
  const upgradeLevel=field(v,'UpgradeLevel')??0;if(!Number.isInteger(upgradeLevel)||upgradeLevel<0||upgradeLevel>9)throw Error('Ungültige Aufwertungsstufe.');
  const isRefined=field(v,'IsRefined')===true;if(isRefined&&upgradeLevel!==9)throw Error('Ungültige Veredelung.');
- return {upgradeLevel,isRefined,instanceId:id,itemId:string(field(v,'ItemId'),'Itemkatalog-ID'),name:string(field(v,'DisplayName')||field(v,'ItemId'),'Itemname'),description:field(v,'Description')??'',icon:field(v,'IconId')??'✧',
+ return {minimumLevel:field(v,'MinimumLevel')??1,upgradeLevel,isRefined,instanceId:id,itemId:string(field(v,'ItemId'),'Itemkatalog-ID'),name:string(field(v,'DisplayName')||field(v,'ItemId'),'Itemname'),description:field(v,'Description')??'',icon:field(v,'IconId')??'✧',
  rarity:enumValue<Rarity>(field(v,'Rarity'),rarities,'Seltenheit'),slot:field(v,'Slot')==null?undefined:enumValue<Slot>(field(v,'Slot'),slots,'Slot'),kind:enumValue(field(v,'Kind'),['Treasure','Equipment','Consumable'],'Itemart'),
  attributes:Object.fromEntries(Object.entries(attributes(field(v,'Attributes'))).map(([k,value])=>[k,Number(value)>0&&(upgradeLevel>0||isRefined)?Number((Number(value)*(isRefined?1.5:1+[0,.03,.06,.09,.12,.17,.22,.28,.35,.45][upgradeLevel])).toFixed(4)):Number(value)])),effects:effects.map((e:any)=>({id:string(field(e,'Id'),'Effekt-ID'),description:field(e,'Description')??field(e,'Name')??field(e,'Id'),trigger:enumValue(field(e,'Trigger'),['DoubleAttack','TripleAttack','ExtraLoot','SushiPreservation'],'Effekt'),chance:number(field(e,'Chance'),'Chance'),strength:number(field(e,'Strength'),'Stärke'),requiresCritical:field(e,'RequiresCritical')===true,minimumStake:number(field(e,'MinimumStake'),'Mindesteinsatz'),cooldownSeconds:number(field(e,'CooldownSeconds'),'Cooldown'),activity:field(e,'Activity')==null?undefined:enumValue<Activity>(field(e,'Activity'),activities,'Aktivität')})),
  favorite:field(v,'IsFavorite')===true,locked:field(v,'IsLocked')===true,salvageValue:optionalNumber(field(v,'SalvageValue')),setId:field(v,'SetId')||undefined,
@@ -54,6 +58,9 @@ export function mapProfile(raw:any,catalog:any={}):DemoState {
  const points=field(raw,'Points');if(!/^(0|[1-9]\d*)$/.test(String(points))||BigInt(points)>9223372036854775807n || typeof points==='number'&&!Number.isSafeInteger(points))throw Error('Ungültiger Perlenstand.');
  const rpg=object(field(raw,'Rpg'),'RPG-Profil');if(field(rpg,'SchemaVersion')!==1)throw Error('Unbekannte RPG-Datenversion.');
  const state=emptyRemoteState(),view=catalogView(catalog),health=field(rpg,'Health');
+ state.remote!.progressionRules=catalog?.progressionRules;state.remote!.experienceExact=String(field(rpg,'Experience'));
+ state.remote!.statistics=readStatistics(field(rpg,'Statistics'));
+ const role=field(rpg,'Role')??0;if(!Number.isInteger(role)||role<0||role>3)throw Error('Ungültige Kampfrolle.');state.remote!.role=([undefined,'tank','healer','damage'] as const)[role];
  const ranks=field(rpg,'TalentRanks');
  if(ranks!=null)state.talents=counts(ranks,'Talente');
  if(catalog.talentCatalogVersion===1&&Array.isArray(catalog.talents)){
@@ -79,7 +86,7 @@ export function mapProfile(raw:any,catalog:any={}):DemoState {
  if(materials!=null){
   const stock=object(materials,'Materialvorrat');
   const read=(name:string)=>{const value=number(field(stock,name),'Materialanzahl');if(!Number.isSafeInteger(value)||value<0||value>2147483647)throw Error('Ungültiger Materialvorrat.');return value;};
-  state.materials={shells:read('Shells'),whitePearls:read('WhitePearls'),bluePearls:read('BluePearls'),redPearls:read('RedPearls'),stoneChips:read('StoneChips'),...Object.fromEntries(['PearlDust','LuminousScale','RuneShell','EternalDepthCore','TrueCoralCore','CursedSilk','AbyssShard','ReinforcementCore'].filter(key=>field(stock,key)!=null).map(key=>[key[0].toLowerCase()+key.slice(1),field(stock,key)==null?0:read(key)]))};
+  state.materials={shells:read('Shells'),whitePearls:read('WhitePearls'),bluePearls:read('BluePearls'),redPearls:read('RedPearls'),stoneChips:read('StoneChips'),...Object.fromEntries(['DungeonRuneShard','DungeonCoralHeart','DungeonVoidSigil','PearlDust','LuminousScale','RuneShell','EternalDepthCore','TrueCoralCore','CursedSilk','AbyssShard','ReinforcementCore'].filter(key=>field(stock,key)!=null).map(key=>[key[0].toLowerCase()+key.slice(1),field(stock,key)==null?0:read(key)]))};
  }
  const buffs=field(rpg,'Buffs');if(!Array.isArray(buffs))throw Error('Buffs fehlen.');
  state.player.buffs=buffs.map((b:any)=>({recipeId:string(field(b,'RecipeId'),'Buff-ID'),name:view.recipes.find(r=>r.id===field(b,'RecipeId'))?.name??field(b,'RecipeId'),activity:enumValue<Activity>(field(b,'Activity'),activities,'Buff-Aktivität'),category:enumValue<SushiCategory>(field(b,'Category'),['Offensive','Defensive'],'Sushi-Slot'),remainingUses:number(field(b,'RemainingUses'),'Aufladungen'),attributes:attributes(field(b,'Attributes')),activatedAt:time(field(b,'ActivatedAt')),expiresAt:field(b,'ExpiresAt')==null?undefined:time(field(b,'ExpiresAt')),lastBossId:field(b,'LastBossId')||undefined,passiveHealing:optionalNumber(field(b,'PassiveHealing')),chatHealing:optionalNumber(field(b,'ChatHealing')),bossDamageReduction:optionalNumber(field(b,'BossDamageReduction')),bossLifeleech:optionalNumber(field(b,'BossLifeleech'))}));

@@ -18,17 +18,24 @@ public static class RpgZoneService
     public static IReadOnlyDictionary<string,int> Materials(RpgProfile p,RpgConfig c,RpgZoneDefinition z,string source,IDuelRandom rng)
     {
         if(source=="mimic")return RpgMaterialLootService.Award(p,c.Upgrades,"mimic",rng);
-        var stats=CharacterStatService.Calculate(p,c,RpgActivity.Dive);
         var guaranteed=RpgEternalCombat.Has(p,c,"divine_infinity",3);
         var awards=new Dictionary<string,int>();
         foreach(var id in z.Materials) {
-            var chance=c.Upgrades.Drops[source].GetValueOrDefault(id)?.Chance??(source=="enemy"?8m:15m);
-            if(source=="enemy")chance=RpgCombatDropRules.Chance(chance);
-            if(guaranteed||rng.NextInclusive(0,999999)<Math.Clamp(chance*(1+(stats.MaterialFind+(source=="fish"?0:RpgPerkCatalog.Combined(p,"diveMaterials")))/100),0,100)*10000)awards[id]=(rng.NextInclusive(1,3)+RpgEternalEightLoot.ExtraMaterial(p,c,rng))*RpgEternalCombat.NormalLootMultiplier(p,c);
+            if(guaranteed||rng.NextInclusive(0,999999)<MaterialChance(p,c,z,id,source)*10000)awards[id]=(rng.NextInclusive(1,3)+RpgEternalEightLoot.ExtraMaterial(p,c,rng))*RpgEternalCombat.NormalLootMultiplier(p,c);
         }
         foreach(var pair in awards)RpgUpgradeCatalog.Add(p.Materials,pair.Key,pair.Value);
         return awards;
     }
+    public static decimal MaterialChance(RpgProfile p,RpgConfig c,RpgZoneDefinition z,string id,string source)
+    {
+        if(!z.Materials.Contains(id)||source is not ("dive" or "chest" or "enemy" or "fish"))return 0;
+        if(RpgEternalCombat.Has(p,c,"divine_infinity",3))return 100;
+        var chance=c.Upgrades.Drops[source].GetValueOrDefault(id)?.Chance??(source=="enemy"?8m:15m);
+        if(source=="enemy")chance=RpgCombatDropRules.Chance(chance);
+        var stats=CharacterStatService.Calculate(p,c,RpgActivity.Dive);
+        return Math.Clamp(chance*(1+(stats.MaterialFind+(source=="fish"?0:RpgPerkCatalog.Combined(p,"diveMaterials")))/100),0,100);
+    }
+    public static object[] MaterialLocations(RpgProfile p,RpgConfig c)=>c.Zones.Areas.SelectMany(z=>z.Materials.SelectMany(id=>new[]{"dive","chest","enemy"}.Select(source=>new{MaterialId=id,ZoneId=z.Id,ZoneName=z.Name,Source=source,Chance=MaterialChance(p,c,z,id,source),Locked=false,Requirement="Freie Gebietswahl"}))).Where(x=>x.Chance>0).Cast<object>().ToArray();
     public static RpgItem? Equipment(RpgProfile p,RpgConfig c,RpgZoneDefinition z,IDuelRandom rng,DateTimeOffset now)
     {
         // Explicit area access order: True is not unlocked by the numeric Cursed enum value.

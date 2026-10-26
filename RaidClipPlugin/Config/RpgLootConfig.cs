@@ -76,7 +76,7 @@ public sealed class RpgLootConfig
     public void Validate()
     {
         if (CollectorPearlCap is <0 or >100 || CollectorChanceCap is <0 or >100 || CollectorExperienceCap is <0 or >100 || CollectorPoolChance is <0 or >100 ||
-            Items.Any(i=>(i.DropWeight is <0 or >1000000 || i.DropWeight==0&&!i.ItemId.StartsWith("quest_")) || i.Collector is not null && (i.Kind!=RpgItemKind.Treasure || i.Slot.HasValue ||
+            Items.Any(i=>(i.MinimumLevel is <1 or >100 || i.DropWeight is <0 or >1000000 || i.DropWeight==0&&!i.ItemId.StartsWith("quest_")&&!i.ItemId.StartsWith("starter_")) || i.Collector is not null && (i.Kind!=RpgItemKind.Treasure || i.Slot.HasValue ||
                 typeof(RpgCollectorBonuses).GetProperties().Any(p=>(decimal)p.GetValue(i.Collector)! is <0 or >100))))
             throw new InvalidOperationException("Ungültige Sammlerschatz-/Poolkonfiguration.");
         RpgItemGenerationService.Validate(this);

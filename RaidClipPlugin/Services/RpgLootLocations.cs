@@ -12,9 +12,10 @@ public static class RpgLootLocations
   var eternal=RpgEternalCatalog.Items().Concat(RpgWeaponCatalog.Items()).Where(i=>i.Rarity==ItemRarity.Eternal).ToArray();
   var eight=RpgEternalEightCatalog.Sets().SelectMany(s=>s.ItemIds).ToHashSet();
   return c.DiveLoot.Items.Concat(eternal).DistinctBy(i=>i.ItemId).Where(i=>i.Rarity!=ItemRarity.Divine).Select(item=>{
-   var locations=new List<RpgLootLocation>();
+   var starter=item.ItemId.StartsWith("starter_");var locations=new List<RpgLootLocation>();
    foreach(var z in c.Zones.Areas){
     var fights=z.EnemyChance>0||z.MimicChance>0;
+    if(starter&&fights&&z.Level<=30&&c.EarlyLegendaries.Enabled)locations.Add(new(z.Id,"enemy"));
     if(item.Slot is null&&item.Kind!=RpgItemKind.Consumable&&item.Rarity<=ItemRarity.Legendary&&z.ChestChance>0)locations.Add(new(z.Id,"chest"));
     if(!fights||item.Slot is null)continue;
     if(item.Rarity<=ItemRarity.Legendary&&item.Rarity<=z.MaximumRarity&&c.BossLootChance>0&&c.DiveLoot.MaximumDropChance>0&&item.DropWeight>0&&item.DropActivities.Contains(RpgActivity.Boss)&&c.DiveLoot.RarityWeights.GetValueOrDefault(item.Rarity)>0)locations.Add(new(z.Id,"enemy"));
@@ -28,6 +29,7 @@ public static class RpgLootLocations
    foreach(var boss in c.AreaBosses.Bosses.Where(b=>b.Enabled&&b.ItemChance>0))if(BossPool(c,boss).Any(i=>i.ItemId==item.ItemId))locations.Add(new(boss.AreaId,"boss",boss.Id));
    if(eight.Contains(item.ItemId)&&c.AreaBosses.Bosses.Any(b=>b.Id=="boss_eonath"&&b.Enabled)&&c.Zones.EternalEightChances.GetValueOrDefault("eonath")>0)locations.Add(new("primordial_throne","boss","boss_eonath"));
    var effects=item.Effects.Select(e=>$"{e.Name}: {e.Chance} % Chance · {e.CooldownSeconds} s Abklingzeit").Where(s=>!string.IsNullOrWhiteSpace(s)).ToList();
+   if(starter)effects.Add(item.Description);
    if(item.Generation is {} rules&&rules.GenerateEffect){foreach(var effect in c.DiveLoot.Effects.Where(e=>rules.EffectIds.Contains(e.Id))){effects.Add(effect.Trigger==RpgEffectTrigger.DoubleAttack?$"Doppelangriff: {rules.DoubleAttackMinimumChance}–{rules.DoubleAttackMaximumChance} % Chance":$"{effect.Name}: {effect.Chance} % Chance · {effect.CooldownSeconds} s Abklingzeit");}}
    return new RpgLocatedItem(item.ItemId,item.DisplayName,item.Rarity.ToString(),item.SetId,StatRanges(item),effects,locations);
   }).ToArray();

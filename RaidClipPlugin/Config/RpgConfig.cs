@@ -5,16 +5,21 @@ namespace RaidClipPlugin.Config;
 
 public sealed class RpgConfig
 {
+    public RpgDungeonConfig Dungeons {get;set;}=new();
+    public RpgBossAssignmentConfig BossAssignment {get;set;}=new();
+    public RpgMultiplayerConfig Multiplayer {get;set;}=new();
+    public RpgEarlyLegendaryConfig EarlyLegendaries {get;set;}=new();
+    public RpgRoleConfig Roles {get;set;}=new();
     public RpgAreaBossConfig AreaBosses {get;set;}=new();
     public Dictionary<string,RpgItemSettings> ItemSettings {get;set;}=[];
     public RpgAdminAccess AdminAccess {get;set;}=new();
     public RpgZoneConfig Zones {get;set;}=new();
     public RpgUpgradeConfig Upgrades {get;set;}=new();
-    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); RpgZoneService.AddMissing(this); RpgWeaponCatalog.AddMissing(DiveLoot); RpgQuestCatalog.AddMissing(this); }
+    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); RpgZoneService.AddMissing(this); RpgWeaponCatalog.AddMissing(DiveLoot); RpgQuestCatalog.AddMissing(this); RpgEarlyLegendaryCatalog.AddMissing(this); }
     public long FreeFishingReward { get; set; } = 40;
     public decimal PowerDamagePerPoint { get; set; } = 1;
     private RpgHealthConfig _health = new();
-    public RpgHealthConfig Health { get { _health.EquipmentSets = Sets; return _health; } set => _health=value; }
+    public RpgHealthConfig Health { get { _health.EquipmentSets = Sets; _health.Roles=Roles;_health.EarlyLegendaries=EarlyLegendaries; return _health; } set => _health=value; }
     public RpgMimicConfig Mimic {get;set;}=new();
     public RpgEnemyConfig Enemies { get; set; } = new();
     public RpgHotTimeConfig HotTime { get; set; } = new();
@@ -29,7 +34,7 @@ public sealed class RpgConfig
     {
         RpgQuestCatalog.AddMissing(this);
         foreach(var item in DiveLoot.Items.Where(i=>i.Generation is null))RpgCoreStatService.Apply(item);
-        AreaBosses.Validate();
+        Dungeons.Validate();BossAssignment.Validate();Multiplayer.Validate();EarlyLegendaries.Validate();RpgEarlyLegendaryCatalog.AddMissing(this);Roles.Validate();AreaBosses.Validate();
         AdminAccess.Validate();
         Upgrades.Validate();
         Zones.Validate();

@@ -470,6 +470,7 @@ public sealed partial class AdventureGameService
                     if(RpgEternalCombat.Judgment(account.Rpg,_config.Adventures.Rpg))damage=_boss.Hp;
                     RpgWeaponService.AfterHit(account.Rpg,_config.Adventures.Rpg,hit.Spell,Math.Min(damage,_boss.Hp),clock);
                     var confirmedTotal=Math.Min(damage,_boss.Hp);
+                    RpgEarlyLegendaryEffects.AfterHit(confirmedTotal,account.Rpg,_config.Adventures.Rpg,_random,clock);
                     var confirmedDirect=hit.Damage>0?(int)Math.Min(confirmedTotal,(decimal)confirmedTotal*hit.DirectDamage/hit.Damage):0;
                     var confirmedSoul=hit.Damage>0?(int)Math.Min(confirmedTotal-confirmedDirect,(decimal)confirmedTotal*hit.SoulProcDamage/hit.Damage):0;
                     RpgEternalEightCombat.AfterDirect(account.Rpg,_config.Adventures.Rpg,confirmedDirect,confirmedSoul,hit.Critical,clock);
@@ -490,6 +491,7 @@ public sealed partial class AdventureGameService
                         receivedDamage=RpgWeaponService.Counter(receivedDamage,account.Rpg,hit.Spell,clock);
                         receivedDamage=RpgEternalCombat.Receive(receivedDamage,account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
                         receivedDamage=RpgEternalEightCombat.Receive(receivedDamage,account.Rpg,_config.Adventures.Rpg,_boss.Id,!_boss.Config.IsMimic,clock);
+                        receivedDamage=RpgEarlyLegendaryEffects.Receive(receivedDamage,account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
                         health.CurrentHp=Math.Max(0,health.CurrentHp!.Value-receivedDamage);
                         RpgDepthsCombatService.AfterCounter(account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
                         playerDied=health.Defeated=health.CurrentHp==0;

@@ -100,6 +100,9 @@ public sealed partial class ViewerPointStore
         account.Rpg ??= new();
         if (account.Rpg.SchemaVersion != 1) throw new InvalidOperationException("Unbekannte RPG-Datenversion.");
         SnapshotProtocol.TalentRules.Validate(account.Rpg.PlayerLevel,account.Rpg.TalentRanks);
+        account.Rpg.Party??=new();SnapshotProtocol.PartySnapshot.Validate(account.Rpg.Party,account.UserId);
+        if(!Enum.IsDefined(account.Rpg.Role))throw new InvalidDataException("Ungültige Rolle.");
+        account.Rpg.Statistics??=new();SnapshotProtocol.RpgStatistics.Validate(account.Rpg.Statistics);
         account.Rpg.Quests??=new();SnapshotProtocol.QuestProgressRules.Validate(account.Rpg.Quests);
         account.Rpg.Materials ??= new();
         account.Rpg.Materials.Validate();

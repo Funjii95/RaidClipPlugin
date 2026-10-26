@@ -1,5 +1,6 @@
 namespace RaidClipPlugin.Models;
 
+public enum RpgRole { Unselected, Tank, Healer, Damage }
 public enum ItemRarity { Common, Uncommon, Rare, Epic, Legendary, True, Cursed, Abyss, Eternal, Divine }
 public enum EquipmentSlot { Weapon, Helmet, Chest, Gloves, Boots, Ring1, Ring2, Amulet }
 public enum RpgActivity { Dive, Fishing, Boss }
@@ -58,6 +59,7 @@ public sealed class RpgAttributes
 
 public sealed class RpgItem
 {
+    public int MinimumLevel {get;set;}=1;
     public int UpgradeLevel { get; set; }
     public bool IsRefined { get; set; }
     public int DropWeight { get; set; } = 1;
@@ -123,6 +125,9 @@ public sealed class RpgBuff
 
 public sealed class RpgProfile
 {
+    public SnapshotProtocol.PartySnapshot Party {get;set;}=new();
+    public RpgRole Role {get;set;}
+    public SnapshotProtocol.RpgStatistics Statistics {get;set;}=new();
     public SnapshotProtocol.QuestProgress Quests {get;set;}=new();
     public string SelectedDivingZone {get;set;}="sunny_lagoon";
     public string SelectedBossId {get;set;}="boss_korallus";

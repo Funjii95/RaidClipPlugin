@@ -20,6 +20,7 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
   RpgItem? item=null;RpgEnemyResult? enemy=null;var additional=new List<RpgItem>();var material=new Dictionary<string,int>();var applied=Array.Empty<string>();
   string eventType="",outcome="",zoneId="",zoneName="";long payout=0;int remaining=0,shells=0;bool mimicDiscovered=false;
   var result=await points.ApplyRpgAsync(userId,name,requestId,a=>{
+   if(points.HasActivePartyCombatUnsafe(userId,time))return new(false,"Beende zuerst die laufende Gruppen- oder Dungeoninstanz.");
    var p=a.Rpg;var zone=c.Zones.Get(fishing?p.SelectedFishingZone:p.SelectedDivingZone);zoneId=zone.Id;zoneName=zone.Name;
    if(p.Cooldowns.TryGetValue(command,out var until)&&until>time){remaining=(int)Math.Ceiling((until-time).TotalSeconds);return new(false,$"Cooldown: noch {remaining} Sekunden.");}
    RpgHealthService.Refresh(p,c.Health,time);if(!fishing&&p.Health.CurrentHp<=0)return new(false,"Du hast 0 HP. Erst heilen, dann tauchen.");
@@ -42,7 +43,7 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
      if(RpgDepthsCombatService.Has(p,c,"true_eternal_reef",4)&&rng.NextInclusive(0,9999)<1500)quantity++;
      quantity=checked(quantity*RpgEternalCombat.NormalLootMultiplier(p,c));
      if(!p.Fish.TryGetValue(fish.Id,out var stack))p.Fish[fish.Id]=stack=new(){FishId=fish.Id,FirstCaughtAt=time};stack.Quantity=checked(stack.Quantity+quantity);stack.LastCaughtAt=time;
-     RpgQuestService.Record(p,"fish",zone.Id,quantity,fish.Id);
+     RpgQuestService.Record(p,"fish",zone.Id,quantity,fish.Id);RpgStatisticsService.Fish(p,fish.Id,quantity);
      a.FishCollection[fish.Name]=checked(a.FishCollection.GetValueOrDefault(fish.Name)+quantity);
      item=new(){ItemId=fish.Id,DisplayName=fish.Name,IconId=fish.IconId,Rarity=fish.Rarity,FoundAt=time};payout=Math.Max(0,fish.PearlReward??c.FreeFishingReward);outcome=$"{quantity} × {fish.Name}";Merge(RpgZoneService.Materials(p,c,zone,"fish",rng));
     }else{p.Materials.Shells=checked(p.Materials.Shells+1);shells=1;outcome="Eine Muschel gefunden!";}
@@ -66,10 +67,14 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
     if(RpgEternalCombat.Has(p,c,"eternal_star_hunter",6)&&rng.NextInclusive(0,9999)<3000&&(enemy is null||enemy.Victory))Merge(RpgZoneService.Materials(p,c,zone,"dive",rng));
    }
    if(!fishing){RpgQuestService.Record(p,"dive",zone.Id);if(p.Buffs.Any(b=>RpgSushiService.Active(b,time)))RpgQuestService.Record(p,"buffedDive",zone.Id);if(enemy?.Victory==true)RpgQuestService.Record(p,"kills",zone.Id);}
+   if(!fishing&&!mimicDiscovered&&enemy?.Victory!=false&&c.EarlyLegendaries.Enabled&&RpgEarlyLegendaryEffects.Has(p,"pearl_amulet")&&rng.NextInclusive(0,9999)<c.EarlyLegendaries.PearlChance*100)payout+=c.EarlyLegendaries.PearlAmount;
    payout=RpgEternalCombat.Enhanced(p)?RpgCollectorService.Reward(payout,stats.PearlBonus):RpgPassiveService.RewardPayout(payout,0,stats.PearlBonus);payout=checked(payout*RpgEternalCombat.NormalLootMultiplier(p,c));
    var collector=RpgCollectorService.Calculate(p,c.DiveLoot);payout=RpgCollectorService.Reward(payout,fishing?collector.FishingPearls:collector.DivePearls);
    payout=points.RewardAmount(payout,fishing?RpgRewardSource.Fishing:RpgRewardSource.DiveNetWin);if(config.MaximumAccountEnabled)payout=Math.Min(payout,Math.Max(0,config.MaximumAccountPoints-a.Points));a.Points=checked(a.Points+payout);
    foreach(var found in p.Inventory.Where(i=>!ownedBefore.Contains(i.InstanceId)&&i.InstanceId!=item?.InstanceId&&!additional.Any(a=>a.InstanceId==i.InstanceId)))additional.Add(found);
+   RpgStatisticsService.Add(p,"pearlsEarned",payout);
+   var legendary=p.Inventory.Count(i=>!ownedBefore.Contains(i.InstanceId)&&i.Rarity==ItemRarity.Legendary);RpgStatisticsService.Add(p,"legendaryFinds",legendary);
+   if(!fishing){RpgStatisticsService.Add(p,"dives");RpgStatisticsService.Zone(p,zone.Id,"dives");var success=enemy?.Victory!=false;RpgStatisticsService.Add(p,success?"successfulDives":"failedDives");RpgStatisticsService.Zone(p,zone.Id,success?"success":"failure");RpgStatisticsService.Zone(p,zone.Id,"materials",material.Values.Sum());RpgStatisticsService.Zone(p,zone.Id,"legendary",legendary);}
    a.GamesPlayed=checked(a.GamesPlayed+1);
    RpgPassiveService.ConsumeBuffs(p,activity,c,rng,time,0);p.Cooldowns[command]=time.AddSeconds(RpgPerkCatalog.Cooldown(p,game.CooldownSeconds,fishing?"fishCooldown":"diveCooldown")/(1+(double)Math.Clamp(stats.MovementSpeed,-90,200)/100));return new(true);
   },token);
