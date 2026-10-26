@@ -30,8 +30,8 @@ public class RpgStatisticsTests
  {
   var c=new RpgConfig{Enabled=true};var p=new RpgProfile();var z=c.Zones.Get("sunny_lagoon");
   c.Upgrades.Drops["enemy"]["white_pearl"]=new(){Chance=17,Minimum=1,Maximum=1};
-  Assert.Equal(22,RpgZoneService.MaterialChance(p,c,z,"white_pearl","enemy"));Assert.Equal(0,RpgZoneService.MaterialChance(p,c,z,"abyss_shard","enemy"));
-  using var doc=JsonDocument.Parse(JsonSerializer.Serialize(RpgZoneService.MaterialLocations(p,c)));var found=doc.RootElement.EnumerateArray().Single(x=>x.GetProperty("MaterialId").GetString()=="white_pearl"&&x.GetProperty("ZoneId").GetString()==z.Id&&x.GetProperty("Source").GetString()=="enemy");Assert.Equal(22,found.GetProperty("Chance").GetDecimal());
+  Assert.Equal(32,RpgZoneService.MaterialChance(p,c,z,"white_pearl","enemy"));Assert.Equal(0,RpgZoneService.MaterialChance(p,c,z,"abyss_shard","enemy"));
+  using var doc=JsonDocument.Parse(JsonSerializer.Serialize(RpgZoneService.MaterialLocations(p,c)));var found=doc.RootElement.EnumerateArray().Single(x=>x.GetProperty("MaterialId").GetString()=="white_pearl"&&x.GetProperty("ZoneId").GetString()==z.Id&&x.GetProperty("Source").GetString()=="enemy");Assert.Equal(32,found.GetProperty("Chance").GetDecimal());
   Assert.Equal(10,c.Zones.Areas.Count);Assert.Equal(c.Zones.Areas.Select(x=>x.Id).Order(),RpgStatistics.ZoneIds.Order());
  }
 }

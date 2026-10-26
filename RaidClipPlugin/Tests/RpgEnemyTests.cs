@@ -40,7 +40,7 @@ public sealed class RpgEnemyTests : IDisposable
     {
         // Legacy stake values cannot change the actual selected area's fixed enemy level.
         var c=Config();var p=new RpgProfile();var r=new RpgEnemyService(new Low()).Encounter(p,c,stake,_now)!;
-        Assert.NotEmpty(name);Assert.True(xp>0);Assert.Equal("Kleine Riffkrabbe",r.Name);Assert.Equal(10,r.Level);Assert.True(r.Victory);Assert.Equal(100,p.Experience);Assert.NotNull(r.Loot);Assert.Equal(0,r.DamageTaken);
+        Assert.NotEmpty(name);Assert.True(xp>0);Assert.Equal("Kleine Riffkrabbe",r.Name);Assert.Equal(10,r.Level);Assert.True(r.Victory);Assert.Equal(300,p.Experience);Assert.NotNull(r.Loot);Assert.Equal(0,r.DamageTaken);
     }
     [Fact]
     public void BetterOfTwoRollsImprovesRarityWithoutGivingTwoItems()
@@ -75,10 +75,10 @@ public sealed class RpgEnemyTests : IDisposable
         var store=new ViewerPointStore(_dir);await store.AddPointsAsync("u","U",1000,0,default);
         var service=new RpgAdventureService(store,c,new Low(),()=>_now);var r=await service.ExecuteAsync("u","U","one",RpgActivity.Dive,250,default);
         Assert.True(r.Success);Assert.True(r.Enemy!.Victory);Assert.Equal(1020,r.Balance);Assert.Equal(20,r.Payout);
-        var p=(await store.GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(100,p.Experience);Assert.Equal(2,p.Inventory.Count);Assert.Single(p.Inventory,i=>i.ItemId.StartsWith("starter_"));
+        var p=(await store.GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(300,p.Experience);Assert.Equal(2,p.Inventory.Count);Assert.Single(p.Inventory,i=>i.ItemId.StartsWith("starter_"));
         r=await new RpgAdventureService(store,c,new Low(),()=>_now.AddHours(1)).ExecuteAsync("u","U","one",RpgActivity.Dive,250,default);
         Assert.False(r.Success);Assert.Null(r.Enemy);Assert.Equal(1020,await store.GetPointsAsync("u",default));
-        p=(await new ViewerPointStore(_dir).GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(100,p.Experience);Assert.Equal(2,p.Inventory.Count);Assert.Single(p.Inventory,i=>i.ItemId.StartsWith("starter_"));
+        p=(await new ViewerPointStore(_dir).GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(300,p.Experience);Assert.Equal(2,p.Inventory.Count);Assert.Single(p.Inventory,i=>i.ItemId.StartsWith("starter_"));
     }
     [Fact]
     public async Task FailedSaveRollsBackCombatExperienceLootAndCurrency()

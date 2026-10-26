@@ -32,7 +32,7 @@ public sealed record SelfDeletionJob(string UserId,Guid RequestId,DateTimeOffset
 public static class RpgIntents
 {
     public static bool IsAdmin(string kind)=>kind is "adminGrantSet" or "adminDashboard" or "adminConfigRead" or "adminConfigSave" or "adminPlayers" or "adminPlayer" or "adminControl" or "adminRoles" or "adminCatalog" or "adminStart" or "adminGrant" or "adminMaterialGrant" or "adminBalance" or "adminHealAll" or "adminDivine" or "adminZoneDebug";
-    public static readonly string[] Supported = ["dungeonStatus","partyCombat","partyStatus","party","selectRole","questStatus","startQuest","claimQuest","selectBoss","compareEquipment","selectZone","refineItem","upgradeItem","status","inventory","sets","perks","equip","unequip","buyPerk","dive","fish","craft","eat","preview","minigames","casino","bossStatus","bossAttack","itemlock","favorite","salvagePreview","salvageBatch","salvageConfirm","salvageCancel","community","openShells","learnTalent"];
+    public static readonly string[] Supported = ["diveSeries","dungeonStatus","partyCombat","partyStatus","party","selectRole","questStatus","startQuest","claimQuest","selectBoss","compareEquipment","selectZone","refineItem","upgradeItem","status","inventory","sets","perks","equip","unequip","buyPerk","dive","fish","craft","eat","preview","minigames","casino","bossStatus","bossAttack","itemlock","favorite","salvagePreview","salvageBatch","salvageConfirm","salvageCancel","community","openShells","learnTalent"];
     public static string Canonical(RpgIntent intent)
     {
         if(intent.ActionId==Guid.Empty || !(Supported.Contains(intent.Kind)||IsAdmin(intent.Kind)) || intent.Arguments.ValueKind!=JsonValueKind.Object)
@@ -43,6 +43,7 @@ public static class RpgIntents
             if(!intent.Arguments.TryGetProperty("operation",out var combatOp)||combatOp.ValueKind!=JsonValueKind.String)throw new ArgumentException("Missing combat operation.");
             required=combatOp.GetString() switch{"startDive"=>["operation","zoneId"],"startDungeon"=>["operation","dungeonId","difficulty"],"heal" or "guard"=>["operation","targetUserId"],"startBoss" or "attack" or "rally" or "interrupt" or "advance" or "abandon" or "recover" or "pauseAutomatic" or "resumeAutomatic"=>["operation"],_=>throw new ArgumentException("Invalid combat operation.")};
         }
+        if(intent.Kind=="diveSeries"){if(!intent.Arguments.TryGetProperty("operation",out var seriesOp)||seriesOp.ValueKind!=JsonValueKind.String)throw new ArgumentException("Missing series operation.");required=seriesOp.GetString() switch{"start"=>["operation","count"],"stop"=>["operation"],_=>throw new ArgumentException("Invalid series operation.")};}
         var values=new SortedDictionary<string,string>(StringComparer.Ordinal);
         if(intent.Kind=="adminConfigRead")required=["section","filter","page"];
         if(intent.Kind=="adminConfigSave")required=["section","changes","version"];
@@ -66,6 +67,7 @@ public static class RpgIntents
         if(intent.Kind=="party"&&values.TryGetValue("targetUserId",out var targetId)&&!PartySnapshot.User(targetId))throw new ArgumentException("Invalid party target.");
         if(intent.Kind=="party"&&values.TryGetValue("invitationId",out var invitation)&&!PartySnapshot.Id(invitation))throw new ArgumentException("Invalid invitation.");
         if(intent.Kind=="selectRole"&&(!values.TryGetValue("role",out var selectedRole)||selectedRole is not ("tank" or "healer" or "damage")))throw new ArgumentException("Invalid combat role.");
+        if(intent.Kind=="diveSeries"&&values.TryGetValue("count",out var seriesCount)&&seriesCount is not ("10" or "20" or "100"))throw new ArgumentException("Invalid dive count.");
         if(required.Any(p=>!values.ContainsKey(p)))throw new ArgumentException("Missing action arguments.");
         if(intent.Kind=="partyCombat"){
             if(values.TryGetValue("targetUserId",out var combatTarget)&&combatTarget!="auto"&&!PartySnapshot.User(combatTarget))throw new ArgumentException("Invalid combat target.");

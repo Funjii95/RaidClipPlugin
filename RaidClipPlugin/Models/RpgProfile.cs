@@ -128,6 +128,8 @@ public sealed class RpgProfile
     public List<SnapshotProtocol.CombatRewardReceipt> CombatRewards {get;set;}=[];
     public SnapshotProtocol.PartySnapshot Party {get;set;}=new();
     public RpgRole Role {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public SnapshotProtocol.DiveSeriesState? DiveSeries {get;set;}
     public SnapshotProtocol.RpgStatistics Statistics {get;set;}=new();
     public SnapshotProtocol.QuestProgress Quests {get;set;}=new();
     public string SelectedDivingZone {get;set;}="sunny_lagoon";

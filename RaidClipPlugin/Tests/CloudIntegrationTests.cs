@@ -43,6 +43,18 @@ public sealed class CloudIntegrationTests : IDisposable
         store.ApplyRpgAsync("1001","SYNTHETIC",action,a=>{a.Points+=10;a.Rpg.Perks["power"]=2;return new(true);},default);
 
     [Fact]
+    public async Task Large_private_journal_is_projected_before_transport_limit_without_losing_progress()
+    {
+        var store=await SeedAsync();await Worker(store).SynchronizeOnceAsync();
+        await store.ApplyRpgAsync("1001","SYNTHETIC","journal",a=>{for(var n=0;n<5000;n++)a.Rpg.CompletedActions.Add("automatic:"+Guid.NewGuid().ToString("N")+":"+n);a.Points+=123;a.Rpg.Experience+=10000;return new(true);},default);
+        var account=(await store.GetProfileAsync("1001",default)).Entry;var raw=new SnapshotMessage(1,"42","1001",1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account));
+        Assert.Throws<InvalidDataException>(()=>SnapshotValidation.Validate(raw,"42"));
+        var clean=SnapshotValidation.ValidateLocalSource(raw,"42");Assert.DoesNotContain("CompletedActions",clean.AccountJson);Assert.Equal(clean.ContentHash,SnapshotValidation.Validate(raw with{AccountJson=clean.AccountJson},"42").ContentHash);
+        var saved=await File.ReadAllBytesAsync(FilePath);await Worker(store).SynchronizeOnceAsync();Assert.Equal(saved,await File.ReadAllBytesAsync(FilePath));Assert.Equal(223,JsonDocument.Parse(cloud.Head!.AccountJson!).RootElement.GetProperty("Points").GetInt64());
+        Assert.True((await store.GetProfileAsync("1001",default)).Entry.Rpg.CompletedActions.Count>=5000);Assert.Empty((await Outbox().ReadAsync("1001"))!.Pending);
+    }
+
+    [Fact]
     public async Task Real_mutation_generates_complete_snapshot_without_changing_the_legacy_file()
     {
         var store=await SeedAsync();var worker=Worker(store);await worker.SynchronizeOnceAsync();
@@ -55,7 +67,7 @@ public sealed class CloudIntegrationTests : IDisposable
         var rpg=profile.RootElement.GetProperty("Rpg");
         Assert.Equal(110,profile.RootElement.GetProperty("Points").GetInt64());
         Assert.Equal(0.25m,rpg.GetProperty("Health").GetProperty("SushiRegenRemainder").GetDecimal());
-        foreach(var property in typeof(RpgProfile).GetProperties().Where(p=>p.Name!="CompletedActions"))Assert.True(rpg.TryGetProperty(property.Name,out _),property.Name);
+        foreach(var property in typeof(RpgProfile).GetProperties().Where(p=>p.Name!="CompletedActions"&&p.Name!="DiveSeries"))Assert.True(rpg.TryGetProperty(property.Name,out _),property.Name);
         foreach(var property in typeof(RpgItem).GetProperties())Assert.True(rpg.GetProperty("Inventory")[0].TryGetProperty(property.Name,out _),property.Name);
         foreach(var property in typeof(RpgBuff).GetProperties())Assert.True(rpg.GetProperty("Buffs")[0].TryGetProperty(property.Name,out _),property.Name);
         Assert.DoesNotContain("CompletedActions",cloud.Head.AccountJson);

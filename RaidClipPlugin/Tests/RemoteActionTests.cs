@@ -75,7 +75,14 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     }
     [Fact]public void Tides_requires_publisher_support_for_extended_stats_and_shields()
     {
-        Assert.Equal(12,SnapshotValidation.RpgProjectionVersion);
+        Assert.Equal(13,SnapshotValidation.RpgProjectionVersion);
+    }
+    [Fact]public async Task Private_action_journal_does_not_break_status_or_dive_series_commands()
+    {
+        var executor=await SeedAsync();await points!.ApplyRpgAsync("1001","SYNTHETIC","journal",a=>{for(var n=0;n<5000;n++)a.Rpg.CompletedActions.Add("automatic:"+Guid.NewGuid().ToString("N")+":"+n);return new(true);},default);
+        var result=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("status","{}")),default);Assert.True(result.Success);Assert.DoesNotContain("CompletedActions",result.DataJson);
+        var start=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("diveSeries","{\"operation\":\"start\",\"count\":\"20\"}")),default);Assert.True(start.Success);Assert.Contains("DiveSeries",start.DataJson);
+        var stop=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("diveSeries","{\"operation\":\"stop\"}")),default);Assert.True(stop.Success);Assert.Equal("stopped",(await points.GetProfileAsync("1001",default)).Entry.Rpg.DiveSeries!.Status);
     }
     [Fact]public async Task Large_inventory_status_keeps_authoritative_stats_and_profile()
     {

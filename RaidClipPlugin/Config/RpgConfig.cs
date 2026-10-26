@@ -1,10 +1,11 @@
-﻿using RaidClipPlugin.Models;
+using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 
 namespace RaidClipPlugin.Config;
 
 public sealed class RpgConfig
 {
+    public RpgLagoonBalanceConfig LagoonBalance {get;set;}=new();
     public RpgDungeonConfig Dungeons {get;set;}=new();
     public RpgBossAssignmentConfig BossAssignment {get;set;}=new();
     public RpgMultiplayerConfig Multiplayer {get;set;}=new();
@@ -34,7 +35,7 @@ public sealed class RpgConfig
     {
         RpgQuestCatalog.AddMissing(this);
         foreach(var item in DiveLoot.Items.Where(i=>i.Generation is null))RpgCoreStatService.Apply(item);
-        Dungeons.Validate();BossAssignment.Validate();Multiplayer.Validate();EarlyLegendaries.Validate();RpgEarlyLegendaryCatalog.AddMissing(this);Roles.Validate();AreaBosses.Validate();
+        LagoonBalance.Validate();Dungeons.Validate();BossAssignment.Validate();Multiplayer.Validate();EarlyLegendaries.Validate();RpgEarlyLegendaryCatalog.AddMissing(this);Roles.Validate();AreaBosses.Validate();
         AdminAccess.Validate();
         Upgrades.Validate();
         Zones.Validate();

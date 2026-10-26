@@ -163,7 +163,7 @@ internal sealed class IntegratedSnapshotWorker
             // otherwise whitespace can exceed the envelope budget after a valid grant.
             var compact=JsonSerializer.Serialize(account,new JsonSerializerOptions{Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping});
             var candidate=new SnapshotMessage(1,channel,id,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,compact);
-            var clean=SnapshotValidation.Validate(candidate,channel).AccountJson!;
+            var clean=SnapshotValidation.ValidateLocalSource(candidate,channel).AccountJson!;
             // A dungeon updates several members every turn. Unchanged bystanders
             // need periodic reconciliation, not a remote head read on every hit.
             if(state is not null&&state.Pending.Length==0&&state.PrivateAccountJson==clean&&verifiedHeads.TryGetValue(id,out var verified)&&now()-verified<TimeSpan.FromSeconds(30))return;

@@ -13,7 +13,7 @@ public static class RpgZoneService
     {
         if(activity is not ("dive" or "fish"))throw new ArgumentException("UngÃ¼ltige AktivitÃ¤t.");
         c.Zones.Get(zone);
-        return points.ApplyRpgAsync(user,name,request,a=>{if(!c.Enabled)return new(false,"RPG deaktiviert.");if(activity=="fish")a.Rpg.SelectedFishingZone=zone;else a.Rpg.SelectedDivingZone=zone;return new(true,"Gebiet gespeichert: "+c.Zones.Get(zone).Name);},ct);
+        return points.ApplyRpgAsync(user,name,request,a=>{if(!c.Enabled)return new(false,"RPG deaktiviert.");if(activity=="dive"&&a.Rpg.DiveSeries is {Status:"active"})return new(false,"Beende zuerst die laufende Tauchserie.");if(activity=="fish")a.Rpg.SelectedFishingZone=zone;else a.Rpg.SelectedDivingZone=zone;return new(true,"Gebiet gespeichert: "+c.Zones.Get(zone).Name);},ct);
     }
     public static IReadOnlyDictionary<string,int> Materials(RpgProfile p,RpgConfig c,RpgZoneDefinition z,string source,IDuelRandom rng)
     {
@@ -32,6 +32,7 @@ public static class RpgZoneService
         if(RpgEternalCombat.Has(p,c,"divine_infinity",3))return 100;
         var chance=c.Upgrades.Drops[source].GetValueOrDefault(id)?.Chance??(source=="enemy"?8m:15m);
         if(source=="enemy")chance=RpgCombatDropRules.Chance(chance);
+        if(z.Id==Default)chance+=c.LagoonBalance.MaterialChanceBonus;
         var stats=CharacterStatService.Calculate(p,c,RpgActivity.Dive);
         return Math.Clamp(chance*(1+(stats.MaterialFind+(source=="fish"?0:RpgPerkCatalog.Combined(p,"diveMaterials")))/100),0,100);
     }
@@ -53,7 +54,7 @@ public static class RpgZoneService
         }
         var combatPool=System.Text.Json.JsonSerializer.Deserialize<RpgLootConfig>(System.Text.Json.JsonSerializer.Serialize(c.DiveLoot))!;
         combatPool.Items=combatPool.Items.Where(i=>i.Slot.HasValue&&i.Rarity<=ItemRarity.Legendary).ToList();
-        var normal=new RpgLootService(rng).RollCombatReward(combatPool,now,RpgActivity.Boss,c.BossLootChance,(ItemRarity)Math.Min((int)ItemRarity.Legendary,(int)z.MaximumRarity)).Item;
+        var normal=new RpgLootService(rng).RollCombatReward(combatPool,now,RpgActivity.Boss,Math.Min(100,c.BossLootChance+(z.Id==Default?c.LagoonBalance.EquipmentChanceBonus:0)),(ItemRarity)Math.Min((int)ItemRarity.Legendary,(int)z.MaximumRarity)).Item;
         return normal?.Slot is not null?normal:null;
     }
     private static RpgItem Instance(RpgItem definition,RpgConfig c,IDuelRandom rng,DateTimeOffset now)

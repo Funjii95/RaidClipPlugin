@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
@@ -142,7 +142,10 @@ public sealed partial class ViewerPointStore
                 return new(false, "Aktion wurde bereits verarbeitet.", draft.Points, true);
             var result = mutate(draft);
             if (!result.Success) return new(false, result.Error, original?.Points ?? 0);
+            var beforeSalvage=draft.Points;
             RpgCollectionInventory.SalvageOverflow(draft, _collectionSalvage, _collectionMaximumBalance);
+            if(draft.Rpg.DiveSeries is {} series&&original?.Rpg.DiveSeries is {} previous&&series.Id==previous.Id&&series.Completed>previous.Completed)
+                series.Pearls=checked(series.Pearls+Math.Max(0,draft.Points-beforeSalvage));
             if (draft.Points < 0 || draft.UserId != userId)
                 throw new InvalidOperationException("Ungültiger RPG-Kontozustand.");
             var previousBoss=_globalBoss;

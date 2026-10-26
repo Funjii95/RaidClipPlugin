@@ -51,7 +51,7 @@ internal sealed partial class RemoteRpgExecutor
     foreach(var slot in a.Rpg.Equipment.Where(p=>ids.Contains(p.Value)).Select(p=>p.Key).ToArray())a.Rpg.Equipment.Remove(slot);
     a.Rpg.Inventory.RemoveAll(i=>ids.Contains(i.InstanceId));RpgHealthService.Refresh(a.Rpg,c.Health,DateTimeOffset.UtcNow);
    }else return new(false,"Unbekannte Divine-Aktion.");
-   try{SnapshotValidation.Validate(new(1,channel,target,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(a)),channel);}catch(InvalidDataException){return new(false,"Inventar überschreitet Cloud-Größenlimit.");}
+   try{SnapshotValidation.ValidateLocalSource(new(1,channel,target,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(a)),channel);}catch(InvalidDataException){return new(false,"Inventar überschreitet Cloud-Größenlimit.");}
    return new(true,op=="remove"?"Göttliche Items entfernt.":"Vollständiges göttliches Set gespeichert.");
   },ct);
   return new(applied.Success,applied.Success?"applied":"rule_rejected",applied.Error,JsonSerializer.Serialize(new{message=applied.Error}));

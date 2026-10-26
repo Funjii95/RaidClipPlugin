@@ -76,10 +76,10 @@ public partial class MainForm
         _automaticDungeonTask=Task.Run(async()=>{
             var automatic=new RpgAutomaticDungeons(_viewerPoints,()=>minigame.RemoteConfiguration);
             while(!ct.IsCancellationRequested){
-                try{if(_streamAdmission.CanPlay(epoch)){using var scope=_streamAdmission.Enter(epoch);await automatic.TickAsync(ct);}}
+                try{if(_streamAdmission.CanPlay(epoch)){using var scope=_streamAdmission.Enter(epoch);await automatic.TickAsync(ct);await new RpgDiveSeriesService(_viewerPoints,minigame.RemoteConfiguration).TickAsync(ct,async(name,zone,token)=>{await minigame.StartDiscoveredBossAsync(name,token,zone);});}}
                 catch(OperationCanceledException)when(ct.IsCancellationRequested){break;}
                 catch(GameplayUnavailableException){}
-                catch{CloudLog("Automatischer Dungeon pausiert kurz; gespeicherter Kampfstand bleibt erhalten.");}
+                catch{CloudLog("Automatisches Abenteuer pausiert kurz; gespeicherter Fortschritt bleibt erhalten.");}
                 try{await Task.Delay(1000,ct);}catch(OperationCanceledException){break;}
             }
         },ct);

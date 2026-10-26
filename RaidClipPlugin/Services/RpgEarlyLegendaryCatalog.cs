@@ -33,7 +33,7 @@ public static class RpgEarlyLegendaryCatalog
  public static RpgItem? Roll(RpgProfile p,RpgConfig c,RpgZoneDefinition zone,IDuelRandom random,DateTimeOffset now)
  {
   if(!c.EarlyLegendaries.Enabled||zone.Level>30)return null;
-  var chance=Math.Clamp(RpgCombatDropRules.Chance(c.EarlyLegendaries.DropChance)+(RpgEarlyLegendaryEffects.Has(p,"abyss_luck")?c.EarlyLegendaries.LuckyRingBonus:0),0,100);
+  var chance=Math.Clamp(RpgCombatDropRules.Chance(c.EarlyLegendaries.DropChance)+(zone.Id==RpgZoneService.Default?c.LagoonBalance.EarlyLegendaryChanceBonus:0)+(RpgEarlyLegendaryEffects.Has(p,"abyss_luck")?c.EarlyLegendaries.LuckyRingBonus:0),0,100);
   if(random.NextInclusive(0,999999)>=chance*10000)return null;
   var pool=c.DiveLoot.Items.Where(i=>i.ItemId.StartsWith("starter_")&&i.MinimumLevel<=p.PlayerLevel).ToArray();if(pool.Length==0)return null;
   var found=System.Text.Json.JsonSerializer.Deserialize<RpgItem>(System.Text.Json.JsonSerializer.Serialize(pool[random.NextInclusive(0,pool.Length-1)]))!;found.InstanceId=Guid.NewGuid().ToString("N");found.FoundAt=now;return found;

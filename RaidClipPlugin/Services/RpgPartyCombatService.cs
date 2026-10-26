@@ -20,6 +20,7 @@ internal sealed class RpgPartyCombatService(ViewerPointStore points,MinigameConf
   if(operation=="startDungeon"&&party is null){if(!c.Dungeons.Enabled)return new(false,"Dungeons sind nicht freigegeben.");party=new(){Id=Guid.NewGuid().ToString("N"),LeaderId=actor,Members=[actor],CreatedAt=now};world.Parties[party.Id]=party;}
   if(party is null)return new(false,"Erstelle zuerst eine Gruppe.");foreach(var id in party.Members){var p=get(id).Rpg;RpgHealthService.Refresh(p,c.Health,now);}
   if(operation is "startDive" or "startBoss" or "startDungeon"){
+   if(party.Members.Any(id=>get(id).Rpg.DiveSeries is {Status:"active"}))return new(false,"Beendet zuerst die laufenden Tauchserien.");
    if(party.LeaderId!=actor)return new(false,"Nur die Gruppenleitung startet ein Abenteuer.");
    if(party.Instance is {Status:"active"} active&&active.ExpiresAt>now)return new(false,"Es läuft bereits eine gemeinsame Instanz.");
    if(points.HasGlobalBossParticipantsUnsafe(party.Members))return new(false,"Beendet zuerst eure Teilnahme am globalen Bossereignis.");
@@ -110,7 +111,7 @@ internal sealed class RpgPartyCombatService(ViewerPointStore points,MinigameConf
  {
   var i=party.Instance!;var zone=c.Zones.Get(i.ZoneId);foreach(var id in party.Members){var a=get(id);var p=a.Rpg;if(i.Rewarded.Contains(id)||p.Health.CurrentHp<=0||i.Threat.GetValueOrDefault(id)<=0)continue;
    var rewardReceipt=new RpgCombatRewardService(a);var eligible=p.PlayerLevel+c.Multiplayer.MaximumLevelSpreadForRewards>=zone.Level;var rewardLevel=Math.Min(zone.Level,p.PlayerLevel+c.Multiplayer.MaximumLevelSpreadForRewards);var multiplier=i.Kind=="dungeon"?c.Dungeons.RewardMultipliers[i.Difficulty]*3:1;
-   var amount=(long)(rewardLevel*20*multiplier);if(settings.MaximumAccountEnabled)amount=Math.Min(amount,Math.Max(0,settings.MaximumAccountPoints-a.Points));a.Points=checked(a.Points+amount);RpgStatisticsService.Add(p,"pearlsEarned",amount);RpgHealthService.Experience(p,c.Health,(int)(rewardLevel*20*multiplier),now);
+   var amount=(long)(rewardLevel*20*multiplier);if(settings.MaximumAccountEnabled)amount=Math.Min(amount,Math.Max(0,settings.MaximumAccountPoints-a.Points));a.Points=checked(a.Points+amount);RpgStatisticsService.Add(p,"pearlsEarned",amount);RpgHealthService.Experience(p,c.Health,i.Kind=="dungeon"?c.Dungeons.CompletionExperience(p.PlayerLevel,c.Health.ExperiencePerLevel,i.Difficulty):(int)(rewardLevel*20*multiplier),now);
    var previous=p.Inventory.Select(x=>x.InstanceId).ToHashSet();
    if(eligible){var materials=RpgZoneService.Materials(p,c,zone,"enemy",Rng);RpgStatisticsService.Zone(p,zone.Id,"materials",materials.Values.Sum());RpgItem? item=null;
     if(i.Kind=="dungeon"){

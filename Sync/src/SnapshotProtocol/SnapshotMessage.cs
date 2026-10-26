@@ -16,7 +16,7 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 12;
+    public const int RpgProjectionVersion = 13;
     public const int MaxMessageBytes = 256 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
@@ -39,6 +39,17 @@ public static class SnapshotValidation
         var message = document.RootElement.Deserialize<SnapshotMessage>(Options)
             ?? throw new InvalidDataException("Missing snapshot message.");
         return Validate(message, trustedChannelId);
+    }
+
+    // Trusted local saves include private idempotency journals. Project them before
+    // enforcing the wire limit; network ingress must keep using ReadAsync/Validate.
+    public static ValidatedSnapshot ValidateLocalSource(SnapshotMessage message, string trustedChannelId)
+    {
+        if (message.Kind == SnapshotKind.Delete) return Validate(message, trustedChannelId);
+        var json = message.AccountJson ?? throw new InvalidDataException("Missing account.");
+        if (Encoding.UTF8.GetByteCount(json) > 16 * 1024 * 1024)
+            throw new InvalidDataException("Local snapshot source too large.");
+        return Validate(message with { AccountJson = Project(json, message.UserId) }, trustedChannelId);
     }
 
     public static ValidatedSnapshot Validate(SnapshotMessage message, string trustedChannelId)
@@ -81,7 +92,7 @@ public static class SnapshotValidation
             throw new InvalidDataException("Invalid account identity, balance, date or RPG object.");
         var rpg = Clean(JsonSerializer.SerializeToElement(root["Rpg"]),
             ["SchemaVersion", "LegacyFishImported", "Inventory", "Equipment", "Perks", "Fish", "Sushi", "Buffs", "Cooldowns",
-                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials", "TalentRanks", "SelectedDivingZone", "SelectedFishingZone", "SelectedBossId", "Quests", "Statistics", "Role", "Party", "CombatRewards"]);
+                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials", "TalentRanks", "SelectedDivingZone", "SelectedFishingZone", "SelectedBossId", "Quests", "Statistics", "Role", "Party", "CombatRewards", "DiveSeries"]);
         if(rpg.ContainsKey("SelectedBossId")&&rpg["SelectedBossId"]?.GetValue<string>() is not ("boss_korallus" or "boss_thalruun" or "boss_moderklaue" or "boss_luminara" or "boss_vortexion" or "boss_krysalith" or "boss_maledictus" or "boss_aethernos" or "boss_nharzul" or "boss_eonath"))throw new InvalidDataException("Invalid selected boss.");
         foreach(var selected in new[]{"SelectedDivingZone","SelectedFishingZone"})if(rpg.ContainsKey(selected)&&rpg[selected]?.GetValue<string>() is not ("sunny_lagoon" or "sunken_temples" or "shipwreck_graveyard" or "glowing_coral_forest" or "tidal_maelstrom" or "crystal_grotto" or "cursed_depths" or "true_abyss" or "abyss" or "primordial_throne"))throw new InvalidDataException("Invalid selected zone.");
         if (rpg["SchemaVersion"]?.GetValue<int>() != 1) throw new InvalidDataException("Unsupported RPG schema.");
@@ -101,6 +112,7 @@ public static class SnapshotValidation
                 foreach(var key in new[]{"AutomaticCombat","NextAutomaticAt"})if(!original.Any(p=>p.Key.Equals(key,StringComparison.OrdinalIgnoreCase)))instance.Remove(key);
             rpg["Party"]=normalized;
         }
+        if(rpg["DiveSeries"] is not null){var series=rpg["DiveSeries"]!.Deserialize<DiveSeriesState>(Options)??throw new InvalidDataException("Invalid dive series.");DiveSeriesState.Validate(series);rpg["DiveSeries"]=JsonSerializer.SerializeToNode(series);}
         if(rpg.ContainsKey("CombatRewards")){var rewards=rpg["CombatRewards"]?.Deserialize<List<CombatRewardReceipt>>(Options)??throw new InvalidDataException("Invalid rewards.");CombatRewardReceipt.Validate(rewards);rpg["CombatRewards"]=JsonSerializer.SerializeToNode(rewards);}
         if(rpg.ContainsKey("Role")&&(rpg["Role"] is not JsonValue role||!role.TryGetValue<int>(out var selectedRole)||selectedRole is <0 or >3))throw new InvalidDataException("Invalid role.");
         if(rpg.ContainsKey("Statistics")){var stats=rpg["Statistics"]?.Deserialize<RpgStatistics>()??throw new InvalidDataException("Invalid statistics.");RpgStatistics.Validate(stats);rpg["Statistics"]=JsonSerializer.SerializeToNode(stats);}

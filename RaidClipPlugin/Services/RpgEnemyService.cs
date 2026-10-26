@@ -48,7 +48,7 @@ public sealed class RpgEnemyService(IDuelRandom random)
    }
   }
   if(p.Health.CurrentHp==0&&!string.IsNullOrEmpty(p.Health.BossId))p.Health.Defeated=true;
-  bool victory=hp==0&&p.Health.CurrentHp>0;RpgItem? loot=null,eternal=null;IReadOnlyDictionary<string,int> materials=new Dictionary<string,int>();var experience=zone.Level*(elite?20:10);
+  bool victory=hp==0&&p.Health.CurrentHp>0;RpgItem? loot=null,eternal=null;IReadOnlyDictionary<string,int> materials=new Dictionary<string,int>();var experience=zone.Level*(elite?20:10)*(zone.Id==RpgZoneService.Default?c.LagoonBalance.ExperienceMultiplier:1);
   RpgStatisticsService.Add(p,victory?"enemyKills":"lostFights");if(victory)RpgStatisticsService.Zone(p,zone.Id,"kills");
   if(victory) {
    RpgHealthService.Experience(p,c.Health,experience,now);RpgPerkCatalog.Victory(p,now);

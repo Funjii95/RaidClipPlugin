@@ -10,7 +10,7 @@ public sealed record RpgAdventureResult(bool Success,string PlayerId,long Stake,
 public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig config,IDuelRandom? random=null,Func<DateTimeOffset>? now=null)
 {
  private readonly IDuelRandom rng=random??new CryptoDuelRandom();private readonly Func<DateTimeOffset> clock=now??(()=>DateTimeOffset.UtcNow);
- public async Task<RpgAdventureResult> ExecuteAsync(string userId,string name,string requestId,RpgActivity activity,long stake,CancellationToken token)
+ public async Task<RpgAdventureResult> ExecuteAsync(string userId,string name,string requestId,RpgActivity activity,long stake,CancellationToken token,string? seriesId=null,int? seriesIndex=null)
  {
   var c=config.Adventures.Rpg;var fishing=activity==RpgActivity.Fishing;var game=fishing?config.Adventures.Fishing:config.Adventures.Treasure;
   if(!config.Enabled||!config.PointsEnabled||!c.Enabled||!game.Enabled||activity==RpgActivity.Boss)return new(false,userId,0,0,0,"RPG-Aktion ist deaktiviert.","",null,0,[]);
@@ -21,7 +21,10 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
   string eventType="",outcome="",zoneId="",zoneName="";long payout=0;int remaining=0,shells=0;bool mimicDiscovered=false;
   var result=await points.ApplyRpgAsync(userId,name,requestId,a=>{
    if(points.HasActivePartyCombatUnsafe(userId,time))return new(false,"Beende zuerst die laufende Gruppen- oder Dungeoninstanz.");
-   var p=a.Rpg;var zone=c.Zones.Get(fishing?p.SelectedFishingZone:p.SelectedDivingZone);zoneId=zone.Id;zoneName=zone.Name;
+   var p=a.Rpg;
+   if(seriesId is not null&&(p.DiveSeries is not {Status:"active"} series||series.Id!=seriesId||series.Completed!=seriesIndex||series.ZoneId!=p.SelectedDivingZone))return new(false,"Tauchserie ist nicht mehr aktuell.");
+   if(!fishing&&seriesId is null&&p.DiveSeries is {Status:"active"})return new(false,"Beende zuerst die laufende Tauchserie.");
+   var experienceBefore=p.Experience;var zone=c.Zones.Get(fishing?p.SelectedFishingZone:p.SelectedDivingZone);zoneId=zone.Id;zoneName=zone.Name;
    if(p.Cooldowns.TryGetValue(command,out var until)&&until>time){remaining=(int)Math.Ceiling((until-time).TotalSeconds);return new(false,$"Cooldown: noch {remaining} Sekunden.");}
    RpgHealthService.Refresh(p,c.Health,time);if(!fishing&&p.Health.CurrentHp<=0)return new(false,"Du hast 0 HP. Erst heilen, dann tauchen.");
    var ownedBefore=p.Inventory.Select(i=>i.InstanceId).ToHashSet();
@@ -76,7 +79,14 @@ public sealed class RpgAdventureService(ViewerPointStore points,MinigameConfig c
    var legendary=p.Inventory.Count(i=>!ownedBefore.Contains(i.InstanceId)&&i.Rarity==ItemRarity.Legendary);RpgStatisticsService.Add(p,"legendaryFinds",legendary);
    if(!fishing){RpgStatisticsService.Add(p,"dives");RpgStatisticsService.Zone(p,zone.Id,"dives");var success=enemy?.Victory!=false;RpgStatisticsService.Add(p,success?"successfulDives":"failedDives");RpgStatisticsService.Zone(p,zone.Id,success?"success":"failure");RpgStatisticsService.Zone(p,zone.Id,"materials",material.Values.Sum());RpgStatisticsService.Zone(p,zone.Id,"legendary",legendary);}
    a.GamesPlayed=checked(a.GamesPlayed+1);
-   RpgPassiveService.ConsumeBuffs(p,activity,c,rng,time,0);p.Cooldowns[command]=time.AddSeconds(RpgPerkCatalog.Cooldown(p,game.CooldownSeconds,fishing?"fishCooldown":"diveCooldown")/(1+(double)Math.Clamp(stats.MovementSpeed,-90,200)/100));return new(true);
+   RpgPassiveService.ConsumeBuffs(p,activity,c,rng,time,0);p.Cooldowns[command]=time.AddSeconds(RpgPerkCatalog.Cooldown(p,game.CooldownSeconds,fishing?"fishCooldown":"diveCooldown")/(1+(double)Math.Clamp(stats.MovementSpeed,-90,200)/100));if(seriesId is not null){
+    RpgDiveSeriesService.Record(a,enemy?.DamageTaken??0,payout,p.Experience-experienceBefore,p.Inventory.Where(i=>!ownedBefore.Contains(i.InstanceId)),material);
+    // Stop before a newly earned batch could exceed the public save transport limit.
+    // Returning a rejection rolls this single dive back; all previous dives stay committed.
+    var snapshot=new SnapshotProtocol.SnapshotMessage(1,userId,userId,1,Guid.NewGuid(),time,SnapshotProtocol.SnapshotKind.Upsert,System.Text.Json.JsonSerializer.Serialize(a));
+    try{var clean=SnapshotProtocol.SnapshotValidation.ValidateLocalSource(snapshot,userId);if(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(snapshot with{AccountJson=clean.AccountJson}).Length>SnapshotProtocol.SnapshotValidation.MaxMessageBytes-2048)return new(false,"Inventar voll. Bisherige Tauchbeute bleibt erhalten.");}
+    catch(InvalidDataException){return new(false,"Inventar voll. Bisherige Tauchbeute bleibt erhalten.");}
+   }return new(true);
   },token);
   if(result.Success&&!result.Duplicate)points.PublishStory(new(fishing?GroqScene.Fishing:GroqScene.Dive,"adventure:"+userId+":"+requestId,outcome,name));
   return new(result.Success,userId,0,result.Success?payout:0,result.Balance,result.Error,outcome,result.Success?item:null,remaining,result.Success?applied:[]){AdditionalItems=result.Success?additional:[],Enemy=result.Success?enemy:null,MaterialRewards=result.Success?material:new Dictionary<string,int>(),ShellsAwarded=result.Success?shells:0,ZoneId=zoneId,ZoneName=zoneName,EventType=eventType,BossDiscovered=result.Success&&!result.Duplicate&&mimicDiscovered};
