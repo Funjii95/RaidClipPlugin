@@ -9,7 +9,7 @@ public static class ActionResultLimits
 {
     // Keep the complete Firestore action document comfortably below 1 MiB.
     // Measure serialized UTF-8: DataJson is escaped again inside the receipt.
-    public const int MaximumOutcomeBytes = 384 * 1024;
+    public const int MaximumOutcomeBytes = 768 * 1024;
     public const int MaximumCompletionBodyBytes = MaximumOutcomeBytes + 8192;
 }
 
@@ -23,8 +23,9 @@ public sealed record ActionReceipt(Guid ActionId, string State, ActionOutcome? O
 public sealed record RelayHeartbeat(Guid SessionId, long Sequence, DateTimeOffset SentAt, bool Ready, string CatalogJson);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record RelayComplete(Guid SessionId, Guid ActionId, ActionOutcome Outcome);
+public sealed record RelayClaim(ActionEnvelope? Envelope,int WaitedMilliseconds);
 public sealed record RelaySession(Guid SessionId, DateTimeOffset ExpiresAt);
-public sealed record RelayAvailability(bool Available, string Reason, string? CatalogJson, Guid? SessionId=null,bool SelfDeletionEnabled=false);
+public sealed record RelayAvailability(bool Available, string Reason, string? CatalogJson, Guid? SessionId=null,bool SelfDeletionEnabled=false,bool LongPolling=false);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record SelfDeletionIntent(Guid RequestId,string Confirmation);
 public sealed record SelfDeletionJob(string UserId,Guid RequestId,DateTimeOffset RequestedAt,bool Completed=false);

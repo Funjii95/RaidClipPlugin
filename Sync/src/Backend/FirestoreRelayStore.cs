@@ -5,6 +5,18 @@ namespace Backend;
 public sealed class FirestoreRelayStore(FirestoreDb database,string channelId,string collection) : IRelayStore
 {
     private readonly SemaphoreSlim transactions = new(1,1);
+    public Task WaitForOutcomeAsync(Guid id,TimeSpan duration,CancellationToken ct)=>WaitAsync(database.Collection(collection).Document(channelId).Collection("actions").Document(id.ToString("N")),snapshot=>!snapshot.Exists||snapshot.ContainsField("privacyErased")||JsonSerializer.Deserialize<RelayAction>(snapshot.GetValue<string>("actionJson"))!.State is not ("queued" or "executing"),duration,ct);
+    public Task WaitForWorkAsync(Guid session,TimeSpan duration,CancellationToken ct)=>WaitAsync(database.Collection(collection).Document(channelId),snapshot=>!snapshot.Exists||JsonSerializer.Deserialize<RelayChannel>(snapshot.GetValue<string>("stateJson")) is {} state&&(state.SessionId!=session||state.Queue.Count>0),duration,ct);
+    private static async Task WaitAsync(DocumentReference reference,Func<DocumentSnapshot,bool> ready,TimeSpan duration,CancellationToken ct)
+    {
+        using var deadline=CancellationTokenSource.CreateLinkedTokenSource(ct);deadline.CancelAfter(duration);
+        var signal=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var listener=reference.Listen(snapshot=>{if(ready(snapshot))signal.TrySetResult();},deadline.Token);
+        try{var finished=await Task.WhenAny(signal.Task,listener.ListenerTask);await finished;}
+        catch(OperationCanceledException)when(!ct.IsCancellationRequested&&deadline.IsCancellationRequested){}
+        finally{deadline.Cancel();try{await listener.StopAsync();}catch(OperationCanceledException)when(deadline.IsCancellationRequested){}}
+        ct.ThrowIfCancellationRequested();
+    }
     public async Task<T> ObserveAsync<T>(Guid? id,Func<RelayChannel,RelayAction?,T> observation,CancellationToken ct)
     {
         RelayAction? action=null;

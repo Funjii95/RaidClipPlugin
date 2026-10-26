@@ -51,7 +51,7 @@ internal sealed class CloudActionClient : IDisposable
     }
     internal async Task RunAsync(CancellationToken ct)
     {
-        var nextBeat=DateTimeOffset.MinValue;
+        var nextBeat=DateTimeOffset.MinValue;var waitingSupported=true;
         var failures=0;
         ActionEnvelope? pending=null;ActionOutcome? outcome=null;TimeSpan executionWindow=TimeSpan.Zero;
         try {
@@ -70,11 +70,16 @@ internal sealed class CloudActionClient : IDisposable
                     }
                     if(pending is null){
                         var issued=System.Diagnostics.Stopwatch.GetTimestamp();
-                        pending=await Request<ActionEnvelope>(HttpMethod.Post,"/api/v1/plugin/actions/claim/"+session,null,ct);
+                        var serverWait=0;
+                        if(waitingSupported){
+                            try{var claim=await Request<RelayClaim>(HttpMethod.Post,"/api/v1/plugin/actions/claim/"+session+"/wait",null,ct);if(claim is null||claim.WaitedMilliseconds is <0 or >2000)throw new InvalidDataException("Invalid relay wait timing.");pending=claim.Envelope;serverWait=claim.WaitedMilliseconds;}
+                            catch(HttpRequestException missing)when(missing.StatusCode==HttpStatusCode.NotFound){waitingSupported=false;}
+                        }
+                        if(!waitingSupported)pending=await Request<ActionEnvelope>(HttpMethod.Post,"/api/v1/plugin/actions/claim/"+session,null,ct);
                         if(pending is not null){
                             var serverWindow=pending.ExecuteBefore-pending.ObservedAt;
                             if(serverWindow<=TimeSpan.Zero || serverWindow>TimeSpan.FromSeconds(8))throw new InvalidDataException("Invalid execution lease.");
-                            executionWindow=serverWindow-System.Diagnostics.Stopwatch.GetElapsedTime(issued);
+                            executionWindow=serverWindow-TimeSpan.FromMilliseconds(Math.Max(0,System.Diagnostics.Stopwatch.GetElapsedTime(issued).TotalMilliseconds-serverWait));
                         }
                     }
                     var handled=pending is not null;
@@ -87,8 +92,9 @@ internal sealed class CloudActionClient : IDisposable
                     // Drain accepted work promptly; keep bounded polling when no work exists.
                     if(failures>0)log("Aktionskanal wieder verbunden.");
                     failures=0;
-                    await Task.Delay(handled?100:500,ct);
+                    if(!waitingSupported)await Task.Delay(handled?100:500,ct);
                 } catch(OperationCanceledException) when(ct.IsCancellationRequested){throw;}
+                catch(Exception) when(ct.IsCancellationRequested){throw new OperationCanceledException(ct);}
                 catch(HttpRequestException error) when(error.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden){log("Aktionskanal gesperrt: geschützten Zugang prüfen.");return;}
                 catch(Exception error) when(IsTransient(error)) {
                     // Keep the same session, ActionId and already persisted outcome.

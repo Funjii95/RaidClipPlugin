@@ -25,12 +25,14 @@ public sealed record RelayMutation<T>(T Value, RelayAction? Action = null, bool 
 public interface IRelayStore
 {
     Task<RelayChannel> ReadChannelAsync(CancellationToken ct);
+    Task WaitForOutcomeAsync(Guid id,TimeSpan duration,CancellationToken ct)=>Task.Delay(duration,ct);
+    Task WaitForWorkAsync(Guid session,TimeSpan duration,CancellationToken ct)=>Task.Delay(duration,ct);
     Task<T> ObserveAsync<T>(Guid? id,Func<RelayChannel,RelayAction?,T> observation,CancellationToken ct)=>TransactionAsync<T>(id,false,(s,a)=>new(observation(s,a)),ct);
     Task PurgeUserActionsAsync(string user,CancellationToken ct);
     Task<T> TransactionAsync<T>(Guid? id, bool head, Func<RelayChannel,RelayAction?,RelayMutation<T>> operation,CancellationToken ct);
 }
 // Test host only. Production configuration cannot select this store.
-public sealed class MemoryRelayStore : IRelayStore
+public sealed partial class MemoryRelayStore : IRelayStore
 {
     private readonly SemaphoreSlim gate=new(1,1);
     private RelayChannel channel=new();
@@ -38,6 +40,7 @@ public sealed class MemoryRelayStore : IRelayStore
     public async Task<RelayChannel> ReadChannelAsync(CancellationToken ct){await gate.WaitAsync(ct);try{return JsonSerializer.Deserialize<RelayChannel>(JsonSerializer.Serialize(channel))!;}finally{gate.Release();}}
     public async Task PurgeUserActionsAsync(string user,CancellationToken ct){
         await gate.WaitAsync(ct);try{channel.PrivacyBlockedUsers.Add(user);channel.ExpiresAt=default;
+            Pulse();
             foreach(var id in actions.Where(p=>p.Value.Envelope.UserId==user).Select(p=>p.Key).ToArray()){actions.Remove(id);channel.Queue.Remove(id);}
         }finally{gate.Release();}
     }
@@ -49,8 +52,10 @@ public sealed class MemoryRelayStore : IRelayStore
             if(head)id=state.Queue.FirstOrDefault() is var first && first!=Guid.Empty ? first : null;
             var action=id is {} key && actions.TryGetValue(key,out var found) ? JsonSerializer.Deserialize<RelayAction>(JsonSerializer.Serialize(found)) : null;
             var mutation=operation(state,action);
+            var original=JsonSerializer.Serialize(channel);var originalAction=id is {} oldId&&actions.TryGetValue(oldId,out var oldAction)?JsonSerializer.Serialize(oldAction):null;
             channel=state;
             if(mutation.WriteAction && mutation.Action is {} changed)actions[changed.Envelope.Intent.ActionId]=changed;
+            if(original!=JsonSerializer.Serialize(channel)||mutation.WriteAction&&originalAction!=JsonSerializer.Serialize(mutation.Action))Pulse();
             return mutation.Value;
         } finally {gate.Release();}
     }
@@ -99,7 +104,7 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     public async Task<RelayAvailability> AvailabilityAsync(CancellationToken ct)
     {
         var s=await store.ReadChannelAsync(ct);
-        return new(Ready(s),Ready(s)?"ready":"plugin_not_ready",s.CatalogJson,Ready(s)?s.SessionId:null,settings.Actions.SelfDeletionEnabled&&settings.Actions.PrivacyDeletionEnabled);
+        return new(Ready(s),Ready(s)?"ready":"plugin_not_ready",s.CatalogJson,Ready(s)?s.SessionId:null,settings.Actions.SelfDeletionEnabled&&settings.Actions.PrivacyDeletionEnabled,true);
     }
     public async Task<ActionReceipt> EnqueueAsync(string user,RpgIntent intent,Guid expectedSession,CancellationToken ct)
     {

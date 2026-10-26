@@ -26,6 +26,8 @@ public static class ActionEndpoints
         });
         viewers.MapGet("/actions/{id:guid}",async(Guid id,ClaimsPrincipal user,ActionRelay relay,CancellationToken ct)=>
             await relay.ReadAsync(user.FindFirstValue("user_id")!,id,ct) is {} value ? Results.Ok(value) : Results.NotFound());
+        viewers.MapGet("/actions/{id:guid}/wait",async(Guid id,ClaimsPrincipal user,ActionRelay relay,CancellationToken ct)=>
+            await relay.ReadWaitingAsync(user.FindFirstValue("user_id")!,id,ct) is {} value ? Results.Ok(value) : Results.NotFound());
         var plugin=app.MapGroup("/api/v1/plugin/actions").RequireAuthorization("ActionPlugin").RequireRateLimiting("plugin-actions");
         viewers.MapGet("/privacy/deletion",async(ClaimsPrincipal user,ActionRelay relay,CancellationToken ct)=>Results.Ok(new{request=await relay.SelfDeletionStatusAsync(user.FindFirstValue("user_id")!,ct)}));
         viewers.MapPost("/privacy/deletion",async(HttpRequest request,ClaimsPrincipal user,ActionRelay relay,CancellationToken ct)=>Results.Accepted(value:await relay.RequestSelfDeletionAsync(user.FindFirstValue("user_id")!,await Body<SelfDeletionIntent>(request,1024,ct),ct)));
@@ -37,6 +39,7 @@ public static class ActionEndpoints
         plugin.MapDelete("/session/{id:guid}",async(Guid id,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.CloseAsync(id,ct)));
         plugin.MapPost("/claim/{session:guid}",async(Guid session,ActionRelay relay,CancellationToken ct)=>
             await relay.ClaimAsync(session,ct) is {} value ? Results.Ok(value) : Results.NoContent());
+        plugin.MapPost("/claim/{session:guid}/wait",async(Guid session,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.ClaimWaitingAsync(session,ct)));
         plugin.MapPost("/complete",async(HttpRequest request,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.CompleteAsync(await Body<RelayComplete>(request,ActionResultLimits.MaximumCompletionBodyBytes,ct),ct)));
     }
     private static async Task<T> Body<T>(HttpRequest request,int limit,CancellationToken ct)

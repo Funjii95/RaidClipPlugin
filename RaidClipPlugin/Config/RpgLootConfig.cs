@@ -5,6 +5,10 @@ namespace RaidClipPlugin.Config;
 
 public sealed class RpgLootConfig
 {
+    public static bool IsRetiredDrop(RpgItem item) =>
+        item.ItemId.Equals("shell", StringComparison.OrdinalIgnoreCase) ||
+        item.ItemId.Equals("old-shell", StringComparison.OrdinalIgnoreCase) ||
+        item.DisplayName.Equals("Alte Muschel", StringComparison.OrdinalIgnoreCase);
     public RpgLootConfig()
     {
         foreach (var item in Items.Where(i => i.Slot.HasValue))
@@ -47,7 +51,6 @@ public sealed class RpgLootConfig
         [ItemRarity.Epic] = 200, [ItemRarity.Legendary] = 50 };
     public List<RpgItem> Items { get; set; } = new()
     {
-        new() { ItemId = "shell", DisplayName = "Alte Muschel", Rarity = ItemRarity.Common, IconId = "shell" },
         new() { ItemId = "gloves", DisplayName = "Otterhandschuhe", Rarity = ItemRarity.Common, Kind = RpgItemKind.Equipment,
             Slot = EquipmentSlot.Gloves, Attributes = new() { Damage = 1 }, IconId = "gloves" },
         new() { ItemId = "trident", DisplayName = "Dreizack der Strömung", Rarity = ItemRarity.Uncommon, Kind = RpgItemKind.Equipment,
@@ -75,6 +78,8 @@ public sealed class RpgLootConfig
 
     public void Validate()
     {
+        // Migrate saved loot configurations as well as new defaults. Owned items stay intact.
+        Items.RemoveAll(IsRetiredDrop);
         if (CollectorPearlCap is <0 or >100 || CollectorChanceCap is <0 or >100 || CollectorExperienceCap is <0 or >100 || CollectorPoolChance is <0 or >100 ||
             Items.Any(i=>(i.MinimumLevel is <1 or >100 || i.DropWeight is <0 or >1000000 || i.DropWeight==0&&!i.ItemId.StartsWith("quest_")&&!i.ItemId.StartsWith("starter_")) || i.Collector is not null && (i.Kind!=RpgItemKind.Treasure || i.Slot.HasValue ||
                 typeof(RpgCollectorBonuses).GetProperties().Any(p=>(decimal)p.GetValue(i.Collector)! is <0 or >100))))

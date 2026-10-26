@@ -17,7 +17,8 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 public static class SnapshotValidation
 {
     public const int RpgProjectionVersion = 14;
-    public const int MaxMessageBytes = 256 * 1024;
+    // Includes the escaped account JSON. Leave ample room for Firestore metadata.
+    public const int MaxMessageBytes = 512 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
     // Bound the complete UTF-8 envelope before JSON parsing, including escaped accountJson.

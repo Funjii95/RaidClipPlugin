@@ -70,7 +70,7 @@ public sealed class RemoteAdminTests:IDisposable
     [Fact] public async Task OversizedGrantRollsBackInsteadOfBreakingCloudSync()
     {
         await points.SetPointsAsync("1001","SYNTHETIC",1234,0,default);
-        await points.ApplyRpgAsync("1001","SYNTHETIC","seed-large",a=>{a.Rpg.Inventory.Add(new(){ItemId="synthetic-large",Description=new string('x',250000)});return new(true);},default);
+        await points.ApplyRpgAsync("1001","SYNTHETIC","seed-large",a=>{a.Rpg.Inventory.Add(new(){ItemId="synthetic-large",Description=new string('x',SnapshotProtocol.SnapshotValidation.MaxMessageBytes-12000)});return new(true);},default);
         var e=Envelope("adminGrant",new{itemId="tide_king_helmet",targetUserId="1001",count="20",roll="maximum",stats="{}"});
         var result=await Executor().ExecuteAsync(e,default);Assert.False(result.Success);Assert.Contains("Größenbegrenzung",result.Message);
         Assert.Single((await points.GetProfileAsync("1001",default)).Entry.Rpg.Inventory);

@@ -46,12 +46,12 @@ public sealed class CloudIntegrationTests : IDisposable
     public async Task Large_private_journal_is_projected_before_transport_limit_without_losing_progress()
     {
         var store=await SeedAsync();await Worker(store).SynchronizeOnceAsync();
-        await store.ApplyRpgAsync("1001","SYNTHETIC","journal",a=>{for(var n=0;n<5000;n++)a.Rpg.CompletedActions.Add("automatic:"+Guid.NewGuid().ToString("N")+":"+n);a.Points+=123;a.Rpg.Experience+=10000;return new(true);},default);
+        await store.ApplyRpgAsync("1001","SYNTHETIC","journal",a=>{for(var n=0;n<12000;n++)a.Rpg.CompletedActions.Add("automatic:"+Guid.NewGuid().ToString("N")+":"+n);a.Points+=123;a.Rpg.Experience+=10000;return new(true);},default);
         var account=(await store.GetProfileAsync("1001",default)).Entry;var raw=new SnapshotMessage(1,"42","1001",1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account));
         Assert.Throws<InvalidDataException>(()=>SnapshotValidation.Validate(raw,"42"));
         var clean=SnapshotValidation.ValidateLocalSource(raw,"42");Assert.DoesNotContain("CompletedActions",clean.AccountJson);Assert.Equal(clean.ContentHash,SnapshotValidation.Validate(raw with{AccountJson=clean.AccountJson},"42").ContentHash);
         var saved=await File.ReadAllBytesAsync(FilePath);await Worker(store).SynchronizeOnceAsync();Assert.Equal(saved,await File.ReadAllBytesAsync(FilePath));Assert.Equal(223,JsonDocument.Parse(cloud.Head!.AccountJson!).RootElement.GetProperty("Points").GetInt64());
-        Assert.True((await store.GetProfileAsync("1001",default)).Entry.Rpg.CompletedActions.Count>=5000);Assert.Empty((await Outbox().ReadAsync("1001"))!.Pending);
+        Assert.True((await store.GetProfileAsync("1001",default)).Entry.Rpg.CompletedActions.Count>=12000);Assert.Empty((await Outbox().ReadAsync("1001"))!.Pending);
     }
 
     [Fact]
