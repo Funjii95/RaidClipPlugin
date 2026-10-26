@@ -40,9 +40,13 @@ public static class RpgCombatPowerService
  {
   var available=choices.Where(b=>b.Enabled).OrderBy(b=>b.Level).ToArray();if(available.Length==0)throw new InvalidOperationException("Keine Gebietsbosse verfügbar.");
   if(RpgEternalCombat.Judgment(p,c))return available[^1];var power=Evaluate(p,c,now);
-  return available.LastOrDefault(b=>(decimal)Math.Sqrt((double)((decimal)b.BaseHp*b.Attack*b.AttackFactor*b.Hits))<=power.Rating*c.BossAssignment.RatingMultiplier)??available[0];
+  var balanced=available.LastOrDefault(b=>(decimal)Math.Sqrt((double)((decimal)b.BaseHp*b.Attack*b.AttackFactor*b.Hits))<=power.Rating*c.BossAssignment.RatingMultiplier)??available[0];
+  // Defense must not keep a high-damage build on a boss it can immediately defeat.
+  // Counterattack scaling supplies the survival budget for the higher assignment.
+  var targetHp=power.ExpectedHit*c.BossAssignment.TargetPersonalTurns;
+  return available.FirstOrDefault(b=>b.Level>=balanced.Level&&b.BaseHp>=targetHp)??available[^1];
  }
- public static int PersonalHp(RpgProfile p,RpgConfig c,RpgAreaBossDefinition boss,DateTimeOffset now)=>Math.Clamp((int)Math.Min(int.MaxValue,decimal.Ceiling(Evaluate(p,c,now).ExpectedHit*c.BossAssignment.TargetPersonalTurns)),Math.Min(100,boss.BaseHp),boss.BaseHp);
+ public static int PersonalHp(RpgProfile p,RpgConfig c,RpgAreaBossDefinition boss,DateTimeOffset now)=>Math.Clamp((int)Math.Min(int.MaxValue,decimal.Ceiling(Evaluate(p,c,now).ExpectedHit*c.BossAssignment.TargetPersonalTurns)),Math.Min(100,boss.BaseHp),int.MaxValue);
  public static decimal AttackScale(RpgProfile p,RpgConfig c,RpgAreaBossDefinition boss,DateTimeOffset now)
  {
   var s=CharacterStatService.Calculate(p,c,RpgActivity.Boss,now:now);var incoming=boss.Attack*boss.AttackFactor*boss.Hits*100/(100+Math.Clamp(s.Armor*(1+s.ArmorPercent/100),0,10000))*(1-Math.Clamp(s.BossDamageReduction,0,80)/100);
