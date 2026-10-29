@@ -88,7 +88,7 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     }
     public async Task<RelaySession> HeartbeatAsync(RelayHeartbeat beat,CancellationToken ct)
     {
-        if(beat.CatalogJson.Length>48000 || Math.Abs((Now-beat.SentAt).TotalSeconds)>5)throw new RelayDenied(400,"stale_heartbeat");
+        if(beat.CatalogJson.Length>96000 || Math.Abs((Now-beat.SentAt).TotalSeconds)>5)throw new RelayDenied(400,"stale_heartbeat");
         using(var doc=JsonDocument.Parse(beat.CatalogJson))if(doc.RootElement.ValueKind!=JsonValueKind.Object)throw new RelayDenied(400,"catalog_invalid");
         return await store.TransactionAsync<RelaySession>(null,false,(s,_)=>{
             if(s.SessionId!=beat.SessionId || s.ExpiresAt<=Now || beat.Sequence<=s.Sequence || Math.Abs((Now-beat.SentAt).TotalSeconds)>5)throw new RelayDenied(409,"stale_session");

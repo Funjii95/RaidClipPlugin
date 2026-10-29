@@ -35,7 +35,7 @@ public static class ActionEndpoints
         plugin.MapPost("/privacy-requests/{userId}/complete",async(string userId,HttpRequest request,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.CompleteSelfDeletionAsync(userId,(await Body<SelfDeletionIntent>(request,1024,ct)).RequestId,ct)));
         plugin.MapPost("/privacy/{userId}",async(string userId,ActionRelay relay,CancellationToken ct)=>{await relay.PurgeUserAsync(userId,ct);return Results.Ok(new{erased=true});});
         plugin.MapPost("/session",async(ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.OpenAsync(ct)));
-        plugin.MapPost("/heartbeat",async(HttpRequest request,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.HeartbeatAsync(await Body<RelayHeartbeat>(request,65536,ct),ct)));
+        plugin.MapPost("/heartbeat",async(HttpRequest request,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.HeartbeatAsync(await Body<RelayHeartbeat>(request,131072,ct),ct)));
         plugin.MapDelete("/session/{id:guid}",async(Guid id,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.CloseAsync(id,ct)));
         plugin.MapPost("/claim/{session:guid}",async(Guid session,ActionRelay relay,CancellationToken ct)=>
             await relay.ClaimAsync(session,ct) is {} value ? Results.Ok(value) : Results.NoContent());

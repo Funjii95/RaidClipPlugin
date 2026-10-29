@@ -53,11 +53,11 @@ public static class RpgZoneService
             if(pool.Length>0)return Instance(pool[rng.NextInclusive(0,pool.Length-1)],c,rng,now);
         }
         var combatPool=System.Text.Json.JsonSerializer.Deserialize<RpgLootConfig>(System.Text.Json.JsonSerializer.Serialize(c.DiveLoot))!;
-        combatPool.Items=combatPool.Items.Where(i=>i.Slot.HasValue&&i.Rarity<=ItemRarity.Legendary).ToList();
+        combatPool.Items=combatPool.Items.Where(i=>i.Slot.HasValue&&i.Rarity<=ItemRarity.Legendary&&i.MinimumLevel<=Math.Min(p.PlayerLevel,z.Level)).ToList();
         var normal=new RpgLootService(rng).RollCombatReward(combatPool,now,RpgActivity.Boss,Math.Min(100,c.BossLootChance+(z.Id==Default?c.LagoonBalance.EquipmentChanceBonus:0)),(ItemRarity)Math.Min((int)ItemRarity.Legendary,(int)z.MaximumRarity)).Item;
         return normal?.Slot is not null?normal:null;
     }
-    private static RpgItem Instance(RpgItem definition,RpgConfig c,IDuelRandom rng,DateTimeOffset now)
+    internal static RpgItem Instance(RpgItem definition,RpgConfig c,IDuelRandom rng,DateTimeOffset now)
     {
         var item=System.Text.Json.JsonSerializer.Deserialize<RpgItem>(System.Text.Json.JsonSerializer.Serialize(definition))!;item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=now;RpgItemGenerationService.Generate(item,c.DiveLoot,rng);return item;
     }

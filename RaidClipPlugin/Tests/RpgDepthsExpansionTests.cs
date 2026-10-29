@@ -21,7 +21,7 @@ public sealed class RpgDepthsExpansionTests:IDisposable
     [Fact] public void CatalogHas54UniqueGearItemsElevenStackableMaterialsSixRealSetsAndNoNewSlot()
     {
         var c=new RpgConfig();c.Validate();var items=RpgDepthsExpansion.Items();Assert.Equal(54,items.Count);Assert.Equal(54,items.Select(i=>i.ItemId).Distinct().Count());
-        Assert.Equal(6,RpgDepthsExpansion.Sets().Count);Assert.Equal(11,RpgUpgradeCatalog.Materials.Count(m=>!m.Id.StartsWith("dungeon_")));Assert.Equal(3,RpgUpgradeCatalog.Materials.Count(m=>m.Id.StartsWith("dungeon_")));Assert.Equal(8,Enum.GetValues<EquipmentSlot>().Length);
+        Assert.Equal(6,RpgDepthsExpansion.Sets().Count);Assert.Equal(11,RpgUpgradeCatalog.Materials.Count(m=>!m.Id.StartsWith("dungeon_")));Assert.Equal(3,RpgUpgradeCatalog.Materials.Count(m=>m.Id.StartsWith("dungeon_")));Assert.Equal(9,Enum.GetValues<EquipmentSlot>().Length);
         Assert.All(RpgUpgradeCatalog.Materials,m=>Assert.True(RpgUpgradeCatalog.Properties.ContainsKey(m.Id)));
         var n=c.DiveLoot.Items.Count;RpgDepthsExpansion.AddMissing(c);Assert.Equal(n,c.DiveLoot.Items.Count);
         Assert.All(items.Where(i=>i.Rarity==ItemRarity.Abyss),i=>Assert.Equal(new[]{RpgActivity.Boss},i.DropActivities));

@@ -18,6 +18,7 @@ public static class RpgSetCombatService
     }
     public static void Refresh(RpgProfile p,RpgHealthConfig c,DateTimeOffset now)
     {
+        RpgTankCombat.Refresh(p,c,now);
         RpgDepthsCombatService.Refresh(p,c,now);
         RpgEternalCombat.Refresh(p,c,now);
         var sets=c.EquipmentSets;
@@ -58,7 +59,7 @@ public static class RpgSetCombatService
         if(p.Health.CurrentHp is null or <=0||raw<=0)return 0;
         var max=RpgHealthService.Maximum(p,c);
         var power=Math.Clamp(Gear(p,"HealingPower")+Bonus(p,c.EquipmentSets,"HealingPower")+(p.Role==RpgRole.Healer?c.Roles.HealerHealingPercent:0),-90,200);
-        var amount=(int)Math.Min(int.MaxValue,decimal.Floor(raw*(1+power/100)));
+        var amount=(int)Math.Min(int.MaxValue,decimal.Floor(raw*(1+power/100)*(1+RpgTankCombat.ReceivedHealing(p,c,now)/100)));
         var missing=Math.Max(0,max-p.Health.CurrentHp.Value);var granted=Math.Min(missing,amount);
         p.Health.CurrentHp+=granted;RpgStatisticsService.Add(p,"healing",granted);
         RpgEternalCombat.Healed(p,c,granted,now);

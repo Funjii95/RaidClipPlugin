@@ -1,8 +1,8 @@
 namespace RaidClipPlugin.Models;
 
 public enum RpgRole { Unselected, Tank, Healer, Damage }
-public enum ItemRarity { Common, Uncommon, Rare, Epic, Legendary, True, Cursed, Abyss, Eternal, Divine }
-public enum EquipmentSlot { Weapon, Helmet, Chest, Gloves, Boots, Ring1, Ring2, Amulet }
+public enum ItemRarity { Common, Uncommon, Rare, Epic, Legendary, True, Cursed, Abyss, Eternal, Divine, Mythic }
+public enum EquipmentSlot { Weapon, Helmet, Chest, Gloves, Boots, Ring1, Ring2, Amulet, Belt }
 public enum RpgActivity { Dive, Fishing, Boss }
 public enum RpgItemKind { Treasure, Equipment, Consumable }
 public enum SushiCategory { Offensive, Defensive }
@@ -10,12 +10,16 @@ public enum SushiCategory { Offensive, Defensive }
 public static class RarityPresentation
 {
     public static string ColorHex(ItemRarity rarity) => rarity switch
-    { ItemRarity.Common => "#9CA3AF", ItemRarity.Uncommon => "#22C55E", ItemRarity.Rare => "#3B82F6",
+    { ItemRarity.Mythic => "#ff8738", ItemRarity.Common => "#9CA3AF", ItemRarity.Uncommon => "#22C55E", ItemRarity.Rare => "#3B82F6",
         ItemRarity.Epic => "#A855F7", ItemRarity.Legendary => "#EAB308", ItemRarity.True => "#9BFF76", ItemRarity.Cursed => "#DC55FF", ItemRarity.Abyss => "#E51D48", ItemRarity.Eternal => "#FFF2A8", ItemRarity.Divine => "#FFD700", _ => "#9CA3AF" };
 }
 
 public sealed class RpgAttributes
 {
+    public decimal BlockChance {get;set;}
+    public decimal ReceivedHealing {get;set;}
+    public decimal BarrierPower {get;set;}
+    public decimal ThreatBonus {get;set;}
     public decimal Attack {get;set;}
     public decimal MagicPower {get;set;}
     public decimal ManaRegeneration {get;set;}
@@ -158,6 +162,10 @@ public sealed class RpgHealthState
 {
     public decimal? CurrentMana {get;set;}
     public DateTimeOffset? LastManaRegen {get;set;}
+    public string TankLoadout {get;set;}="";
+    public int TankBarrierHp {get;set;}
+    public int TankAvatarHp {get;set;}
+    public int TankHitCount {get;set;}
     public int ManaShieldHp {get;set;}
     public string ManaShieldSource {get;set;}="";
     public DateTimeOffset? ManaShieldExpires {get;set;}

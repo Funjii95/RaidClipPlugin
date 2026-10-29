@@ -9,7 +9,7 @@ public static class RpgRoleService
   if(p.Role==RpgRole.Healer){result.HealingPower+=c.Roles.HealerHealingPercent;result.CriticalHealing+=c.Roles.HealerCriticalHealing;result.Damage+=c.Roles.HealerDamagePercent;}
   if(p.Role==RpgRole.Damage)result.Damage+=c.Roles.DamagePercent;
  }
- public static decimal Threat(RpgProfile p,RpgConfig c,int damage,int effectiveHealing)=>(Math.Max(0,damage)+Math.Max(0,effectiveHealing)*c.Roles.HealingThreatMultiplier)*(p.Role==RpgRole.Tank?c.Roles.TankThreatMultiplier:1);
+ public static decimal Threat(RpgProfile p,RpgConfig c,int damage,int effectiveHealing)=>(Math.Max(0,damage)+Math.Max(0,effectiveHealing)*c.Roles.HealingThreatMultiplier)*(p.Role==RpgRole.Tank?c.Roles.TankThreatMultiplier:1)*(1+Math.Clamp(RpgSetCombatService.Gear(p,"ThreatBonus")+RpgSetCombatService.Bonus(p,c.Sets,"ThreatBonus"),0,300)/100);
 }
 public sealed partial class ViewerPointStore
 {

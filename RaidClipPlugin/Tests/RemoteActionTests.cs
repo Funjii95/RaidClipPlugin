@@ -41,7 +41,7 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
         var view=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("questStatus","{}")),default);Assert.True(view.Success);using var data=JsonDocument.Parse(view.DataJson!);Assert.Equal(11,data.RootElement.GetProperty("quests").GetArrayLength());
         var start=Envelope(ActionApiFixture.Intent("startQuest","{\"questId\":\"tutorial\"}"));var result=await executor.ExecuteAsync(start,default);Assert.True(result.Success);Assert.Equal(result,await Executor().ExecuteAsync(start,default));
         var forged=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("claimQuest","{\"questId\":\"tutorial\"}")),default);Assert.False(forged.Success);
-        Assert.InRange(System.Text.Encoding.UTF8.GetByteCount(executor.CatalogJson()),1,48000);
+        Assert.InRange(System.Text.Encoding.UTF8.GetByteCount(executor.CatalogJson()),1,96000);
     }
     [Fact]public async Task Dungeon_intents_return_committed_party_hp_and_replay_without_a_second_attack()
     {
@@ -75,7 +75,7 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     }
     [Fact]public void Tides_requires_publisher_support_for_extended_stats_and_shields()
     {
-        Assert.Equal(14,SnapshotValidation.RpgProjectionVersion);
+        Assert.Equal(15,SnapshotValidation.RpgProjectionVersion);
     }
     [Fact]public async Task Private_action_journal_does_not_break_status_or_dive_series_commands()
     {
@@ -102,7 +102,7 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     [Fact]public async Task Talent_intents_are_authoritative_idempotent_and_return_committed_ranks()
     {
         var executor=await SeedAsync(2000,30);
-        var catalogJson=executor.CatalogJson();Assert.InRange(catalogJson.Length,1,48000);
+        var catalogJson=executor.CatalogJson();Assert.InRange(catalogJson.Length,1,96000);
         using var catalog=JsonDocument.Parse(catalogJson);
         Assert.Equal(21,catalog.RootElement.GetProperty("talents").GetArrayLength());
         var intent=new RpgIntent(Guid.NewGuid(),"learnTalent",JsonSerializer.SerializeToElement(new{talentId="combat-power",expectedRank="0",catalogVersion="1"}));

@@ -1,4 +1,4 @@
-﻿using RaidClipPlugin.Config;
+using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 namespace RaidClipPlugin.Services;
 public sealed record RpgEnemyResult(string Name,bool Victory,int Rounds,int DamageTaken,int CurrentHp,int MaximumHp,int Experience,RpgItem? Loot)
@@ -22,7 +22,7 @@ public sealed class RpgEnemyService(IDuelRandom random)
   var hp=zone.Hp*(elite?2:1);var attack=zone.Attack*(elite?1.35m:1);var armor=zone.Armor*(elite?1.25m:1);
   int taken=0,rounds=0;var combatId="zone:"+Guid.NewGuid().ToString("N");
   while(hp>0&&p.Health.CurrentHp>0&&rounds<c.Enemies.MaximumRounds) {
-   rounds++;RpgEternalCombat.Refresh(p,c.Health,now);var stats=CharacterStatService.Calculate(p,c,RpgActivity.Dive,now:now);
+   rounds++;RpgTankCombat.Before(p,c,(int)attack,false,now);RpgEternalCombat.Refresh(p,c.Health,now);var stats=CharacterStatService.Calculate(p,c,RpgActivity.Dive,now:now);
    var baseAttack=random.NextInclusive(10,30);
    var regular=CharacterStatService.BossDamage(baseAttack,stats,random.NextInclusive(0,9999)/100m,out var critical,c.BaseCritMultiplier);
    var attackBase=(int)Math.Min(int.MaxValue,decimal.Floor((baseAttack+stats.Attack)*(1+stats.AttackPercent/100)*(1+stats.Damage/100)*(1+stats.BossDamage/100)));
@@ -43,8 +43,9 @@ public sealed class RpgEnemyService(IDuelRandom random)
    if(hp>0) {
     var playerArmor=Math.Max(0,stats.Armor*(1+stats.ArmorPercent/100));var dodge=RpgPerkCatalog.Proc(p,"underwaterDodge",random)||(stats.BossDodgeChance>0&&random.NextInclusive(0,9999)<stats.BossDodgeChance*100);
     var raw=dodge?0:(int)decimal.Ceiling(attack*100/(100+playerArmor)*(1-Math.Clamp(stats.BossDamageReduction,-80,95)/100));
+    raw=RpgTankCombat.Defend(raw,p,c,random,now,attack>=RpgHealthService.Maximum(p,c.Health)*.2m);
     var absorbed=Math.Min(p.Health.SetShieldHp,raw);p.Health.SetShieldHp-=absorbed;raw-=absorbed;
-    raw=RpgWeaponService.Counter(raw,p,spell,now);raw=RpgEternalCombat.Receive(raw,p,c,combatId,now);raw=RpgEarlyLegendaryEffects.Receive(raw,p,c,combatId,now);var received=Math.Min(p.Health.CurrentHp!.Value,raw);p.Health.CurrentHp-=received;taken+=received;RpgStatisticsService.Add(p,"damageTaken",received);RpgStatisticsService.Add(p,"damageBlocked",Math.Max(0,(int)decimal.Ceiling(attack)-received));
+    raw=RpgWeaponService.Counter(raw,p,spell,now);raw=RpgEternalCombat.Receive(raw,p,c,combatId,now);raw=RpgEarlyLegendaryEffects.Receive(raw,p,c,combatId,now);raw=RpgTankCombat.Lethal(raw,p,c,now);var received=Math.Min(p.Health.CurrentHp!.Value,raw);p.Health.CurrentHp-=received;taken+=received;RpgStatisticsService.Add(p,"damageTaken",received);RpgStatisticsService.Add(p,"damageBlocked",Math.Max(0,(int)decimal.Ceiling(attack)-received));
    }
   }
   if(p.Health.CurrentHp==0&&!string.IsNullOrEmpty(p.Health.BossId))p.Health.Defeated=true;

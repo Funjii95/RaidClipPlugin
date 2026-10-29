@@ -56,6 +56,7 @@ public static class CharacterStatService
         foreach (var progress in RpgSetService.Progress(profile, config))
         foreach (var bonus in progress.Set.Bonuses.Where(b => progress.Equipped >= b.RequiredPieces)) Add(result, bonus.Attributes);
         RpgRoleService.Apply(profile,config,result);
+        RpgTankCombat.Dynamic(profile,config,result,now??DateTimeOffset.UtcNow);
         result.CritChance = Math.Clamp(result.CritChance, 0, (enhanced?100:Math.Clamp(config.CritChanceCap, 0, 100)));
         result.CritDamage = Math.Clamp(result.CritDamage, 0, (enhanced?10000:Math.Clamp(config.CritDamageCap, 0, 1000)));
         result.Luck = Math.Clamp(result.Luck, 0, (enhanced?10000:Math.Clamp(config.LuckCap, 0, 1000)));
@@ -90,6 +91,7 @@ public static class CharacterStatService
 
     private static void Add(RpgAttributes a, RpgAttributes b, int count = 1)
     {
+        a.BlockChance+=b.BlockChance*count;a.ReceivedHealing+=b.ReceivedHealing*count;a.BarrierPower+=b.BarrierPower*count;a.ThreatBonus+=b.ThreatBonus*count;
         a.Attack+=b.Attack*count;a.MagicPower+=b.MagicPower*count;a.ManaRegeneration+=b.ManaRegeneration*count;a.WaterDamage+=b.WaterDamage*count;a.ElementalDamage+=b.ElementalDamage*count;a.AbyssDamage+=b.AbyssDamage*count;a.LightDamage+=b.LightDamage*count;
         a.EnemyEncounterChance+=b.EnemyEncounterChance*count;a.MaterialFind+=b.MaterialFind*count;a.AttackPercent+=b.AttackPercent*count;a.ExperienceBonus+=b.ExperienceBonus*count;a.DivineDamage+=b.DivineDamage*count;
         a.MovementSpeed+=b.MovementSpeed*count;a.BossLifeleech+=b.BossLifeleech*count;a.Armor+=b.Armor*count;a.ArmorPercent+=b.ArmorPercent*count;a.MaximumHpPercent+=b.MaximumHpPercent*count;

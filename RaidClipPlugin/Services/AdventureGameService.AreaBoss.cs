@@ -94,7 +94,7 @@ public sealed partial class AdventureGameService
     void Counter(decimal raw,decimal armorIgnore=0,decimal reductionIgnore=0){
      if(p.Health.CurrentHp<=0)return;
      var counter=RpgBossDefenseService.Counter((int)Math.Min(int.MaxValue,decimal.Ceiling(raw)),p,cfg,_random,clock,armorIgnore,reductionIgnore);
-     counter=RpgWeaponService.Counter(counter,p,hit.Spell,clock);counter=RpgEternalCombat.Receive(counter,p,cfg,round.Id,clock);counter=RpgEternalEightCombat.Receive(counter,p,cfg,round.Id,true,clock);counter=RpgEarlyLegendaryEffects.Receive(counter,p,cfg,round.Id,clock);
+     counter=RpgWeaponService.Counter(counter,p,hit.Spell,clock);counter=RpgEternalCombat.Receive(counter,p,cfg,round.Id,clock);counter=RpgEternalEightCombat.Receive(counter,p,cfg,round.Id,true,clock);counter=RpgEarlyLegendaryEffects.Receive(counter,p,cfg,round.Id,clock);counter=RpgTankCombat.Lethal(counter,p,cfg,clock);
      var taken=Math.Min(p.Health.CurrentHp!.Value,counter);p.Health.CurrentHp-=taken;received+=taken;
     }
     var factor=definition.AttackFactor*(automatic?participant.AttackScale:1)*(!next.EventConfig.IsMimic&&definition.Id=="boss_maledictus"&&participant.Cycles>1?1.1m:1);

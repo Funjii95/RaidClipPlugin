@@ -16,7 +16,7 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 14;
+    public const int RpgProjectionVersion = 15;
     // Includes the escaped account JSON. Leave ample room for Firestore metadata.
     public const int MaxMessageBytes = 512 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
@@ -136,7 +136,7 @@ public static class SnapshotValidation
         if (rpg.ContainsKey("Health"))
         {
             var health = Clean(JsonSerializer.SerializeToElement(rpg["Health"]),
-                ["CurrentMana", "LastManaRegen", "ManaShieldHp", "ManaShieldSource", "ManaShieldExpires", "CurrentHp", "AppliedMaximumHp", "AppliedBaseMaximumHp", "LastPassiveRegen", "SushiRegenRemainder",
+                ["TankLoadout", "TankBarrierHp", "TankAvatarHp", "TankHitCount", "CurrentMana", "LastManaRegen", "ManaShieldHp", "ManaShieldSource", "ManaShieldExpires", "CurrentHp", "AppliedMaximumHp", "AppliedBaseMaximumHp", "LastPassiveRegen", "SushiRegenRemainder",
                     "LastChatHeal", "BossId", "Defeated", "BossDamage", "BossRemainingHp", "SetShieldHp", "SetShieldSource"]);
             foreach (var field in health)
             {
@@ -144,7 +144,7 @@ public static class SnapshotValidation
                 if (field.Value is not JsonValue value || (field.Key switch
                 {
                     "LastManaRegen" or "ManaShieldExpires" or "LastPassiveRegen" or "LastChatHeal" => !value.TryGetValue<DateTimeOffset>(out _),
-                    "ManaShieldSource" or "BossId" or "SetShieldSource" => !value.TryGetValue<string>(out _),
+                    "TankLoadout" or "ManaShieldSource" or "BossId" or "SetShieldSource" => !value.TryGetValue<string>(out _),
                     "Defeated" => !value.TryGetValue<bool>(out _),
                     "CurrentMana" => !value.TryGetValue<decimal>(out var mana) || mana < 0 || mana > 100,
                     "SushiRegenRemainder" => !value.TryGetValue<decimal>(out var remainder) || remainder < 0,
@@ -168,7 +168,7 @@ public static class SnapshotValidation
                 if (item["Attributes"] is not null)
                 {
                     item["Attributes"] = Clean(JsonSerializer.SerializeToElement(item["Attributes"]),
-                        ["Damage", "CritChance", "CritDamage", "Luck", "BossDamage", "PearlBonus", "FishingLuck", "DiveLuck",
+                        ["BlockChance", "ReceivedHealing", "BarrierPower", "ThreatBonus", "Damage", "CritChance", "CritDamage", "Luck", "BossDamage", "PearlBonus", "FishingLuck", "DiveLuck",
                             "Power", "Stamina", "MaximumHp", "DoubleAttackChance", "TripleAttackChance", "ExtraLootChance",
                             "SushiPreservationChance", "BossDamageReduction", "BossDodgeChance", "CriticalHealing", "RareEquipmentLuck",
                             "Attack","MagicPower","ManaRegeneration","WaterDamage","ElementalDamage","AbyssDamage","LightDamage", "EnemyEncounterChance", "MaterialFind", "AttackPercent", "ExperienceBonus", "DivineDamage", "MovementSpeed", "BossLifeleech", "Armor", "ArmorPercent", "MaximumHpPercent", "AttackSpeed", "HealingPower"]);
@@ -185,7 +185,7 @@ public static class SnapshotValidation
                     if (field.Key == "Slot" && field.Value is null) continue;
                     if (field.Key is "Rarity" or "Kind" or "Slot" or "Activity" or "RemainingUses")
                     {
-                        var maximum = field.Key switch { "Rarity" => 9, "Kind" or "Activity" => 2, "Slot" => 7, _ => int.MaxValue };
+                        var maximum = field.Key switch { "Rarity" => 10, "Kind" or "Activity" => 2, "Slot" => 8, _ => int.MaxValue };
                         if (field.Value is not JsonValue number || !number.TryGetValue<int>(out var value) || value < 0 || value > maximum)
                             throw new InvalidDataException("Invalid enum or remaining uses.");
                     }

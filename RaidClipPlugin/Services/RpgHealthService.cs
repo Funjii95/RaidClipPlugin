@@ -7,7 +7,7 @@ namespace RaidClipPlugin.Services;
 public static class RpgHealthService
 {
     private static int BaseMaximum(RpgProfile p,RpgHealthConfig c) => checked(c.BaseHp + (Math.Clamp(p.PlayerLevel,1,c.MaximumLevel)-1)*c.HpPerLevel + RpgLevelStats.Bonus(p,c.MaximumLevel)*c.HpPerStamina);
-    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked((int)decimal.Floor((BaseMaximum(p,c)*(1+RpgPerkCatalog.Combined(p,"health")/100)+Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina,c.EquipmentSets),0,RpgEternalCombat.Enhanced(p)?1000000:c.EquipmentHpCap))*(1+Math.Clamp(RpgSetCombatService.Gear(p,"MaximumHpPercent")+RpgSetCombatService.Bonus(p,c.EquipmentSets,"MaximumHpPercent"),-90,RpgEternalCombat.Enhanced(p)?10000:200)/100)));
+    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked((int)decimal.Floor((BaseMaximum(p,c)*(1+RpgPerkCatalog.Combined(p,"health")/100)+Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina,c.EquipmentSets),0,RpgEternalCombat.Enhanced(p)?1000000:c.EquipmentHpCap))*(1+Math.Clamp(RpgSetCombatService.Gear(p,"MaximumHpPercent")+RpgSetCombatService.Bonus(p,c.EquipmentSets,"MaximumHpPercent"),-90,RpgEternalCombat.Enhanced(p)?10000:200)/100))) + p.Health.TankAvatarHp;
     internal static void ApplyStatMigration(RpgProfile p,RpgHealthConfig c)
     {
         p.Health??=new();var max=Maximum(p,c);
@@ -18,6 +18,7 @@ public static class RpgHealthService
     public static void Refresh(RpgProfile p, RpgHealthConfig c, DateTimeOffset now)
     {
         c.Validate(); p.Health ??= new();
+        RpgTankCombat.Refresh(p,c,now);
         RpgWeaponService.RefreshMana(p,now);
         var h=p.Health; var max=Maximum(p,c);
         if(h.CurrentHp is null) { h.CurrentHp=max; h.AppliedMaximumHp=max; h.LastPassiveRegen=now; }

@@ -492,6 +492,7 @@ public sealed partial class AdventureGameService
                         receivedDamage=RpgEternalCombat.Receive(receivedDamage,account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
                         receivedDamage=RpgEternalEightCombat.Receive(receivedDamage,account.Rpg,_config.Adventures.Rpg,_boss.Id,!_boss.Config.IsMimic,clock);
                         receivedDamage=RpgEarlyLegendaryEffects.Receive(receivedDamage,account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
+                        receivedDamage=RpgTankCombat.Lethal(receivedDamage,account.Rpg,_config.Adventures.Rpg,clock);
                         health.CurrentHp=Math.Max(0,health.CurrentHp!.Value-receivedDamage);
                         RpgDepthsCombatService.AfterCounter(account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
                         playerDied=health.Defeated=health.CurrentHp==0;

@@ -10,7 +10,7 @@ internal static class RpgGroupHealing
  {
   var sender=get(actor).Rpg;var recipient=get(target).Rpg;if(sender.Health.CurrentHp is null or <=0||recipient.Health.CurrentHp is null or <=0||raw<=0)return 0;
   var stats=CharacterStatService.Calculate(sender,c,RpgActivity.Boss,now:now);var critical=canCrit&&rng.NextInclusive(0,9999)<(sender.Role==RpgRole.Healer?c.Roles.HealerCriticalHealing:0)*100;
-  var amount=(int)Math.Min(int.MaxValue,decimal.Floor(raw*(applyPower?1+Math.Clamp(stats.HealingPower,-90,200)/100:1)*(critical?1.5m:1)));
+  var amount=(int)Math.Min(int.MaxValue,decimal.Floor(raw*(applyPower?1+Math.Clamp(stats.HealingPower,-90,200)/100:1)*(critical?1.5m:1)*(1+RpgTankCombat.ReceivedHealing(recipient,c.Health,now)/100)));
   var max=RpgHealthService.Maximum(recipient,c.Health);var granted=Math.Min(max-recipient.Health.CurrentHp.Value,amount);recipient.Health.CurrentHp+=granted;
   if(granted>0){RpgStatisticsService.Add(sender,"healing",granted);RpgStatisticsService.Add(sender,"groupHealing",granted);RpgEternalCombat.Healed(recipient,c.Health,granted,now);RpgPartyCombatService.AddThreat(instance,actor,RpgRoleService.Threat(sender,c,0,granted));RpgPartyCombatService.Log(instance,actor,target,critical?"critical-heal":"heal",granted);}
   if(amount>granted&&(Has(sender,c,"coral_oracle",6)||Has(sender,c,"eternal_tide_blessing",6))){var cap=(int)(max*c.Multiplayer.ShieldMaxHpPercent/100);instance.Shields[target]=Math.Min(cap,instance.Shields.GetValueOrDefault(target)+amount-granted);}
