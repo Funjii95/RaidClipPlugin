@@ -49,7 +49,7 @@ public static class RpgZoneService
         if(z.Level>=90)allowed.Add(ItemRarity.Abyss);
         foreach(var rarity in new[]{ItemRarity.Abyss,ItemRarity.True,ItemRarity.Cursed}) {
             if(!allowed.Contains(rarity)||rng.NextInclusive(0,999999)>=RpgCombatDropRules.Chance(c.Upgrades.EquipmentDropChances[rarity.ToString()])*10000)continue;
-            var pool=c.DiveLoot.Items.Where(i=>i.Rarity==rarity&&i.Slot.HasValue).ToArray();
+            var pool=c.DiveLoot.Items.Where(i=>i.Rarity==rarity&&i.Slot.HasValue&&i.MinimumLevel<=Math.Min(p.PlayerLevel,z.Level)).ToArray();
             if(pool.Length>0)return Instance(pool[rng.NextInclusive(0,pool.Length-1)],c,rng,now);
         }
         var combatPool=System.Text.Json.JsonSerializer.Deserialize<RpgLootConfig>(System.Text.Json.JsonSerializer.Serialize(c.DiveLoot))!;

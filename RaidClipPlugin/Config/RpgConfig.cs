@@ -16,7 +16,7 @@ public sealed class RpgConfig
     public RpgAdminAccess AdminAccess {get;set;}=new();
     public RpgZoneConfig Zones {get;set;}=new();
     public RpgUpgradeConfig Upgrades {get;set;}=new();
-    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); RpgZoneService.AddMissing(this); RpgWeaponCatalog.AddMissing(DiveLoot); RpgQuestCatalog.AddMissing(this); RpgTankCatalog.AddMissing(this); RpgEarlyLegendaryCatalog.AddMissing(this); }
+    public RpgConfig() { RpgSushiService.AddMissing(this); RpgPerkCatalog.AddMissing(this); RpgZoneService.AddMissing(this); RpgWeaponCatalog.AddMissing(DiveLoot); RpgQuestCatalog.AddMissing(this); RpgTankCatalog.AddMissing(this); RpgTrinketCatalog.AddMissing(this); RpgEarlyLegendaryCatalog.AddMissing(this); }
     public long FreeFishingReward { get; set; } = 40;
     public decimal PowerDamagePerPoint { get; set; } = 1;
     private RpgHealthConfig _health = new();
@@ -33,7 +33,7 @@ public sealed class RpgConfig
     public decimal FishingEquipmentChance { get; set; } = 0.5m;
     public void Validate()
     {
-        RpgQuestCatalog.AddMissing(this); RpgTankCatalog.AddMissing(this);
+        RpgQuestCatalog.AddMissing(this); RpgTankCatalog.AddMissing(this); RpgTrinketCatalog.AddMissing(this);
         foreach(var item in DiveLoot.Items.Where(i=>i.Generation is null))RpgCoreStatService.Apply(item);
         LagoonBalance.Validate();Dungeons.Validate();BossAssignment.Validate();Multiplayer.Validate();EarlyLegendaries.Validate();RpgEarlyLegendaryCatalog.AddMissing(this);Roles.Validate();AreaBosses.Validate();
         AdminAccess.Validate();

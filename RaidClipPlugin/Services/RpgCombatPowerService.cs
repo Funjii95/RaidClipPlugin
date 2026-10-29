@@ -16,6 +16,11 @@ public static class RpgCombatPowerService
   var interval=(decimal)RpgSetCombatService.AttackSeconds(p,c,6,now);var criticalRate=Math.Clamp(s.CritChance,0,100)/100;var extraRate=Math.Clamp(s.DoubleAttackChance+s.TripleAttackChance,0,100)/100;
   bool Has(string id,int n)=>RpgSetCombatService.Active(p,c.Sets,id,n);
   decimal proc=0;
+  foreach(var item in p.Inventory.Where(i=>RpgTrinketCatalog.IsSlot(i.Slot)&&p.Equipment.Any(e=>RpgTrinketCatalog.IsSlot(e.Key)&&e.Value==i.InstanceId)).DistinctBy(i=>i.ItemId)){
+   var d=RpgTrinketCatalog.Definitions.FirstOrDefault(d=>d.Id==item.ItemId);if(d is null)continue;
+   var element=d.Element switch {"Water"=>s.WaterDamage+s.ElementalDamage,"Light"=>s.LightDamage+s.ElementalDamage,"Abyss"=>s.AbyssDamage+s.ElementalDamage,_=>0};
+   proc+=d.Power/100m*(1+Math.Clamp(element,0,10000)/100)*Math.Min(d.Chance/100m*(d.Critical?criticalRate:1),interval/d.Cooldown)/crit;
+  }
   if(Has("tide_king_regalia",4))proc+=1.6m*Math.Min(criticalRate,interval/8);
   if(Has("abyss_hunter",4))proc+=1.7m*Math.Min(extraRate,interval/6);
   if(Has("true_ancient_current",6))proc+=2*Math.Min(1,interval/20);

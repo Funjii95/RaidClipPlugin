@@ -9,7 +9,7 @@ public static class RpgLootLocations
  public static object Wire(RpgConfig c)=>Build(c).Select(i=>new object[]{i.Id,i.Name,i.Rarity,i.SetId,i.Ranges.Select(r=>new object[]{r.Attribute,r.Min,r.Max,r.Optional}),i.Effects,i.Sources.Select(s=>new object?[]{s.ZoneId,s.Kind,s.BossId})}).ToArray();
  public static IReadOnlyList<RpgLocatedItem> Build(RpgConfig c)
  {
-  var eternal=RpgEternalCatalog.Items().Concat(RpgWeaponCatalog.Items()).Where(i=>i.Rarity==ItemRarity.Eternal).ToArray();
+  var eternal=RpgEternalCatalog.Items().Concat(RpgWeaponCatalog.Items()).Concat(RpgTrinketCatalog.Items()).Where(i=>i.Rarity==ItemRarity.Eternal).ToArray();
   var eight=RpgEternalEightCatalog.Sets().SelectMany(s=>s.ItemIds).ToHashSet();
   return c.DiveLoot.Items.Concat(eternal).DistinctBy(i=>i.ItemId).Where(i=>i.Rarity!=ItemRarity.Divine).Select(item=>{
    var starter=item.ItemId.StartsWith("starter_");var locations=new List<RpgLootLocation>();
@@ -25,12 +25,12 @@ public static class RpgLootLocations
      if(possible)locations.Add(new(z.Id,"eternal"));
     }
    }
-   if(item.SetId is "tank_sentinel" or "tank_leviathan")foreach(var dungeon in RpgDungeonConfig.Definitions)locations.Add(new(dungeon.ZoneId,"dungeon","dungeon:"+dungeon.Id));
+   if(item.SetId is "tank_sentinel" or "tank_leviathan" || RpgTrinketCatalog.IsSlot(item.Slot)&&item.Rarity==ItemRarity.Mythic)foreach(var dungeon in RpgDungeonConfig.Definitions)locations.Add(new(dungeon.ZoneId,"dungeon","dungeon:"+dungeon.Id));
    foreach(var mimic in RpgRegionalMimics.Catalog(c))if(RpgRegionalMimics.Pool(c,mimic).Any(i=>i.ItemId==item.ItemId))locations.Add(new(mimic.AreaId,"mimic",mimic.Id));
    foreach(var boss in c.AreaBosses.Bosses.Where(b=>b.Enabled&&b.ItemChance>0))if(BossPool(c,boss).Any(i=>i.ItemId==item.ItemId))locations.Add(new(boss.AreaId,"boss",boss.Id));
    if(eight.Contains(item.ItemId)&&c.AreaBosses.Bosses.Any(b=>b.Id=="boss_eonath"&&b.Enabled)&&c.Zones.EternalEightChances.GetValueOrDefault("eonath")>0)locations.Add(new("primordial_throne","boss","boss_eonath"));
    var effects=item.Effects.Select(e=>$"{e.Name}: {e.Chance} % Chance · {e.CooldownSeconds} s Abklingzeit").Where(s=>!string.IsNullOrWhiteSpace(s)).ToList();
-   if(starter||item.ItemId.StartsWith("tank_"))effects.Add(item.Description);
+   if(starter||item.ItemId.StartsWith("tank_")||item.ItemId.StartsWith("trinket_"))effects.Add(item.Description);
    if(item.Generation is {} rules&&rules.GenerateEffect){foreach(var effect in c.DiveLoot.Effects.Where(e=>rules.EffectIds.Contains(e.Id))){effects.Add(effect.Trigger==RpgEffectTrigger.DoubleAttack?$"Doppelangriff: {rules.DoubleAttackMinimumChance}–{rules.DoubleAttackMaximumChance} % Chance":$"{effect.Name}: {effect.Chance} % Chance · {effect.CooldownSeconds} s Abklingzeit");}}
    return new RpgLocatedItem(item.ItemId,item.DisplayName,item.Rarity.ToString(),item.SetId,StatRanges(item),effects,locations);
   }).ToArray();

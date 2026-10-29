@@ -75,7 +75,7 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     }
     [Fact]public void Tides_requires_publisher_support_for_extended_stats_and_shields()
     {
-        Assert.Equal(15,SnapshotValidation.RpgProjectionVersion);
+        Assert.Equal(16,SnapshotValidation.RpgProjectionVersion);
     }
     [Fact]public async Task Private_action_journal_does_not_break_status_or_dive_series_commands()
     {

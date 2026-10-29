@@ -120,7 +120,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
         if(e.Intent.Kind=="selectZone") {mutation=await RpgZoneService.SelectAsync(points,rpg,e.UserId,account.DisplayName,request,Arg("activity"),Arg("zoneId"),ct);}
         if(e.Intent.Kind=="compareEquipment") {
             var item=account.Rpg.Inventory.SingleOrDefault(i=>i.InstanceId==Arg("instanceId"));
-            if(item?.Slot is null||!Enum.TryParse<EquipmentSlot>(Arg("slot"),out var selected)||!Enum.IsDefined(selected)||!(selected==item.Slot||item.Slot is EquipmentSlot.Ring1 or EquipmentSlot.Ring2&&selected is EquipmentSlot.Ring1 or EquipmentSlot.Ring2))return new(false,"invalid_item","Eigene Ausrüstung und gültiger Slot erforderlich.");
+            if(item?.Slot is null||!Enum.TryParse<EquipmentSlot>(Arg("slot"),out var selected)||!Enum.IsDefined(selected)||!(selected==item.Slot||RpgTrinketCatalog.IsSlot(item.Slot)&&RpgTrinketCatalog.IsSlot(selected)||item.Slot is EquipmentSlot.Ring1 or EquipmentSlot.Ring2&&selected is EquipmentSlot.Ring1 or EquipmentSlot.Ring2))return new(false,"invalid_item","Eigene Ausrüstung und gültiger Slot erforderlich.");
             var draft=JsonSerializer.Deserialize<RpgProfile>(JsonSerializer.Serialize(account.Rpg))!;
             foreach(var slot in draft.Equipment.Where(p=>p.Value==item.InstanceId).Select(p=>p.Key).ToArray())draft.Equipment.Remove(slot);
             draft.Equipment[selected]=item.InstanceId;

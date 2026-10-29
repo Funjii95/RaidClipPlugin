@@ -1,4 +1,4 @@
-﻿using RaidClipPlugin.Config;
+using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
@@ -55,7 +55,7 @@ public static class RpgPassiveService
         var direct=(int)Math.Min(int.MaxValue,(long)regular+hits*(int)decimal.Floor(regular*strength)+RpgEarlyLegendaryEffects.ExtraHit(regular,profile,config,random));
         var spell=RpgWeaponService.Cast(profile,config,stats,attack,now);
         var eight=RpgEternalEightCombat.Proc(attack,critical,hits,profile,config,now);
-        return new((int)Math.Min(int.MaxValue,(long)direct+eight.Damage+(spell?.Damage??0)+RpgSetCombatService.ProcDamage(attack,critical,hits,profile,config,now)+RpgDepthsCombatService.AttackProc(attack,critical,hits,profile,config,random,now)+RpgEternalCombat.Proc(attack,critical,hits,profile,config,now)),critical,hits){DirectDamage=direct,Spell=spell,SoulProcDamage=eight.SoulDamage};
+        return new((int)Math.Min(int.MaxValue,(long)direct+RpgTrinketCatalog.Proc(attack,critical,profile,stats,random,now)+eight.Damage+(spell?.Damage??0)+RpgSetCombatService.ProcDamage(attack,critical,hits,profile,config,now)+RpgDepthsCombatService.AttackProc(attack,critical,hits,profile,config,random,now)+RpgEternalCombat.Proc(attack,critical,hits,profile,config,now)),critical,hits){DirectDamage=direct,Spell=spell,SoulProcDamage=eight.SoulDamage};
     }
 
     public static long RewardPayout(long payout, long stake, decimal bonus)

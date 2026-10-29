@@ -10,7 +10,7 @@ public class RpgEarlyLegendaryTests
  private static RpgProfile Equipped(string id){var p=new RpgProfile{PlayerLevel=30};var item=RpgEarlyLegendaryCatalog.Items().Single(i=>i.ItemId=="starter_"+id);p.Inventory.Add(item);p.Equipment[item.Slot!.Value]=item.InstanceId;return p;}
  [Fact] public void Twenty_unique_nonset_items_cover_existing_slots_and_have_real_sources()
  {
-  var c=new RpgConfig{Enabled=true};c.Validate();var items=RpgEarlyLegendaryCatalog.Items();Assert.Equal(20,items.Count);Assert.Equal(20,items.Select(i=>i.ItemId).Distinct().Count());Assert.All(items,i=>{Assert.Equal(ItemRarity.Legendary,i.Rarity);Assert.Empty(i.SetId);Assert.InRange(i.MinimumLevel,1,30);Assert.False(string.IsNullOrWhiteSpace(i.Description));});Assert.Equal(Enum.GetValues<EquipmentSlot>().Where(s=>s!=EquipmentSlot.Belt).Order(),items.Select(i=>i.Slot!.Value).Distinct().Order());
+  var c=new RpgConfig{Enabled=true};c.Validate();var items=RpgEarlyLegendaryCatalog.Items();Assert.Equal(20,items.Count);Assert.Equal(20,items.Select(i=>i.ItemId).Distinct().Count());Assert.All(items,i=>{Assert.Equal(ItemRarity.Legendary,i.Rarity);Assert.Empty(i.SetId);Assert.InRange(i.MinimumLevel,1,30);Assert.False(string.IsNullOrWhiteSpace(i.Description));});Assert.Equal(Enum.GetValues<EquipmentSlot>().Where(s=>s<=EquipmentSlot.Amulet).Order(),items.Select(i=>i.Slot!.Value).Distinct().Order());
   foreach(var item in items)Assert.Equal(3,RpgLootLocations.Build(c).Single(i=>i.Id==item.ItemId).Sources.Count);
  }
  [Fact] public void Extra_hit_and_healing_are_real_nonrecursive_and_respect_damage_confirmation()

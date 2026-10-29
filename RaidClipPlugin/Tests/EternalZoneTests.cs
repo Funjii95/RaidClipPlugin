@@ -33,7 +33,7 @@ public sealed class EternalZoneTests:IDisposable
   Assert.Equal(multiplier,RpgEternalCombat.NormalLootMultiplier(p,c));
   Assert.Equal(xp,RpgSetCombatService.Bonus(p,c.Sets,"ExperienceBonus"));
   var material=RpgZoneService.Materials(p,c,c.Zones.Get("sunny_lagoon"),"chest",new Low());Assert.All(material.Values,v=>Assert.Equal(multiplier,v));
-  if(count==8){Assert.Equal(8,p.Equipment.Count);Assert.Equal(Enum.GetValues<EquipmentSlot>().Where(s=>s!=EquipmentSlot.Belt).Order(),p.Equipment.Keys.Order());
+  if(count==8){Assert.Equal(8,p.Equipment.Count);Assert.Equal(Enum.GetValues<EquipmentSlot>().Where(s=>s<=EquipmentSlot.Amulet).Order(),p.Equipment.Keys.Order());
    var ring=p.Inventory.First(i=>i.ItemId=="divine_infinity_ring");var copy=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(ring))!;copy.InstanceId="duplicate";p.Inventory.Add(copy);p.Equipment[EquipmentSlot.Ring2]=copy.InstanceId;
    Assert.False(RpgEternalCombat.Has(p,c,"divine_infinity",8));Assert.Equal(3,RpgEternalCombat.NormalLootMultiplier(p,c));}
  }

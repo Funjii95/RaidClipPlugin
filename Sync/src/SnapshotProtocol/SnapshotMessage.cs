@@ -16,7 +16,7 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 15;
+    public const int RpgProjectionVersion = 16;
     // Includes the escaped account JSON. Leave ample room for Firestore metadata.
     public const int MaxMessageBytes = 512 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
@@ -185,7 +185,7 @@ public static class SnapshotValidation
                     if (field.Key == "Slot" && field.Value is null) continue;
                     if (field.Key is "Rarity" or "Kind" or "Slot" or "Activity" or "RemainingUses")
                     {
-                        var maximum = field.Key switch { "Rarity" => 10, "Kind" or "Activity" => 2, "Slot" => 8, _ => int.MaxValue };
+                        var maximum = field.Key switch { "Rarity" => 10, "Kind" or "Activity" => 2, "Slot" => 10, _ => int.MaxValue };
                         if (field.Value is not JsonValue number || !number.TryGetValue<int>(out var value) || value < 0 || value > maximum)
                             throw new InvalidDataException("Invalid enum or remaining uses.");
                     }

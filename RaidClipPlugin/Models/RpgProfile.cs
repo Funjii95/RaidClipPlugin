@@ -2,7 +2,7 @@ namespace RaidClipPlugin.Models;
 
 public enum RpgRole { Unselected, Tank, Healer, Damage }
 public enum ItemRarity { Common, Uncommon, Rare, Epic, Legendary, True, Cursed, Abyss, Eternal, Divine, Mythic }
-public enum EquipmentSlot { Weapon, Helmet, Chest, Gloves, Boots, Ring1, Ring2, Amulet, Belt }
+public enum EquipmentSlot { Weapon, Helmet, Chest, Gloves, Boots, Ring1, Ring2, Amulet, Belt, Trinket1, Trinket2 }
 public enum RpgActivity { Dive, Fishing, Boss }
 public enum RpgItemKind { Treasure, Equipment, Consumable }
 public enum SushiCategory { Offensive, Defensive }

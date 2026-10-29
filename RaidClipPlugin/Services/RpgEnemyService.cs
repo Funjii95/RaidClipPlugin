@@ -31,7 +31,7 @@ public sealed class RpgEnemyService(IDuelRandom random)
    var ignore=critical&&RpgEternalCombat.Has(p,c,"eternal_primordial_wrath",6)?.30m:0m;
    int extra=stats.DoubleAttackChance>0&&random.NextInclusive(0,9999)<stats.DoubleAttackChance*100?1:0;
    var eight=RpgEternalEightCombat.Proc(attackBase,critical,extra,p,c,now);
-   var damage=(int)Math.Min(int.MaxValue,decimal.Floor((regular*(1+extra*.5m)+RpgEarlyLegendaryEffects.ExtraHit(regular,p,c,random)+eight.Damage+(spell?.Damage??0)+RpgEternalCombat.Proc(regular,critical,extra,p,c,now)+RpgDepthsCombatService.AttackProc(regular,critical,extra,p,c,random,now))*100/(100+armor*(1-ignore))));
+   var damage=(int)Math.Min(int.MaxValue,decimal.Floor((regular*(1+extra*.5m)+RpgEarlyLegendaryEffects.ExtraHit(regular,p,c,random)+RpgTrinketCatalog.Proc(attackBase,critical,p,stats,random,now)+eight.Damage+(spell?.Damage??0)+RpgEternalCombat.Proc(regular,critical,extra,p,c,now)+RpgDepthsCombatService.AttackProc(regular,critical,extra,p,c,random,now))*100/(100+armor*(1-ignore))));
    var actual=RpgEternalCombat.Judgment(p,c)?hp:Math.Min(hp,Math.Max(1,damage));hp-=actual;RpgEarlyLegendaryEffects.AfterHit(actual,p,c,random,now);RpgStatisticsService.Hit(p,actual,critical);
    var directAfterArmor=(int)Math.Min(int.MaxValue,decimal.Floor(regular*(1+extra*.5m)*100/(100+armor*(1-ignore))));
    var soulAfterArmor=(int)Math.Min(int.MaxValue,decimal.Floor(eight.SoulDamage*100m/(100+armor*(1-ignore))));
