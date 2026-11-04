@@ -25,17 +25,17 @@ public static class RpgLootLocations
      if(possible)locations.Add(new(z.Id,"eternal"));
     }
    }
-   if(item.SetId is "tank_sentinel" or "tank_leviathan" || RpgTrinketCatalog.IsSlot(item.Slot)&&item.Rarity==ItemRarity.Mythic)foreach(var dungeon in RpgDungeonConfig.Definitions)locations.Add(new(dungeon.ZoneId,"dungeon","dungeon:"+dungeon.Id));
+   if(RpgMythicRoleCatalog.IsSet(item.SetId)||item.SetId is "tank_sentinel" or "tank_leviathan" || RpgTrinketCatalog.IsSlot(item.Slot)&&item.Rarity==ItemRarity.Mythic)foreach(var dungeon in RpgDungeonConfig.Definitions)locations.Add(new(dungeon.ZoneId,"dungeon","dungeon:"+dungeon.Id));
    foreach(var mimic in RpgRegionalMimics.Catalog(c))if(RpgRegionalMimics.Pool(c,mimic).Any(i=>i.ItemId==item.ItemId))locations.Add(new(mimic.AreaId,"mimic",mimic.Id));
    foreach(var boss in c.AreaBosses.Bosses.Where(b=>b.Enabled&&b.ItemChance>0))if(BossPool(c,boss).Any(i=>i.ItemId==item.ItemId))locations.Add(new(boss.AreaId,"boss",boss.Id));
    if(eight.Contains(item.ItemId)&&c.AreaBosses.Bosses.Any(b=>b.Id=="boss_eonath"&&b.Enabled)&&c.Zones.EternalEightChances.GetValueOrDefault("eonath")>0)locations.Add(new("primordial_throne","boss","boss_eonath"));
    var effects=item.Effects.Select(e=>$"{e.Name}: {e.Chance} % Chance · {e.CooldownSeconds} s Abklingzeit").Where(s=>!string.IsNullOrWhiteSpace(s)).ToList();
-   if(starter||item.ItemId.StartsWith("tank_")||item.ItemId.StartsWith("trinket_"))effects.Add(item.Description);
+   if(RpgMythicRoleCatalog.IsSet(item.SetId)||starter||item.ItemId.StartsWith("tank_")||item.ItemId.StartsWith("trinket_"))effects.Add(item.Description);
    if(item.Generation is {} rules&&rules.GenerateEffect){foreach(var effect in c.DiveLoot.Effects.Where(e=>rules.EffectIds.Contains(e.Id))){effects.Add(effect.Trigger==RpgEffectTrigger.DoubleAttack?$"Doppelangriff: {rules.DoubleAttackMinimumChance}–{rules.DoubleAttackMaximumChance} % Chance":$"{effect.Name}: {effect.Chance} % Chance · {effect.CooldownSeconds} s Abklingzeit");}}
    return new RpgLocatedItem(item.ItemId,item.DisplayName,item.Rarity.ToString(),item.SetId,StatRanges(item),effects,locations);
   }).ToArray();
  }
- public static RpgItem[] BossPool(RpgConfig c,RpgAreaBossDefinition boss)=>c.DiveLoot.Items.Where(i=>i.Rarity!=ItemRarity.Divine&&i.SetId!="tank_sentinel"&&i.SetId!="tank_leviathan"&&i.MinimumLevel<=boss.Level&&i.Rarity.ToString()==boss.Rarity&&i.Slot.HasValue&&i.DropWeight>0)
+ public static RpgItem[] BossPool(RpgConfig c,RpgAreaBossDefinition boss)=>c.DiveLoot.Items.Where(i=>i.Rarity!=ItemRarity.Divine&&!RpgMythicRoleCatalog.IsSet(i.SetId)&&i.SetId!="tank_sentinel"&&i.SetId!="tank_leviathan"&&i.MinimumLevel<=boss.Level&&i.Rarity.ToString()==boss.Rarity&&i.Slot.HasValue&&i.DropWeight>0)
   .Where(i=>i.Slot!=EquipmentSlot.Weapon||boss.Level>=80||boss.Id=="boss_vortexion"&&i.ItemId=="weapon_tide_crown"||boss.Id=="boss_krysalith"&&i.ItemId=="weapon_leviathan_call")
   .Where(i=>boss.Rarity!="Eternal"||!new[]{"eternal_cosmic_forge","eternal_soul_devourer","eternal_ten_seas_treasure"}.Contains(i.SetId)).ToArray();
  public static IReadOnlyList<RpgStatRange> StatRanges(RpgItem item)

@@ -66,6 +66,7 @@ internal sealed class RpgPartyCombatService(ViewerPointStore points,MinigameConf
    if(!RpgGroupHealing.CanHeal(self.Rpg,c))return new(false,"Dafür benötigst du die Heilerrolle oder ein passendes Heiler-Set.");
    var recipient=target=="auto"?RpgGroupHealing.Lowest(party,get,c):target;if(recipient is null||!party.Members.Contains(recipient)||get(recipient).Rpg.Health.CurrentHp<=0)return new(false,"Heilziel muss ein lebendes Gruppenmitglied sein.");
    var raw=(int)(RpgHealthService.Maximum(self.Rpg,c.Health)*c.Multiplayer.GroupHealMaxHpPercent/100);RpgGroupHealing.Heal(actor,recipient,raw,i,get,c,Rng,now);
+   RpgGroupHealing.LifespringEcho(actor,recipient,raw,party,get,c,Rng,now);
    var extraTargets=RpgGroupHealing.Has(self.Rpg,c,"eternal_tide_blessing",6)?3:RpgGroupHealing.Has(self.Rpg,c,"coral_oracle",4)||RpgGroupHealing.Has(self.Rpg,c,"eternal_tide_blessing",4)?1:0;
    foreach(var other in party.Members.Where(id=>id!=recipient&&get(id).Rpg.Health.CurrentHp>0).OrderBy(id=>(decimal)get(id).Rpg.Health.CurrentHp!.Value/RpgHealthService.Maximum(get(id).Rpg,c.Health)).Take(extraTargets))RpgGroupHealing.Heal(actor,other,raw/2,i,get,c,Rng,now);
   }else if(operation=="guard"){
@@ -122,7 +123,7 @@ internal sealed class RpgPartyCombatService(ViewerPointStore points,MinigameConf
     }else if(i.Kind=="boss"){
      var boss=c.AreaBosses.Bosses.Single(b=>b.Id==i.EnemyId);var pool=RpgLootLocations.BossPool(c,boss);if(pool.Length>0&&Rng.NextInclusive(0,999999)<RpgCombatDropRules.Chance(boss.ItemChance)*10000){item=System.Text.Json.JsonSerializer.Deserialize<RpgItem>(System.Text.Json.JsonSerializer.Serialize(pool[Rng.NextInclusive(0,pool.Length-1)]))!;item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=now;RpgItemGenerationService.Generate(item,c.DiveLoot,Rng);}
     }else{item=RpgZoneService.Equipment(p,c,zone,Rng,now);var early=RpgEarlyLegendaryCatalog.Roll(p,c,zone,Rng,now);if(early is not null)p.Inventory.Add(early);}
-    if(i.Kind=="dungeon"&&i.Difficulty=="mythic"&&p.PlayerLevel>=80&&Rng.NextInclusive(0,99)<25){var tanks=c.DiveLoot.Items.Where(x=>(x.SetId=="tank_sentinel"||x.SetId=="tank_leviathan"||RpgTrinketCatalog.IsSlot(x.Slot)&&x.Rarity==ItemRarity.Mythic)&&x.MinimumLevel<=p.PlayerLevel).ToArray();if(tanks.Length>0)p.Inventory.Add(RpgZoneService.Instance(tanks[Rng.NextInclusive(0,tanks.Length-1)],c,Rng,now));}
+    if(i.Kind=="dungeon"&&i.Difficulty=="mythic"&&p.PlayerLevel>=80&&Rng.NextInclusive(0,99)<25){var tanks=RpgMythicRoleCatalog.DungeonPool(c,p.PlayerLevel);if(tanks.Length>0)p.Inventory.Add(RpgZoneService.Instance(tanks[Rng.NextInclusive(0,tanks.Length-1)],c,Rng,now));}
    if(item is not null)p.Inventory.Add(item);
    }
    RpgStatisticsService.Add(p,"enemyKills");RpgStatisticsService.Zone(p,zone.Id,"kills");if(i.Kind=="boss"){RpgStatisticsService.Add(p,"groupBossKills");RpgStatisticsService.BossKill(p,i.EnemyId);}if(i.Kind=="dungeon")p.Statistics.Dungeons[i.Difficulty]=Math.Min(SnapshotProtocol.RpgStatistics.Maximum,p.Statistics.Dungeons.GetValueOrDefault(i.Difficulty)+1);

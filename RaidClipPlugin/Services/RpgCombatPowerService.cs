@@ -15,7 +15,7 @@ public static class RpgCombatPowerService
   if(weapon is not null&&RpgWeaponCatalog.Find(weapon.ItemId) is {} spell)hit+=Math.Clamp(s.MagicPower,0,1000000)*2*Math.Min(1,5*(1+Math.Clamp(s.ManaRegeneration,0,500)/100)*6/spell.ManaCost);
   var interval=(decimal)RpgSetCombatService.AttackSeconds(p,c,6,now);var criticalRate=Math.Clamp(s.CritChance,0,100)/100;var extraRate=Math.Clamp(s.DoubleAttackChance+s.TripleAttackChance,0,100)/100;
   bool Has(string id,int n)=>RpgSetCombatService.Active(p,c.Sets,id,n);
-  decimal proc=0;
+  decimal proc=Has(RpgMythicRoleCatalog.DamageSet,11)?2.5m*(1+Math.Clamp(s.WaterDamage+s.ElementalDamage,0,10000)/100)*Math.Min(criticalRate,interval/8)/crit:0;
   foreach(var item in p.Inventory.Where(i=>RpgTrinketCatalog.IsSlot(i.Slot)&&p.Equipment.Any(e=>RpgTrinketCatalog.IsSlot(e.Key)&&e.Value==i.InstanceId)).DistinctBy(i=>i.ItemId)){
    var d=RpgTrinketCatalog.Definitions.FirstOrDefault(d=>d.Id==item.ItemId);if(d is null)continue;
    var element=d.Element switch {"Water"=>s.WaterDamage+s.ElementalDamage,"Light"=>s.LightDamage+s.ElementalDamage,"Abyss"=>s.AbyssDamage+s.ElementalDamage,_=>0};
