@@ -81,7 +81,7 @@ public sealed class RpgHealthTests : IDisposable
         var p=(await s.GetProfileAsync("u",default)).Entry.Rpg;Assert.Equal(0,p.Health.CurrentHp);Assert.True(p.Health.Defeated);
         _now=_now.AddSeconds(2);
         await RpgHealthService.HealChatAsync(s,c.Adventures.Rpg,new(){UserId="u",Id="heal",Text="hello"},_now,default);
-        Assert.Equal(0,(await s.GetProfileAsync("u",default)).Entry.Rpg.Health.CurrentHp);
+        Assert.Equal(10,(await s.GetProfileAsync("u",default)).Entry.Rpg.Health.CurrentHp);
         game=Game(new(_dir),c);Assert.False((await game.ExecuteBossAttackAsync("u","U","two",default)).Success);
         Assert.Equal(190,game.Status.BossHp);
     }

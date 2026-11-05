@@ -9,7 +9,7 @@ public sealed class RemoteShellTests : IDisposable
 {
     private readonly string root=Path.Combine(Path.GetTempPath(),"otter-remote-shell-"+Guid.NewGuid().ToString("N"));
     [Fact]
-    public async Task Shell_action_is_chat_only_and_never_advertised_or_executed_remotely()
+    public async Task Shell_action_is_advertised_executes_once_and_checks_admission()
     {
         var points=new ViewerPointStore(root);
         var config=new MinigameConfig{Enabled=true,PointsEnabled=true};config.Adventures.Rpg.Enabled=true;
@@ -19,13 +19,17 @@ public sealed class RemoteShellTests : IDisposable
         var intent=new RpgIntent(Guid.NewGuid(),"openShells",JsonSerializer.SerializeToElement(new{count="10"}));
         var envelope=new ActionEnvelope("42","1001",Guid.NewGuid(),"",DateTimeOffset.UtcNow.AddSeconds(8),intent,RpgIntents.Hash(intent));
         var result=await Executor().ExecuteAsync(envelope,default);
-        Assert.False(result.Success);
-        Assert.Equal("chat_only",result.Code);
+        Assert.True(result.Success);
+        Assert.Equal("applied",result.Code);
+        using var updated=JsonDocument.Parse(result.DataJson!);
+        Assert.Equal(0,updated.RootElement.GetProperty("profile").GetProperty("Rpg").GetProperty("Materials").GetProperty("Shells").GetInt32());
         Assert.Equal(result,await Executor().ExecuteAsync(envelope,default));
-        Assert.Equal(10,(await points.GetProfileAsync("1001",default)).Entry.Rpg.Materials.Shells);
+        Assert.Equal(0,(await points.GetProfileAsync("1001",default)).Entry.Rpg.Materials.Shells);
         using var catalog=JsonDocument.Parse(Executor().CatalogJson());
-        Assert.DoesNotContain(catalog.RootElement.GetProperty("supported").EnumerateArray(),item=>item.GetString()=="openShells");
+        Assert.Contains(catalog.RootElement.GetProperty("supported").EnumerateArray(),item=>item.GetString()=="openShells");
         var other=intent with{ActionId=Guid.NewGuid()};
+        var empty=envelope with{Intent=other,IntentHash=RpgIntents.Hash(other)};
+        Assert.Equal("rule_rejected",(await Executor().ExecuteAsync(empty,default)).Code);
         var attempt=envelope with{Intent=other,IntentHash=RpgIntents.Hash(other),UserId="1002"};
         Assert.False((await Executor().ExecuteAsync(attempt,default)).Success);
         admission.End();

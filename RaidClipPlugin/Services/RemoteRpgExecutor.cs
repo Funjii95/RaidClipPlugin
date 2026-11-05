@@ -15,7 +15,6 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     internal async Task<ActionOutcome> ExecuteAsync(ActionEnvelope envelope,CancellationToken ct,TimeSpan? remainingWindow=null)
     {
         var hash=RpgIntents.Hash(envelope.Intent);
-        if(envelope.Intent.Kind=="openShells")return new(false,"chat_only","Muscheln sind derzeit ausschließlich im Chat verfügbar: !muscheln [1–100].");
         if(envelope.ChannelId!=channel || !(users.Contains(envelope.UserId)||enrolled?.Invoke(envelope.UserId)==true) || envelope.IntentHash!=hash || envelope.SessionId==Guid.Empty)
             return new(false,"scope_denied","Aktionszuordnung ungültig.");
         await gate.WaitAsync(ct);
@@ -141,7 +140,12 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             mutation=await progression.UnequipAsync(e.UserId,account.DisplayName,request,slot,ct);
         }
         if(e.Intent.Kind is "upgradeItem" or "refineItem")mutation=await new RpgUpgradeService(points,rpg).ApplyAsync(e.UserId,account.DisplayName,request,Arg("instanceId"),int.Parse(Arg("expectedLevel")),e.Intent.Kind=="refineItem",ct);
-        if(e.Intent.Kind=="openShells"){var opened=await new RpgShellService(points,rpg).OpenAsync(e.UserId,account.DisplayName,request,int.Parse(Arg("count")),ct);return new(opened.Success,opened.Success?"applied":"rule_rejected",opened.Message);}
+        if(e.Intent.Kind=="openShells"){
+            var opened=await new RpgShellService(points,rpg,maximumBalance:config.MaximumAccountEnabled?config.MaximumAccountPoints:long.MaxValue).OpenAsync(e.UserId,account.DisplayName,request,int.Parse(Arg("count")),ct);
+            var fresh=(await points.GetProfileAsync(e.UserId,ct)).Entry;
+            var projection=SnapshotValidation.ValidateLocalSource(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(fresh)),channel).AccountJson!;
+            return new(opened.Success,opened.Success?"applied":"rule_rejected",opened.Message,JsonSerializer.Serialize(new{profile=JsonDocument.Parse(projection).RootElement.Clone()}));
+        }
         if(e.Intent.Kind=="learnTalent")mutation=await RpgTalentService.LearnAsync(points,rpg,e.UserId,account.DisplayName,request,Arg("talentId"),int.Parse(Arg("expectedRank")),int.Parse(Arg("catalogVersion")),ct);
         if(e.Intent.Kind=="buyPerk")mutation=await progression.BuyPerkAsync(e.UserId,account.DisplayName,request,Arg("perkId"),ct,e.Intent.Arguments.TryGetProperty("mode",out var mode) && mode.GetString()=="max");
         if(e.Intent.Kind=="craft")mutation=await progression.CraftAsync(e.UserId,account.DisplayName,request,Arg("recipeId"),ct);
@@ -165,7 +169,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     internal string CatalogJson()
     {
         var config=configuration();var rpg=config.Adventures.Rpg;
-        return JsonSerializer.Serialize(new{staffAccess=new{channelId=channel,moderators=rpg.AdminAccess.Moderators},partyInviteNames=true,automaticDungeons=true,pluginVersion=typeof(RemoteRpgExecutor).Assembly.GetName().Version!.ToString(),progressionRules=new{rpg.Health.ExperiencePerLevel,rpg.Health.MaximumLevel},magicRules=new{MaximumMana=100,BaseRegenerationPerSecond=5,AutomaticWeaponSpells=true},perkMaxPurchase=true,collectorItems=rpg.DiveLoot.Items.Where(i=>i.Collector is not null).Select(i=>new{Id=i.ItemId,Name=i.DisplayName,i.Rarity}),zones=rpg.Zones.Areas, supported=RpgIntents.Supported.Where(kind=>kind!="openShells").Concat(new[]{"adminCatalog","adminStart","adminGrantSet","adminGrant","adminMaterialGrant","adminBalance","adminHealAll","adminDivine","adminZoneDebug","adminDashboard","adminConfigRead","adminConfigSave","adminPlayers","adminPlayer","adminControl","adminRoles"}),
+        return JsonSerializer.Serialize(new{staffAccess=new{channelId=channel,moderators=rpg.AdminAccess.Moderators},partyInviteNames=true,automaticDungeons=true,pluginVersion=typeof(RemoteRpgExecutor).Assembly.GetName().Version!.ToString(),progressionRules=new{rpg.Health.ExperiencePerLevel,rpg.Health.MaximumLevel},magicRules=new{MaximumMana=100,BaseRegenerationPerSecond=5,AutomaticWeaponSpells=true},perkMaxPurchase=true,collectorItems=rpg.DiveLoot.Items.Where(i=>i.Collector is not null).Select(i=>new{Id=i.ItemId,Name=i.DisplayName,i.Rarity}),zones=rpg.Zones.Areas, supported=RpgIntents.Supported.Concat(new[]{"adminCatalog","adminStart","adminGrantSet","adminGrant","adminMaterialGrant","adminBalance","adminHealAll","adminDivine","adminZoneDebug","adminDashboard","adminConfigRead","adminConfigSave","adminPlayers","adminPlayer","adminControl","adminRoles"}),
             materialCatalog=RpgUpgradeCatalog.Materials, itemUpgrade=new{maximumLevel=9,bonuses=RpgEquipmentUpgradeRules.Bonuses,baseCosts=Enumerable.Range(0,6).Select(level=>RpgEquipmentUpgradeRules.Cost(level,ItemRarity.Common,rpg.Upgrades)).Select(cost=>new object[]{cost.Pearls,cost.Materials}),highCostsByRarity=Enum.GetValues<ItemRarity>().Where(r=>r!=ItemRarity.Divine).ToDictionary(r=>r.ToString(),r=>Enumerable.Range(6,3).Select(level=>RpgEquipmentUpgradeRules.Cost(level,r,rpg.Upgrades)).Select(cost=>new object[]{cost.Pearls,cost.Materials})),refinement=new{TargetLevel=9,Pearls=rpg.Upgrades.RefinementPearls,Materials=new Dictionary<string,int>{{"eternal_depth_core",1}}}},
             talentCatalogVersion=TalentRules.CatalogVersion,talents=TalentRules.Catalog,
             perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Presentation=RpgPerkCatalog.Find(p.Id) is {} presentation?new{presentation.Category,presentation.Symbol,presentation.Value,presentation.Label}:null,Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),

@@ -44,11 +44,11 @@ public static class RpgHealthService
                 if(b.ExpiresAt is null && b.RemainingUses<=0)return 0m;
                 return Math.Max(0,(decimal)(end-start).TotalSeconds)*Math.Clamp(b.PassiveHealing,0,1000)/60;
             });
-            if(c.PassiveHealing && h.CurrentHp>0)
+            if(c.PassiveHealing)
             {
                 // Keep fractional healing across intervals and reloads. Legacy property name is retained.
                 var accrued=extra+(c.EarlyLegendaries.Enabled&&RpgEarlyLegendaryEffects.Has(p,"kelp_vest")?Math.Min(credited,max)*c.PassiveSeconds/60m*c.EarlyLegendaries.RegenerationPerMinute:0)+Math.Min(credited,max)*max*c.PassiveHp/100m*c.PassiveSeconds/60m+Math.Clamp(h.SushiRegenRemainder,0,0.9999999999999999999999999999m);
-                RpgSetCombatService.Heal(p,c,(int)Math.Min(int.MaxValue,Math.Min(credited,max)*RpgPerkCatalog.Bonus(p,"regen")+decimal.Floor(accrued)),now);
+                RpgSetCombatService.Heal(p,c,(int)Math.Min(int.MaxValue,Math.Min(credited,max)*RpgPerkCatalog.Bonus(p,"regen")+decimal.Floor(accrued)),now,allowRevive:true);
                 h.SushiRegenRemainder=h.CurrentHp>=max?0:accrued-decimal.Floor(accrued);
             }
             h.LastPassiveRegen=h.LastPassiveRegen.Value.AddSeconds(intervals*c.PassiveSeconds);
@@ -94,9 +94,9 @@ public static class RpgHealthService
         {
             Refresh(a.Rpg,config.Health,now);
             var h=a.Rpg.Health;
-            if(config.Health.ChatHealing && h.CurrentHp>0 && (h.LastChatHeal is null || (now-h.LastChatHeal.Value).TotalSeconds>=config.Health.ChatCooldownSeconds))
+            if(config.Health.ChatHealing && (h.LastChatHeal is null || (now-h.LastChatHeal.Value).TotalSeconds>=config.Health.ChatCooldownSeconds))
             {
-                RpgSetCombatService.Heal(a.Rpg,config.Health,(int)decimal.Floor(Maximum(a.Rpg,config.Health)*config.Health.ChatHp/100m)+RpgSushiService.ChatBonus(a.Rpg,now),now);
+                RpgSetCombatService.Heal(a.Rpg,config.Health,(int)decimal.Floor(Maximum(a.Rpg,config.Health)*config.Health.ChatHp/100m)+RpgSushiService.ChatBonus(a.Rpg,now),now,allowRevive:true);
                 h.LastChatHeal=now;
             }
             return new(true);
