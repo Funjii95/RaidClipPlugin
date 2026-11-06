@@ -67,6 +67,7 @@ internal sealed class RpgPartyCombatService(ViewerPointStore points,MinigameConf
    var recipient=target=="auto"?RpgGroupHealing.Lowest(party,get,c):target;if(recipient is null||!party.Members.Contains(recipient)||get(recipient).Rpg.Health.CurrentHp<=0)return new(false,"Heilziel muss ein lebendes Gruppenmitglied sein.");
    var raw=(int)(RpgHealthService.Maximum(self.Rpg,c.Health)*c.Multiplayer.GroupHealMaxHpPercent/100);RpgGroupHealing.Heal(actor,recipient,raw,i,get,c,Rng,now);
    RpgGroupHealing.LifespringEcho(actor,recipient,raw,party,get,c,Rng,now);
+   RpgGroupHealing.DawnWave(actor,raw,party,get,c,Rng,now);
    var extraTargets=RpgGroupHealing.Has(self.Rpg,c,"eternal_tide_blessing",6)?3:RpgGroupHealing.Has(self.Rpg,c,"coral_oracle",4)||RpgGroupHealing.Has(self.Rpg,c,"eternal_tide_blessing",4)?1:0;
    foreach(var other in party.Members.Where(id=>id!=recipient&&get(id).Rpg.Health.CurrentHp>0).OrderBy(id=>(decimal)get(id).Rpg.Health.CurrentHp!.Value/RpgHealthService.Maximum(get(id).Rpg,c.Health)).Take(extraTargets))RpgGroupHealing.Heal(actor,other,raw/2,i,get,c,Rng,now);
   }else if(operation=="guard"){

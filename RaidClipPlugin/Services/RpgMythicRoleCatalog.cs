@@ -5,7 +5,7 @@ namespace RaidClipPlugin.Services;
 public static class RpgMythicRoleCatalog
 {
  public const string DamageSet="mythic_stormkraken", HealerSet="mythic_lifespring";
- public static bool IsSet(string id)=>id is DamageSet or HealerSet;
+ public static bool IsSet(string id)=>id is DamageSet or HealerSet or RpgDawnHealerCatalog.SetId;
  static readonly EquipmentSlot[] Slots=[EquipmentSlot.Helmet,EquipmentSlot.Chest,EquipmentSlot.Gloves,EquipmentSlot.Boots,EquipmentSlot.Weapon,EquipmentSlot.Ring1,EquipmentSlot.Ring2,EquipmentSlot.Amulet,EquipmentSlot.Belt,EquipmentSlot.Trinket1,EquipmentSlot.Trinket2];
  static readonly string[] Parts=["helmet","chest","gloves","boots","weapon","ring","seal","amulet","belt","trinket1","trinket2"];
  static readonly string[] DamageNames=["Krone des Sturmkrakens","Schuppenpanzer der Donnerflut","Klauen des Sturmjägers","Schritte des Orkans","Dreizack des Sturmkrakens","Ring der tosenden Brandung","Siegel des Donnerauges","Herz der Sturmflut","Gurt der peitschenden Gezeiten","Auge des Sturmkrakens","Donnerkern der Urtiefe"];
@@ -21,9 +21,11 @@ public static class RpgMythicRoleCatalog
    var id=(heal?HealerSet:DamageSet)+"_"+Parts[n];
    result.Add(new(){ItemId=id,IconId=id,DisplayName=(heal?HealNames:DamageNames)[n],Description="Mythisches 11-Teile-"+(heal?"Heiler":"DD")+"-Set. Fundort: Mythische Dungeons ab Stufe 80. Setboni zählen unterschiedliche ausgerüstete Teile.",MinimumLevel=80,CoreStatsVersion=3,Rarity=ItemRarity.Mythic,Kind=RpgItemKind.Equipment,Slot=Slots[n],SetId=heal?HealerSet:DamageSet,DropWeight=1,DropActivities=[RpgActivity.Boss],Attributes=a});
   }
+  result.AddRange(RpgDawnHealerCatalog.Items());
   return result;
  }
  public static List<RpgItemSet> Sets()=>[
+  RpgDawnHealerCatalog.Set(),
   new(){Id=DamageSet,Name="Zorn des Sturmkrakens",Description="Mythisches DD-Set mit elf unterschiedlichen Teilen. Boni sind kumulativ.",ItemIds=Parts.Select(p=>DamageSet+"_"+p).ToList(),Bonuses=[
    new(){RequiredPieces=2,Description="Erwachender Sturm: +15 % Angriff",Attributes=new(){AttackPercent=15}},
    new(){RequiredPieces=4,Description="Auge des Jägers: +8 Prozentpunkte Krit-Chance, +20 % Krit-Schaden",Attributes=new(){CritChance=8,CritDamage=20}},
