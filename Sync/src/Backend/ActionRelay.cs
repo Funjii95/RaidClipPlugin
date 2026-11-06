@@ -110,8 +110,6 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     {
         Scope(user);
 
-        // This feature is intentionally chat-only; never queue browser requests.
-        if(intent.Kind=="openShells")throw new RelayDenied(403,"chat_only");
         if(settings.Actions.AutomaticPlayerEnrollment && (players is null || await players.GetAsync(user,ct) is null))throw new RelayDenied(403,"profile_not_enrolled");
         var hash=RpgIntents.Hash(intent);
         return await store.TransactionAsync<ActionReceipt>(intent.ActionId,false,(s,a)=>{
