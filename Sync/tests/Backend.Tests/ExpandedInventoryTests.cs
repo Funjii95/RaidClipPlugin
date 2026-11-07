@@ -18,6 +18,22 @@ public sealed class ExpandedInventoryTests
     }));
 
     [Fact]
+    public async Task Full_six_hundred_item_inventory_above_old_limit_is_preserved()
+    {
+        var inventory = Inventory.Replace(new string('a', 90), new string('ü', 40) + new string('a', 210));
+        var message = PublisherTests.Message() with { AccountJson = PublisherTests.Account.Replace("\"Inventory\":[]", "\"Inventory\":" + inventory) };
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(message);
+        Assert.InRange(bytes.Length, 512 * 1024 + 1, SnapshotValidation.MaxMessageBytes);
+        using var input = new MemoryStream(bytes);
+        var validated = await SnapshotValidation.ReadAsync(input, "42");
+        await using var fixture = await TransactionalFirestoreFixture.StartAsync();
+        await fixture.Sink.ApplyAsync(message with { AccountJson = validated.AccountJson });
+        var player = (await fixture.Reader.GetAsync("1001", default))!;
+        Assert.Equal(600, player.Rpg.Inventory.Length);
+        Assert.Equal("expanded-599", player.Rpg.Inventory[599].GetProperty("InstanceId").GetString());
+    }
+
+    [Fact]
     public async Task Expanded_inventory_survives_wire_validation_and_firestore_roundtrip()
     {
         var message = PublisherTests.Message() with
@@ -58,3 +74,4 @@ public sealed class ExpandedInventoryTests
         Assert.Equal(data, receipt!.Outcome!.DataJson);
     }
 }
+

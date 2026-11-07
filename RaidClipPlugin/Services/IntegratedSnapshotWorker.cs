@@ -94,7 +94,8 @@ internal sealed class IntegratedSnapshotWorker
             }
         }
         catch(OperationCanceledException) when(ct.IsCancellationRequested){Report("Cloud-Sender beendet; ausstehende Daten bleiben gespeichert");}
-        catch(Exception error){Report(error is SnapshotHeadReadException ?
+        catch(Exception error){Report(error is InvalidDataException && error.Message.Contains("too large",StringComparison.OrdinalIgnoreCase) ?
+            "Cloud-Sender angehalten: Spielstand überschreitet die Übertragungsgröße; lokale Daten bleiben erhalten, Plugin-Update erforderlich" : error is SnapshotHeadReadException ?
             "Cloud-Sender angehalten: Publisher-Vertrag oder Zugang ungültig; lokale Speicherung bleibt aktiv" :
             "Cloud-Sender angehalten: Daten-/Revisionskonflikt oder Konfiguration prüfen; keine automatische Überschreibung");}
         finally{Availability(false);source.Persisted-=Signal;}
