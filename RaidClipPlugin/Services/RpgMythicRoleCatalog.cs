@@ -22,6 +22,7 @@ public static class RpgMythicRoleCatalog
    result.Add(new(){ItemId=id,IconId=id,DisplayName=(heal?HealNames:DamageNames)[n],Description="Mythisches 11-Teile-"+(heal?"Heiler":"DD")+"-Set. Fundort: Mythische Dungeons ab Stufe 80. Setboni zählen unterschiedliche ausgerüstete Teile.",MinimumLevel=80,CoreStatsVersion=3,Rarity=ItemRarity.Mythic,Kind=RpgItemKind.Equipment,Slot=Slots[n],SetId=heal?HealerSet:DamageSet,DropWeight=1,DropActivities=[RpgActivity.Boss],Attributes=a});
   }
   result.AddRange(RpgDawnHealerCatalog.Items());
+  foreach(var item in result)RpgMythicBalance.Apply(item);
   return result;
  }
  public static List<RpgItemSet> Sets()=>[

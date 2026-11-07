@@ -18,7 +18,8 @@ public static class RpgCoreStatService
         // Missing weapon damage is repaired independently of the old armor migration.
         var weaponChanged=item.Slot==EquipmentSlot.Weapon&&item.Attributes.Attack<=0;
         if(weaponChanged)item.Attributes.Attack=WeaponAttack(item.Rarity);
-        if(item.CoreStatsVersion>=3)return weaponChanged;
+        var mythicChanged=RpgMythicBalance.Apply(item);
+        if(item.CoreStatsVersion>=3)return weaponChanged || mythicChanged;
         var baseline=Baseline(item.Rarity);
         if(item.Attributes.Power<=0)item.Attributes.Power=baseline.Power;
         if(item.Attributes.Stamina<=0)item.Attributes.Stamina=baseline.Stamina;
