@@ -29,6 +29,23 @@ public class RpgMythicBalanceTests
    Assert.Equal(40,saved.Attributes.BossDamage);Assert.Equal(2400,saved.Attributes.Attack);Assert.Equal(item.InstanceId,profile.Equipment[EquipmentSlot.Weapon]);
   }finally{if(Directory.Exists(root))Directory.Delete(root,true);}
  }
+ [Fact] public async Task Startup_persists_already_v3_items_to_cloud_source_exactly_once(){
+  var root=Path.Combine(Path.GetTempPath(),"mythic-startup-"+Guid.NewGuid().ToString("N"));
+  try{
+   Directory.CreateDirectory(root);var health=new RpgHealthConfig{PassiveHealing=false};
+   var entry=new ViewerPointEntry{UserId="1001",DisplayName="Test",Points=777};entry.Rpg.PlayerLevel=99;
+   entry.Rpg.Inventory=RpgDawnHealerCatalog.Items();entry.Rpg.Health.CurrentHp=10;
+   RpgHealthService.ApplyStatMigration(entry.Rpg,health);
+   var file=Path.Combine(root,"viewer-points.json");
+   await File.WriteAllTextAsync(file,JsonSerializer.Serialize(new Dictionary<string,ViewerPointEntry>{{"1001",entry}}));
+   var store=new ViewerPointStore(root);var events=0;store.Persisted+=()=>events++;
+   Assert.Equal(1,await store.UpgradeEquipmentCoreStatsAsync(health,default));
+   using(var doc=JsonDocument.Parse(await File.ReadAllBytesAsync(file))){var account=doc.RootElement.GetProperty("1001");Assert.Equal(777,account.GetProperty("Points").GetInt64());
+    foreach(var item in account.GetProperty("Rpg").GetProperty("Inventory").EnumerateArray()){Assert.Equal(40,item.GetProperty("Attributes").GetProperty("BossDamage").GetDecimal());Assert.True(item.GetProperty("Attributes").GetProperty("Attack").GetDecimal()>=140);}}
+   Assert.Equal(1,events);var saved=await File.ReadAllBytesAsync(file);
+   Assert.Equal(0,await new ViewerPointStore(root).UpgradeEquipmentCoreStatsAsync(health,default));Assert.Equal(saved,await File.ReadAllBytesAsync(file));
+  }finally{if(Directory.Exists(root))Directory.Delete(root,true);}
+ }
  static RpgProfile Wear(IEnumerable<RpgItem> items,int upgrade){var p=new RpgProfile{PlayerLevel=99};foreach(var i in items){RpgCoreStatService.Apply(i);i.UpgradeLevel=upgrade;p.Inventory.Add(i);var slot=i.Slot!.Value;if(slot==EquipmentSlot.Ring1 && p.Equipment.ContainsKey(slot))slot=EquipmentSlot.Ring2;p.Equipment[slot]=i.InstanceId;}p.Health.CurrentHp=100;return p;}
  [Theory][InlineData(0)][InlineData(9)] public void Full_mythic_damage_set_beats_eternal_damage_sets_at_equal_upgrade(int upgrade){
   var c=new RpgConfig();c.Validate();var now=DateTimeOffset.UtcNow;

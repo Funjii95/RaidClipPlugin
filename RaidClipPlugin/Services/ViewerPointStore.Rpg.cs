@@ -18,8 +18,13 @@ public sealed partial class ViewerPointStore
             var draft=JsonSerializer.Deserialize<Dictionary<string,ViewerPointEntry>>(JsonSerializer.Serialize(original,JsonOptions),JsonOptions)!;
             var changed=0;
             foreach(var (id,entry) in draft){
-                if(IsPrivacyBlocked(id)||!entry.Rpg.Inventory.Any(i=>i.Slot.HasValue&&i.Kind!=RpgItemKind.Consumable&&i.CoreStatsVersion<3)&&!RpgHealthService.NeedsLevelStatMigration(entry.Rpg,health))continue;
-                RpgCoreStatService.Upgrade(entry.Rpg);RpgHealthService.ApplyStatMigration(entry.Rpg,health);
+                if(IsPrivacyBlocked(id))continue;
+                // Current-version items can still need a newer balance correction.
+                // Evaluate every item on the detached draft; never short-circuit the loop.
+                var equipmentChanged=false;
+                foreach(var item in entry.Rpg.Inventory)equipmentChanged |= RpgCoreStatService.Apply(item);
+                if(!equipmentChanged&&!RpgHealthService.NeedsLevelStatMigration(entry.Rpg,health))continue;
+                RpgHealthService.ApplyStatMigration(entry.Rpg,health);
                 entry.UpdatedAt=DateTimeOffset.UtcNow;changed++;
             }
             if(changed==0)return 0;
