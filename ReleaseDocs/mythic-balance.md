@@ -1,4 +1,4 @@
-# Mythic-Balancing – vorbereitet
+# Plugin 2.8.12 – Mythic-Balancing
 
 - Alle mythischen Ausrüstungsteile erhalten mindestens +40 % Boss-Schaden; Sturmkraken-Teile mindestens +50 %.
 - Sturmkraken: mindestens 3.200 Waffenangriff, 260 Angriff auf weiteren Teilen, +5 % Angriff und +20 % Gesamtschaden je Teil; mindestens 30 Kraft/Ausdauer, 8 % Krit-Chance und 20 % Krit-Schaden je Teil.
