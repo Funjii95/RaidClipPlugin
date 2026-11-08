@@ -74,6 +74,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             return await InvokeExtendedAsync(e,account,request,ct);
         if(e.Intent.Kind=="diveSeries"){
             var service=new RpgDiveSeriesService(points,config);var done=Arg("operation")=="start"?await service.StartAsync(e.UserId,account.DisplayName,request,int.Parse(Arg("count")),ct):await service.StopAsync(e.UserId,account.DisplayName,request,ct);
+            if(done.Success&&Arg("operation")=="start")await service.TickAsync(ct,async(name,zone,token)=>{if(minigames is not null)await minigames.StartDiscoveredBossAsync(name,token,zone);},e.UserId);
             var fresh=(await points.GetProfileAsync(e.UserId,ct)).Entry;var projection=SnapshotValidation.ValidateLocalSource(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(fresh)),channel).AccountJson!;
             return new(done.Success,done.Success?"applied":"rule_rejected",done.Error,JsonSerializer.Serialize(new{profile=JsonDocument.Parse(projection).RootElement.Clone()}));
         }

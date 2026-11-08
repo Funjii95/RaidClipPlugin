@@ -23,10 +23,11 @@ internal sealed class RpgDiveSeriesService(ViewerPointStore points,MinigameConfi
   },ct);
  }
  internal Task<RpgTransactionResult> StopAsync(string user,string name,string request,CancellationToken ct)=>points.ApplyRpgAsync(user,name,request,a=>{if(a.Rpg.DiveSeries is not {Status:"active"} s)return new(false,"Keine laufende Tauchserie.");s.Status="stopped";s.Reason="Manuell beendet";return new(true);},ct);
- internal async Task<int> TickAsync(CancellationToken ct,Func<string,string,CancellationToken,Task>? discovered=null){
+ internal async Task<int> TickAsync(CancellationToken ct,Func<string,string,CancellationToken,Task>? discovered=null,string? onlyUser=null){
   if(!config.Enabled||!config.PointsEnabled||!config.Adventures.Rpg.Enabled||!config.Adventures.Treasure.Enabled)return 0;
   var now=Now;var changed=0;
   foreach(var entry in await points.DueDiveSeriesAsync(now,ct)){
+   if(onlyUser is not null&&entry.Id!=onlyUser)continue;
    var s=entry.Series;
    if(config.PointsBlacklist.Any(n=>n.Equals(entry.Name,StringComparison.OrdinalIgnoreCase))){await StopAsync(entry.Id,entry.Name,"series-blocked:"+s.Id,ct);continue;}
    var result=await new RpgAdventureService(points,config,random,()=>now).ExecuteSeriesAsync(entry.Id,entry.Name,"series-batch:"+s.Id+":"+s.Completed,ct,s.Id,s.Completed);

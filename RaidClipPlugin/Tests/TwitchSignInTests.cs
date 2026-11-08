@@ -113,12 +113,30 @@ public sealed class TwitchSignInTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public async Task Expired_device_session_renews_without_secret_or_browser_and_transient_failure_preserves_login()
+    {
+        var root=Path.Combine(Path.GetTempPath(),"twitch-renew-"+Guid.NewGuid().ToString("N"));
+        var handler=new TwitchHandler();using var http=new HttpClient(handler);var opens=0;
+        var service=new AuthenticationService(new AppConfig{Twitch=new(){ClientId="test-client",ClientSecret="legacy-secret"}},http,_=>opens++,root);
+        try{
+            await service.GetSessionAsync(default);
+            handler.ExpireOnce=true;handler.Paths.Clear();
+            var restored=await service.GetSessionAsync(default);
+            Assert.Equal("dennis",restored.Login);Assert.Equal(1,opens);Assert.Contains("/oauth2/token",handler.Paths);
+            handler.TemporaryFailure=true;
+            await Assert.ThrowsAsync<HttpRequestException>(()=>service.GetSessionAsync(default));
+            Assert.Equal(1,opens);Assert.True(File.Exists(Path.Combine(root,"twitch-token.dat")));
+        }finally{if(Directory.Exists(root))Directory.Delete(root,true);}
+    }
+
     private sealed class ImmediateProgress(Action<TwitchAuthorizationRequest> report) : IProgress<TwitchAuthorizationRequest>
     { public void Report(TwitchAuthorizationRequest value) => report(value); }
 
     private sealed class TwitchHandler : HttpMessageHandler
     {
         public bool RejectClient { get; init; }
+        public bool ExpireOnce;public bool TemporaryFailure;
         public List<string> Paths { get; } = [];
         private string[] _scopes = [];
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
@@ -133,7 +151,9 @@ public sealed class TwitchSignInTests
                 _scopes = Uri.UnescapeDataString(scopeValue.Replace('+', ' ')).Split(' ');
                 return Json(new { device_code = "synthetic-device", user_code = "DENNIS-CODE", verification_uri = "https://www.twitch.tv/activate", expires_in = 60, interval = 1 });
             }
-            if (path == "/oauth2/token") return Json(new { access_token = "synthetic-access", refresh_token = "synthetic-refresh" });
+            if (path == "/oauth2/token") {var form=await request.Content!.ReadAsStringAsync(token);Assert.DoesNotContain("client_secret",form);return Json(new { access_token = "synthetic-access", refresh_token = "synthetic-refresh" });}
+            if(path=="/oauth2/validate"&&TemporaryFailure)return new(HttpStatusCode.ServiceUnavailable);
+            if(path=="/oauth2/validate"&&ExpireOnce){ExpireOnce=false;return new(HttpStatusCode.Unauthorized);}
             if (path == "/oauth2/validate") return Json(new { client_id = "test-client", login = "dennis", user_id = "1002", scopes = _scopes, expires_in = 3600 });
             throw new InvalidOperationException("Unexpected non-Twitch request: " + path);
         }

@@ -14,7 +14,7 @@ public sealed class EventSubService
     private readonly string _clientId;
     private readonly string _accessToken;
     private readonly string _broadcasterId;
-    private readonly HttpClient _http = new();
+    private readonly HttpClient _http = new(new TwitchRenewingHandler());
     public event Func<RaidEvent, Task>? RaidReceived;
     public event Func<AdBreakEvent, Task>? AdBreakStarted;
     public event Func<ChatAlertEvent, Task>? ChatAlertReceived;

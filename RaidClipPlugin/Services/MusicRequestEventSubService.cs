@@ -16,7 +16,7 @@ public sealed class MusicRequestEventSubService : IDisposable
     private readonly string _accessToken;
     private readonly string _broadcasterId;
     private readonly string _rewardId;
-    private readonly HttpClient _http = new();
+    private readonly HttpClient _http = new(new TwitchRenewingHandler());
     private bool _subscriptionActive;
 
     public event Func<MusicRequestRedemption, Task>? RedemptionReceived;

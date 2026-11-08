@@ -23,6 +23,7 @@ public sealed class AuthenticationService
 
     public static IReadOnlyList<string> RequiredChatScopes { get; } =
         new[] { "user:read:chat", "user:write:chat" };
+    private static readonly SemaphoreSlim SessionGate=new(1,1);
     private readonly TwitchConfig _config;
     private readonly HttpClient _http;
     private readonly Action<string> _openBrowser;
@@ -53,21 +54,38 @@ public sealed class AuthenticationService
 
     public async Task<TwitchSession> GetSessionAsync(CancellationToken cancellationToken, IProgress<TwitchAuthorizationRequest>? authorization = null)
     {
+        await SessionGate.WaitAsync(cancellationToken);
+        try {
         var saved = await LoadTokenAsync(cancellationToken);
         if (saved is not null)
         {
             var valid = await ValidateAsync(saved.AccessToken, cancellationToken);
             if (valid is not null)
-                return valid with { RefreshToken = saved.RefreshToken };
+                return Track(valid with { RefreshToken = saved.RefreshToken });
 
             if (!string.IsNullOrWhiteSpace(saved.RefreshToken))
             {
                 var refreshed = await RefreshAsync(saved.RefreshToken, cancellationToken);
                 if (refreshed is not null)
-                    return refreshed;
+                    return Track(refreshed);
             }
         }
-        return await SignInAsync(cancellationToken, authorization);
+        return Track(await SignInAsync(cancellationToken, authorization));
+        } finally { SessionGate.Release(); }
+    }
+
+    private TwitchSession Track(TwitchSession session){
+        TwitchRenewingHandler.Register(session.AccessToken,async ct=>{
+            await SessionGate.WaitAsync(ct);
+            try{
+                var saved=await LoadTokenAsync(ct);
+                if(saved is null||string.IsNullOrEmpty(saved.RefreshToken))return null;
+                var renewed=await RefreshAsync(saved.RefreshToken,ct);
+                if(renewed?.UserId!=session.UserId)return null;
+                return renewed.AccessToken;
+            }finally{SessionGate.Release();}
+        });
+        return session;
     }
 
     private async Task<TwitchSession> SignInAsync(CancellationToken cancellationToken, IProgress<TwitchAuthorizationRequest>? authorization)
@@ -137,18 +155,20 @@ public sealed class AuthenticationService
             ["client_id"] = _config.ClientId
         };
 
-        if (!string.IsNullOrWhiteSpace(_config.ClientSecret))
-        {
-            fields["client_secret"] = _config.ClientSecret;
-        }
+        // Device-code login above is a public-client flow: renew with the
+        // same client credentials, not an unrelated legacy client secret.
 
         using var response = await _http.PostAsync(
             TokenUrl,
             new FormUrlEncodedContent(fields),
             cancellationToken);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode) {
+            if(response.StatusCode is System.Net.HttpStatusCode.BadRequest or System.Net.HttpStatusCode.Unauthorized)return null;
+            throw new HttpRequestException("Twitch-Anmeldung vorübergehend nicht erreichbar. Gespeicherte Anmeldung bleibt erhalten.",null,response.StatusCode);
+        }
         var token = await response.Content.ReadFromJsonAsync<TokenResponse>(JsonOptions, cancellationToken);
         if (token is null) return null;
+        if(string.IsNullOrWhiteSpace(token.RefreshToken))token=token with {RefreshToken=refreshToken};
         await SaveTokenAsync(token, cancellationToken);
         var session = await ValidateAsync(token.AccessToken, cancellationToken);
         return session is null ? null : session with { RefreshToken = token.RefreshToken };
@@ -159,7 +179,10 @@ public sealed class AuthenticationService
         using var request = new HttpRequestMessage(HttpMethod.Get, ValidateUrl);
         request.Headers.Authorization = new AuthenticationHeaderValue("OAuth", accessToken);
         using var response = await _http.SendAsync(request, cancellationToken);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode) {
+            if(response.StatusCode is System.Net.HttpStatusCode.BadRequest or System.Net.HttpStatusCode.Unauthorized)return null;
+            throw new HttpRequestException("Twitch-Anmeldung vorübergehend nicht erreichbar. Gespeicherte Anmeldung bleibt erhalten.",null,response.StatusCode);
+        }
         var validation = await response.Content.ReadFromJsonAsync<ValidationResponse>(JsonOptions, cancellationToken);
         if (validation is null ||
             validation.ClientId != _config.ClientId ||
