@@ -102,7 +102,7 @@ public sealed class EternalZoneTests:IDisposable
  public void DivineEnemyChanceIsExactlyOneThousandPercentRelativeAndDoesNotStackPerPiece(int pieces)
  {
   var c=Config();var p=Equipped("divine_infinity",pieces);var a=CharacterStatService.Calculate(p,c,RpgActivity.Dive);Assert.Equal(1000,a.EnemyEncounterChance);
-  var zone=c.Zones.Get("sunny_lagoon");Assert.Equal(99,RpgAdventureService.EnemyChance(zone,a));zone.EnemyChance=2;Assert.Equal(22,RpgAdventureService.EnemyChance(zone,a));zone.EnemyChance=0;Assert.Equal(0,RpgAdventureService.EnemyChance(zone,a));
+  var zone=c.Zones.Get("sunny_lagoon");Assert.Equal(99.5m,RpgAdventureService.EnemyChance(zone,a));zone.EnemyChance=2;Assert.Equal(22,RpgAdventureService.EnemyChance(zone,a));zone.EnemyChance=0;Assert.Equal(0,RpgAdventureService.EnemyChance(zone,a));
   p.Equipment.Clear();Assert.Equal(0,CharacterStatService.Calculate(p,c,RpgActivity.Dive).EnemyEncounterChance);Assert.Equal(.03m,c.Zones.EternalChances["normal"]);
  }
  [Fact]public void WrathProcsDoNotRecurseStacksStopAtTenAndExpire()
