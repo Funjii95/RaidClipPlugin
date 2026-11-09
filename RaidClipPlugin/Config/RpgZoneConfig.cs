@@ -17,8 +17,16 @@ public sealed class RpgZoneDefinition
     public decimal EnemyChance {get;set;}=45;
     public decimal EliteChance {get;set;}=10;
 }
-public sealed class RpgZoneConfig
+public sealed class RpgZoneConfig : System.Text.Json.Serialization.IJsonOnDeserialized
 {
+    public const decimal DefaultMimicChance = .5m;
+    public int MimicSpawnVersion {get;set;}
+    void System.Text.Json.Serialization.IJsonOnDeserialized.OnDeserialized()
+    {
+        if (MimicSpawnVersion >= 1) return;
+        foreach (var area in Areas) area.MimicChance = DefaultMimicChance;
+        MimicSpawnVersion = 1;
+    }
     public int FishBiomesVersion {get;set;}
     public List<RpgZoneDefinition> Areas {get;set;}=Defaults();
     public Dictionary<string,decimal> EternalChances {get;set;}=new(){["normal"]=.03m,["elite"]=.12m,["mimic"]=.20m,["endgame"]=.35m};
@@ -41,8 +49,8 @@ public sealed class RpgZoneConfig
         // supplement the five recipe fish, which remain available in multiple areas.
         string[] recipe=["sardine","perch","eel","crystal-carp","leviathan"];
         int[] hp=[70,150,270,430,650,950,1350,1900,2650,3700],attack=[8,16,28,44,65,92,130,185,260,360],armor=[3,7,12,19,28,40,55,75,100,135];
-        int[] chest=[8,10,12,14,16,18,20,22,24,28],mimic=[1,2,4,3,4,5,7,8,10,12];
+        int[] chest=[8,10,12,14,16,18,20,22,24,28];
         ItemRarity[] maximum=[ItemRarity.Uncommon,ItemRarity.Rare,ItemRarity.Epic,ItemRarity.Epic,ItemRarity.Legendary,ItemRarity.Legendary,ItemRarity.Cursed,ItemRarity.True,ItemRarity.Abyss,ItemRarity.Eternal];
-        return Enumerable.Range(0,10).Select(i=>new RpgZoneDefinition{Id=ids[i],Name=names[i],Level=(i+1)*10,Hp=hp[i],Attack=attack[i],Armor=armor[i],Enemies=enemies[i],Materials=mats[i],MaximumRarity=maximum[i],ChestChance=chest[i],MimicChance=mimic[i],Fish=(i==0?new[]{"sardine","perch","eel","crystal-carp","leviathan","sea_cucumber","shrimp","giant_shrimp","pufferfish","golden_pufferfish","vampire_squid","tuna"}:new[]{recipe[i%5],recipe[(i+1)%5],new[]{"shrimp","sea_cucumber","giant_shrimp","pufferfish","tuna","golden_pufferfish","vampire_squid","giant_shrimp","tuna","vampire_squid"}[i]})}).ToList();
+        return Enumerable.Range(0,10).Select(i=>new RpgZoneDefinition{Id=ids[i],Name=names[i],Level=(i+1)*10,Hp=hp[i],Attack=attack[i],Armor=armor[i],Enemies=enemies[i],Materials=mats[i],MaximumRarity=maximum[i],ChestChance=chest[i],MimicChance=DefaultMimicChance,Fish=(i==0?new[]{"sardine","perch","eel","crystal-carp","leviathan","sea_cucumber","shrimp","giant_shrimp","pufferfish","golden_pufferfish","vampire_squid","tuna"}:new[]{recipe[i%5],recipe[(i+1)%5],new[]{"shrimp","sea_cucumber","giant_shrimp","pufferfish","tuna","golden_pufferfish","vampire_squid","giant_shrimp","tuna","vampire_squid"}[i]})}).ToList();
     }
 }

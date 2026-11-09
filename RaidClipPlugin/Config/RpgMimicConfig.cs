@@ -3,7 +3,7 @@ namespace RaidClipPlugin.Config;
 public sealed class RpgMimicConfig
 {
     [Category("Fundchance"),DisplayName("Mimic aktiv")] public bool Enabled {get;set;}=true;
-    [Category("Fundchance"),DisplayName("Grundchance je Tauchgang (%)"),Description("Gilt auch ohne Perk. Abgrundsinn ergänzt 0,1 Prozentpunkte pro Rang (maximal +0,5).")]
+    [Category("Fundchance"),DisplayName("Grundchance je Tauchgang (%)"),Description("Maximal 0,5 % je Tauchgang. Regionale Mimics verwenden die Fundchance ihres Gebiets.")]
     public decimal BaseSpawnChance {get;set;}=.5m;
     [Category("Kampf"),DisplayName("Name")] public string Name {get;set;}="Mimic – Lebende Schatztruhe";
     [Category("Kampf"),DisplayName("Lebenspunkte")] public int HitPoints {get;set;}=200;
