@@ -381,6 +381,7 @@ public sealed partial class MainForm
         AddMinigameTab(tabs, "Chattexte", messages);
         AddMinigameTab(tabs, "Mod-Commands", commands);
         AddMinigameTab(tabs, "Warteschlange", queueLayout);
+        AddMinigameTab(tabs, "TIDAL (Test)", BuildTidalTestPanel());
 
 
         var layout = new TableLayoutPanel

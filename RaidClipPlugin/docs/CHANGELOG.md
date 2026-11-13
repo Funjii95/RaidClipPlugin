@@ -1,3 +1,10 @@
+## 2.8.16 – Zusätzlicher TIDAL-Test und nachgereichte Patchnotes
+
+- Eigener TIDAL-Testreiter ohne Änderungen an Spotify, bestehenden Commands oder Kanalpunkten.
+- HTTPS-Track-Links und separate lokale Merkliste; manueller offizieller Embed-Player mit separatem Browserprofil. Keine Desktop-Fernsteuerung oder vorgetäuschte Wiedergabe.
+- Online geprüft: Trackseite, oEmbed und Embed erreichbar. Anonymer Browser-Playversuch ohne bestätigte Wiedergabe; vollständige Songs und Kontenanmeldung bleiben manuell zu prüfen.
+- Die vorhandenen ReleaseDocs und nachgetragenen GitHub-Hinweise von 2.2.0 bis 2.8.15 werden direkt im Plugin eingebettet und offline in der Versionshistorie angezeigt.
+
 ## 2.1.37 – Original-Ottergrafiken für OBS
 
 - Gelieferte Otter-Collage unverändert eingebettet; getrennte Bildausschnitte für Rennen, Bosskampf und Heist ohne weiße Trennflächen oder Verzerrung.

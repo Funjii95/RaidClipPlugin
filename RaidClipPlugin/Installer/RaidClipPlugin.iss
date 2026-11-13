@@ -1,6 +1,6 @@
 #define MyAppName "Raid Clip Plugin"
 #ifndef MyAppVersion
-#define MyAppVersion "2.1.45"
+#define MyAppVersion "2.8.16"
 #endif
 #define MyAppPublisher "RaidClipPlugin"
 #define MyAppExeName "RaidClipPlugin.exe"
