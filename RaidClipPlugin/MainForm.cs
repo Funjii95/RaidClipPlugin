@@ -4912,7 +4912,10 @@ private IReadOnlyList<ModuleHealthViewModel> CreateInitialModuleHealthViewModels
         return layout;
     }
 
-    private static string BuildPatchNotesHistoryText()
+    private static string BuildPatchNotesHistoryText() =>
+        PatchNotesService.BuildHistory(BuildLegacyPatchNotesHistoryText());
+
+    private static string BuildLegacyPatchNotesHistoryText()
     {
         return string.Join(
             Environment.NewLine + Environment.NewLine,
