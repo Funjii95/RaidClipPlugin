@@ -7,7 +7,7 @@ namespace RaidClipPlugin.Services;
 public sealed record AdventureStatus(bool BossActive = false, int BossHp = 0, int BossMaxHp = 0,
     int BossPlayers = 0, DateTimeOffset? BossEndsAt = null, bool RaceActive = false,
     int RacePlayers = 0, long RaceStake = 0, DateTimeOffset? RaceEndsAt = null,
-    string BossEventId="",DateTimeOffset? BossStartedAt=null,string RaceEventId="",DateTimeOffset? RaceStartedAt=null,string BossName="Perlenwächter",bool BossIsMimic=false,decimal BossLegendaryChance=5);
+    string BossEventId="",DateTimeOffset? BossStartedAt=null,string RaceEventId="",DateTimeOffset? RaceStartedAt=null,string BossName="Perlenwächter",bool BossIsMimic=false,decimal BossLegendaryChance=5,string MimicAreaId="");
 
 public sealed class AdventureOverlayServer
 {
@@ -52,10 +52,19 @@ public sealed class AdventureOverlayServer
                 try
                 {
                     var path = context.Request.Url?.AbsolutePath;
-                    if (context.Request.HttpMethod != "GET" || path is not ("/" or "/mimic" or "/state" or "/community" or "/preview" or "/assets/otter-events.png" or "/assets/mimic.png"))
+                    if (context.Request.HttpMethod != "GET" || path is not ("/" or "/mimic" or "/state" or "/community" or "/preview" or "/assets/otter-events.png" or "/assets/mimic.png" or "/assets/current-mimic.webp"))
                     { context.Response.StatusCode = 404; continue; }
-                    if (path is "/assets/otter-events.png" or "/assets/mimic.png")
+                    if (path is "/assets/otter-events.png" or "/assets/mimic.png" or "/assets/current-mimic.webp")
                     {
+                        if(path=="/assets/current-mimic.webp"){
+                            var area=_status().MimicAreaId;
+                            using var regional=typeof(AdventureOverlayServer).Assembly.GetManifestResourceStream("RaidClipPlugin.Overlay.Mimics."+area+".webp");
+                            context.Response.Headers["Cache-Control"]="no-store";
+                            context.Response.ContentType=regional is null?"image/png":"image/webp";
+                            if(regional is not null)await regional.CopyToAsync(context.Response.OutputStream,token);
+                            else await context.Response.OutputStream.WriteAsync(MimicArtwork.Value,token);
+                            continue;
+                        }
                         context.Response.ContentType = "image/png";
                         context.Response.Headers["Cache-Control"] = "public, max-age=3600";
                         var image = path=="/assets/mimic.png"?MimicArtwork.Value:Artwork.Value;

@@ -7,7 +7,7 @@ namespace RaidClipPlugin.Services;
 public static class RpgHealthService
 {
     private static int BaseMaximum(RpgProfile p,RpgHealthConfig c) => checked(c.BaseHp + (Math.Clamp(p.PlayerLevel,1,c.MaximumLevel)-1)*c.HpPerLevel + RpgLevelStats.Bonus(p,c.MaximumLevel)*c.HpPerStamina);
-    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked((int)decimal.Floor((BaseMaximum(p,c)*(1+RpgPerkCatalog.Combined(p,"health")/100)+Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina,c.EquipmentSets),0,RpgEternalCombat.Enhanced(p)?1000000:c.EquipmentHpCap))*(1+Math.Clamp(RpgSetCombatService.Gear(p,"MaximumHpPercent")+RpgSetCombatService.Bonus(p,c.EquipmentSets,"MaximumHpPercent"),-90,RpgEternalCombat.Enhanced(p)?10000:200)/100)));
+    public static int Maximum(RpgProfile p, RpgHealthConfig c) => checked((int)decimal.Floor((BaseMaximum(p,c)*(1+RpgPerkCatalog.Combined(p,"health")/100)+Math.Clamp(CharacterStatService.EquipmentMaximumHp(p,c.HpPerStamina,c.EquipmentSets),0,RpgEternalCombat.Enhanced(p)?1000000:c.EquipmentHpCap))*(1+Math.Clamp(RpgSetCombatService.Gear(p,"MaximumHpPercent")+RpgSetCombatService.Bonus(p,c.EquipmentSets,"MaximumHpPercent"),-90,RpgEternalCombat.Enhanced(p)?10000:200)/100))) + p.Health.TankAvatarHp;
     internal static void ApplyStatMigration(RpgProfile p,RpgHealthConfig c)
     {
         p.Health??=new();var max=Maximum(p,c);
@@ -18,6 +18,7 @@ public static class RpgHealthService
     public static void Refresh(RpgProfile p, RpgHealthConfig c, DateTimeOffset now)
     {
         c.Validate(); p.Health ??= new();
+        RpgTankCombat.Refresh(p,c,now);
         RpgWeaponService.RefreshMana(p,now);
         var h=p.Health; var max=Maximum(p,c);
         if(h.CurrentHp is null) { h.CurrentHp=max; h.AppliedMaximumHp=max; h.LastPassiveRegen=now; }
@@ -45,8 +46,9 @@ public static class RpgHealthService
             });
             if(c.PassiveHealing)
             {
-                var accrued=extra+Math.Clamp(h.SushiRegenRemainder,0,0.9999999999999999999999999999m);
-                RpgSetCombatService.Heal(p,c,(int)Math.Min(int.MaxValue,Math.Min(credited,max)*(c.PassiveHp+RpgPerkCatalog.Bonus(p,"regen"))+decimal.Floor(accrued)),now);
+                // Keep fractional healing across intervals and reloads. Legacy property name is retained.
+                var accrued=extra+(c.EarlyLegendaries.Enabled&&RpgEarlyLegendaryEffects.Has(p,"kelp_vest")?Math.Min(credited,max)*c.PassiveSeconds/60m*c.EarlyLegendaries.RegenerationPerMinute:0)+Math.Min(credited,max)*max*c.PassiveHp/100m*c.PassiveSeconds/60m+Math.Clamp(h.SushiRegenRemainder,0,0.9999999999999999999999999999m);
+                RpgSetCombatService.Heal(p,c,(int)Math.Min(int.MaxValue,Math.Min(credited,max)*RpgPerkCatalog.Bonus(p,"regen")+decimal.Floor(accrued)),now,allowRevive:true);
                 h.SushiRegenRemainder=h.CurrentHp>=max?0:accrued-decimal.Floor(accrued);
             }
             h.LastPassiveRegen=h.LastPassiveRegen.Value.AddSeconds(intervals*c.PassiveSeconds);
@@ -82,7 +84,7 @@ public static class RpgHealthService
     }
     public static string Status(RpgProfile p,RpgHealthConfig c) =>
         $"❤️ HP: {p.Health.CurrentHp}/{Maximum(p,c)} | Level {p.PlayerLevel} ({p.Experience} EXP) | " +
-        $"Passiv: +{(c.PassiveHealing?c.PassiveHp+RpgPerkCatalog.Bonus(p,"regen")+RpgSushiService.PassiveBonus(p,DateTimeOffset.UtcNow)*c.PassiveSeconds/60:0)} HP/{c.PassiveSeconds}s | Chat: +{(c.ChatHealing?c.ChatHp+RpgSushiService.ChatBonus(p,DateTimeOffset.UtcNow):0)} HP/{c.ChatCooldownSeconds}s." +
+        $"Passiv: +{(c.PassiveHealing?decimal.Floor(Maximum(p,c)*c.PassiveHp/100m*c.PassiveSeconds/60m)+RpgPerkCatalog.Bonus(p,"regen")+RpgSushiService.PassiveBonus(p,DateTimeOffset.UtcNow)*c.PassiveSeconds/60:0)} HP/{c.PassiveSeconds}s | Chat: +{(c.ChatHealing?decimal.Floor(Maximum(p,c)*c.ChatHp/100m)+RpgSushiService.ChatBonus(p,DateTimeOffset.UtcNow):0)} HP/{c.ChatCooldownSeconds}s." +
         (p.Health.Defeated ? " Für den zuletzt angegriffenen Boss besiegt; Heilung hebt diese Sperre nicht auf." : "");
     public static async Task HealChatAsync(ViewerPointStore points,RpgConfig config,ChatMessage message,DateTimeOffset now,CancellationToken token)
     {
@@ -94,7 +96,7 @@ public static class RpgHealthService
             var h=a.Rpg.Health;
             if(config.Health.ChatHealing && (h.LastChatHeal is null || (now-h.LastChatHeal.Value).TotalSeconds>=config.Health.ChatCooldownSeconds))
             {
-                RpgSetCombatService.Heal(a.Rpg,config.Health,config.Health.ChatHp+RpgSushiService.ChatBonus(a.Rpg,now),now);
+                RpgSetCombatService.Heal(a.Rpg,config.Health,(int)decimal.Floor(Maximum(a.Rpg,config.Health)*config.Health.ChatHp/100m)+RpgSushiService.ChatBonus(a.Rpg,now),now,allowRevive:true);
                 h.LastChatHeal=now;
             }
             return new(true);

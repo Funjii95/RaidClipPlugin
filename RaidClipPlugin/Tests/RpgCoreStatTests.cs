@@ -7,6 +7,16 @@ namespace RaidClipPlugin.Tests;
 
 public sealed class RpgCoreStatTests
 {
+    [Theory]
+    [InlineData(ItemRarity.Common)] [InlineData(ItemRarity.Legendary)] [InlineData(ItemRarity.Eternal)]
+    public void WeaponsAlwaysHaveDamageIncludingPreviouslyMigratedInventory(ItemRarity rarity)
+    {
+        var item=new RpgItem{Slot=EquipmentSlot.Weapon,Rarity=rarity,CoreStatsVersion=3,UpgradeLevel=7,Attributes=new(){Power=42}};
+        var id=item.InstanceId;Assert.True(RpgCoreStatService.Apply(item));Assert.True(item.Attributes.Attack>0);
+        Assert.Equal(42,item.Attributes.Power);Assert.Equal(7,item.UpgradeLevel);Assert.Equal(id,item.InstanceId);
+        var attack=item.Attributes.Attack;Assert.False(RpgCoreStatService.Apply(item));Assert.Equal(attack,item.Attributes.Attack);
+        item.Attributes.Attack=320;Assert.False(RpgCoreStatService.Apply(item));Assert.Equal(320,item.Attributes.Attack);
+    }
     private sealed class Low:IDuelRandom {public int NextInclusive(int min,int max)=>min;}
     [Theory]
     [InlineData(ItemRarity.Common,1,1)] [InlineData(ItemRarity.Uncommon,2,2)] [InlineData(ItemRarity.Rare,3,4)]

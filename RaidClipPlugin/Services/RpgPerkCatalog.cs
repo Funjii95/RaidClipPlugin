@@ -52,7 +52,7 @@ public static class RpgPerkCatalog
     }
     public static void Victory(RpgProfile profile,DateTimeOffset now)
     {if(Bonus(profile,"victoryDamage")>0)profile.Cooldowns["perk:otter-rage"]=now.AddSeconds(60);}
-    public static decimal MimicChance(RpgProfile profile,RpgConfig config)=>config.Mimic.Enabled?Math.Clamp(config.Mimic.BaseSpawnChance+Bonus(profile,"bossDiscovery"),0,100):0;
+    public static decimal MimicChance(RpgProfile profile,RpgConfig config)=>config.Mimic.Enabled?Math.Clamp(config.Mimic.BaseSpawnChance,0,RpgZoneConfig.DefaultMimicChance):0;
     public static bool DiscoverMimic(RpgProfile profile,RpgConfig config,IDuelRandom random)
     {var chance=MimicChance(profile,config);return chance>0 && random.NextInclusive(0,9999)<chance*100;}
     public static double Cooldown(RpgProfile profile,int seconds,string effect)=>Math.Max(1,Math.Clamp(seconds,1,86400)*(1-(double)Math.Clamp(Combined(profile,effect),0,95)/100));

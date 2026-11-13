@@ -62,7 +62,7 @@ public sealed class RpgSalvageService(ViewerPointStore points, RpgConfig config,
             chosen = new[] { profile.Inventory[number-1] };
         }
         else if (selection == "duplicates")
-            chosen = profile.Inventory.Where(i=>!string.IsNullOrWhiteSpace(i.ItemId)).GroupBy(RollSignature).SelectMany(g => g.OrderByDescending(i => Blocked(i,profile) is not null).Skip(1))
+            chosen = profile.Inventory.Where(i=>i.Slot.HasValue && i.Kind!=RpgItemKind.Consumable && !string.IsNullOrWhiteSpace(i.ItemId)).GroupBy(RollSignature).SelectMany(g => g.OrderByDescending(i => Blocked(i,profile) is not null).Skip(1))
                 .Where(i => Blocked(i,profile) is null && !Sensitive(i));
         else if (selection == "all common") chosen = profile.Inventory.Where(i => i.Rarity == ItemRarity.Common && Blocked(i,profile) is null && !Sensitive(i));
         else return new(false,"Nutzung: !salvage <Nummer> | duplicates | all common.");
@@ -128,7 +128,7 @@ public sealed class RpgSalvageService(ViewerPointStore points, RpgConfig config,
         var profile=(await points.GetProfileAsync(userId,token)).Entry.Rpg;
         IEnumerable<RpgItem> chosen=selection switch {
             "common"=>profile.Inventory.Where(i=>i.Rarity==ItemRarity.Common && Blocked(i,profile) is null && !Sensitive(i)),
-            "duplicates"=>profile.Inventory.Where(i=>!string.IsNullOrWhiteSpace(i.ItemId)).GroupBy(RollSignature)
+            "duplicates"=>profile.Inventory.Where(i=>i.Slot.HasValue && i.Kind!=RpgItemKind.Consumable && !string.IsNullOrWhiteSpace(i.ItemId)).GroupBy(RollSignature)
                 .SelectMany(g=>g.OrderByDescending(i=>Blocked(i,profile) is not null).Skip(1))
                 .Where(i=>Blocked(i,profile) is null && !Sensitive(i)),
             _=>[]};
@@ -163,7 +163,7 @@ public sealed class RpgSalvageService(ViewerPointStore points, RpgConfig config,
                 return new(false,"Perlengutschrift würde das Kontolimit überschreiten. Nichts wurde zerlegt.");
             var ids=quote.Items.Select(i=>i.InstanceId).ToHashSet(StringComparer.Ordinal);
             account.Rpg.Inventory.RemoveAll(i=>ids.Contains(i.InstanceId));
-            account.Points=checked(account.Points+quote.Total);
+            account.Points=checked(account.Points+quote.Total);RpgStatisticsService.Add(account.Rpg,"salvagedItems",ids.Count);RpgStatisticsService.Add(account.Rpg,"pearlsEarned",quote.Total);
             return new(true);
         },token,backupBeforeCommit:true);
         if(!result.Success) return new(false,result.Error,Balance:result.Balance);

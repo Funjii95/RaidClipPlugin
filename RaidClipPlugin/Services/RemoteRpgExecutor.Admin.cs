@@ -37,7 +37,7 @@ internal sealed partial class RemoteRpgExecutor
                     RpgItemGenerationService.Generate(item,rpg.DiveLoot,new CryptoDuelRandom());
                     RpgCoreStatService.Apply(item);a.Rpg.Inventory.Add(item);added.Add(item.InstanceId);
                 }
-                try{SnapshotValidation.Validate(new(1,channel,targetUser,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(a)),channel);}catch(InvalidDataException){return new(false,"Inventar überschreitet Cloud-Größenlimit.");}
+                try{SnapshotValidation.ValidateLocalSource(new(1,channel,targetUser,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(a)),channel);}catch(InvalidDataException){return new(false,"Inventar überschreitet Cloud-Größenlimit.");}
                 return new(true);
             },ct);
             var setMessage=result.Success?$"{set.Name} ({set.ItemIds.Count} Teile) für Twitch-ID {targetUser}: {added.Count} fehlende Teile gespeichert. Vorhandene Teile bleiben erhalten.":result.Error;
@@ -92,7 +92,7 @@ internal sealed partial class RemoteRpgExecutor
         var resultGrant=await points.ApplyRpgAsync(target,account.DisplayName,"admin:"+e.Intent.ActionId.ToString("N"),a=>
         {
             a.Rpg.Inventory.AddRange(created);
-            try{SnapshotValidation.Validate(new(1,channel,target,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(a)),channel);}
+            try{SnapshotValidation.ValidateLocalSource(new(1,channel,target,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(a)),channel);}
             catch(InvalidDataException){return new(false,"Items nicht erstellt: Der Spielstand würde die Cloud-Größenbegrenzung überschreiten. Zuerst Inventar aufräumen.");}
             return new(true);
         },ct);

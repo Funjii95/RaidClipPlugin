@@ -1,0 +1,162 @@
+{
+  "starter_crab_breaker": {
+    "src": "./items/starter/starter_crab_breaker.webp",
+    "name": "Krabbenbrecher",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "feaa7dcad5dc53a658a89eedc8df52a0c8b468d9b91c19e76479d7f2c7160f37",
+    "assetSha256": "3c1584fe4a3836f172857d9bd85b2b209706abb9950b9b18cd3bde538748c9ff"
+  },
+  "starter_pearl_spear": {
+    "src": "./items/starter/starter_pearl_spear.webp",
+    "name": "Perlenlanze",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "c05edbd38d9275dbf659e0e78154b85314045acc0444dd313b20bf3e3546387e",
+    "assetSha256": "7f244441eceb6de760958055a852158c3a6dccda1888a377883c7bbd0279db89"
+  },
+  "starter_tide_dagger": {
+    "src": "./items/starter/starter_tide_dagger.webp",
+    "name": "Gezeitendolch",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "62210cfac0f0da6c6936bf46a9b051d94adfe0a2896deb374c71c83e6857c50a",
+    "assetSha256": "97a9d237790b9211f7de61a99fb411a116932b927df146f7742288236b788063"
+  },
+  "starter_hunter_helm": {
+    "src": "./items/starter/starter_hunter_helm.webp",
+    "name": "Helm des Jägers",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "6bb0cb20e791bbcb96f6a25290e4ed8bb6650f0a59c18397ffa3afdd277a2799",
+    "assetSha256": "1b096e17d0d297fee2530358347931435b9b8ac759dc9d22e350913320f20760"
+  },
+  "starter_bubble_hood": {
+    "src": "./items/starter/starter_bubble_hood.webp",
+    "name": "Blasenhaube",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "52a126dc3b8cc948d7017d8e40cec3ea7fe8d07b0fdb23efa06bf9e5b76800a9",
+    "assetSha256": "a055339002736d85514a66124a28efd4646c999c46539f2b9d3f3bcf6e3c5338"
+  },
+  "starter_coral_crown": {
+    "src": "./items/starter/starter_coral_crown.webp",
+    "name": "Korallenkrone",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "ce7366b85f9a12688cca0472e18e762642303a6d1fd227ddbee5cfd6a3cc30fc",
+    "assetSha256": "dd05fa474c7a6ced6fa41486bcbb98084a22e5b293eff05e5be84d46ba2f1fdf"
+  },
+  "starter_forgotten_plate": {
+    "src": "./items/starter/starter_forgotten_plate.webp",
+    "name": "Panzer des Vergessenen",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "838d73418a845affc242b4c612e49701e8e7604292ca9bcb80156da1383dbdc0",
+    "assetSha256": "f685d1f0feb472a166216ca35061fef2f6c95d67660263433b3e15bbaaccfed0"
+  },
+  "starter_shell_guard": {
+    "src": "./items/starter/starter_shell_guard.webp",
+    "name": "Muschelbastion",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "5410fe6d8c90bb461bdeeb9ae13edd3aa5f5cdd5716978ebcb46b0f8263285dc",
+    "assetSha256": "58c09648db02ff78cc3d27b58bfb6b053582404972a14cc6ab454f660c21eed9"
+  },
+  "starter_kelp_vest": {
+    "src": "./items/starter/starter_kelp_vest.webp",
+    "name": "Weste des Lebenskelps",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "a0296a21028ef51894a5da1e497adf52d07edabcf29727572c09abbc31bbeffc",
+    "assetSha256": "c13b3e893aa4cbc46345238e001f1c51dde0a0a1b2dbfdf9551625c846d704d7"
+  },
+  "starter_reef_grip": {
+    "src": "./items/starter/starter_reef_grip.webp",
+    "name": "Riffgreifer",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "62f0dcb6fdd4aa791c090a512938b3e7b889eb423465ccc180d027331afd2488",
+    "assetSha256": "5511c67241964e262a2c8a483f18639b5e7bdaa2a8ba2009d1019849aaae902a"
+  },
+  "starter_echo_gloves": {
+    "src": "./items/starter/starter_echo_gloves.webp",
+    "name": "Handschuhe des Echos",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "4f3b6a76b7317e1fe86ca27ec4872c2ede0a098899591d87cc98281e7e6ad5d2",
+    "assetSha256": "64c0dde87a16f58a0d2f9cdfa925418e1bb91fbe2bac3b23faa57d30b087e12f"
+  },
+  "starter_ghost_flippers": {
+    "src": "./items/starter/starter_ghost_flippers.webp",
+    "name": "Geisterflossen",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "d094a4357402f27c86689820f3f8b4a2f58ebf72e5984947711bb37847f96618",
+    "assetSha256": "c2d94a6576fc50fb8d1f13c1e47c09355e697a08ce25b6c759159c9e54e65e60"
+  },
+  "starter_current_boots": {
+    "src": "./items/starter/starter_current_boots.webp",
+    "name": "Stiefel der Strömung",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "a97286288e26d33b8444c6548b9ac0100b6f047531316fa46411fa2a2fb354b2",
+    "assetSha256": "950a89615eff0a1b347e0d122e218f6fa94b306efc4e360a149117b674c83bc9"
+  },
+  "starter_turtle_boots": {
+    "src": "./items/starter/starter_turtle_boots.webp",
+    "name": "Schildkrötenstiefel",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "661ef6b25e414f5c57fdffe6f8237b05bfdaf75d2b75f7d2c0280b63873cecae",
+    "assetSha256": "85aba26258d8178635c63c5ae3375cb94856e0f0c7eb0d7f76a8db68c2732531"
+  },
+  "starter_healing_ring": {
+    "src": "./items/starter/starter_healing_ring.webp",
+    "name": "Ring der Tiefenheilung",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "663d23c5428146317ecfde30662bda9db7cd86f1d1075bfe5df66e6b8968ca07",
+    "assetSha256": "5cf0d4172e87727e53febdab41ebb55bd6bdeb36a7d906c9937c9e6936807359"
+  },
+  "starter_sun_ring": {
+    "src": "./items/starter/starter_sun_ring.webp",
+    "name": "Sonnenperlenring",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "74cb53c337786020a1dfa61f05c6bd94cb49b7112162284fd0f9ad4671726e27",
+    "assetSha256": "474f0bd72378767382f9c409b414ba09e00808fc71562295503b4a8a65c7c65a"
+  },
+  "starter_abyss_luck": {
+    "src": "./items/starter/starter_abyss_luck.webp",
+    "name": "Abyssaler Glücksring",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "b0547c01e8afc146b64e1ff104a2258be0ca4016eb6991919e61f83156340104",
+    "assetSha256": "073890deb167b7fca38a73dcd54434f6da2c1baa3b266bf17bdd23c9ebd234a4"
+  },
+  "starter_precision_ring": {
+    "src": "./items/starter/starter_precision_ring.webp",
+    "name": "Ring der Runenpräzision",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "fe5f13d52b484957cabbd16664ad6d75db0aaa28fcecaef834bf31506584203c",
+    "assetSha256": "4a6626d78d5666771101dea2ea2ae11eef263724d50669ef6dd7596c96225556"
+  },
+  "starter_pearl_amulet": {
+    "src": "./items/starter/starter_pearl_amulet.webp",
+    "name": "Perlentaucher-Amulett",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "1162c2b80d00ba61e5a426a8997c44cea6687227485109d291ebff12d8233640",
+    "assetSha256": "19699d02e7f56958819c299903d30b8f0bef33e97cb6cd57d5d047476d8aa1b7"
+  },
+  "starter_life_amulet": {
+    "src": "./items/starter/starter_life_amulet.webp",
+    "name": "Amulett der Lebensströmung",
+    "width": 512,
+    "height": 512,
+    "sourceSha256": "59363e87b683e6ea846e114e9379df39765d2f710a2465aab8d21411626fd1ca",
+    "assetSha256": "cdab95700ca6df07e8c461d05f84b8308bca4b9f5dced458586d7b581b946b54"
+  }
+}

@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using RaidClipPlugin.Models;
 
 namespace RaidClipPlugin.Services;
@@ -18,8 +18,13 @@ public sealed partial class ViewerPointStore
             var draft=JsonSerializer.Deserialize<Dictionary<string,ViewerPointEntry>>(JsonSerializer.Serialize(original,JsonOptions),JsonOptions)!;
             var changed=0;
             foreach(var (id,entry) in draft){
-                if(IsPrivacyBlocked(id)||!entry.Rpg.Inventory.Any(i=>i.Slot.HasValue&&i.Kind!=RpgItemKind.Consumable&&i.CoreStatsVersion<3)&&!RpgHealthService.NeedsLevelStatMigration(entry.Rpg,health))continue;
-                RpgCoreStatService.Upgrade(entry.Rpg);RpgHealthService.ApplyStatMigration(entry.Rpg,health);
+                if(IsPrivacyBlocked(id))continue;
+                // Current-version items can still need a newer balance correction.
+                // Evaluate every item on the detached draft; never short-circuit the loop.
+                var equipmentChanged=false;
+                foreach(var item in entry.Rpg.Inventory)equipmentChanged |= RpgCoreStatService.Apply(item);
+                if(!equipmentChanged&&!RpgHealthService.NeedsLevelStatMigration(entry.Rpg,health))continue;
+                RpgHealthService.ApplyStatMigration(entry.Rpg,health);
                 entry.UpdatedAt=DateTimeOffset.UtcNow;changed++;
             }
             if(changed==0)return 0;
@@ -100,6 +105,10 @@ public sealed partial class ViewerPointStore
         account.Rpg ??= new();
         if (account.Rpg.SchemaVersion != 1) throw new InvalidOperationException("Unbekannte RPG-Datenversion.");
         SnapshotProtocol.TalentRules.Validate(account.Rpg.PlayerLevel,account.Rpg.TalentRanks);
+        account.Rpg.Party??=new();SnapshotProtocol.PartySnapshot.Validate(account.Rpg.Party,account.UserId);
+        account.Rpg.CombatRewards??=[];SnapshotProtocol.CombatRewardReceipt.Validate(account.Rpg.CombatRewards);
+        if(!Enum.IsDefined(account.Rpg.Role))throw new InvalidDataException("Ungültige Rolle.");
+        account.Rpg.Statistics??=new();SnapshotProtocol.RpgStatistics.Validate(account.Rpg.Statistics);
         account.Rpg.Quests??=new();SnapshotProtocol.QuestProgressRules.Validate(account.Rpg.Quests);
         account.Rpg.Materials ??= new();
         account.Rpg.Materials.Validate();
@@ -138,7 +147,10 @@ public sealed partial class ViewerPointStore
                 return new(false, "Aktion wurde bereits verarbeitet.", draft.Points, true);
             var result = mutate(draft);
             if (!result.Success) return new(false, result.Error, original?.Points ?? 0);
+            var beforeSalvage=draft.Points;
             RpgCollectionInventory.SalvageOverflow(draft, _collectionSalvage, _collectionMaximumBalance);
+            if(draft.Rpg.DiveSeries is {} series&&original?.Rpg.DiveSeries is {} previous&&series.Id==previous.Id&&series.Completed>previous.Completed)
+                series.Pearls=checked(series.Pearls+Math.Max(0,draft.Points-beforeSalvage));
             if (draft.Points < 0 || draft.UserId != userId)
                 throw new InvalidOperationException("Ungültiger RPG-Kontozustand.");
             var previousBoss=_globalBoss;

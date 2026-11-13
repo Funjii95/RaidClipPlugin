@@ -152,7 +152,7 @@ public sealed class PublisherTests : IDisposable
     public async Task Authenticated_requests_are_rate_limited()
     {
         var message = Message();
-        for (var i = 0; i < 60; i++) Assert.Equal(HttpStatusCode.OK, (await Post(message)).StatusCode);
+        for (var i = 0; i < 600; i++) Assert.Equal(HttpStatusCode.OK, (await Post(message)).StatusCode);
         Assert.Equal(HttpStatusCode.TooManyRequests, (await Post(message)).StatusCode);
     }
 

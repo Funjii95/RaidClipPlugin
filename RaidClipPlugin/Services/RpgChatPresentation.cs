@@ -20,7 +20,7 @@ public static class RpgChatPresentation
     { RpgActivity.Fishing => "Angelaktionen", RpgActivity.Dive => "Tauchgänge", RpgActivity.Boss => "Bossangriffe", _ => "Aktionen" };
     public static string SlotName(EquipmentSlot slot) => slot switch
     { EquipmentSlot.Weapon => "Waffe", EquipmentSlot.Helmet => "Helm", EquipmentSlot.Chest => "Brust", EquipmentSlot.Gloves => "Handschuhe",
-        EquipmentSlot.Boots => "Schuhe", EquipmentSlot.Ring1 => "Ring 1", EquipmentSlot.Ring2 => "Ring 2", EquipmentSlot.Amulet => "Amulett", _ => slot.ToString() };
+        EquipmentSlot.Trinket1 => "Trinket 1", EquipmentSlot.Trinket2 => "Trinket 2", EquipmentSlot.Belt => "Gürtel", EquipmentSlot.Boots => "Schuhe", EquipmentSlot.Ring1 => "Ring 1", EquipmentSlot.Ring2 => "Ring 2", EquipmentSlot.Amulet => "Amulett", _ => slot.ToString() };
     public static string ItemIcon(EquipmentSlot? slot) => slot switch
     {
         EquipmentSlot.Gloves => "🧤", EquipmentSlot.Helmet => "🪖", EquipmentSlot.Chest => "🛡️",

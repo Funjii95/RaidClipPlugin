@@ -55,9 +55,13 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
             var instanceId = numbered ? view![number - 1] : selection;
             var item = account.Rpg.Inventory.SingleOrDefault(i => i.InstanceId == instanceId);
             if (item is null) return new(false, "Dieser Gegenstand ist nicht in deinem Inventar.");
+            if(account.Rpg.PlayerLevel<item.MinimumLevel)return new(false,$"Benötigt Stufe {item.MinimumLevel}.");
             // Persisted slot remains authoritative for legacy items without Kind metadata.
             if (item.Slot is null)
                 return new(false, $"{RpgChatPresentation.ItemName(item)} ist " + (item.Kind == RpgItemKind.Consumable ? "ein Verbrauchsgegenstand" : "ein Schatz") + " und kann nicht ausgerüstet werden.");
+            var trinket=RpgTrinketCatalog.IsSlot(item.Slot);
+            if(trinket&&account.Rpg.Inventory.Any(i=>i.ItemId==item.ItemId&&i.InstanceId!=instanceId&&account.Rpg.Equipment.Values.Contains(i.InstanceId)))return new(false,"Dieses Trinket ist bereits ausgerüstet. Wähle zwei verschiedene Trinkets.");
+            if(trinket&&requestedSlot is null){var occupied=account.Rpg.Equipment;requestedSlot=occupied.FirstOrDefault(e=>e.Value==instanceId).Value is not null?occupied.First(e=>e.Value==instanceId).Key:!occupied.ContainsKey(EquipmentSlot.Trinket1)?EquipmentSlot.Trinket1:!occupied.ContainsKey(EquipmentSlot.Trinket2)?EquipmentSlot.Trinket2:null;if(requestedSlot is null)return new(false,"Beide Trinketplätze sind belegt. Wähle Trinket1 oder Trinket2 zum Ersetzen.");}
             var ring = item.Slot is EquipmentSlot.Ring1 or EquipmentSlot.Ring2;
             var slot = requestedSlot ?? item.Slot.Value;
             if (ring && requestedSlot is null)
@@ -69,7 +73,7 @@ public sealed class RpgProgressionService(ViewerPointStore points, RpgConfig con
                 else return new(false, $"Beide Ringplätze sind belegt. Wähle !equip {selection} ring1 oder !equip {selection} ring2 zum Ersetzen.");
             }
             if (!Enum.IsDefined(slot)) return new(false, "Ungültiger Ausrüstungsplatz.");
-            if (item.Slot != slot && !(ring && slot is EquipmentSlot.Ring1 or EquipmentSlot.Ring2)) return new(false, "Unpassender Ausrüstungsplatz.");
+            if (item.Slot != slot && !(ring && slot is EquipmentSlot.Ring1 or EquipmentSlot.Ring2) && !(trinket && RpgTrinketCatalog.IsSlot(slot))) return new(false, "Unpassender Ausrüstungsplatz.");
             if(config.Health.Enabled) RpgHealthService.Refresh(account.Rpg,config.Health,DateTimeOffset.UtcNow);
             foreach (var old in account.Rpg.Equipment.Where(p => p.Value == instanceId).Select(p => p.Key).ToArray()) account.Rpg.Equipment.Remove(old);
             account.Rpg.Equipment[slot] = instanceId;

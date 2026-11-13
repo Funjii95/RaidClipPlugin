@@ -50,7 +50,7 @@ public sealed partial class AdventureGameService
         var current=new AdventureStatus(
         _boss is not null, _boss?.Hp ?? 0, _boss?.MaximumHp ?? 0,
         _boss?.Players.Count ?? 0, _boss?.End, _race is not null, _race?.Players.Count ?? 0, _race?.Stake ?? 0, _race?.End,
-        _boss?.Id??"",_boss?.End.AddSeconds(-Math.Clamp(_boss.Config.DurationSeconds,10,1800)),_race?.Id??"",_race?.End.AddSeconds(-Math.Clamp(_race.Config.Adventures.Race.JoinSeconds,5,600)),_boss?.Config.DisplayName??"Perlenwächter",_boss?.Config.IsMimic??false,_boss?.Config.IsMimic==true?(_boss.AreaState is not null?RpgRegionalMimics.EquipmentChance:_config.Adventures.Rpg.Mimic.LegendaryChance):_config.Adventures.Rpg.Mimic.NormalBossLegendaryChance);
+        _boss?.Id??"",_boss?.End.AddSeconds(-Math.Clamp(_boss.Config.DurationSeconds,10,1800)),_race?.Id??"",_race?.End.AddSeconds(-Math.Clamp(_race.Config.Adventures.Race.JoinSeconds,5,600)),_boss?.Config.DisplayName??"Perlenwächter",_boss?.Config.IsMimic??false,_boss?.Config.IsMimic==true?(_boss.AreaState is not null?RpgRegionalMimics.EquipmentChance:_config.Adventures.Rpg.Mimic.LegendaryChance):_config.Adventures.Rpg.Mimic.NormalBossLegendaryChance,_boss?.Config.IsMimic==true?_boss.AreaState?.Bosses.FirstOrDefault()?.AreaId??"":"");
         Volatile.Write(ref _status,current);
         if(current.BossActive && current.BossEventId!=previous.BossEventId)NotifyOverlayStart(CommunityEventType.Boss,current.BossEventId);
         if(current.RaceActive && current.RaceEventId!=previous.RaceEventId)NotifyOverlayStart(CommunityEventType.Race,current.RaceEventId);
@@ -470,6 +470,7 @@ public sealed partial class AdventureGameService
                     if(RpgEternalCombat.Judgment(account.Rpg,_config.Adventures.Rpg))damage=_boss.Hp;
                     RpgWeaponService.AfterHit(account.Rpg,_config.Adventures.Rpg,hit.Spell,Math.Min(damage,_boss.Hp),clock);
                     var confirmedTotal=Math.Min(damage,_boss.Hp);
+                    RpgEarlyLegendaryEffects.AfterHit(confirmedTotal,account.Rpg,_config.Adventures.Rpg,_random,clock);
                     var confirmedDirect=hit.Damage>0?(int)Math.Min(confirmedTotal,(decimal)confirmedTotal*hit.DirectDamage/hit.Damage):0;
                     var confirmedSoul=hit.Damage>0?(int)Math.Min(confirmedTotal-confirmedDirect,(decimal)confirmedTotal*hit.SoulProcDamage/hit.Damage):0;
                     RpgEternalEightCombat.AfterDirect(account.Rpg,_config.Adventures.Rpg,confirmedDirect,confirmedSoul,hit.Critical,clock);
@@ -490,6 +491,8 @@ public sealed partial class AdventureGameService
                         receivedDamage=RpgWeaponService.Counter(receivedDamage,account.Rpg,hit.Spell,clock);
                         receivedDamage=RpgEternalCombat.Receive(receivedDamage,account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
                         receivedDamage=RpgEternalEightCombat.Receive(receivedDamage,account.Rpg,_config.Adventures.Rpg,_boss.Id,!_boss.Config.IsMimic,clock);
+                        receivedDamage=RpgEarlyLegendaryEffects.Receive(receivedDamage,account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
+                        receivedDamage=RpgTankCombat.Lethal(receivedDamage,account.Rpg,_config.Adventures.Rpg,clock);
                         health.CurrentHp=Math.Max(0,health.CurrentHp!.Value-receivedDamage);
                         RpgDepthsCombatService.AfterCounter(account.Rpg,_config.Adventures.Rpg,_boss.Id,clock);
                         playerDied=health.Defeated=health.CurrentHp==0;

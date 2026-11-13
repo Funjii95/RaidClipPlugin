@@ -41,11 +41,49 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
         var view=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("questStatus","{}")),default);Assert.True(view.Success);using var data=JsonDocument.Parse(view.DataJson!);Assert.Equal(11,data.RootElement.GetProperty("quests").GetArrayLength());
         var start=Envelope(ActionApiFixture.Intent("startQuest","{\"questId\":\"tutorial\"}"));var result=await executor.ExecuteAsync(start,default);Assert.True(result.Success);Assert.Equal(result,await Executor().ExecuteAsync(start,default));
         var forged=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("claimQuest","{\"questId\":\"tutorial\"}")),default);Assert.False(forged.Success);
-        Assert.InRange(System.Text.Encoding.UTF8.GetByteCount(executor.CatalogJson()),1,48000);
+        Assert.InRange(System.Text.Encoding.UTF8.GetByteCount(executor.CatalogJson()),1,96000);
+    }
+    [Fact]public async Task Dungeon_intents_return_committed_party_hp_and_replay_without_a_second_attack()
+    {
+        var executor=await SeedAsync(level:30);
+        var overview=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("dungeonStatus","{}")),default);Assert.True(overview.Success);
+        using(var data=JsonDocument.Parse(overview.DataJson!))Assert.Equal(3,data.RootElement.GetProperty("dungeons").GetArrayLength());
+        var start=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("partyCombat","{\"operation\":\"startDungeon\",\"dungeonId\":\"runen_halls\",\"difficulty\":\"normal\"}")),default);Assert.True(start.Success,start.Message);
+        var intent=Envelope(ActionApiFixture.Intent("partyCombat","{\"operation\":\"attack\"}"));var hit=await executor.ExecuteAsync(intent,default);Assert.True(hit.Success,hit.Message);
+        Assert.Equal(hit,await Executor().ExecuteAsync(intent,default));
+        using(var data=JsonDocument.Parse(hit.DataJson!)){
+            var instance=data.RootElement.GetProperty("party").GetProperty("snapshot").GetProperty("Party").GetProperty("Instance");Assert.Equal(1,instance.GetProperty("Turn").GetInt32());Assert.True(instance.GetProperty("Hp").GetInt32()<instance.GetProperty("MaximumHp").GetInt32());
+            Assert.Equal("1001",data.RootElement.GetProperty("profile").GetProperty("UserId").GetString());Assert.True(data.RootElement.TryGetProperty("stats",out _));
+        }
+        var locked=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("selectRole","{\"role\":\"healer\"}")),default);Assert.False(locked.Success);
+    }
+    [Fact]public async Task Party_invitation_resolves_a_Twitch_login_once_and_keeps_ID_ownership(){
+        await SeedAsync();await points!.AddPointsAsync("2002","Simoncat",100,0,default);var lookups=0;
+        var executor=new RemoteRpgExecutor(points,()=>config,gate,epoch,"42",new HashSet<string>{"1001"},Path.Combine(root,"receipts"),(_,_)=>true,resolveTwitchUser:(login,_)=>{lookups++;Assert.Equal("simoncat",login);return Task.FromResult<TwitchUser?>(new("2002","simoncat","Simoncat"));});
+        Assert.True((await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("party","{\"operation\":\"create\"}")),default)).Success);
+        var invitation=Envelope(ActionApiFixture.Intent("party","{\"operation\":\"invite\",\"targetLogin\":\"@Simoncat\"}"));var sent=await executor.ExecuteAsync(invitation,default);Assert.True(sent.Success,sent.Message);Assert.Contains("Simoncat",sent.DataJson);Assert.Equal(sent,await executor.ExecuteAsync(invitation,default));Assert.Equal(1,lookups);
+        Assert.Single((await points.GetProfileAsync("2002",default)).Entry.Rpg.Party.Invitations);Assert.Empty((await points.GetProfileAsync("1001",default)).Entry.Rpg.Party.Invitations);
+        Assert.Throws<ArgumentException>(()=>RpgIntents.Canonical(ActionApiFixture.Intent("party","{\"operation\":\"invite\",\"targetLogin\":\"simoncat\",\"targetUserId\":\"42\"}")));
+    }
+    private sealed class FlakyClaimHandler:DelegatingHandler{
+        public int Sessions;public bool Failed;
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken ct){if(request.RequestUri!.AbsolutePath.EndsWith("/session")&&request.Method==HttpMethod.Post)Sessions++;if(!Failed&&request.RequestUri.AbsolutePath.Contains("/claim/")){Failed=true;return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable){Content=new StringContent("{}")});}return base.SendAsync(request,ct);}
+    }
+    [Fact]public async Task Temporary_claim_failure_keeps_the_existing_session_and_executes_once(){
+        var executor=await SeedAsync();await using var api=new ActionApiFixture();var handler=new FlakyClaimHandler();var transport=api.Factory.CreateDefaultClient(handler);transport.DefaultRequestHeaders.Authorization=new("Bearer",ActionApiFixture.Key);using var stop=new CancellationTokenSource(TimeSpan.FromSeconds(20));using var pump=new CloudActionClient(transport,executor,()=>gate.CanPlay(epoch),_=>{});var running=pump.RunAsync(stop.Token);
+        try{RelayAvailability? ready;do{await Task.Delay(500,stop.Token);ready=await api.Viewer.GetFromJsonAsync<RelayAvailability>("/api/v1/play/state",stop.Token);}while(!ready!.Available);api.Viewer.DefaultRequestHeaders.Add("X-Rpg-Session",ready.SessionId!.Value.ToString());var intent=ActionApiFixture.Intent();(await api.Viewer.PostAsJsonAsync("/api/v1/play/actions",intent,stop.Token)).EnsureSuccessStatusCode();ActionReceipt? receipt;do{await Task.Delay(100,stop.Token);receipt=await api.Viewer.GetFromJsonAsync<ActionReceipt>("/api/v1/play/actions/"+intent.ActionId,stop.Token);}while(receipt!.State is "queued" or "executing");Assert.Equal("applied",receipt.State);Assert.Equal(1500,await points!.GetPointsAsync("1001",default));Assert.True(handler.Failed);Assert.Equal(1,handler.Sessions);}finally{stop.Cancel();await running;}
     }
     [Fact]public void Tides_requires_publisher_support_for_extended_stats_and_shields()
     {
-        Assert.Equal(10,SnapshotValidation.RpgProjectionVersion);
+        Assert.Equal(16,SnapshotValidation.RpgProjectionVersion);
+    }
+    [Fact]public async Task Private_action_journal_does_not_break_status_or_dive_series_commands()
+    {
+        var executor=await SeedAsync();await points!.ApplyRpgAsync("1001","SYNTHETIC","journal",a=>{for(var n=0;n<5000;n++)a.Rpg.CompletedActions.Add("automatic:"+Guid.NewGuid().ToString("N")+":"+n);return new(true);},default);
+        var result=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("status","{}")),default);Assert.True(result.Success);Assert.DoesNotContain("CompletedActions",result.DataJson);
+        var start=await executor.ExecuteAsync(Envelope(ActionApiFixture.Intent("diveSeries","{\"operation\":\"start\",\"count\":\"25\"}")),default);Assert.True(start.Success);Assert.Contains("DiveSeries",start.DataJson);
+        var series=(await points.GetProfileAsync("1001",default)).Entry.Rpg.DiveSeries!;Assert.NotEqual("active",series.Status);Assert.True(series.Completed>0);
+        using var response=JsonDocument.Parse(start.DataJson!);Assert.Equal(series.Status,response.RootElement.GetProperty("profile").GetProperty("Rpg").GetProperty("DiveSeries").GetProperty("Status").GetString());
     }
     [Fact]public async Task Large_inventory_status_keeps_authoritative_stats_and_profile()
     {
@@ -65,7 +103,7 @@ public sealed class RemoteActionTests(ITestOutputHelper output) : IDisposable
     [Fact]public async Task Talent_intents_are_authoritative_idempotent_and_return_committed_ranks()
     {
         var executor=await SeedAsync(2000,30);
-        var catalogJson=executor.CatalogJson();Assert.InRange(catalogJson.Length,1,48000);
+        var catalogJson=executor.CatalogJson();Assert.InRange(catalogJson.Length,1,96000);
         using var catalog=JsonDocument.Parse(catalogJson);
         Assert.Equal(21,catalog.RootElement.GetProperty("talents").GetArrayLength());
         var intent=new RpgIntent(Guid.NewGuid(),"learnTalent",JsonSerializer.SerializeToElement(new{talentId="combat-power",expectedRank="0",catalogVersion="1"}));

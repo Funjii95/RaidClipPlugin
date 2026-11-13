@@ -27,6 +27,7 @@ public sealed class RpgSalvageConfig
     };
     public void Validate()
     {
+        Values.TryAdd(ItemRarity.Mythic, new() { Minimum=6000, Maximum=12000 });
         if (ConfirmationSeconds is < 10 or > 300 || MaximumBatchSize is < 1 or > 100 ||
             Enum.GetValues<ItemRarity>().Any(r => !Values.TryGetValue(r,out var v) || v.Minimum < 0 || v.Maximum < v.Minimum || v.Maximum > 1000000000))
             throw new InvalidOperationException("Ungültige Zerlegewerte oder Bestätigungsgrenzen.");

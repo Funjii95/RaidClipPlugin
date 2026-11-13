@@ -25,11 +25,14 @@ public sealed record RelayMutation<T>(T Value, RelayAction? Action = null, bool 
 public interface IRelayStore
 {
     Task<RelayChannel> ReadChannelAsync(CancellationToken ct);
+    Task WaitForOutcomeAsync(Guid id,TimeSpan duration,CancellationToken ct)=>Task.Delay(duration,ct);
+    Task WaitForWorkAsync(Guid session,TimeSpan duration,CancellationToken ct)=>Task.Delay(duration,ct);
+    Task<T> ObserveAsync<T>(Guid? id,Func<RelayChannel,RelayAction?,T> observation,CancellationToken ct)=>TransactionAsync<T>(id,false,(s,a)=>new(observation(s,a)),ct);
     Task PurgeUserActionsAsync(string user,CancellationToken ct);
     Task<T> TransactionAsync<T>(Guid? id, bool head, Func<RelayChannel,RelayAction?,RelayMutation<T>> operation,CancellationToken ct);
 }
 // Test host only. Production configuration cannot select this store.
-public sealed class MemoryRelayStore : IRelayStore
+public sealed partial class MemoryRelayStore : IRelayStore
 {
     private readonly SemaphoreSlim gate=new(1,1);
     private RelayChannel channel=new();
@@ -37,6 +40,7 @@ public sealed class MemoryRelayStore : IRelayStore
     public async Task<RelayChannel> ReadChannelAsync(CancellationToken ct){await gate.WaitAsync(ct);try{return JsonSerializer.Deserialize<RelayChannel>(JsonSerializer.Serialize(channel))!;}finally{gate.Release();}}
     public async Task PurgeUserActionsAsync(string user,CancellationToken ct){
         await gate.WaitAsync(ct);try{channel.PrivacyBlockedUsers.Add(user);channel.ExpiresAt=default;
+            Pulse();
             foreach(var id in actions.Where(p=>p.Value.Envelope.UserId==user).Select(p=>p.Key).ToArray()){actions.Remove(id);channel.Queue.Remove(id);}
         }finally{gate.Release();}
     }
@@ -48,8 +52,10 @@ public sealed class MemoryRelayStore : IRelayStore
             if(head)id=state.Queue.FirstOrDefault() is var first && first!=Guid.Empty ? first : null;
             var action=id is {} key && actions.TryGetValue(key,out var found) ? JsonSerializer.Deserialize<RelayAction>(JsonSerializer.Serialize(found)) : null;
             var mutation=operation(state,action);
+            var original=JsonSerializer.Serialize(channel);var originalAction=id is {} oldId&&actions.TryGetValue(oldId,out var oldAction)?JsonSerializer.Serialize(oldAction):null;
             channel=state;
             if(mutation.WriteAction && mutation.Action is {} changed)actions[changed.Envelope.Intent.ActionId]=changed;
+            if(original!=JsonSerializer.Serialize(channel)||mutation.WriteAction&&originalAction!=JsonSerializer.Serialize(mutation.Action))Pulse();
             return mutation.Value;
         } finally {gate.Release();}
     }
@@ -82,7 +88,7 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     }
     public async Task<RelaySession> HeartbeatAsync(RelayHeartbeat beat,CancellationToken ct)
     {
-        if(beat.CatalogJson.Length>48000 || Math.Abs((Now-beat.SentAt).TotalSeconds)>5)throw new RelayDenied(400,"stale_heartbeat");
+        if(beat.CatalogJson.Length>96000 || Math.Abs((Now-beat.SentAt).TotalSeconds)>5)throw new RelayDenied(400,"stale_heartbeat");
         using(var doc=JsonDocument.Parse(beat.CatalogJson))if(doc.RootElement.ValueKind!=JsonValueKind.Object)throw new RelayDenied(400,"catalog_invalid");
         return await store.TransactionAsync<RelaySession>(null,false,(s,_)=>{
             if(s.SessionId!=beat.SessionId || s.ExpiresAt<=Now || beat.Sequence<=s.Sequence || Math.Abs((Now-beat.SentAt).TotalSeconds)>5)throw new RelayDenied(409,"stale_session");
@@ -98,14 +104,12 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     public async Task<RelayAvailability> AvailabilityAsync(CancellationToken ct)
     {
         var s=await store.ReadChannelAsync(ct);
-        return new(Ready(s),Ready(s)?"ready":"plugin_not_ready",s.CatalogJson,Ready(s)?s.SessionId:null,settings.Actions.SelfDeletionEnabled&&settings.Actions.PrivacyDeletionEnabled);
+        return new(Ready(s),Ready(s)?"ready":"plugin_not_ready",s.CatalogJson,Ready(s)?s.SessionId:null,settings.Actions.SelfDeletionEnabled&&settings.Actions.PrivacyDeletionEnabled,true);
     }
     public async Task<ActionReceipt> EnqueueAsync(string user,RpgIntent intent,Guid expectedSession,CancellationToken ct)
     {
         Scope(user);
 
-        // This feature is intentionally chat-only; never queue browser requests.
-        if(intent.Kind=="openShells")throw new RelayDenied(403,"chat_only");
         if(settings.Actions.AutomaticPlayerEnrollment && (players is null || await players.GetAsync(user,ct) is null))throw new RelayDenied(403,"profile_not_enrolled");
         var hash=RpgIntents.Hash(intent);
         return await store.TransactionAsync<ActionReceipt>(intent.ActionId,false,(s,a)=>{
@@ -125,8 +129,16 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     public async Task<ActionReceipt?> ReadAsync(string user,Guid id,CancellationToken ct)
     {
         Scope(user);
+        var observed=await store.ObserveAsync(id,(s,a)=>{
+            if(a is null || a.Envelope.UserId!=user)return (Receipt:(ActionReceipt?)null,Expire:false);
+            if(s.PrivacyBlockedUsers.Contains(user))throw new RelayDenied(410,"privacy_erased");
+            var expires=a.State=="queued"&&(a.QueuedUntil<=Now||a.Envelope.SessionId!=s.SessionId||s.ExpiresAt<=Now)||a.State=="executing"&&a.Envelope.ExecuteBefore<=Now;
+            return (Receipt:(ActionReceipt?)Receipt(a),Expire:expires);
+        },ct);
+        if(!observed.Expire)return observed.Receipt;
         return await store.TransactionAsync<ActionReceipt?>(id,false,(s,a)=>{
             if(a is null || a.Envelope.UserId!=user)return new(null);
+            if(s.PrivacyBlockedUsers.Contains(user))throw new RelayDenied(410,"privacy_erased");
             Expire(s,a);return new(Receipt(a),a,true);
         },ct);
     }
@@ -139,6 +151,10 @@ public sealed partial class ActionRelay(IRelayStore store,TimeProvider clock,Bac
     }
     public async Task<ActionEnvelope?> ClaimAsync(Guid session,CancellationToken ct)
     {
+        // Idle polling must not acquire a pessimistic lock on the shared control document.
+        var observed=await store.ReadChannelAsync(ct);
+        if(observed.SessionId!=session||!Ready(observed)||observed.Sequence<=0)throw new RelayDenied(409,"plugin_disconnected");
+        if(observed.Queue.Count==0)return null;
         return await store.TransactionAsync<ActionEnvelope?>(null,true,(s,a)=>{
             if(s.SessionId!=session || !Ready(s) || s.Sequence<=0)throw new RelayDenied(409,"plugin_disconnected");
             if(a is null)return new(null);

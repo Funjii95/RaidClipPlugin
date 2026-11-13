@@ -11,7 +11,7 @@ public static class RpgEternalLoot
         var chance=RpgCombatDropRules.Chance(c.Zones.EternalChances.GetValueOrDefault(source))*10000;
         if(chance==0||random.NextInclusive(0,999999)>=chance)return null;
         // One successful Eternal roll selects one of 18 armor pieces or 3 weapons uniformly.
-        var pool=RpgEternalCatalog.Items().Where(i=>i.Rarity==ItemRarity.Eternal).Concat(RpgWeaponCatalog.Items().Where(i=>i.Rarity==ItemRarity.Eternal)).ToArray();
+        var pool=RpgEternalCatalog.Items().Where(i=>i.Rarity==ItemRarity.Eternal).Concat(RpgWeaponCatalog.Items().Where(i=>i.Rarity==ItemRarity.Eternal)).Concat(RpgTrinketCatalog.Items().Where(i=>i.Rarity==ItemRarity.Eternal&&i.MinimumLevel<=p.PlayerLevel)).ToArray();
         var item=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(pool[random.NextInclusive(0,pool.Length-1)]))!;
         RpgCoreStatService.Apply(item);item.InstanceId=Guid.NewGuid().ToString("N");item.FoundAt=now;p.Inventory.Add(item);return item;
     }

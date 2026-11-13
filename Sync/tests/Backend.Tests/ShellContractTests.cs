@@ -6,13 +6,19 @@ namespace Backend.Tests;
 public sealed class ShellContractTests
 {
     [Fact]
-    public async Task Shell_action_is_denied_even_with_valid_identity_and_ready_plugin()
+    public async Task Shell_action_uses_authenticated_idempotent_queue()
     {
         await using var f=new ActionApiFixture();var session=await f.ReadyAsync();
-        var response=await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",ActionApiFixture.Intent("openShells","{\"count\":\"10\"}"));
-        Assert.Equal(System.Net.HttpStatusCode.Forbidden,response.StatusCode);
-        Assert.Contains("chat_only",await response.Content.ReadAsStringAsync());
+        var intent=ActionApiFixture.Intent("openShells","{\"count\":\"10\"}");
+        for(var i=0;i<2;i++)Assert.Equal(System.Net.HttpStatusCode.Accepted,(await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",intent)).StatusCode);
+        var envelope=await (await f.Plugin.PostAsync("/api/v1/plugin/actions/claim/"+session,null)).Content.ReadFromJsonAsync<ActionEnvelope>();
+        Assert.Equal("1001",envelope!.UserId);
+        Assert.Equal(intent.ActionId,envelope.Intent.ActionId);
+        Assert.Equal(RpgIntents.Hash(intent),envelope.IntentHash);
+        (await f.Plugin.PostAsJsonAsync("/api/v1/plugin/actions/complete",new RelayComplete(session,intent.ActionId,new(true,"applied","synthetic")))).EnsureSuccessStatusCode();
         Assert.Equal(System.Net.HttpStatusCode.NoContent,(await f.Plugin.PostAsync("/api/v1/plugin/actions/claim/"+session,null)).StatusCode);
+        f.Viewer.DefaultRequestHeaders.Authorization=new("Bearer","invalid");
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized,(await f.Viewer.PostAsJsonAsync("/api/v1/play/actions",intent)).StatusCode);
     }
 
     [Theory]

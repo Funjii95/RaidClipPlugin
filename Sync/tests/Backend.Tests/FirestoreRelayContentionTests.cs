@@ -28,16 +28,20 @@ public sealed class FirestoreRelayContentionTests
         var session=await relay.OpenAsync(default);
         await relay.HeartbeatAsync(new(session.SessionId,1,clock.Now,true,"{}"),default);
         var initial=fixture.Server.WriteCount;
+        var initialTransactions=fixture.Server.BeginCount;
         await Task.WhenAll(Enumerable.Range(0,40).Select(async _=>{
             Assert.True((await relay.AvailabilityAsync(default)).Available);
             Assert.Null(await relay.ClaimAsync(session.SessionId,default));
         }));
         Assert.Equal(initial,fixture.Server.WriteCount);
+        Assert.Equal(initialTransactions,fixture.Server.BeginCount);
         var intent=ActionApiFixture.Intent();
         await relay.EnqueueAsync("1001",intent,session.SessionId,default);
         var queuedWrites=fixture.Server.WriteCount;
+        var queuedTransactions=fixture.Server.BeginCount;
         await Task.WhenAll(Enumerable.Range(0,20).Select(async _=>Assert.Equal("queued",(await relay.ReadAsync("1001",intent.ActionId,default))!.State)));
         Assert.Equal(queuedWrites,fixture.Server.WriteCount);
+        Assert.Equal(queuedTransactions,fixture.Server.BeginCount);
         var envelope=await relay.ClaimAsync(session.SessionId,default);
         Assert.NotNull(envelope);
         var done=new RelayComplete(session.SessionId,intent.ActionId,new(true,"applied","synthetic"));

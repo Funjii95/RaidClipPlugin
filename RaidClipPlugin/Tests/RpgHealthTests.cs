@@ -38,7 +38,7 @@ public sealed class RpgHealthTests : IDisposable
         var p=new RpgProfile();var c=new RpgHealthConfig();RpgHealthService.Refresh(p,c,_now);p.Health.CurrentHp=50;
         RpgHealthService.Experience(p,c,1000,_now);Assert.Equal(2,p.PlayerLevel);Assert.Equal(77,p.Health.CurrentHp);
         RpgHealthService.Refresh(p,c,_now.AddSeconds(119));Assert.Equal(79,p.Health.CurrentHp);
-        RpgHealthService.Refresh(p,c,_now.AddSeconds(120));Assert.Equal(81,p.Health.CurrentHp);
+        RpgHealthService.Refresh(p,c,_now.AddSeconds(120));Assert.Equal(82,p.Health.CurrentHp);
         RpgHealthService.Refresh(p,c,_now.AddYears(1));Assert.Equal(127,p.Health.CurrentHp);
     }
     [Fact]

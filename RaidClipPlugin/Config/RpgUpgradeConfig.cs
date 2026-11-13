@@ -20,6 +20,7 @@ public sealed class RpgUpgradeConfig
     public Dictionary<string,int> MimicWeights {get;set;}=new(){["red_pearl"]=30,["rune_shell"]=25,["cursed_silk"]=18,["true_coral_core"]=15,["abyss_shard"]=10,["eternal_depth_core"]=2};
     public void Validate()
     {
+        RarityCosts.TryAdd("Mythic",new[]{2,3,4});
         if(ColoredPearlCosts.Length!=3||ColoredPearlCosts.Any(n=>n is <0 or >1000000)||RarityCosts.Count!=Enum.GetValues<ItemRarity>().Length||Enum.GetValues<ItemRarity>().Any(r=>!RarityCosts.TryGetValue(r.ToString(),out var counts)||counts.Length!=3||counts.Any(n=>n is <0 or >1000000)))throw new InvalidOperationException("Ungültige Materialkosten.");
         if(EquipmentDropChances.Count!=3||new[]{"True","Cursed","Abyss"}.Any(k=>!EquipmentDropChances.ContainsKey(k))||EquipmentDropChances.Values.Any(v=>v is <0 or >100))throw new InvalidOperationException("Ungültige Erweiterungs-Dropchancen.");
         if(PearlCosts.Length!=9||CoreCosts.Length!=9||PearlCosts.Any(n=>n<0||n>1_000_000_000)||CoreCosts.Any(n=>n<0||n>1000000)||RefinementPearls<0||RefinementPearls>1_000_000_000)throw new InvalidOperationException("Ungültige Aufwertungskosten.");

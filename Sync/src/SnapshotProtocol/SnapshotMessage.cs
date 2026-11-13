@@ -16,8 +16,9 @@ public sealed record ValidatedSnapshot(string ChannelId, string UserId, long Rev
 
 public static class SnapshotValidation
 {
-    public const int RpgProjectionVersion = 10;
-    public const int MaxMessageBytes = 256 * 1024;
+    public const int RpgProjectionVersion = 16;
+    // Includes the escaped account JSON. Leave ample room for Firestore metadata.
+    public const int MaxMessageBytes = 768 * 1024;
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
     // Bound the complete UTF-8 envelope before JSON parsing, including escaped accountJson.
@@ -39,6 +40,17 @@ public static class SnapshotValidation
         var message = document.RootElement.Deserialize<SnapshotMessage>(Options)
             ?? throw new InvalidDataException("Missing snapshot message.");
         return Validate(message, trustedChannelId);
+    }
+
+    // Trusted local saves include private idempotency journals. Project them before
+    // enforcing the wire limit; network ingress must keep using ReadAsync/Validate.
+    public static ValidatedSnapshot ValidateLocalSource(SnapshotMessage message, string trustedChannelId)
+    {
+        if (message.Kind == SnapshotKind.Delete) return Validate(message, trustedChannelId);
+        var json = message.AccountJson ?? throw new InvalidDataException("Missing account.");
+        if (Encoding.UTF8.GetByteCount(json) > 16 * 1024 * 1024)
+            throw new InvalidDataException("Local snapshot source too large.");
+        return Validate(message with { AccountJson = Project(json, message.UserId) }, trustedChannelId);
     }
 
     public static ValidatedSnapshot Validate(SnapshotMessage message, string trustedChannelId)
@@ -81,7 +93,7 @@ public static class SnapshotValidation
             throw new InvalidDataException("Invalid account identity, balance, date or RPG object.");
         var rpg = Clean(JsonSerializer.SerializeToElement(root["Rpg"]),
             ["SchemaVersion", "LegacyFishImported", "Inventory", "Equipment", "Perks", "Fish", "Sushi", "Buffs", "Cooldowns",
-                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials", "TalentRanks", "SelectedDivingZone", "SelectedFishingZone", "SelectedBossId", "Quests"]);
+                "PlayerLevel", "Experience", "Health", "SushiVersion", "Materials", "TalentRanks", "SelectedDivingZone", "SelectedFishingZone", "SelectedBossId", "Quests", "Statistics", "Role", "Party", "CombatRewards", "DiveSeries"]);
         if(rpg.ContainsKey("SelectedBossId")&&rpg["SelectedBossId"]?.GetValue<string>() is not ("boss_korallus" or "boss_thalruun" or "boss_moderklaue" or "boss_luminara" or "boss_vortexion" or "boss_krysalith" or "boss_maledictus" or "boss_aethernos" or "boss_nharzul" or "boss_eonath"))throw new InvalidDataException("Invalid selected boss.");
         foreach(var selected in new[]{"SelectedDivingZone","SelectedFishingZone"})if(rpg.ContainsKey(selected)&&rpg[selected]?.GetValue<string>() is not ("sunny_lagoon" or "sunken_temples" or "shipwreck_graveyard" or "glowing_coral_forest" or "tidal_maelstrom" or "crystal_grotto" or "cursed_depths" or "true_abyss" or "abyss" or "primordial_throne"))throw new InvalidDataException("Invalid selected zone.");
         if (rpg["SchemaVersion"]?.GetValue<int>() != 1) throw new InvalidDataException("Unsupported RPG schema.");
@@ -90,6 +102,21 @@ public static class SnapshotValidation
                 !value.TryGetValue<long>(out var count) || count < (key == "PlayerLevel" ? 1 : 0) ||
                 (key != "Experience" && count > int.MaxValue)))
                 throw new InvalidDataException("Invalid RPG progression value.");
+        if(rpg.ContainsKey("Party")){
+            var rawParty=rpg["Party"];
+            var rawInstance=(rawParty?["Party"]??rawParty?["party"])?["Instance"]??(rawParty?["Party"]??rawParty?["party"])?["instance"];
+            var party=rawParty?.Deserialize<PartySnapshot>(Options)??throw new InvalidDataException("Invalid party.");PartySnapshot.Validate(party,userId);
+            var normalized=JsonSerializer.SerializeToNode(party)!;
+            // Do not add optional v12 defaults to a v11 sender's projection:
+            // that would change its content hash after a successful delivery.
+            if(rawInstance is JsonObject original&&normalized["Party"]?["Instance"] is JsonObject instance)
+                foreach(var key in new[]{"AutomaticCombat","NextAutomaticAt"})if(!original.Any(p=>p.Key.Equals(key,StringComparison.OrdinalIgnoreCase)))instance.Remove(key);
+            rpg["Party"]=normalized;
+        }
+        if(rpg["DiveSeries"] is not null){var series=rpg["DiveSeries"]!.Deserialize<DiveSeriesState>(Options)??throw new InvalidDataException("Invalid dive series.");DiveSeriesState.Validate(series);rpg["DiveSeries"]=JsonSerializer.SerializeToNode(series);}
+        if(rpg.ContainsKey("CombatRewards")){var rewards=rpg["CombatRewards"]?.Deserialize<List<CombatRewardReceipt>>(Options)??throw new InvalidDataException("Invalid rewards.");CombatRewardReceipt.Validate(rewards);rpg["CombatRewards"]=JsonSerializer.SerializeToNode(rewards);}
+        if(rpg.ContainsKey("Role")&&(rpg["Role"] is not JsonValue role||!role.TryGetValue<int>(out var selectedRole)||selectedRole is <0 or >3))throw new InvalidDataException("Invalid role.");
+        if(rpg.ContainsKey("Statistics")){var stats=rpg["Statistics"]?.Deserialize<RpgStatistics>()??throw new InvalidDataException("Invalid statistics.");RpgStatistics.Validate(stats);rpg["Statistics"]=JsonSerializer.SerializeToNode(stats);}
         if(rpg.ContainsKey("Quests")){var quest=rpg["Quests"]?.Deserialize<QuestProgress>()??throw new InvalidDataException("Invalid quests.");QuestProgressRules.Validate(quest);}
         if(rpg.ContainsKey("TalentRanks"))
         {
@@ -99,7 +126,7 @@ public static class SnapshotValidation
         if (rpg.ContainsKey("Materials"))
         {
             var materials = Clean(JsonSerializer.SerializeToElement(rpg["Materials"]),
-                ["Shells", "WhitePearls", "BluePearls", "RedPearls", "StoneChips", "PearlDust", "LuminousScale", "RuneShell", "EternalDepthCore", "TrueCoralCore", "CursedSilk", "AbyssShard", "ReinforcementCore"]);
+                ["DungeonRuneShard", "DungeonCoralHeart", "DungeonVoidSigil", "Shells", "WhitePearls", "BluePearls", "RedPearls", "StoneChips", "PearlDust", "LuminousScale", "RuneShell", "EternalDepthCore", "TrueCoralCore", "CursedSilk", "AbyssShard", "ReinforcementCore"]);
             foreach (var key in new[] {"Shells","WhitePearls","BluePearls","RedPearls","StoneChips"})
                 if (materials[key] is not JsonValue value || !value.TryGetValue<int>(out var count) || count < 0)
                     throw new InvalidDataException("Invalid RPG material balance.");
@@ -109,7 +136,7 @@ public static class SnapshotValidation
         if (rpg.ContainsKey("Health"))
         {
             var health = Clean(JsonSerializer.SerializeToElement(rpg["Health"]),
-                ["CurrentMana", "LastManaRegen", "ManaShieldHp", "ManaShieldSource", "ManaShieldExpires", "CurrentHp", "AppliedMaximumHp", "AppliedBaseMaximumHp", "LastPassiveRegen", "SushiRegenRemainder",
+                ["TankLoadout", "TankBarrierHp", "TankAvatarHp", "TankHitCount", "CurrentMana", "LastManaRegen", "ManaShieldHp", "ManaShieldSource", "ManaShieldExpires", "CurrentHp", "AppliedMaximumHp", "AppliedBaseMaximumHp", "LastPassiveRegen", "SushiRegenRemainder",
                     "LastChatHeal", "BossId", "Defeated", "BossDamage", "BossRemainingHp", "SetShieldHp", "SetShieldSource"]);
             foreach (var field in health)
             {
@@ -117,7 +144,7 @@ public static class SnapshotValidation
                 if (field.Value is not JsonValue value || (field.Key switch
                 {
                     "LastManaRegen" or "ManaShieldExpires" or "LastPassiveRegen" or "LastChatHeal" => !value.TryGetValue<DateTimeOffset>(out _),
-                    "ManaShieldSource" or "BossId" or "SetShieldSource" => !value.TryGetValue<string>(out _),
+                    "TankLoadout" or "ManaShieldSource" or "BossId" or "SetShieldSource" => !value.TryGetValue<string>(out _),
                     "Defeated" => !value.TryGetValue<bool>(out _),
                     "CurrentMana" => !value.TryGetValue<decimal>(out var mana) || mana < 0 || mana > 100,
                     "SushiRegenRemainder" => !value.TryGetValue<decimal>(out var remainder) || remainder < 0,
@@ -136,12 +163,12 @@ public static class SnapshotValidation
             for (var i = 0; i < array.Count; i++)
             {
                 var item = Clean(JsonSerializer.SerializeToElement(array[i]), key == "Inventory"
-                    ? ["UpgradeLevel", "IsRefined", "InstanceId", "ItemId", "DisplayName", "Description", "IconId", "Rarity", "Kind", "ConsumableRecipeId", "Slot", "Attributes", "FoundAt", "DropWeight", "Collector", "CoreStatsVersion", "SalvageValue", "IsLocked", "IsFavorite", "SetId", "DropActivities", "Effects", "Generation"]
+                    ? ["MinimumLevel", "UpgradeLevel", "IsRefined", "InstanceId", "ItemId", "DisplayName", "Description", "IconId", "Rarity", "Kind", "ConsumableRecipeId", "Slot", "Attributes", "FoundAt", "DropWeight", "Collector", "CoreStatsVersion", "SalvageValue", "IsLocked", "IsFavorite", "SetId", "DropActivities", "Effects", "Generation"]
                     : ["RecipeId", "AllActivities", "Activity", "RemainingUses", "Attributes", "Category", "EncounterBased", "ActivatedAt", "LastBossId", "ExpiresAt", "PassiveHealing", "ChatHealing", "BossDamageReduction", "BossLifeleech"]);
                 if (item["Attributes"] is not null)
                 {
                     item["Attributes"] = Clean(JsonSerializer.SerializeToElement(item["Attributes"]),
-                        ["Damage", "CritChance", "CritDamage", "Luck", "BossDamage", "PearlBonus", "FishingLuck", "DiveLuck",
+                        ["BlockChance", "ReceivedHealing", "BarrierPower", "ThreatBonus", "Damage", "CritChance", "CritDamage", "Luck", "BossDamage", "PearlBonus", "FishingLuck", "DiveLuck",
                             "Power", "Stamina", "MaximumHp", "DoubleAttackChance", "TripleAttackChance", "ExtraLootChance",
                             "SushiPreservationChance", "BossDamageReduction", "BossDodgeChance", "CriticalHealing", "RareEquipmentLuck",
                             "Attack","MagicPower","ManaRegeneration","WaterDamage","ElementalDamage","AbyssDamage","LightDamage", "EnemyEncounterChance", "MaterialFind", "AttackPercent", "ExperienceBonus", "DivineDamage", "MovementSpeed", "BossLifeleech", "Armor", "ArmorPercent", "MaximumHpPercent", "AttackSpeed", "HealingPower"]);
@@ -158,7 +185,7 @@ public static class SnapshotValidation
                     if (field.Key == "Slot" && field.Value is null) continue;
                     if (field.Key is "Rarity" or "Kind" or "Slot" or "Activity" or "RemainingUses")
                     {
-                        var maximum = field.Key switch { "Rarity" => 9, "Kind" or "Activity" => 2, "Slot" => 7, _ => int.MaxValue };
+                        var maximum = field.Key switch { "Rarity" => 10, "Kind" or "Activity" => 2, "Slot" => 10, _ => int.MaxValue };
                         if (field.Value is not JsonValue number || !number.TryGetValue<int>(out var value) || value < 0 || value > maximum)
                             throw new InvalidDataException("Invalid enum or remaining uses.");
                     }

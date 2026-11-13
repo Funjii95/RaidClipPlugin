@@ -3,6 +3,7 @@ namespace RaidClipPlugin.Models;
 // Additive 0.0.3 resource storage; legacy profiles start with zero resources.
 public sealed class RpgMaterials
 {
+    public int DungeonRuneShard {get;set;}public int DungeonCoralHeart {get;set;}public int DungeonVoidSigil {get;set;}
     public int PearlDust { get; set; }
     public int LuminousScale { get; set; }
     public int RuneShell { get; set; }

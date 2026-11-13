@@ -1,4 +1,4 @@
-﻿using RaidClipPlugin.Config;
+using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
 using RaidClipPlugin.Services;
 using System.Text.Json;
@@ -33,7 +33,7 @@ public sealed class EternalZoneTests:IDisposable
   Assert.Equal(multiplier,RpgEternalCombat.NormalLootMultiplier(p,c));
   Assert.Equal(xp,RpgSetCombatService.Bonus(p,c.Sets,"ExperienceBonus"));
   var material=RpgZoneService.Materials(p,c,c.Zones.Get("sunny_lagoon"),"chest",new Low());Assert.All(material.Values,v=>Assert.Equal(multiplier,v));
-  if(count==8){Assert.Equal(8,p.Equipment.Count);Assert.Equal(Enum.GetValues<EquipmentSlot>().Order(),p.Equipment.Keys.Order());
+  if(count==8){Assert.Equal(8,p.Equipment.Count);Assert.Equal(Enum.GetValues<EquipmentSlot>().Where(s=>s<=EquipmentSlot.Amulet).Order(),p.Equipment.Keys.Order());
    var ring=p.Inventory.First(i=>i.ItemId=="divine_infinity_ring");var copy=JsonSerializer.Deserialize<RpgItem>(JsonSerializer.Serialize(ring))!;copy.InstanceId="duplicate";p.Inventory.Add(copy);p.Equipment[EquipmentSlot.Ring2]=copy.InstanceId;
    Assert.False(RpgEternalCombat.Has(p,c,"divine_infinity",8));Assert.Equal(3,RpgEternalCombat.NormalLootMultiplier(p,c));}
  }
@@ -102,7 +102,7 @@ public sealed class EternalZoneTests:IDisposable
  public void DivineEnemyChanceIsExactlyOneThousandPercentRelativeAndDoesNotStackPerPiece(int pieces)
  {
   var c=Config();var p=Equipped("divine_infinity",pieces);var a=CharacterStatService.Calculate(p,c,RpgActivity.Dive);Assert.Equal(1000,a.EnemyEncounterChance);
-  var zone=c.Zones.Get("sunny_lagoon");Assert.Equal(99,RpgAdventureService.EnemyChance(zone,a));zone.EnemyChance=2;Assert.Equal(22,RpgAdventureService.EnemyChance(zone,a));zone.EnemyChance=0;Assert.Equal(0,RpgAdventureService.EnemyChance(zone,a));
+  var zone=c.Zones.Get("sunny_lagoon");Assert.Equal(99.5m,RpgAdventureService.EnemyChance(zone,a));zone.EnemyChance=2;Assert.Equal(22,RpgAdventureService.EnemyChance(zone,a));zone.EnemyChance=0;Assert.Equal(0,RpgAdventureService.EnemyChance(zone,a));
   p.Equipment.Clear();Assert.Equal(0,CharacterStatService.Calculate(p,c,RpgActivity.Dive).EnemyEncounterChance);Assert.Equal(.03m,c.Zones.EternalChances["normal"]);
  }
  [Fact]public void WrathProcsDoNotRecurseStacksStopAtTenAndExpire()

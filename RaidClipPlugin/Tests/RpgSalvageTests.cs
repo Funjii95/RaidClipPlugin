@@ -78,6 +78,27 @@ public sealed class RpgSalvageTests : IDisposable
         var saved=(await _points.GetProfileAsync("42",default)).Entry;Assert.Equal(3,saved.Rpg.Inventory.Count);Assert.Equal(1000+q.Total,saved.Points);
         Assert.Equal(2,saved.Rpg.Inventory.Single(i=>i.InstanceId=="different").Attributes.Damage);
     }
+    [Theory]
+    [InlineData(true)] [InlineData(false)]
+    public async Task DuplicateBatchesPreserveAllCollectiblesAndOnlySalvageEquipment(bool windows)
+    {
+        var treasures=Enumerable.Range(0,5).Select(n=>new RpgItem {
+            InstanceId="treasure-"+n,ItemId="relic",DisplayName="Relikt",
+            Kind=RpgItemKind.Treasure,Rarity=ItemRarity.Common,Collector=new(){BossPearls=2}
+        }).ToArray();
+        await Seed(treasures.Concat(new[]{Item("a"),Item("b")}).ToArray());
+        var preview=windows
+            ? await Service().PreviewBatchAsync("42","duplicates",default)
+            : await Service().PreviewAsync("42","duplicates",default);
+        Assert.True(preview.Success,preview.Error);
+        var quote=preview.Quote!;
+        Assert.Equal("b",Assert.Single(quote.Items).InstanceId);
+        Assert.True((await Service().ConfirmAsync("42","Otter","safe-duplicates",quote.Token,default)).Success);
+        var saved=(await _points.GetProfileAsync("42",default)).Entry.Rpg;
+        Assert.Equal(5,saved.Inventory.Count(RpgCollectionInventory.IsCollectible));
+        Assert.Equal(6,saved.Inventory.Count);
+        Assert.False((await Service().PreviewBatchAsync("42","duplicates",default)).Success);
+    }
     [Fact]
     public async Task InventoryChangesAndAccountLimitRejectWholeTransaction()
     {

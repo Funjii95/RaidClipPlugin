@@ -10,7 +10,7 @@ public sealed class AreaBossTests:IDisposable
  private readonly ViewerPointStore points;private readonly MinigameConfig config=new(){Enabled=true,PointsEnabled=true};
  private DateTimeOffset now=DateTimeOffset.UtcNow;
  private sealed class Low:IDuelRandom{public int NextInclusive(int min,int max)=>min;}
- public AreaBossTests(){points=new(root);var c=config.Adventures.Rpg;c.Enabled=true;c.Health.Enabled=true;c.Health.Counterattacks=false;c.AreaBosses.Enabled=true;config.Adventures.Boss.AttackCooldownSeconds=1;}
+ public AreaBossTests(){points=new(root);var c=config.Adventures.Rpg;c.Enabled=true;c.Health.Enabled=true;c.Health.Counterattacks=false;c.AreaBosses.Enabled=true;c.BossAssignment.Automatic=false;config.Adventures.Boss.AttackCooldownSeconds=1;}
  private AdventureGameService Engine()=>new(points,config,(_,_)=>Task.CompletedTask,new Low(),()=>now,"42");
  private async Task Start(AdventureGameService engine)=>await engine.HandleAsync(new(){UserId="42",UserName="Owner",IsBroadcaster=true},"!start boss",["!start boss"],default);
  private async Task Seed(string user,string boss,int attack=0)=>await points.ApplyRpgAsync(user,user,"seed",a=>{

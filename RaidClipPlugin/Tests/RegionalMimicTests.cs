@@ -15,6 +15,17 @@ public sealed class RegionalMimicTests:IDisposable
  public void Dispose(){if(Directory.Exists(root))Directory.Delete(root,true);}
  AdventureGameService Engine(ViewerPointStore store)=>new(store,config,(_,_)=>Task.CompletedTask,new Low(),()=>now,"42");
  async Task Seed(ViewerPointStore store,string id,int attack=100)=>await store.ApplyRpgAsync(id,id,"seed",a=>{a.Rpg.PlayerLevel=50;a.Rpg.SelectedBossId="boss_eonath";a.Rpg.Inventory.Add(new(){ItemId="test-weapon",Kind=RpgItemKind.Equipment,Slot=EquipmentSlot.Weapon,Attributes=new(){Attack=attack}});a.Rpg.Equipment[EquipmentSlot.Weapon]=a.Rpg.Inventory.Last().InstanceId;return new(true);},default);
+ [Fact] public void AllZonesMigrateToHalfPercentWithoutChangingLoot()
+ {
+  Assert.All(new RpgZoneConfig().Areas,z=>Assert.Equal(.5m,z.MimicChance));
+  var old=new RpgZoneConfig();
+  foreach(var z in old.Areas)z.MimicChance=12;
+  var loaded=JsonSerializer.Deserialize<RpgZoneConfig>(JsonSerializer.Serialize(old))!;
+  Assert.All(loaded.Areas,z=>Assert.Equal(.5m,z.MimicChance));
+  Assert.Equal(1,loaded.MimicSpawnVersion);
+  Assert.Equal(50,RpgRegionalMimics.EquipmentChance);
+  Assert.All(JsonSerializer.Deserialize<RpgZoneConfig>(JsonSerializer.Serialize(loaded))!.Areas,z=>Assert.Equal(.5m,z.MimicChance));
+ }
  [Fact] public void TenRegionalVariantsHaveHeavyHpDamageAndRegionalLootOnly(){
   var c=config.Adventures.Rpg;c.Validate();var mimics=RpgRegionalMimics.Catalog(c);Assert.Equal(10,mimics.Count);Assert.Equal(10,mimics.Select(m=>m.Name).Distinct().Count());
   foreach(var mimic in mimics){var original=RpgAreaBossConfig.Defaults().Single(b=>b.AreaId==mimic.AreaId);Assert.Equal(original.BaseHp*2,mimic.BaseHp);Assert.True(mimic.Attack>original.Attack);Assert.Equal(50,mimic.ItemChance);Assert.Equal(c.Zones.Get(mimic.AreaId).Materials,mimic.Materials);

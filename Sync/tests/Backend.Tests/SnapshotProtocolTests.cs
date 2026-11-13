@@ -167,7 +167,7 @@ public sealed class SnapshotProtocolTests : IDisposable
     }
 
     [Theory]
-    [InlineData("\"Rarity\":2", "\"Rarity\":10")]
+    [InlineData("\"Rarity\":2", "\"Rarity\":11")]
     [InlineData("\"Damage\":1.25", "\"Damage\":\"invalid\"")]
     [InlineData("\"Quantity\":2", "\"Quantity\":-1")]
     [InlineData("\"RemainingUses\":2", "\"RemainingUses\":-1")]

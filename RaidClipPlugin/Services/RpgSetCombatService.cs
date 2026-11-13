@@ -18,6 +18,7 @@ public static class RpgSetCombatService
     }
     public static void Refresh(RpgProfile p,RpgHealthConfig c,DateTimeOffset now)
     {
+        RpgTankCombat.Refresh(p,c,now);
         RpgDepthsCombatService.Refresh(p,c,now);
         RpgEternalCombat.Refresh(p,c,now);
         var sets=c.EquipmentSets;
@@ -53,14 +54,14 @@ public static class RpgSetCombatService
             else if(Ready(p,"moon-shield",15,now))Shield(p,(int)(max*0.12m),"moon",now);
         }
     }
-    public static int Heal(RpgProfile p,RpgHealthConfig c,int raw,DateTimeOffset now)
+    public static int Heal(RpgProfile p,RpgHealthConfig c,int raw,DateTimeOffset now,bool allowRevive=false)
     {
-        if(p.Health.CurrentHp is null or <0||raw<=0)return 0;
+        if(p.Health.CurrentHp is null || (!allowRevive && p.Health.CurrentHp<=0) || raw<=0)return 0;
         var max=RpgHealthService.Maximum(p,c);
-        var power=Math.Clamp(Gear(p,"HealingPower")+Bonus(p,c.EquipmentSets,"HealingPower"),-90,200);
-        var amount=(int)Math.Min(int.MaxValue,decimal.Floor(raw*(1+power/100)));
+        var power=Math.Clamp(Gear(p,"HealingPower")+Bonus(p,c.EquipmentSets,"HealingPower")+(p.Role==RpgRole.Healer?c.Roles.HealerHealingPercent:0),-90,200);
+        var amount=(int)Math.Min(int.MaxValue,decimal.Floor(raw*(1+power/100)*(1+RpgTankCombat.ReceivedHealing(p,c,now)/100)));
         var missing=Math.Max(0,max-p.Health.CurrentHp.Value);var granted=Math.Min(missing,amount);
-        p.Health.CurrentHp+=granted;
+        p.Health.CurrentHp+=granted;RpgStatisticsService.Add(p,"healing",granted);
         RpgEternalCombat.Healed(p,c,granted,now);
         if(amount>missing&&Active(p,c.EquipmentSets,"coral_oracle",6))Shield(p,Math.Min(amount-missing,(int)(max*0.18m)),"coral",now);
         return granted;

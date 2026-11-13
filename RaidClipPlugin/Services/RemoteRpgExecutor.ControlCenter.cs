@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Globalization;
 using RaidClipPlugin.Config;
 using RaidClipPlugin.Models;
@@ -56,7 +56,7 @@ internal sealed partial class RemoteRpgExecutor
   if(operation=="profile"){
    var view=JsonSerializer.Deserialize<ViewerPointEntry>(JsonSerializer.Serialize(account))!;
    if(!owner){var forbidden=view.Rpg.Inventory.Where(i=>i.Rarity==ItemRarity.Divine).Select(i=>i.InstanceId).ToHashSet();view.Rpg.Inventory.RemoveAll(i=>i.Rarity==ItemRarity.Divine);foreach(var slot in view.Rpg.Equipment.Where(s=>forbidden.Contains(s.Value)).Select(s=>s.Key).ToArray())view.Rpg.Equipment.Remove(slot);}
-   var projection=SnapshotValidation.Validate(new(1,channel,targetId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(view)),channel);
+   var projection=SnapshotValidation.ValidateLocalSource(new(1,channel,targetId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(view)),channel);
    return Reply(new{profile=JsonDocument.Parse(projection.AccountJson!).RootElement.Clone(),statistics=new{account.RaceWins,account.BossDefeats,account.GamesPlayed,account.Wins,account.Losses,account.BiggestWin,account.WatchMinutes,fish=account.FishCollection.Sum(f=>f.Value)},divineHidden=!owner});
   }
   if(!owner)return new(false,"admin_required","Spielstandänderungen sind dem Kanalinhaber vorbehalten.");

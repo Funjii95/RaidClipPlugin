@@ -39,7 +39,7 @@ public sealed class ChatModerationService : IDisposable
     private readonly string _broadcasterId;
     private readonly string _moderatorId;
     private readonly SharedChatCommandGuard _sharedChatCommandGuard;
-    private readonly HttpClient _http = new();
+    private readonly HttpClient _http = new(new TwitchRenewingHandler());
     private readonly SemaphoreSlim _messageDispatchSlots =
         new(MaxParallelMessageBatches, MaxParallelMessageBatches);
     private bool _disposed;

@@ -2,6 +2,7 @@ using RaidClipPlugin.Config;
 namespace RaidClipPlugin.Models;
 public sealed class RpgGlobalBossParticipant
 {
+ public bool HasAssignment {get;set;} public bool PersonalVictory {get;set;}public int PersonalMaximumHp {get;set;}public int PersonalRemainingHp {get;set;}public decimal AssignedPower {get;set;}public decimal AttackScale {get;set;}=1;
  public string UserId {get;set;}="";public string Name {get;set;}="";public string BossId {get;set;}="boss_korallus";
  public long Damage {get;set;} public decimal Contribution {get;set;} public int Cycles {get;set;} public bool Defeated {get;set;}
  public int CurseIntervals {get;set;}

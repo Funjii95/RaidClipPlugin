@@ -9,7 +9,7 @@ namespace RaidClipPlugin.Services;
 
 public sealed class TwitchService : ITwitchClipClient, IClipChatClient, IGiveawayTwitchClient, IHeistTwitchClient, IDuelTwitchClient, IDuelModerationClient, IChatTimerClient
 {
-    private readonly HttpClient _http = new();
+    private readonly HttpClient _http = new(new TwitchRenewingHandler());
     private int _sharedChatSendNoticeLogged;
 
 

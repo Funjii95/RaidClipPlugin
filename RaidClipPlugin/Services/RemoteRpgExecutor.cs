@@ -8,14 +8,13 @@ namespace RaidClipPlugin.Services;
 internal sealed record LocalActionRecord(string Hash,string UserId,ActionOutcome? Outcome);
 internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<MinigameConfig> configuration,
     StreamAdmission admission,Guid epoch,string channel,IReadOnlySet<string> users,string journal,
-    Func<string,string,bool> permitted,ChatMinigameService? minigames=null,Func<string,bool>? enrolled=null,Action<RpgUpgradeConfig>? saveUpgrades=null,Action<RpgZoneConfig>? saveZones=null,Func<AppConfig>? readAdminConfiguration=null,Action<AppConfig>? saveAdminConfiguration=null)
+    Func<string,string,bool> permitted,ChatMinigameService? minigames=null,Func<string,bool>? enrolled=null,Action<RpgUpgradeConfig>? saveUpgrades=null,Action<RpgZoneConfig>? saveZones=null,Func<AppConfig>? readAdminConfiguration=null,Action<AppConfig>? saveAdminConfiguration=null,Func<string,CancellationToken,Task<TwitchUser?>>? resolveTwitchUser=null)
 {
     private readonly SemaphoreSlim gate=new(1,1);
-    internal static string CommandFor(string kind)=>kind switch {"selectBoss"=>"!attack","compareEquipment"=>"!equip","selectZone"=>"!dive","upgradeItem" or "refineItem"=>"!equip","learnTalent"=>"!talent","openShells"=>"!muscheln","questStatus" or "startQuest" or "claimQuest" or "status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
+    internal static string CommandFor(string kind)=>kind switch {"diveSeries"=>"!dive","dungeonStatus" or "partyStatus" or "party"=>"!stats","partyCombat"=>"!dive","selectRole"=>"!stats","selectBoss"=>"!attack","compareEquipment"=>"!equip","selectZone"=>"!dive","upgradeItem" or "refineItem"=>"!equip","learnTalent"=>"!talent","openShells"=>"!muscheln","questStatus" or "startQuest" or "claimQuest" or "status"=>"!stats","inventory"=>"!inventory","sets"=>"!sets","perks"=>"!perks","equip"=>"!equip","unequip"=>"!unequip","buyPerk"=>"!perk","craft"=>"!craft","eat"=>"!sushi","fish"=>"!fish","dive"=>"!dive","bossAttack"=>"!attack","bossStatus"=>"!stats","itemlock"=>"!itemlock","favorite"=>"!favorite","salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel"=>"!salvage",_=>""};
     internal async Task<ActionOutcome> ExecuteAsync(ActionEnvelope envelope,CancellationToken ct,TimeSpan? remainingWindow=null)
     {
         var hash=RpgIntents.Hash(envelope.Intent);
-        if(envelope.Intent.Kind=="openShells")return new(false,"chat_only","Muscheln sind derzeit ausschließlich im Chat verfügbar: !muscheln [1–100].");
         if(envelope.ChannelId!=channel || !(users.Contains(envelope.UserId)||enrolled?.Invoke(envelope.UserId)==true) || envelope.IntentHash!=hash || envelope.SessionId==Guid.Empty)
             return new(false,"scope_denied","Aktionszuordnung ungültig.");
         await gate.WaitAsync(ct);
@@ -63,18 +62,48 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
         if(!source.RootElement.TryGetProperty(e.UserId,out _))return new(false,"profile_missing","Kein lokales Testprofil vorhanden.");
         var account=(await points.GetProfileAsync(e.UserId,ct)).Entry;
         var config=configuration();var rpg=config.Adventures.Rpg;
-        var command=e.Intent.Kind=="casino"?"!"+e.Intent.Arguments.GetProperty("game").GetString():e.Intent.Kind=="community"?minigames?.RemoteCommand(e.Intent.Arguments.GetProperty("game").GetString()!,e.Intent.Arguments.GetProperty("operation").GetString()!)??"":e.Intent.Kind is "preview" or "minigames"?"!stats":e.Intent.Kind=="selectZone"?(e.Intent.Arguments.GetProperty("activity").GetString()=="fish"?"!fish":"!dive"):CommandFor(e.Intent.Kind);
+        var command=e.Intent.Kind=="partyCombat"?(e.Intent.Arguments.GetProperty("operation").GetString() switch{"recover" or "abandon"=>"!stats","startDive" or "startDungeon" or "advance"=>"!dive",_=>"!attack"}):e.Intent.Kind=="casino"?"!"+e.Intent.Arguments.GetProperty("game").GetString():e.Intent.Kind=="community"?minigames?.RemoteCommand(e.Intent.Arguments.GetProperty("game").GetString()!,e.Intent.Arguments.GetProperty("operation").GetString()!)??"":e.Intent.Kind is "preview" or "minigames"?"!stats":e.Intent.Kind=="selectZone"?(e.Intent.Arguments.GetProperty("activity").GetString()=="fish"?"!fish":"!dive"):CommandFor(e.Intent.Kind);
         if(!config.Enabled || !config.PointsEnabled || !rpg.Enabled || !permitted(command,account.DisplayName) ||
             config.PointsBlacklist.Any(n=>n.Equals(account.DisplayName,StringComparison.OrdinalIgnoreCase)))return new(false,"command_disabled","Aktion ist im Plugin nicht freigegeben.");
+        points.ObserveRpgActivity(e.UserId,DateTimeOffset.UtcNow);
         string Arg(string name)=>e.Intent.Arguments.GetProperty(name).GetString()!;
         var progression=new RpgProgressionService(points,rpg);
         var request="extension:"+e.Intent.ActionId.ToString("N");
         RpgTransactionResult? mutation=null;
         if(e.Intent.Kind is "selectBoss" or "bossStatus" or "bossAttack" or "itemlock" or "favorite" or "salvagePreview" or "salvageBatch" or "salvageConfirm" or "salvageCancel" or "community")
             return await InvokeExtendedAsync(e,account,request,ct);
+        if(e.Intent.Kind=="diveSeries"){
+            var service=new RpgDiveSeriesService(points,config);var done=Arg("operation")=="start"?await service.StartAsync(e.UserId,account.DisplayName,request,int.Parse(Arg("count")),ct):await service.StopAsync(e.UserId,account.DisplayName,request,ct);
+            if(done.Success&&Arg("operation")=="start")await service.TickAsync(ct,async(name,zone,token)=>{if(minigames is not null)await minigames.StartDiscoveredBossAsync(name,token,zone);},e.UserId);
+            var fresh=(await points.GetProfileAsync(e.UserId,ct)).Entry;var projection=SnapshotValidation.ValidateLocalSource(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(fresh)),channel).AccountJson!;
+            return new(done.Success,done.Success?"applied":"rule_rejected",done.Error,JsonSerializer.Serialize(new{profile=JsonDocument.Parse(projection).RootElement.Clone()}));
+        }
+        if(e.Intent.Kind=="dungeonStatus")return new(true,"read","Dungeonübersicht geladen.",JsonSerializer.Serialize(new{dungeons=RpgDungeonConfig.Definitions,enabled=rpg.Multiplayer.Enabled&&rpg.Dungeons.Enabled,party=await points.PartyViewAsync(e.UserId,rpg,DateTimeOffset.UtcNow,ct)}));
+        if(e.Intent.Kind=="partyCombat"){
+            string Optional(string key)=>e.Intent.Arguments.TryGetProperty(key,out var value)?value.GetString()!:"";
+            var done=await new RpgPartyCombatService(points,config).ExecuteAsync(e.UserId,account.DisplayName,request,Arg("operation"),Optional("zoneId"),Optional("dungeonId"),Optional("difficulty"),Optional("targetUserId"),ct);
+            var fresh=(await points.GetProfileAsync(e.UserId,ct)).Entry;
+            var projection=SnapshotValidation.ValidateLocalSource(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(fresh)),channel).AccountJson!;
+            return new(done.Success,done.Success?"applied":done.Duplicate?"already_committed":"rule_rejected",done.Error,JsonSerializer.Serialize(new{party=await points.PartyViewAsync(e.UserId,rpg,DateTimeOffset.UtcNow,ct),profile=JsonDocument.Parse(projection).RootElement.Clone(),stats=CharacterStatService.Calculate(fresh.Rpg,rpg,RpgActivity.Boss)}));
+        }
+        if(e.Intent.Kind=="partyStatus")return new(true,"read","Gruppenstatus geladen.",JsonSerializer.Serialize(await points.PartyViewAsync(e.UserId,rpg,DateTimeOffset.UtcNow,ct)));
+        if(e.Intent.Kind=="party"){
+            var target=e.Intent.Arguments.TryGetProperty("targetUserId",out var rawTarget)?rawTarget.GetString()!:"";string? invitedName=null;
+            if(e.Intent.Arguments.TryGetProperty("targetLogin",out var login)){
+                if(resolveTwitchUser is null)return new(false,"lookup_unavailable","Twitch-Namenssuche ist momentan nicht verbunden.");
+                var normalized=login.GetString()!.TrimStart('@').ToLowerInvariant();TwitchUser? resolved;
+                using var lookupTimeout=CancellationTokenSource.CreateLinkedTokenSource(ct);lookupTimeout.CancelAfter(TimeSpan.FromSeconds(3));
+                try{resolved=await resolveTwitchUser(normalized,lookupTimeout.Token);}catch(Exception error)when(error is HttpRequestException or OperationCanceledException){return new(false,"lookup_unavailable","Twitch-Namen gerade nicht erreichbar. Es wurde niemand eingeladen.");}
+                if(resolved is null||!PartySnapshot.User(resolved.Id)||!resolved.Login.Equals(normalized,StringComparison.OrdinalIgnoreCase))return new(false,"player_not_found","Dieser Twitch-Name wurde nicht gefunden.");
+                target=resolved.Id;invitedName=resolved.DisplayName;
+            }
+            var done=await new RpgPartyService(points,rpg).ApplyAsync(e.UserId,account.DisplayName,request,Arg("operation"),target,e.Intent.Arguments.TryGetProperty("invitationId",out var invite)?invite.GetString()!:"",ct);
+            var data=JsonSerializer.SerializeToNode(await points.PartyViewAsync(e.UserId,rpg,DateTimeOffset.UtcNow,ct))!;data["notice"]=done.Success&&invitedName is not null?"Einladung an "+invitedName+" gesendet.":"";
+            return new(done.Success,done.Success?"applied":done.Duplicate?"already_committed":"rule_rejected",done.Error,data.ToJsonString());
+        }
         if(e.Intent.Kind=="questStatus")return new(true,"read","Questfortschritt geladen.",JsonSerializer.Serialize(RpgQuestService.View(account.Rpg,rpg)));
-        if(e.Intent.Kind is "startQuest" or "claimQuest"){var quests=new RpgQuestService(points,config,channel);var saved=e.Intent.Kind=="startQuest"?await quests.StartAsync(e.UserId,account.DisplayName,request,Arg("questId"),ct):await quests.ClaimAsync(e.UserId,account.DisplayName,request,Arg("questId"),ct);var fresh=(await points.GetProfileAsync(e.UserId,ct)).Entry;return new(saved.Success,saved.Success?"applied":"rule_rejected",saved.Error,JsonSerializer.Serialize(new{profile=JsonDocument.Parse(SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(fresh)),channel).AccountJson!).RootElement.Clone()}));}
-        if(e.Intent.Kind=="preview")return new(true,"read","Aktuelle primäre Ausrüstungs-Lootchance.",JsonSerializer.Serialize(new{profile=JsonDocument.Parse(SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account)),channel).AccountJson!).RootElement.Clone(),dive=AdventurePreview(account,"dive",long.Parse(Arg("stake"))),fish=AdventurePreview(account,"fish",long.Parse(Arg("fishingStake"))),lootLocations=RpgLootLocations.Wire(rpg)}));
+        if(e.Intent.Kind is "startQuest" or "claimQuest"){var quests=new RpgQuestService(points,config,channel);var saved=e.Intent.Kind=="startQuest"?await quests.StartAsync(e.UserId,account.DisplayName,request,Arg("questId"),ct):await quests.ClaimAsync(e.UserId,account.DisplayName,request,Arg("questId"),ct);var fresh=(await points.GetProfileAsync(e.UserId,ct)).Entry;return new(saved.Success,saved.Success?"applied":"rule_rejected",saved.Error,JsonSerializer.Serialize(new{profile=JsonDocument.Parse(SnapshotValidation.ValidateLocalSource(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(fresh)),channel).AccountJson!).RootElement.Clone()}));}
+        if(e.Intent.Kind=="preview")return new(true,"read","Aktuelle primäre Ausrüstungs-Lootchance.",JsonSerializer.Serialize(new{profile=JsonDocument.Parse(SnapshotValidation.ValidateLocalSource(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account)),channel).AccountJson!).RootElement.Clone(),dive=AdventurePreview(account,"dive",long.Parse(Arg("stake"))),fish=AdventurePreview(account,"fish",long.Parse(Arg("fishingStake"))),lootLocations=RpgLootLocations.Wire(rpg),materialLocations=RpgZoneService.MaterialLocations(account.Rpg,rpg)}));
         if(e.Intent.Kind=="minigames")return new(true,"read","Spielhallenstatus.",JsonSerializer.Serialize(await MinigameDataAsync(account,ct)));
         if(e.Intent.Kind=="casino"){
             if(minigames is null)return new(false,"unavailable","Laufender Chat-Spieldienst fehlt.");
@@ -84,13 +113,14 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             return new(result.Success,result.Success?"applied":"rule_rejected",result.Message,JsonSerializer.Serialize(await MinigameDataAsync(current,ct)));
         }
         if(e.Intent.Kind is "status" or "inventory" or "sets" or "perks"){
-            var projection=SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account)),channel).AccountJson!;
+            var projection=SnapshotValidation.ValidateLocalSource(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(account)),channel).AccountJson!;
             return new(true,"read","Aktueller Plugin-Stand.",JsonSerializer.Serialize(new{profile=JsonDocument.Parse(projection).RootElement.Clone(),stats=CharacterStatService.Calculate(account.Rpg,rpg,RpgActivity.Boss),sets=RpgSetService.Progress(account.Rpg,rpg)}));
         }
+        if(e.Intent.Kind=="selectRole"){mutation=await points.SelectRoleAsync(e.UserId,account.DisplayName,request,Arg("role") switch{"tank"=>RpgRole.Tank,"healer"=>RpgRole.Healer,_=>RpgRole.Damage},rpg,ct);}
         if(e.Intent.Kind=="selectZone") {mutation=await RpgZoneService.SelectAsync(points,rpg,e.UserId,account.DisplayName,request,Arg("activity"),Arg("zoneId"),ct);}
         if(e.Intent.Kind=="compareEquipment") {
             var item=account.Rpg.Inventory.SingleOrDefault(i=>i.InstanceId==Arg("instanceId"));
-            if(item?.Slot is null||!Enum.TryParse<EquipmentSlot>(Arg("slot"),out var selected)||!Enum.IsDefined(selected)||!(selected==item.Slot||item.Slot is EquipmentSlot.Ring1 or EquipmentSlot.Ring2&&selected is EquipmentSlot.Ring1 or EquipmentSlot.Ring2))return new(false,"invalid_item","Eigene Ausrüstung und gültiger Slot erforderlich.");
+            if(item?.Slot is null||!Enum.TryParse<EquipmentSlot>(Arg("slot"),out var selected)||!Enum.IsDefined(selected)||!(selected==item.Slot||RpgTrinketCatalog.IsSlot(item.Slot)&&RpgTrinketCatalog.IsSlot(selected)||item.Slot is EquipmentSlot.Ring1 or EquipmentSlot.Ring2&&selected is EquipmentSlot.Ring1 or EquipmentSlot.Ring2))return new(false,"invalid_item","Eigene Ausrüstung und gültiger Slot erforderlich.");
             var draft=JsonSerializer.Deserialize<RpgProfile>(JsonSerializer.Serialize(account.Rpg))!;
             foreach(var slot in draft.Equipment.Where(p=>p.Value==item.InstanceId).Select(p=>p.Key).ToArray())draft.Equipment.Remove(slot);
             draft.Equipment[selected]=item.InstanceId;
@@ -111,7 +141,12 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             mutation=await progression.UnequipAsync(e.UserId,account.DisplayName,request,slot,ct);
         }
         if(e.Intent.Kind is "upgradeItem" or "refineItem")mutation=await new RpgUpgradeService(points,rpg).ApplyAsync(e.UserId,account.DisplayName,request,Arg("instanceId"),int.Parse(Arg("expectedLevel")),e.Intent.Kind=="refineItem",ct);
-        if(e.Intent.Kind=="openShells"){var opened=await new RpgShellService(points,rpg).OpenAsync(e.UserId,account.DisplayName,request,int.Parse(Arg("count")),ct);return new(opened.Success,opened.Success?"applied":"rule_rejected",opened.Message);}
+        if(e.Intent.Kind=="openShells"){
+            var opened=await new RpgShellService(points,rpg,maximumBalance:config.MaximumAccountEnabled?config.MaximumAccountPoints:long.MaxValue).OpenAsync(e.UserId,account.DisplayName,request,int.Parse(Arg("count")),ct);
+            var fresh=(await points.GetProfileAsync(e.UserId,ct)).Entry;
+            var projection=SnapshotValidation.ValidateLocalSource(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(fresh)),channel).AccountJson!;
+            return new(opened.Success,opened.Success?"applied":"rule_rejected",opened.Message,JsonSerializer.Serialize(new{profile=JsonDocument.Parse(projection).RootElement.Clone()}));
+        }
         if(e.Intent.Kind=="learnTalent")mutation=await RpgTalentService.LearnAsync(points,rpg,e.UserId,account.DisplayName,request,Arg("talentId"),int.Parse(Arg("expectedRank")),int.Parse(Arg("catalogVersion")),ct);
         if(e.Intent.Kind=="buyPerk")mutation=await progression.BuyPerkAsync(e.UserId,account.DisplayName,request,Arg("perkId"),ct,e.Intent.Arguments.TryGetProperty("mode",out var mode) && mode.GetString()=="max");
         if(e.Intent.Kind=="craft")mutation=await progression.CraftAsync(e.UserId,account.DisplayName,request,Arg("recipeId"),ct);
@@ -121,11 +156,11 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
             if(adventure.BossDiscovered&&(minigames is null||!await minigames.StartDiscoveredBossAsync(account.DisplayName,ct,adventure.ZoneId)))adventure=adventure with{BossDiscovered=false,Outcome="Eine Mimic-Spur gefunden. Es läuft bereits ein Kampf oder eine Rundenpause; kein neues Ereignis gestartet."};
             return new(adventure.Success,adventure.Success?"applied":"rule_rejected",adventure.Error,JsonSerializer.Serialize(adventure));
         }
-        if(e.Intent.Kind is "buyPerk" or "learnTalent" or "upgradeItem" or "refineItem" or "selectZone" && mutation?.Success==true){
+        if(e.Intent.Kind is "selectRole" or "buyPerk" or "learnTalent" or "upgradeItem" or "refineItem" or "selectZone" && mutation?.Success==true){
             // Read the committed authoritative state; the viewer need not wait for
             // the independent Firestore delivery before seeing the purchased level.
             var committed=(await points.GetProfileAsync(e.UserId,ct)).Entry;
-            var projection=SnapshotValidation.Validate(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(committed)),channel).AccountJson!;
+            var projection=SnapshotValidation.ValidateLocalSource(new(1,channel,e.UserId,1,Guid.NewGuid(),DateTimeOffset.UtcNow,SnapshotKind.Upsert,JsonSerializer.Serialize(committed)),channel).AccountJson!;
             return new(true,"applied",mutation.Error,JsonSerializer.Serialize(new{mutation.Balance,mutation.Details,
                 profile=JsonDocument.Parse(projection).RootElement.Clone(),stats=CharacterStatService.Calculate(committed.Rpg,rpg,RpgActivity.Boss)}));
         }
@@ -135,7 +170,7 @@ internal sealed partial class RemoteRpgExecutor(ViewerPointStore points,Func<Min
     internal string CatalogJson()
     {
         var config=configuration();var rpg=config.Adventures.Rpg;
-        return JsonSerializer.Serialize(new{staffAccess=new{channelId=channel,moderators=rpg.AdminAccess.Moderators},pluginVersion=typeof(RemoteRpgExecutor).Assembly.GetName().Version!.ToString(),progressionRules=new{rpg.Health.ExperiencePerLevel,rpg.Health.MaximumLevel},magicRules=new{MaximumMana=100,BaseRegenerationPerSecond=5,AutomaticWeaponSpells=true},perkMaxPurchase=true,collectorItems=rpg.DiveLoot.Items.Where(i=>i.Collector is not null).Select(i=>new{Id=i.ItemId,Name=i.DisplayName,i.Rarity}),zones=rpg.Zones.Areas, supported=RpgIntents.Supported.Where(kind=>kind!="openShells").Concat(new[]{"adminCatalog","adminStart","adminGrantSet","adminGrant","adminMaterialGrant","adminBalance","adminHealAll","adminDivine","adminZoneDebug","adminDashboard","adminConfigRead","adminConfigSave","adminPlayers","adminPlayer","adminControl","adminRoles"}),
+        return JsonSerializer.Serialize(new{staffAccess=new{channelId=channel,moderators=rpg.AdminAccess.Moderators},partyInviteNames=true,automaticDungeons=true,pluginVersion=typeof(RemoteRpgExecutor).Assembly.GetName().Version!.ToString(),progressionRules=new{rpg.Health.ExperiencePerLevel,rpg.Health.MaximumLevel},magicRules=new{MaximumMana=100,BaseRegenerationPerSecond=5,AutomaticWeaponSpells=true},perkMaxPurchase=true,collectorItems=rpg.DiveLoot.Items.Where(i=>i.Collector is not null).Select(i=>new{Id=i.ItemId,Name=i.DisplayName,i.Rarity}),zones=rpg.Zones.Areas, supported=RpgIntents.Supported.Concat(new[]{"adminCatalog","adminStart","adminGrantSet","adminGrant","adminMaterialGrant","adminBalance","adminHealAll","adminDivine","adminZoneDebug","adminDashboard","adminConfigRead","adminConfigSave","adminPlayers","adminPlayer","adminControl","adminRoles"}),
             materialCatalog=RpgUpgradeCatalog.Materials, itemUpgrade=new{maximumLevel=9,bonuses=RpgEquipmentUpgradeRules.Bonuses,baseCosts=Enumerable.Range(0,6).Select(level=>RpgEquipmentUpgradeRules.Cost(level,ItemRarity.Common,rpg.Upgrades)).Select(cost=>new object[]{cost.Pearls,cost.Materials}),highCostsByRarity=Enum.GetValues<ItemRarity>().Where(r=>r!=ItemRarity.Divine).ToDictionary(r=>r.ToString(),r=>Enumerable.Range(6,3).Select(level=>RpgEquipmentUpgradeRules.Cost(level,r,rpg.Upgrades)).Select(cost=>new object[]{cost.Pearls,cost.Materials})),refinement=new{TargetLevel=9,Pearls=rpg.Upgrades.RefinementPearls,Materials=new Dictionary<string,int>{{"eternal_depth_core",1}}}},
             talentCatalogVersion=TalentRules.CatalogVersion,talents=TalentRules.Catalog,
             perks=rpg.Perks.Select(p=>new{p.Id,Name=RpgChatPresentation.PerkName(p),p.MaximumLevel,p.BonusPerLevel,Presentation=RpgPerkCatalog.Find(p.Id) is {} presentation?new{presentation.Category,presentation.Symbol,presentation.Value,presentation.Label}:null,Costs=Enumerable.Range(0,p.MaximumLevel).Select(level=>p.Cost(level).ToString(System.Globalization.CultureInfo.InvariantCulture))}),

@@ -40,12 +40,12 @@ public sealed class RpgPerkReworkTests:IDisposable
         Assert.All(config.Adventures.Rpg.Perks,p=>Assert.Equal(5,p.MaximumLevel));
         Assert.Equal(5,new RpgPerkDefinition{MaximumLevel=100}.MaximumLevel);
     }
-    [Theory] [InlineData(0,true)] [InlineData(99,true)] [InlineData(100,false)] [InlineData(9999,false)]
-    public void MimicDiscoveryHasOnePercentAtRankFiveAndHalfPercentBaseline(int roll,bool expected)
+    [Theory] [InlineData(0,true)] [InlineData(49,true)] [InlineData(50,false)] [InlineData(9999,false)]
+    public void MimicDiscoveryStaysAtHalfPercentEvenAtRankFive(int roll,bool expected)
     {
         var p=new RpgProfile();p.Perks["abyss-sense"]=5;
         Assert.Equal(.5m,RpgPerkCatalog.Bonus(p,"bossDiscovery"));
-        var c=Config().Adventures.Rpg;Assert.Equal(1,RpgPerkCatalog.MimicChance(p,c));
+        var c=Config().Adventures.Rpg;Assert.Equal(.5m,RpgPerkCatalog.MimicChance(p,c));
         Assert.Equal(expected,RpgPerkCatalog.DiscoverMimic(p,c,new Fixed(roll)));
         p.Perks.Clear();Assert.Equal(.5m,RpgPerkCatalog.MimicChance(p,c));Assert.True(RpgPerkCatalog.DiscoverMimic(p,c,new Fixed(49)));Assert.False(RpgPerkCatalog.DiscoverMimic(p,c,new Fixed(50)));
         c.Mimic.Enabled=false;Assert.False(RpgPerkCatalog.DiscoverMimic(p,c,new Low()));
@@ -97,7 +97,7 @@ public sealed class RpgPerkReworkTests:IDisposable
     [Fact] public void SettingsControlDiscoveryAndLegendaryChancesAndRejectInvalidValues()
     {
         var c=Config().Adventures.Rpg;var p=new RpgProfile();c.Mimic.BaseSpawnChance=2;
-        Assert.Equal(2,RpgPerkCatalog.MimicChance(p,c));c.Mimic.LegendaryChance=0;c.Mimic.NormalBossLegendaryChance=100;
+        Assert.Equal(.5m,RpgPerkCatalog.MimicChance(p,c));c.Mimic.LegendaryChance=0;c.Mimic.NormalBossLegendaryChance=100;
         Assert.Null(RpgBossLootService.RollLegendary(c,new Low(),DateTimeOffset.UtcNow,true));
         Assert.NotNull(RpgBossLootService.RollLegendary(c,new Fixed(9999),DateTimeOffset.UtcNow));
         c.Mimic.BaseSpawnChance=-1;Assert.Throws<InvalidOperationException>(()=>c.Validate());

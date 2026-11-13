@@ -5,8 +5,8 @@ import {attributes,emptyRemoteState,field,inventoryItem,mapProfile} from './mode
 import {RemoteMinigameClient} from '../minigames/remote-client';
 export type TwitchHelper={onAuthorized:(callback:(auth:Authorization)=>void)=>void;actions?:{requestIdShare:()=>void}};
 import {PluginRuleError} from './errors';
-import {materialKeys,materialNames} from '../UpgradePanel';
-const actionKinds:Partial<Record<Action['type'],string>>={startQuest:'startQuest',claimQuest:'claimQuest',selectBoss:'selectBoss',selectZone:'selectZone',refine:'refineItem',upgrade:'upgradeItem',learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
+import {materialKeys,materialNames,readMaterialLocations} from '../UpgradePanel';
+const actionKinds:Partial<Record<Action['type'],string>>={selectRole:'selectRole',startQuest:'startQuest',claimQuest:'claimQuest',selectBoss:'selectBoss',selectZone:'selectZone',refine:'refineItem',upgrade:'upgradeItem',learnTalent:'learnTalent',openShells:'openShells',dive:'dive',fishing:'fish',equip:'equip',unequip:'unequip',perk:'buyPerk',cook:'craft',activateSushi:'eat',boss:'bossAttack',favorite:'favorite',lock:'itemlock',dismantle:'salvagePreview',salvageBatch:'salvageBatch',confirmSalvage:'salvageConfirm',cancelSalvage:'salvageCancel'};
 const canonical=(v:any):any=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k[0].toLowerCase()+k.slice(1),canonical(v)])):v;
 const signature=(v:any)=>JSON.stringify(canonical([field(v,'UserId'),field(v,'Points'),field(v,'Rpg')]));
 // Pearls, fishing stocks and regenerating HP can change while the read-only status
@@ -19,7 +19,7 @@ const statsSignature=(profile:any)=>{
  const rpg=field(profile,'Rpg');
  const cooldowns=Object.fromEntries(Object.entries(field(rpg,'Cooldowns')??{}).map(([key,value])=>
   [key,typeof value==='string'&&Number.isFinite(Date.parse(value))?new Date(value).toISOString():value]));
- return JSON.stringify(canonical([field(profile,'UserId'),...['Inventory','Equipment','Perks','Buffs','TalentRanks','PlayerLevel'].map(key=>statTimes(field(rpg,key))),cooldowns]));
+ return JSON.stringify(canonical([field(profile,'UserId'),...['Inventory','Equipment','Perks','Buffs','TalentRanks','PlayerLevel','Role'].map(key=>statTimes(field(rpg,key))),cooldowns]));
 };
 export class BackendRpgDataSource implements RpgDataSource {
  readonly minigames=new RemoteMinigameClient(this);
@@ -129,6 +129,7 @@ export class BackendRpgDataSource implements RpgDataSource {
    if(action.type==='dive'||action.type==='fishing'){const n=action.stake??0;if(!Number.isSafeInteger(n)||n<0)throw Error('Ungültiger Einsatz.');args={stake:String(n)};}
    if(action.type==='startQuest'||action.type==='claimQuest')args={questId:action.id};
      if(action.type==='selectBoss')args={bossId:action.id};
+   if(action.type==='selectRole')args={role:action.role};
    if(action.type==='selectZone')args={activity:action.activity,zoneId:action.zoneId};
    if(action.type==='openShells'){if(!Number.isSafeInteger(action.count)||action.count<1||action.count>100)throw Error('Bitte 1 bis 100 Muscheln auswählen.');args={count:String(action.count)};}
    if(action.type==='equip')args={instanceId:action.id,slot:action.slot};
@@ -266,6 +267,16 @@ export class BackendRpgDataSource implements RpgDataSource {
    if(receipt.state!=='applied'||receipt.outcome?.success!==true)throw Error(receipt.outcome?.message||'Auftrag nicht bestätigt.');
    if(!receipt.outcome.dataJson)throw Error('Bestätigte Spieldaten fehlen.');
    const data=parseWire(receipt.outcome.dataJson);
+   if(kind==='partyCombat'&&data?.profile){
+    const committed={...data.profile,Source:'plugin-snapshot'};const fresh=mapProfile(committed,this.catalog);
+    if(fresh.player.id!==this.state.player.id||!Number.isFinite(Date.parse(field(committed,'UpdatedAt')))||Date.parse(field(committed,'UpdatedAt'))<Date.parse(field(this.profile,'UpdatedAt')))throw Error('Ungültige Kampfbestätigung.');
+    const old=this.state;fresh.boss=old.boss;fresh.hotTime=old.hotTime;fresh.result=old.result;
+    fresh.remote={...old.remote,...fresh.remote!,connection:old.remote!.connection,supported:old.remote!.supported,bossKnown:old.remote!.bossKnown,hotKnown:old.remote!.hotKnown,syncing:true};
+    if(data.stats){const actual=attributes(data.stats) as CharacterStats;this.statusPayload={signature:statsSignature(committed),stats:actual};fresh.remote.stats=actual;}
+    this.confirmedProfile=committed;this.profile=committed;this.state=fresh;this.emit();
+   }
+
+
    if(kind==='questStatus'&&Array.isArray(data.rewardSets)){this.questSets=data.rewardSets;this.catalog={...this.catalog,sets:[...(this.catalog.sets??[]).filter((s:any)=>!String(field(s,'Id')).startsWith('quest_')),...this.questSets]};if(this.profile){const mapped=mapProfile(this.profile,this.catalog);this.state.remote!.sets=mapped.remote!.sets;this.emit();}}
    return data;
   }finally{this.mutating=false;this.markPending();this.emit();}
@@ -315,6 +326,6 @@ export class BackendRpgDataSource implements RpgDataSource {
   const data=await this.readPlugin('preview',{stake:String(stake),fishingStake:String(fishingStake)});
   if(signature(data.profile)!==signature(this.profile))return;
   for(const [kind,n]of [['dive',stake],['fish',fishingStake]] as const){const p=data[kind];if(p?.stake!==String(n)||typeof p.chance!=='number'||!Number.isFinite(p.chance)||p.chance<0||p.chance>100||!Array.isArray(p.rarities))throw Error('Ungültige Lootvorschau.');}
-  this.previewCache={key,value:{dive:data.dive,fish:data.fish}};this.state.remote!.adventurePreview=this.previewCache.value;this.emit();
+  this.previewCache={key,value:{dive:data.dive,fish:data.fish,materialLocations:readMaterialLocations(data.materialLocations)}};this.state.remote!.adventurePreview=this.previewCache.value;this.emit();
  }
 }

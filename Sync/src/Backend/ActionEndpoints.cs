@@ -11,6 +11,8 @@ public static class ActionEndpoints
         app.Use(async(context,next)=>{
             try {await next();}
             catch(RelayDenied denied){context.Response.StatusCode=denied.Status;await context.Response.WriteAsJsonAsync(new{error=denied.Code});}
+            catch(Grpc.Core.RpcException error) when(error.StatusCode is Grpc.Core.StatusCode.Aborted or Grpc.Core.StatusCode.Unavailable or Grpc.Core.StatusCode.DeadlineExceeded)
+            {context.Response.StatusCode=503;await context.Response.WriteAsJsonAsync(new{error="relay_busy"});}
             catch(ArgumentException) when(context.Request.Path.StartsWithSegments("/api/v1/play") || context.Request.Path.StartsWithSegments("/api/v1/plugin/actions"))
             {context.Response.StatusCode=400;await context.Response.WriteAsJsonAsync(new{error="invalid_request"});}
             catch(JsonException) {context.Response.StatusCode=400;await context.Response.WriteAsJsonAsync(new{error="invalid_json"});}
@@ -24,6 +26,8 @@ public static class ActionEndpoints
         });
         viewers.MapGet("/actions/{id:guid}",async(Guid id,ClaimsPrincipal user,ActionRelay relay,CancellationToken ct)=>
             await relay.ReadAsync(user.FindFirstValue("user_id")!,id,ct) is {} value ? Results.Ok(value) : Results.NotFound());
+        viewers.MapGet("/actions/{id:guid}/wait",async(Guid id,ClaimsPrincipal user,ActionRelay relay,CancellationToken ct)=>
+            await relay.ReadWaitingAsync(user.FindFirstValue("user_id")!,id,ct) is {} value ? Results.Ok(value) : Results.NotFound());
         var plugin=app.MapGroup("/api/v1/plugin/actions").RequireAuthorization("ActionPlugin").RequireRateLimiting("plugin-actions");
         viewers.MapGet("/privacy/deletion",async(ClaimsPrincipal user,ActionRelay relay,CancellationToken ct)=>Results.Ok(new{request=await relay.SelfDeletionStatusAsync(user.FindFirstValue("user_id")!,ct)}));
         viewers.MapPost("/privacy/deletion",async(HttpRequest request,ClaimsPrincipal user,ActionRelay relay,CancellationToken ct)=>Results.Accepted(value:await relay.RequestSelfDeletionAsync(user.FindFirstValue("user_id")!,await Body<SelfDeletionIntent>(request,1024,ct),ct)));
@@ -31,10 +35,11 @@ public static class ActionEndpoints
         plugin.MapPost("/privacy-requests/{userId}/complete",async(string userId,HttpRequest request,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.CompleteSelfDeletionAsync(userId,(await Body<SelfDeletionIntent>(request,1024,ct)).RequestId,ct)));
         plugin.MapPost("/privacy/{userId}",async(string userId,ActionRelay relay,CancellationToken ct)=>{await relay.PurgeUserAsync(userId,ct);return Results.Ok(new{erased=true});});
         plugin.MapPost("/session",async(ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.OpenAsync(ct)));
-        plugin.MapPost("/heartbeat",async(HttpRequest request,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.HeartbeatAsync(await Body<RelayHeartbeat>(request,65536,ct),ct)));
+        plugin.MapPost("/heartbeat",async(HttpRequest request,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.HeartbeatAsync(await Body<RelayHeartbeat>(request,131072,ct),ct)));
         plugin.MapDelete("/session/{id:guid}",async(Guid id,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.CloseAsync(id,ct)));
         plugin.MapPost("/claim/{session:guid}",async(Guid session,ActionRelay relay,CancellationToken ct)=>
             await relay.ClaimAsync(session,ct) is {} value ? Results.Ok(value) : Results.NoContent());
+        plugin.MapPost("/claim/{session:guid}/wait",async(Guid session,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.ClaimWaitingAsync(session,ct)));
         plugin.MapPost("/complete",async(HttpRequest request,ActionRelay relay,CancellationToken ct)=>Results.Ok(await relay.CompleteAsync(await Body<RelayComplete>(request,ActionResultLimits.MaximumCompletionBodyBytes,ct),ct)));
     }
     private static async Task<T> Body<T>(HttpRequest request,int limit,CancellationToken ct)
